@@ -108,7 +108,9 @@ const SEAS_ACC = {
   bufanda_verde: { slot: 'neck', name: 'Bufanda verde', price: 25, season: 'navidad', map: ['GGGGGGGGGGGG', 'GwGwGwGwGwGw', '......GG....', '......Gw....'] },
   corona_corazon: { slot: 'head', name: 'Corona de corazones', price: 35, season: 'valentin', map: ['P...P...P', 'PP.PPP.PP', 'PPPPPPPPP', 'RRRRRRRRR'] }
 };
-function addAcc(id, a) { a.w = a.map[0].length + 2; a.h = a.map.length + 2; A.ACC[id] = a; Pix.define('acc_' + id, { w: a.w, h: a.h, fn(p) { p.map(1, 1, a.map); } }); }
+function addAcc(id, a, raw) {
+  if (raw) { a.w = raw.dw || 14; a.h = raw.dh || Math.round(a.w * raw.h / raw.w); A.ACC[id] = a; Pix.define('acc_' + id, { raw: raw.map, pal: raw.pal }); return; }
+  a.w = a.map[0].length + 2; a.h = a.map.length + 2; A.ACC[id] = a; Pix.define('acc_' + id, { w: a.w, h: a.h, fn(p) { p.map(1, 1, a.map); } }); }
 Object.entries(SEAS_ACC).forEach(([id, a]) => addAcc(id, a));
 A.RC.BGS.noche = { price: 25, season: 'halloween' };
 const SEASONS = [
@@ -141,18 +143,20 @@ function daysLeft(se) {
 A.seasonDaysLeft = daysLeft;
 
 // ---- cosas que agrega la administradora (se guardan en la configuración de la app) ----
-const catalog = () => { const c = (A.CFG && A.CFG.catalog) || {}; return { pets: c.pets || [], furn: c.furn || [], clothes: c.clothes || [], food: c.food || [], seasons: c.seasons || [] }; };
+const catalog = () => { const c = (A.CFG && A.CFG.catalog) || {}; return { pets: c.pets || [], furn: c.furn || [], clothes: c.clothes || [], food: c.food || [], icons: c.icons || [], seasons: c.seasons || [] }; };
 const defMap = (name, w, h, map) => Pix.define(name, { w, h, fn(p) { p.map(0, 0, map); } });
-let customKeys = { pets: [], furn: [], clothes: [], food: [] };
+const defX = (name, x, w, h) => x.pal ? Pix.define(name, { raw: x.map, pal: x.pal }) : defMap(name, w, h, x.map);
+let customKeys = { pets: [], furn: [], clothes: [], food: [], icons: [] };
 function registerCatalog() {
   customKeys.furn.forEach(k => delete FURN[k]); customKeys.food.forEach(k => delete FOODS[k]); customKeys.clothes.forEach(k => delete A.ACC[k]);
   customKeys.pets.forEach(k => delete A.ANCH[k]);
-  customKeys = { pets: [], furn: [], clothes: [], food: [] };
+  customKeys = { pets: [], furn: [], clothes: [], food: [], icons: [] };
   const c = catalog();
-  c.pets.forEach(x => { const k = 'cp_' + x.id; defMap(k, x.w || 20, x.h || 20, x.map); customKeys.pets.push(k); if (!x.off) A.ANCH[k] = { hx: (x.w || 20) / 2, hy: x.hy || 5, fy: x.fy || 10, ny: x.ny || 15, sprite: k, name: x.name }; });
-  c.furn.forEach(x => { const k = 'cf_' + x.id; defMap(k, x.w, x.h, x.map); customKeys.furn.push(k); FURN[k] = { name: x.name, w: x.w, h: x.h, price: +x.price || 0, how: x.how, ach: x.ach, season: x.season, sprite: k, x: Math.max(0, 72 - x.w / 2), y: x.wall ? 4 : 70, cat: x.wall ? 'pared' : 'deco', wall: !!x.wall, off: x.off, custom: true }; });
-  c.food.forEach(x => { const k = 'cfo_' + x.id; defMap(k, x.w || 16, x.h || 16, x.map); customKeys.food.push(k); FOODS[k] = { name: x.name, art: x.name, gain: +x.gain || 20, price: +x.price || 3, sprite: k, off: x.off, custom: true }; });
-  c.clothes.forEach(x => { const k = 'cc_' + x.id; customKeys.clothes.push(k); addAcc(k, { slot: x.slot || 'head', name: x.name, price: +x.price || 10, season: x.how === 'temporada' ? x.season : null, ach: x.how === 'logro' ? x.ach : null, raro: x.how === 'raro', map: x.map.map(r => r), off: x.off, offAdmin: x.off, custom: true }); });
+  c.pets.forEach(x => { const k = 'cp_' + x.id; defX(k, x, x.w || 20, x.h || 20); customKeys.pets.push(k); if (!x.off) A.ANCH[k] = { hx: x.pal ? 10 : (x.w || 20) / 2, hy: x.hy || 5, fy: x.fy || 10, ny: x.ny || 15, sprite: k, name: x.name }; });
+  c.furn.forEach(x => { const k = 'cf_' + x.id; defX(k, x, x.w, x.h); customKeys.furn.push(k); const fw = x.dw || x.w, fh = x.dh || x.h; FURN[k] = { name: x.name, w: fw, h: fh, price: +x.price || 0, how: x.how, ach: x.ach, season: x.season, sprite: k, x: Math.max(0, 72 - fw / 2), y: x.wall ? 4 : 70, cat: x.wall ? 'pared' : 'deco', wall: !!x.wall, off: x.off, custom: true }; });
+  c.food.forEach(x => { const k = 'cfo_' + x.id; defX(k, x, x.w || 16, x.h || 16); customKeys.food.push(k); FOODS[k] = { name: x.name, art: x.name, gain: +x.gain || 20, price: +x.price || 3, sprite: k, off: x.off, custom: true }; });
+  c.clothes.forEach(x => { const k = 'cc_' + x.id; customKeys.clothes.push(k); addAcc(k, { slot: x.slot || 'head', name: x.name, price: +x.price || 10, season: x.how === 'temporada' ? x.season : null, ach: x.how === 'logro' ? x.ach : null, raro: x.how === 'raro', map: x.map.map(r => r), off: x.off, offAdmin: x.off, custom: true }, x.pal ? x : null); });
+  c.icons.forEach(x => { if (x.off) return; const k = 'ci_' + x.id; defX(k, x, x.w || 16, x.h || 16); customKeys.icons.push(k); });
   seasonGate();
 }
 function seasonGate() {
@@ -371,7 +375,7 @@ ACT.pcShop = () => {
   const p = P();
   const draw = () => openSheet('Comprar comida', `<div class="stack"><div class="row between"><span class="faint">Se guarda en la despensa.</span>${starsPill()}</div>
 <div class="fr-shop">${Object.entries(FOODS).filter(([, f]) => !f.off).map(([k, f]) => `<button class="shop-tile" data-buyfood="${k}" ${bal() < f.price ? 'disabled' : ''}><img class="pixel" alt="" src="${spr(f.sprite || k, 3)}" style="width:40px"><span>${esc(f.name)}</span><em>${ST(12)} ${f.price} · tienes ${p.pantry[k] || 0}</em></button>`).join('')}</div>
-<p class="faint" style="margin:0">En el juego de atrapar comidita la consigues gratis.</p></div>`, sh => {
+<p class="faint" style="margin:0">También te llega comida en el regalo del día.</p></div>`, sh => {
     sh.addEventListener('click', e => { const b = e.target.closest('[data-buyfood]'); if (!b) return; const k = b.dataset.buyfood; if (!spend(FOODS[k].price)) return; p.pantry[k] = (p.pantry[k] || 0) + 1; A.saveSettings(); toast(`${FOODS[k].name} a la despensa`); draw(); });
   });
   draw();
@@ -732,20 +736,24 @@ ACT.rgDone = () => {
 };
 
 // ---------------- Admin: agregar mascotas, muebles, ropa y comida ----------------
-const KINDS = { pets: ['Mascota', 20, 20], furn: ['Mueble', 24, 24], clothes: ['Ropa', 10, 6], food: ['Comida', 16, 16] };
+const KINDS = { pets: ['Mascota', 20, 20], furn: ['Mueble', 24, 24], clothes: ['Ropa', 10, 6], food: ['Comida', 16, 16], icons: ['Ícono', 16, 16] };
 const PALK = Object.keys(Pix.PAL);
 function blankMap(w, h) { return Array.from({ length: h }, () => '.'.repeat(w)); }
 let ed = null; // borrador del editor
+let edImg = null; // la imagen subida, para volver a pixelarla con más o menos detalle
 function newDraft(kind, item) {
   const [, w, h] = KINDS[kind];
   ed = Object.assign({ kind, id: null, name: '', desc: '', how: 'stars', price: kind === 'pets' ? 100 : kind === 'food' ? 3 : 20, gain: 20, slot: 'head', season: 'halloween', ach: 's7', wall: false, w, h, map: blankMap(w, h), color: 'P' }, item ? JSON.parse(JSON.stringify(item)) : {}, { kind });
   if (item) ed.id = item.id;
+  if (typeof ed.pal === 'string') ed.pal = ed.pal.split(',');
+  if (ed.pal) ed.color = '0';
+  edImg = null;
 }
 A.screens.admincat = () => {
   if (!Store.isOwner) return `${sub('admincat', 'admin')}<div class="card empty">Esta sección es solo para la dueña de la app.</div>`;
   const kind = S.catKind || 'pets'; const c = catalog(); const list = c[kind];
   if (!ed || ed.kind !== kind) newDraft(kind);
-  const pre = { pets: 'cp_', furn: 'cf_', clothes: 'cc_', food: 'cfo_' }[kind];
+  const pre = { pets: 'cp_', furn: 'cf_', clothes: 'cc_', food: 'cfo_', icons: 'ci_' }[kind];
   return `${sub('admincat', 'admin', '<span class="tag gold">Solo tú</span>')}
 <div class="seg">${Object.entries(KINDS).map(([k, [n]]) => `<button data-act="catKind" data-v="${k}" aria-pressed="${k === kind}">${n}</button>`).join('')}</div>
 ${list.length ? `<div class="card"><h3>${KINDS[kind][0]}s que ya agregaste</h3><div class="list">${list.map(x => `<div class="li" style="${x.off ? 'opacity:.55' : ''}"><span class="ic" style="width:48px;height:48px"><img class="pixel" alt="" src="${Pix.sprite((kind === 'clothes' ? 'acc_' : '') + pre + x.id, 3)}" style="max-width:44px;max-height:44px"></span><span class="tx-main"><b>${esc(x.name)}</b><span>${esc(howLabel(x))}${x.off ? ' · oculto' : ''}</span></span><button class="btn sm" data-act="catEdit" data-id="${x.id}">Editar</button></div>`).join('')}</div></div>` : ''}
@@ -759,20 +767,20 @@ ${list.length ? `<div class="card"><h3>${KINDS[kind][0]}s que ya agregaste</h3><
 function howLabel(x) { return x.how === 'stars' ? `${x.price} estrellitas` : x.how === 'logro' ? 'Por logro' : x.how === 'temporada' ? 'De temporada' : x.how === 'raro' ? 'Regalo raro' : 'Gratis'; }
 function formHTML() {
   const k = ed.kind; const [label] = KINDS[k];
-  const sizeSel = k === 'furn' || k === 'clothes' ? `<label class="f">Tamaño (cuadritos)<span class="row" style="gap:6px"><input class="in" data-ed="w" type="number" min="4" max="${k === 'furn' ? 48 : 16}" value="${ed.w}" style="width:70px"> × <input class="in" data-ed="h" type="number" min="3" max="${k === 'furn' ? 48 : 12}" value="${ed.h}" style="width:70px"></span></label>` : `<div class="f">Tamaño<span class="faint">${ed.w} × ${ed.h} cuadritos</span></div>`;
+  const sizeSel = ed.pal ? (k === 'furn' ? `<label class="f">Tamaño en el cuarto<input class="in" data-ed="dw" type="number" min="6" max="100" value="${ed.dw}"><span class="faint" style="font-size:12px">Ancho. La camita mide 26.</span></label>` : k === 'clothes' ? `<label class="f">Tamaño sobre la mascota<input class="in" data-ed="dw" type="number" min="3" max="30" value="${ed.dw}"><span class="faint" style="font-size:12px">Ancho. La mascota mide 20.</span></label>` : `<div class="f">Tamaño<span class="faint">${ed.w} × ${ed.h}</span></div>`) : k === 'furn' || k === 'clothes' ? `<label class="f">Tamaño (cuadritos)<span class="row" style="gap:6px"><input class="in" data-ed="w" type="number" min="4" max="${k === 'furn' ? 48 : 16}" value="${ed.w}" style="width:70px"> × <input class="in" data-ed="h" type="number" min="3" max="${k === 'furn' ? 48 : 12}" value="${ed.h}" style="width:70px"></span></label>` : `<div class="f">Tamaño<span class="faint">${ed.w} × ${ed.h} cuadritos</span></div>`;
   return `<b>${ed.id ? 'Editar ' + label.toLowerCase() : 'Nueva ' + label.toLowerCase()}</b>
 <div class="formgrid">
-<label class="f">Nombre<input class="in" data-ed="name" value="${esc(ed.name)}" placeholder="${{ pets: 'Ej. Mochi de coco', furn: 'Ej. Lámpara de luna', clothes: 'Ej. Gorrito de lana', food: 'Ej. Flan' }[k]}"></label>
-${k === 'pets' ? `<label class="f">Cómo es<input class="in" data-ed="desc" value="${esc(ed.desc)}" placeholder="Ej. Muy dormilona"></label>` : k === 'food' ? `<label class="f">Llena la pancita (+)<input class="in" data-ed="gain" type="number" value="${ed.gain}"></label>` : k === 'clothes' ? `<label class="f">Dónde se pone<select class="in" data-ed="slot">${[['head', 'Cabeza'], ['face', 'Cara'], ['neck', 'Cuello']].map(([v, n]) => `<option value="${v}" ${ed.slot === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>` : `<label class="f">Va en<select class="in" data-ed="wall"><option value="" ${!ed.wall ? 'selected' : ''}>El piso</option><option value="1" ${ed.wall ? 'selected' : ''}>La pared</option></select></label>`}
+<label class="f">Nombre<input class="in" data-ed="name" value="${esc(ed.name)}" placeholder="${{ pets: 'Ej. Mochi de coco', furn: 'Ej. Lámpara de luna', clothes: 'Ej. Gorrito de lana', food: 'Ej. Flan', icons: 'Ej. Mi banco' }[k]}"></label>
+${k === 'pets' ? `<label class="f">Cómo es<input class="in" data-ed="desc" value="${esc(ed.desc)}" placeholder="Ej. Muy dormilona"></label>` : k === 'food' ? `<label class="f">Llena la pancita (+)<input class="in" data-ed="gain" type="number" value="${ed.gain}"></label>` : k === 'clothes' ? `<label class="f">Dónde se pone<select class="in" data-ed="slot">${[['head', 'Cabeza'], ['face', 'Cara'], ['neck', 'Cuello']].map(([v, n]) => `<option value="${v}" ${ed.slot === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>` : k === 'icons' ? '' : `<label class="f">Va en<select class="in" data-ed="wall"><option value="" ${!ed.wall ? 'selected' : ''}>El piso</option><option value="1" ${ed.wall ? 'selected' : ''}>La pared</option></select></label>`}
 ${sizeSel}
 </div>
-<div class="row" style="gap:8px;flex-wrap:wrap"><span class="faint" style="flex:1 1 100%">Dibuja aquí con los colores de Bolsillito, o sube una imagen pixel (se ajusta sola a la cuadrícula).</span>
-<label class="btn sm">Subir imagen pixel<input type="file" accept="image/*" id="edFile" hidden></label><button class="btn sm" data-act="edClear">Borrar todo</button></div>
+<div class="row" style="gap:8px;flex-wrap:wrap"><span class="faint" style="flex:1 1 100%">${ed.pal ? 'Tu imagen ya está en cuadritos con sus propios colores. Si se ve muy gruesa o muy fina, cambia el detalle. También puedes retocarla pintando encima.' : 'Dibuja aquí con los colores de Bolsillito, o sube una imagen pixel: se detectan sus cuadritos y se guardan sus colores tal cual.'}</span>
+<label class="btn sm ${ed.pal ? '' : 'pink'}">Subir imagen pixel<input type="file" accept="image/*" id="edFile" hidden></label>${ed.pal && edImg ? `<button class="btn sm" data-act="edDetail" data-v="-1">Menos detalle</button><button class="btn sm" data-act="edDetail" data-v="1">Más detalle</button>` : ''}<button class="btn sm" data-act="edClear">Borrar todo</button></div>
 <div class="ed-wrap"><canvas id="edCanvas" class="ed-canvas" style="aspect-ratio:${ed.w}/${ed.h}"></canvas><div class="ed-side"><img class="pixel" id="edPrev" alt="Vista previa" src="" style="width:${Math.min(96, ed.w * 4)}px"><span class="faint">Así se verá</span></div></div>
-<div class="ed-pal">${PALK.map(c => `<button class="ed-sw ${ed.color === c ? 'on' : ''}" data-sw="${c}" style="background:${Pix.PAL[c]}" aria-label="Color ${c}"></button>`).join('')}<button class="ed-sw erase ${ed.color === '.' ? 'on' : ''}" data-sw="." aria-label="Borrador">×</button></div>
-<div class="f">¿Cómo se consigue?<div class="chips">${[['stars', 'Con estrellitas'], ['logro', 'Logro'], ['temporada', 'Temporada'], ['raro', 'Regalo raro'], ...(k === 'food' ? [] : [['free', 'Gratis']])].map(([v, n]) => `<button class="chip" data-edhow="${v}" aria-pressed="${ed.how === v}">${n}</button>`).join('')}</div></div>
+<div class="ed-pal">${(ed.pal ? ed.pal.map((h, i) => [i.toString(36), h]) : PALK.map(c => [c, Pix.PAL[c]])).map(([c, h]) => `<button class="ed-sw ${ed.color === c ? 'on' : ''}" data-sw="${c}" style="background:${h}" aria-label="Color ${c}"></button>`).join('')}<button class="ed-sw erase ${ed.color === '.' ? 'on' : ''}" data-sw="." aria-label="Borrador">×</button></div>
+${k === 'icons' ? '<p class="faint" style="margin:0">Los íconos son gratis: le aparecen a todas al elegir el ícono de una cuenta, tarjeta o categoría.</p>' : ''}<div class="f" ${k === 'icons' ? 'hidden' : ''}>¿Cómo se consigue?<div class="chips">${[['stars', 'Con estrellitas'], ['logro', 'Logro'], ['temporada', 'Temporada'], ['raro', 'Regalo raro'], ...(k === 'food' ? [] : [['free', 'Gratis']])].map(([v, n]) => `<button class="chip" data-edhow="${v}" aria-pressed="${ed.how === v}">${n}</button>`).join('')}</div></div>
 <div class="formgrid">
-${ed.how === 'stars' || k === 'food' ? `<label class="f">Precio en estrellitas<input class="in" data-ed="price" type="number" min="0" value="${ed.price}"></label>` : ''}
+${k !== 'icons' && (ed.how === 'stars' || k === 'food') ? `<label class="f">Precio en estrellitas<input class="in" data-ed="price" type="number" min="0" value="${ed.price}"></label>` : ''}
 ${ed.how === 'logro' ? `<label class="f">Qué logro<select class="in" data-ed="ach">${A.RC.ACH.map(a => `<option value="${a.id}" ${ed.ach === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label>` : ''}
 ${ed.how === 'temporada' ? `<label class="f">Qué temporada<select class="in" data-ed="season">${allSeasons().map(s => `<option value="${s.id}" ${ed.season === s.id ? 'selected' : ''}>${esc(s.name)} (${esc(s.when)})</option>`).join('')}</select></label>` : ''}
 </div>
@@ -780,12 +788,13 @@ ${ed.how === 'temporada' ? `<label class="f">Qué temporada<select class="in" da
 <p class="faint" style="margin:0">Lo que guardes aquí les aparece a todas tus usuarias.</p>`;
 }
 function edPaintCanvas() {
-  const cv = $('#edCanvas'); if (!cv) return; const cell = Math.max(6, Math.floor(Math.min(300, cv.parentElement.clientWidth - 110) / ed.w));
+  const cv = $('#edCanvas'); if (!cv) return; const cell = Math.max(ed.pal ? 2 : 6, Math.floor(Math.min(300, cv.parentElement.clientWidth - 110) / Math.max(ed.w, ed.h * .8)));
+  const colOf = ch => ed.pal ? ed.pal[parseInt(ch, 36)] : Pix.PAL[ch];
   cv.width = ed.w * cell; cv.height = ed.h * cell; const g = cv.getContext('2d');
-  for (let y = 0; y < ed.h; y++) for (let x = 0; x < ed.w; x++) { g.fillStyle = (x + y) % 2 ? '#f6efe6' : '#fffaf2'; g.fillRect(x * cell, y * cell, cell, cell); const ch = ed.map[y][x]; if (ch !== '.') { g.fillStyle = Pix.PAL[ch]; g.fillRect(x * cell, y * cell, cell, cell); } }
-  g.strokeStyle = 'rgba(138,77,79,.12)'; for (let x = 0; x <= ed.w; x++) { g.beginPath(); g.moveTo(x * cell + .5, 0); g.lineTo(x * cell + .5, cv.height); g.stroke(); } for (let y = 0; y <= ed.h; y++) { g.beginPath(); g.moveTo(0, y * cell + .5); g.lineTo(cv.width, y * cell + .5); g.stroke(); }
+  for (let y = 0; y < ed.h; y++) for (let x = 0; x < ed.w; x++) { g.fillStyle = (x + y) % 2 ? '#f6efe6' : '#fffaf2'; g.fillRect(x * cell, y * cell, cell, cell); const ch = ed.map[y][x]; if (ch !== '.') { g.fillStyle = colOf(ch) || '#000'; g.fillRect(x * cell, y * cell, cell, cell); } }
+  if (cell >= 5) { g.strokeStyle = 'rgba(138,77,79,.12)'; for (let x = 0; x <= ed.w; x++) { g.beginPath(); g.moveTo(x * cell + .5, 0); g.lineTo(x * cell + .5, cv.height); g.stroke(); } for (let y = 0; y <= ed.h; y++) { g.beginPath(); g.moveTo(0, y * cell + .5); g.lineTo(cv.width, y * cell + .5); g.stroke(); } }
   cv._cell = cell;
-  const nm = '__edprev'; const pad = ed.kind === 'clothes' ? 1 : 0; Pix.define(nm, { w: ed.w + pad * 2, h: ed.h + pad * 2, fn(p) { p.map(pad, pad, ed.map); } }); const pv = $('#edPrev'); if (pv) pv.src = Pix.sprite(nm, 4);
+  const nm = '__edprev'; const pad = ed.kind === 'clothes' ? 1 : 0; if (ed.pal) Pix.define(nm, { raw: ed.map, pal: ed.pal.join(',') }); else Pix.define(nm, { w: ed.w + pad * 2, h: ed.h + pad * 2, fn(p) { p.map(pad, pad, ed.map); } }); const pv = $('#edPrev'); if (pv) pv.src = Pix.sprite(nm, ed.pal ? Math.max(1, Math.ceil(96 / ed.w)) : 4);
 }
 function resizeMap(w, h) { ed.map = Array.from({ length: h }, (_, y) => Array.from({ length: w }, (_, x) => (ed.map[y] && ed.map[y][x]) || '.').join('')); ed.w = w; ed.h = h; }
 A.after.admincat = el => {
@@ -801,23 +810,124 @@ A.after.admincat = el => {
   });
   el.addEventListener('change', e => {
     const t = e.target;
-    if (t.dataset.ed) { const k = t.dataset.ed; if (k === 'w' || k === 'h') { const w = Math.max(3, Math.min(48, +$('[data-ed="w"]', el).value || ed.w)), h = Math.max(3, Math.min(48, +$('[data-ed="h"]', el).value || ed.h)); resizeMap(w, h); A.render(); return; } ed[k] = k === 'wall' ? !!t.value : t.type === 'number' ? +t.value : t.value; }
+    if (t.dataset.ed) { const k = t.dataset.ed; if (k === 'w' || k === 'h') { const w = Math.max(3, Math.min(48, +$('[data-ed="w"]', el).value || ed.w)), h = Math.max(3, Math.min(48, +$('[data-ed="h"]', el).value || ed.h)); resizeMap(w, h); A.render(); return; } ed[k] = k === 'wall' ? !!t.value : t.type === 'number' ? +t.value : t.value; if (k === 'dw') ed.dwSet = true; }
     if (t.id === 'edFile' && t.files[0]) importImage(t.files[0]);
   });
   el.addEventListener('input', e => { const t = e.target; if (t.dataset.ed && t.dataset.ed !== 'w' && t.dataset.ed !== 'h') ed[t.dataset.ed] = t.type === 'number' ? +t.value : t.value; });
 };
-function importImage(file) {
-  const url = URL.createObjectURL(file); const im = new Image();
-  im.onload = () => {
-    const cv = document.createElement('canvas'); cv.width = ed.w; cv.height = ed.h; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
-    const s = Math.min(ed.w / im.width, ed.h / im.height); const w = Math.max(1, Math.round(im.width * s)), h = Math.max(1, Math.round(im.height * s));
-    g.drawImage(im, Math.floor((ed.w - w) / 2), ed.h - h, w, h); const d = g.getImageData(0, 0, ed.w, ed.h).data;
-    const pal = PALK.map(k => { const v = parseInt(Pix.PAL[k].slice(1), 16); return [k, v >> 16, (v >> 8) & 255, v & 255]; });
-    ed.map = Array.from({ length: ed.h }, (_, y) => Array.from({ length: ed.w }, (_, x) => { const o = (y * ed.w + x) * 4; if (d[o + 3] < 128) return '.'; let best = '.', bd = 1e9; pal.forEach(([k, r, gg, b]) => { const dd = (r - d[o]) ** 2 + (gg - d[o + 1]) ** 2 + (b - d[o + 2]) ** 2; if (dd < bd) { bd = dd; best = k; } }); return best; }).join(''));
-    URL.revokeObjectURL(url); edPaintCanvas(); toast('Imagen lista. Puedes retocarla pintando encima.');
-  };
-  im.src = url;
+// Convierte una imagen "pixel art" grande (agrandada, con brillo o fondo) en sus cuadritos reales.
+// Devuelve { w, h, raw: [filas], pal: 'c0,c1,...' } listo para Pix.define(name, { raw, pal }).
+function pixelize(d, W, H, opt) {
+  opt = opt || {};
+  const A = (x, y) => d[(y * W + x) * 4 + 3];
+  const L = (x, y) => { const o = (y * W + x) * 4; return d[o + 3] < 100 ? 0 : d[o] * .3 + d[o + 1] * .59 + d[o + 2] * .11; };
+  // 1) Bordes: cuánto cambia cada columna y cada fila respecto a la anterior.
+  const colD = new Float64Array(W), rowD = new Float64Array(H);
+  for (let y = 0; y < H; y += 1) for (let x = 1; x < W; x++) { const v = Math.abs(L(x, y) - L(x - 1, y)); colD[x] += v; }
+  for (let y = 1; y < H; y++) for (let x = 0; x < W; x += 1) { const v = Math.abs(L(x, y) - L(x, y - 1)); rowD[y] += v; }
+  // 2) Tamaño del cuadrito: medimos cuánto duran los tramos del mismo color en filas y columnas.
+  const hist = new Float64Array(200);
+  const diff = (o1, o2) => Math.abs(d[o1] - d[o2]) + Math.abs(d[o1 + 1] - d[o2 + 1]) + Math.abs(d[o1 + 2] - d[o2 + 2]);
+  const stepY = Math.max(1, Math.floor(H / 300)), stepX = Math.max(1, Math.floor(W / 300));
+  for (let y = 0; y < H; y += stepY) { let last = -1; for (let x = 1; x < W; x++) { const o = (y * W + x) * 4; if (d[o + 3] < 200 || d[o - 1] < 200) { last = -1; continue; } if (diff(o, o - 4) > 40) { if (last >= 0) { const r = x - last; if (r >= 3 && r < 200) hist[r]++; } last = x; } } }
+  for (let x = 0; x < W; x += stepX) { let last = -1; for (let y = 1; y < H; y++) { const o = (y * W + x) * 4, o2 = ((y - 1) * W + x) * 4; if (d[o + 3] < 200 || d[o2 + 3] < 200) { last = -1; continue; } if (diff(o, o2) > 40) { if (last >= 0) { const r = y - last; if (r >= 3 && r < 200) hist[r]++; } last = y; } } }
+  let tot = 0; hist.forEach(v => tot += v);
+  let best = { p: 8, sc: -1 };
+  for (let q = 3; q <= 80; q += 0.25) {
+    let sc = 0; for (let r = 3; r < 200; r++) { if (!hist[r]) continue; const k = r / q; if (k < 0.8) { sc -= hist[r] * 0.5; continue; } const e = k - Math.round(k); sc += hist[r] * Math.exp(-(e * e) / 0.008) / Math.sqrt(Math.round(k)); }
+    if (sc > best.sc) best = { p: q, sc };
+  }
+  const p = opt.cell || best.p;
+  // fase: dónde cae la primera raya de la cuadrícula
+  function phase(D, N) { let bo = 0, bs = -1; for (let o = 0; o < p; o += 0.5) { let s = 0; for (let t = o; t < N; t += p) { const i = Math.round(t); if (i > 0 && i < N) s += D[i]; } if (s > bs) { bs = s; bo = o; } } return bo; }
+  const ox = phase(colD, W), oy = phase(rowD, H);
+  // cada raya se acomoda al borde real más cercano (las imágenes hechas con IA no son parejas)
+  function grid(o, D, N) {
+    const out = []; let t = o;
+    while (t <= N) {
+      let bi = Math.round(t), bv = -1; const r = p * 0.3;
+      for (let i = Math.max(1, Math.round(t - r)); i <= Math.min(N - 1, Math.round(t + r)); i++) { const v = D[i] * (1 - Math.abs(i - t) / (r * 3)); if (v > bv) { bv = v; bi = i; } }
+      if (bv <= 0) bi = Math.round(t);
+      if (!out.length || bi - out[out.length - 1] >= p * 0.5) out.push(bi);
+      t = bi + p;
+    }
+    return out;
+  }
+  const bx = grid(ox, colD, W), by = grid(oy, rowD, H);
+  // 3) Un color por cuadrito (el que más se repite en su centro).
+  const gw = bx.length - 1, gh = by.length - 1;
+  const cells = [];
+  for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
+    const cw = bx[i + 1] - bx[i], ch = by[j + 1] - by[j];
+    const x0 = Math.floor(bx[i] + cw * .25), x1 = Math.ceil(bx[i] + cw * .75), y0 = Math.floor(by[j] + ch * .25), y1 = Math.ceil(by[j] + ch * .75);
+    const cnt = new Map(); let n = 0, aSum = 0;
+    for (let y = y0; y < y1 && y < H; y++) for (let x = x0; x < x1 && x < W; x++) {
+      const o = (y * W + x) * 4; n++; aSum += d[o + 3];
+      if (d[o + 3] < 200) continue;
+      const k = (d[o] >> 3) << 10 | (d[o + 1] >> 3) << 5 | (d[o + 2] >> 3);
+      const c = cnt.get(k); if (c) { c.n++; c.r += d[o]; c.g += d[o + 1]; c.b += d[o + 2]; } else cnt.set(k, { n: 1, r: d[o], g: d[o + 1], b: d[o + 2] });
+    }
+    let best = null, dark = null; cnt.forEach(c => { if (!best || c.n > best.n) best = c; const l = (c.r * .3 + c.g * .59 + c.b * .11) / c.n; if (l < 75 && (!dark || c.n > dark.n)) dark = c; });
+    if (dark && dark !== best && dark.n >= n * 0.3) best = dark;
+    const solid = best && aSum / n >= 170 && best.n >= n * 0.2;
+    cells.push(solid ? [Math.round(best.r / best.n), Math.round(best.g / best.n), Math.round(best.b / best.n)] : null);
+  }
+  // 4) Recortar lo vacío alrededor.
+  let minX = gw, minY = gh, maxX = -1, maxY = -1;
+  cells.forEach((c, k) => { if (!c) return; const i = k % gw, j = (k / gw) | 0; minX = Math.min(minX, i); maxX = Math.max(maxX, i); minY = Math.min(minY, j); maxY = Math.max(maxY, j); });
+  if (maxX < 0) return null;
+  const w = maxX - minX + 1, h = maxY - minY + 1;
+  // 5) Juntar colores casi iguales (máximo 36 colores).
+  const dist = (a, b) => { const dr = a[0] - b[0], dg = a[1] - b[1], db = a[2] - b[2]; return 2 * dr * dr + 4 * dg * dg + 3 * db * db; };
+  const used = []; for (let j = minY; j <= maxY; j++) for (let i = minX; i <= maxX; i++) { const c = cells[j * gw + i]; if (c) used.push(c); }
+  const freq = new Map(); used.forEach(c => { const k = c.join(); freq.set(k, (freq.get(k) || 0) + 1); });
+  let pal = [...freq.entries()].sort((a, b) => b[1] - a[1]).map(([k, n]) => ({ c: k.split(',').map(Number), n }));
+  let tol = 18 * 18 * 3;
+  const merge = () => { const out = []; pal.forEach(e => { const m = out.find(o => dist(o.c, e.c) < tol); if (m) m.n += e.n; else out.push({ c: e.c, n: e.n }); }); pal = out; };
+  merge(); while (pal.length > 36) { tol *= 1.4; merge(); }
+  // ajustar cada color al promedio de su grupo (k-means corto)
+  for (let it = 0; it < 4; it++) {
+    const acc = pal.map(() => [0, 0, 0, 0]);
+    used.forEach(c => { let bi = 0, bd = 1e12; pal.forEach((e, i) => { const dd = dist(c, e.c); if (dd < bd) { bd = dd; bi = i; } }); const a = acc[bi]; a[0] += c[0]; a[1] += c[1]; a[2] += c[2]; a[3]++; });
+    pal = pal.map((e, i) => acc[i][3] ? { c: [acc[i][0] / acc[i][3], acc[i][1] / acc[i][3], acc[i][2] / acc[i][3]].map(Math.round), n: acc[i][3] } : e);
+  }
+  const hex = c => '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
+  const raw = [];
+  for (let j = minY; j <= maxY; j++) { let row = ''; for (let i = minX; i <= maxX; i++) { const c = cells[j * gw + i]; if (!c) { row += '.'; continue; } let bi = 0, bd = 1e12; pal.forEach((e, k) => { const dd = dist(c, e.c); if (dd < bd) { bd = dd; bi = k; } }); row += bi.toString(36); } raw.push(row); }
+  // 6) Quitar puntitos sueltos (un cuadrito solo, sin vecinos).
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { if (raw[j][i] === '.') continue; const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([a, b]) => raw[j + b] && raw[j + b][i + a] && raw[j + b][i + a] !== '.').length; if (!nb) raw[j] = raw[j].slice(0, i) + '.' + raw[j].slice(i + 1); }
+  return { w, h, raw, pal: pal.map(e => hex(e.c)).join(','), cell: +p.toFixed(2) };
 }
+
+A.pixelize = pixelize;
+// Lee un archivo de imagen y devuelve sus píxeles (achicada si es enorme).
+A.readPixels = file => new Promise((ok, bad) => {
+  const url = URL.createObjectURL(file); const im = new Image();
+  im.onload = () => { const k = Math.min(1, 1800 / Math.max(im.width, im.height)); const W = Math.round(im.width * k), H = Math.round(im.height * k); const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(im, 0, 0, W, H); URL.revokeObjectURL(url); ok({ d: g.getImageData(0, 0, W, H).data, W, H }); };
+  im.onerror = () => { URL.revokeObjectURL(url); bad(new Error('img')); }; im.src = url;
+});
+// Pixela con un tope de cuadritos (si sale más grande, se agranda el cuadrito).
+A.pixFit = (img, maxN, cell) => {
+  let r = pixelize(img.d, img.W, img.H, cell ? { cell } : {}); let n = 0;
+  while (r && Math.max(r.w, r.h) > maxN && n++ < 6) r = pixelize(img.d, img.W, img.H, { cell: r.cell * Math.max(r.w, r.h) / maxN * 1.02 });
+  return r;
+};
+// Dibuja el resultado en un PNG nítido (cada cuadrito del mismo tamaño).
+A.pixPNG = (r, maxPx) => { const s = Math.max(1, Math.floor((maxPx || 160) / Math.max(r.w, r.h))); const pal = r.pal.split(','); const cv = document.createElement('canvas'); cv.width = r.w * s; cv.height = r.h * s; const g = cv.getContext('2d'); r.raw.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '.') return; g.fillStyle = pal[parseInt(ch, 36)]; g.fillRect(x * s, y * s, s, s); })); return cv; };
+const MAXN = { pets: 64, furn: 128, clothes: 48, food: 48, icons: 48 };
+function applyPix(r) {
+  if (!r) return toast('No encontré el dibujo. Prueba con una imagen con fondo transparente.');
+  ed.w = r.w; ed.h = r.h; ed.map = r.raw; ed.pal = r.pal.split(','); ed.cell = r.cell; ed.color = '0';
+  if (ed.kind === 'furn' && !ed.dwSet) { const k = 36 / Math.max(r.w, r.h); ed.dw = Math.max(8, Math.round(r.w * k)); }
+  if (ed.kind === 'clothes' && !ed.dwSet) ed.dw = 14;
+  A.render();
+}
+async function importImage(file) {
+  try { edImg = await A.readPixels(file); } catch (e) { return toast('No pude abrir esa imagen'); }
+  const r = A.pixFit(edImg, MAXN[ed.kind] || 64); applyPix(r);
+  if (r) toast(`Lista: ${r.w} × ${r.h} cuadritos, ${r.pal.split(',').length} colores.`);
+}
+ACT.edDetail = a => { if (!edImg || !ed.cell) return; const r = A.pixFit(edImg, MAXN[ed.kind] || 64, ed.cell * (+a.dataset.v > 0 ? 0.85 : 1.18)); if (r && +a.dataset.v > 0 && Math.max(r.w, r.h) >= (MAXN[ed.kind] || 64) * .98 && r.cell >= ed.cell * .99) return toast('Ya está con el máximo detalle'); applyPix(r); };
 async function saveCatalog() {
   A.CFG.catalog = Object.assign({ pets: [], furn: [], clothes: [], food: [] }, A.CFG.catalog || {});
   latestCatalog = JSON.parse(JSON.stringify(A.CFG.catalog));
@@ -836,12 +946,13 @@ ACT.seDel = a => { if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Segur
 ACT.catKind = a => { S.catKind = a.dataset.v; ed = null; A.render(); };
 ACT.catEdit = a => { const kind = S.catKind || 'pets'; const it = catalog()[kind].find(x => x.id === a.dataset.id); newDraft(kind, it); A.render(); setTimeout(() => { const f = $('#catForm'); if (f) f.scrollIntoView({ behavior: 'smooth' }); }, 50); };
 ACT.edNew = () => { newDraft(S.catKind || 'pets'); A.render(); };
-ACT.edClear = () => { ed.map = blankMap(ed.w, ed.h); edPaintCanvas(); };
+ACT.edClear = () => { if (ed.pal) { const [, w, h] = KINDS[ed.kind]; ed.pal = null; ed.w = w; ed.h = h; ed.color = 'P'; edImg = null; ed.map = blankMap(w, h); A.render(); return; } ed.map = blankMap(ed.w, ed.h); edPaintCanvas(); };
 ACT.edSave = () => {
   if (!ed.name.trim()) return toast('Ponle un nombre');
   if (!ed.map.some(r => /[^.]/.test(r))) return toast('Dibuja algo o sube una imagen');
   const kind = ed.kind; A.CFG.catalog = A.CFG.catalog || {}; const list = A.CFG.catalog[kind] = A.CFG.catalog[kind] || [];
-  const item = { id: ed.id || uid(), name: ed.name.trim(), how: ed.how, price: +ed.price || 0, w: ed.w, h: ed.h, map: ed.map.slice(), off: !!ed.off };
+  const item = { id: ed.id || uid(), name: ed.name.trim(), how: kind === 'icons' ? 'free' : ed.how, price: +ed.price || 0, w: ed.w, h: ed.h, map: ed.map.slice(), off: !!ed.off };
+  if (ed.pal) { item.pal = ed.pal.join(','); if (kind === 'furn' || kind === 'clothes') { item.dw = Math.max(3, +ed.dw || 14); item.dh = Math.max(2, Math.round(item.dw * ed.h / ed.w)); } }
   if (kind === 'pets') Object.assign(item, { desc: ed.desc, say: ed.desc });
   if (kind === 'food') Object.assign(item, { gain: +ed.gain || 20 });
   if (kind === 'clothes') Object.assign(item, { slot: ed.slot });

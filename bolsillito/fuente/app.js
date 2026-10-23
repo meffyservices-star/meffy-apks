@@ -1026,8 +1026,11 @@ $$('[data-tab]', sh).forEach(b => b.setAttribute('aria-pressed', b.dataset.tab =
 if (tab === 's') body.innerHTML = `<div class="chips" style="margin-bottom:10px">${VARS.map(([v, n]) => `<button class="chip" data-var="${v}" aria-pressed="${variant === v}">${v ? px('heart~' + v, 16) + ' ' : ''}${n}${v && !isPlus() ? ' ' + px('diamante', 14) : ''}</button>`).join('')}</div>
 ${variant && !isPlus() ? '<p class="faint" style="margin:0 0 8px">Los colores especiales son de Meffy+. Puedes verlos, y se activan con Meffy+.</p>' : ''}
 <div class="emojigrid">${Pix.names.map(n => { const v = 's:' + n + (variant ? '~' + variant : ''); return `<button data-v="${v}" aria-pressed="${current === v}"><img class="pixel" alt="" src="${Pix.sprite(n + (variant ? '~' + variant : ''), 3)}"></button>`; }).join('')}</div>`;
-if (tab === 'i') body.innerHTML = canUp ? `<p class="muted">${opts && opts.upload ? 'Puedes subir el logo de tu banco o app, o cualquier imagen tuya.' : 'Sube una imagen tuya (PNG con fondo transparente queda lindo).'} Se recorta a un tamaño pequeño.</p><input type="file" accept="image/*" class="in" id="ipFile">` : plusPitch('Sube tus propios iconos con Meffy+.');
-const f = $('#ipFile', sh); if (f) f.onchange = async () => { if (!f.files[0]) return; toast('Subiendo…'); const r = await Store.saveImage(f.files[0], 160); closeSheet(); onPick('i:' + r.src); };
+if (tab === 'i') body.innerHTML = canUp ? `<p class="muted">${opts && opts.upload ? 'Puedes subir el logo de tu banco o app, o cualquier imagen tuya.' : 'Sube una imagen tuya (PNG con fondo transparente queda lindo).'} Se recorta a un tamaño pequeño.</p><label class="chip" style="margin-bottom:10px"><input type="checkbox" id="ipPix" checked> Es dibujo pixelado (queda nítido)</label><input type="file" accept="image/*" class="in" id="ipFile">` : plusPitch('Sube tus propios iconos con Meffy+.');
+const f = $('#ipFile', sh); if (f) f.onchange = async () => {
+let file = f.files[0]; if (!file) return; toast('Subiendo…');
+if ($('#ipPix', sh) && $('#ipPix', sh).checked && A.pixelize) { try { const img = await A.readPixels(file); const r = A.pixFit(img, 48); if (r) { const cv = A.pixPNG(r, 160); const blob = await new Promise(ok => cv.toBlob(ok, 'image/png')); file = new File([blob], 'icono.png', { type: 'image/png' }); } } catch (e) { } }
+const r = await Store.saveImage(file, 160); closeSheet(); onPick('i:' + r.src); };
 };
 sh.addEventListener('click', e => {
 const t = e.target.closest('[data-tab]'); if (t) return show(t.dataset.tab);
