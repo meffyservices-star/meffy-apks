@@ -1495,7 +1495,7 @@ const sc = A.screens, after = A.after, ACT = A.ACTIONS;
 const rerender = () => { A.render(); };
 function avatarHTML(cls) { return S.settings.photo ? `<img class="avatar ${cls}" alt="Tu foto" src="${esc(S.settings.photo)}">` : `<img class="avatar ${cls} pixel" alt="" src="${Pix.sprite('pudin', 5)}" style="object-fit:contain;padding:8px">`; }
 A.avatarHTML = avatarHTML;
-const MENU = ['rincon', 'tienda', 'year', 'goals', 'recurring', 'projections', 'rules', 'settings', 'appearance', 'plan', 'data'];
+const MENU = ['rincon', 'jardin', 'tablero', 'tienda', 'year', 'goals', 'recurring', 'projections', 'rules', 'settings', 'appearance', 'plan', 'data'];
 sc.more = () => `
 ${A.header('more')}
 <button class="card row" data-go="data" style="gap:14px;text-align:left;width:100%;color:inherit;font:inherit;cursor:pointer">${avatarHTML('')}<div style="min-width:0"><b class="mid" style="display:block">${esc(S.settings.name || 'Tu perfil')}</b><div class="faint">${A.isPlus() ? '<span class="tag gold">Meffy+</span> ' : ''}${S.settings.photo ? 'Toca para editar tu perfil' : 'Toca para poner tu foto y tu nombre'}</div></div></button>
@@ -1850,7 +1850,7 @@ const w = RW();
 return s.days * w.day + s.goalTx * w.goalTx + s.goalsDone * w.goalDone + s.jWeeks * w.journalWeek + s.under * w.monthUnder + (r.pets || 0) * w.pet + (A.sheyResisted ? A.sheyResisted() * w.antojo : 0) + (A.closedDays ? A.closedDays() * w.closeDay : 0) + (r.bonus || 0) + ACH.filter(a => a.ok(s)).reduce((n, a) => n + a.prize, 0);
 }
 function balance() { const s = stats(); return { s, total: earned(s), bal: Math.max(0, earned(s) - (R().spent || 0)) }; }
-A.rinconBalance = () => balance().bal;
+A.rinconBalance = () => balance().bal; A.rcStats = stats;
 A.owns = key => (R().owned || []).includes(key);
 function gochiMood() {
 const s = stats(); const k = A.ym(A.today()); const n = new Date().getDate(); const dim = A.daysIn(k);
@@ -2205,12 +2205,12 @@ return `<img class="pixel mz-acc" alt="" src="${Pix.sprite('acc_' + id, scale)}"
 }).join('');
 return `<span class="mz ${(opts && opts.cls) || ''}"><img class="pixel mz-base" alt="${an.name}" src="${Pix.sprite(an.sprite, scale)}">${layers}</span>`;
 }
-A.wear = wear;
+A.wear = wear; A.ANCH = ANCH; A.SLOTS = SLOTS;
 A.PAGES.tienda = 'Tiendita';
 Object.values(A.PACKS).forEach(p => { p.map.tienda = p.map.tienda || (p === A.PACKS.pixel ? 's:gift' : 'e:🛍️'); });
 A.screens.tienda = () => {
 const r = R(); const bal = A.rinconBalance ? A.rinconBalance() : 0;
-const who = S.shopWho || 'gochi'; const sec = S.shopSec || 'head';
+const who = S.shopWho || (A.petActive && A.petActive()) || 'gochi'; const sec = S.shopSec || 'head';
 const aleLocked = who === 'ale' && !A.isPlus();
 const eq = r.equip[who] || {};
 const tile = (id, a) => {
@@ -2219,7 +2219,7 @@ const lockTxt = a.plus ? (A.isPlus() ? '' : '<span class="lock">Meffy+</span>') 
 return `<button class="shop-tile ${on ? 'on' : ''}" data-act="shopItem" data-id="${id}" ${aleLocked ? 'disabled' : ''}><img class="pixel" alt="" src="${Pix.sprite('acc_' + id, 4)}" style="width:${Math.min(64, a.w * 4)}px">${lockTxt}<span>${esc(a.name)}</span>${on ? '<em>Puesto ✓</em>' : usable ? '<em>Ponérselo</em>' : ''}</button>`;
 };
 return `${A.header('tienda', `<span class="pill sm" style="background:#fff09a;color:#6b4d12">${A.px('estrellita', 18)} ${bal}</span>`)}
-<div class="seg">${Object.entries(ANCH).map(([k, an]) => `<button data-act="shopWho" data-v="${k}" aria-pressed="${who === k}">${an.name}${k === 'ale' && !A.isPlus() ? ' ' + A.px('diamante', 14) : ''}</button>`).join('')}</div>
+<div class="seg" style="overflow-x:auto">${Object.entries(ANCH).filter(([k]) => !A.petOwns || A.petOwns(k) || k === who).map(([k, an]) => `<button data-act="shopWho" data-v="${k}" aria-pressed="${who === k}">${an.name}${k === 'ale' && !A.isPlus() ? ' ' + A.px('diamante', 14) : ''}</button>`).join('')}</div>
 <div class="rc-scene" style="background-image:url(${Pix.banner(r.bg || 'cielo')});min-height:220px;align-items:center">
 <div class="rc-row">${wear(who, { cls: 'big' })}</div>
 <div class="rc-say">${aleLocked ? 'Ale se viste solo con Meffy+. Con Meffy+ además tienes todos los accesorios para todos.' : `Elige qué ponerle a ${ANCH[who].name}. Toca otra vez para quitárselo.`}</div>
@@ -2233,7 +2233,7 @@ const ACT = A.ACTIONS;
 ACT.shopWho = a => { S.shopWho = a.dataset.v; A.render(); };
 ACT.shopSec = a => { S.shopSec = a.dataset.v; A.render(); };
 ACT.shopItem = a => {
-const id = a.dataset.id, it = ACC[id], r = R(), who = S.shopWho || 'gochi';
+const id = a.dataset.id, it = ACC[id], r = R(), who = S.shopWho || (A.petActive && A.petActive()) || 'gochi';
 if (who === 'ale' && !A.isPlus()) return;
 if (canUse(id)) {
 const eq = r.equip[who]; eq[it.slot] = eq[it.slot] === id ? null : id; A.saveSettings();
