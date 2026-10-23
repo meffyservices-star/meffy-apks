@@ -479,7 +479,7 @@ details.card[open] > summary { margin-bottom: 10px; }
 .room { position: relative; width: 100%; aspect-ratio: 120 / 104; border-radius: 22px; border: 3px solid #fff; box-shadow: var(--shadow); overflow: hidden; image-rendering: pixelated; background: #f7d6d8; touch-action: pan-y; }
 .room.editing { touch-action: none; outline: 3px dashed var(--accent); outline-offset: -8px; }
 .rm-wall { position: absolute; left: 0; top: 0; width: 100%; height: auto; }
-.rm-floor { position: absolute; left: 0; top: 59.6%; width: 100%; height: auto; }
+.rm-floor { position: absolute; left: 0; top: 42.3%; width: 100%; height: auto; }
 .rm-it { position: absolute; height: auto; user-select: none; -webkit-user-drag: none; }
 .room.editing .rm-it { cursor: grab; filter: drop-shadow(0 0 0 #fff); }
 .rm-it.sel { filter: drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff); }
@@ -627,3 +627,14 @@ body.gaming { overflow: hidden; }
 .gr-step.ok .gr-lv { background: #a385e0; color: #fff; }
 .gr-ic { width: 32px; display: flex; justify-content: center; flex: none; }
 .gr-ic img { max-height: 28px; object-fit: contain; }
+.nav button .ni { position: relative; }
+.nav-dot { position: absolute; top: 0; right: -2px; width: 11px; height: 11px; border-radius: 50%; background: #e0577f; border: 2px solid #fff; box-shadow: 0 1px 0 #8a4d4f; }
+.jr-links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pc-tabs { position: sticky; top: 6px; z-index: 6; box-shadow: var(--shadow); }
+.card-pay { display: flex; flex-direction: column; gap: 2px; background: var(--glass-strong); border: 2px dashed var(--glass-line); border-radius: 14px; padding: 8px 12px; font-size: 13px; }
+.card-pay.soon { border-color: #e0577f; background: #fff0f4; }
+.nw-chart { background: var(--glass); border: 2px solid var(--glass-line); border-radius: var(--r-card); padding: 12px 12px 8px; box-shadow: var(--shadow); }
+.nw-chart svg { width: 100%; height: auto; display: block; }
+.alerts { gap: 10px; border-color: #f7a8c0; background: #fff6f8; }
+.al-row { display: flex; align-items: center; gap: 10px; }
+.al-row .iconbtn { width: 30px; height: 30px; font-size: 16px; color: var(--ink-soft); box-shadow: none; flex: none; }

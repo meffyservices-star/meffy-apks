@@ -43,25 +43,25 @@ const FOODS = {
 };
 A.FOODS = FOODS;
 const FURN = {
-  cama: { name: 'Camita', w: 34, h: 26, price: 0, x: 2, y: 60 },
-  ventana: { name: 'Ventana', w: 34, h: 32, price: 0, x: 6, y: 10 },
-  alfombra: { name: 'Alfombra', w: 44, h: 18, price: 0, x: 38, y: 82, flat: true },
-  cojin: { name: 'Cojín', w: 18, h: 12, price: 0, x: 40, y: 90 },
-  planta: { name: 'Planta grande', w: 22, h: 30, price: 25, x: 96, y: 58 },
-  lampara: { name: 'Lámpara de pie', w: 16, h: 36, price: 20, x: 78, y: 46 },
-  lampara_mesa: { name: 'Lámpara de mesa', w: 16, h: 18, price: 15, x: 38, y: 52 },
-  mesita: { name: 'Mesita de noche', w: 18, h: 18, price: 15, x: 37, y: 68 },
-  estante: { name: 'Estante', w: 30, h: 34, price: 40, x: 86, y: 22 },
-  cuadro: { name: 'Cuadro', w: 20, h: 16, price: 15, x: 48, y: 18 },
-  reloj: { name: 'Reloj', w: 14, h: 18, price: 30, x: 72, y: 16 },
-  luces: { name: 'Lucecitas', w: 60, h: 10, price: 20, x: 42, y: 2 },
-  mesa: { name: 'Mesa de té', w: 28, h: 24, price: 30, x: 62, y: 72 },
-  sofa: { name: 'Sofá', w: 36, h: 22, price: 45, x: 66, y: 62 },
+  cama: { name: 'Camita', w: 34, h: 26, price: 0, x: 2, y: 50 },
+  ventana: { name: 'Ventana', w: 34, h: 32, price: 0, x: 6, y: 4 },
+  alfombra: { name: 'Alfombra', w: 44, h: 18, price: 0, x: 38, y: 78, flat: true },
+  cojin: { name: 'Cojín', w: 18, h: 12, price: 0, x: 98, y: 90 },
+  planta: { name: 'Planta grande', w: 22, h: 30, price: 25, x: 98, y: 44 },
+  lampara: { name: 'Lámpara de pie', w: 16, h: 36, price: 20, x: 80, y: 30 },
+  lampara_mesa: { name: 'Lámpara de mesa', w: 16, h: 18, price: 15, x: 38, y: 36 },
+  mesita: { name: 'Mesita de noche', w: 18, h: 18, price: 15, x: 37, y: 54 },
+  estante: { name: 'Estante', w: 30, h: 34, price: 40, x: 86, y: 8 },
+  cuadro: { name: 'Cuadro', w: 20, h: 16, price: 15, x: 48, y: 10 },
+  reloj: { name: 'Reloj', w: 14, h: 18, price: 30, x: 72, y: 8 },
+  luces: { name: 'Lucecitas', w: 60, h: 10, price: 20, x: 42, y: 0 },
+  mesa: { name: 'Mesa de té', w: 28, h: 24, price: 30, x: 62, y: 74 },
+  sofa: { name: 'Sofá', w: 36, h: 22, price: 45, x: 64, y: 54 },
   flores: { name: 'Florero', w: 16, h: 22, price: 15, x: 104, y: 80 },
-  piano: { name: 'Piano', w: 30, h: 26, price: 60, lvl: 8, x: 84, y: 60 },
-  hongo: { name: 'Lámpara de hongo', w: 18, h: 22, how: 'raro', x: 100, y: 74 },
-  calabaza: { name: 'Calabaza', w: 18, h: 16, price: 30, season: 'halloween', x: 98, y: 86 },
-  arbolito: { name: 'Arbolito', w: 22, h: 30, price: 40, season: 'navidad', x: 4, y: 52 }
+  piano: { name: 'Piano', w: 30, h: 26, price: 60, lvl: 8, x: 84, y: 50 },
+  hongo: { name: 'Lámpara de hongo', w: 18, h: 22, how: 'raro', x: 100, y: 70 },
+  calabaza: { name: 'Calabaza', w: 18, h: 16, price: 30, season: 'halloween', x: 98, y: 84 },
+  arbolito: { name: 'Arbolito', w: 22, h: 30, price: 40, season: 'navidad', x: 4, y: 40 }
 };
 A.FURN = FURN;
 const WALLS = { rosa: ['Rosa con flores', 0], menta: ['Menta', 20], lila: ['Lila', 20], durazno: ['Durazno', 20], cielo: ['Cielo', 25] };
@@ -115,7 +115,7 @@ function registerCatalog() {
   customKeys = { pets: [], furn: [], clothes: [], food: [] };
   const c = catalog();
   c.pets.forEach(x => { const k = 'cp_' + x.id; defMap(k, x.w || 20, x.h || 20, x.map); customKeys.pets.push(k); if (!x.off) A.ANCH[k] = { hx: (x.w || 20) / 2, hy: x.hy || 5, fy: x.fy || 10, ny: x.ny || 15, sprite: k, name: x.name }; });
-  c.furn.forEach(x => { const k = 'cf_' + x.id; defMap(k, x.w, x.h, x.map); customKeys.furn.push(k); FURN[k] = { name: x.name, w: x.w, h: x.h, price: +x.price || 0, how: x.how, ach: x.ach, season: x.season, sprite: k, x: Math.max(0, 60 - x.w / 2), y: x.wall ? 20 : 70, off: x.off, custom: true }; });
+  c.furn.forEach(x => { const k = 'cf_' + x.id; defMap(k, x.w, x.h, x.map); customKeys.furn.push(k); FURN[k] = { name: x.name, w: x.w, h: x.h, price: +x.price || 0, how: x.how, ach: x.ach, season: x.season, sprite: k, x: Math.max(0, 60 - x.w / 2), y: x.wall ? 10 : 62, off: x.off, custom: true }; });
   c.food.forEach(x => { const k = 'cfo_' + x.id; defMap(k, x.w || 16, x.h || 16, x.map); customKeys.food.push(k); FOODS[k] = { name: x.name, art: x.name, gain: +x.gain || 20, price: +x.price || 3, sprite: k, off: x.off, custom: true }; });
   c.clothes.forEach(x => { const k = 'cc_' + x.id; customKeys.clothes.push(k); addAcc(k, { slot: x.slot || 'head', name: x.name, price: +x.price || 10, season: x.how === 'temporada' ? x.season : null, ach: x.how === 'logro' ? x.ach : null, raro: x.how === 'raro', map: x.map.map(r => r), off: x.off, offAdmin: x.off, custom: true }); });
   seasonGate();
@@ -217,6 +217,7 @@ A.petSrc2 = petImgSrc;
 function moodMsg(id, c) {
   const n = info(id).name;
   if (c.sleep) return `${n} está durmiendo. Shh…`;
+  const dd = daysSinceTx(); if (dd >= 2) return dd >= 4 ? `Te extraño… hace ${dd} días que no anotamos nada.` : '¿Anotamos lo que gastaste? Me pongo triste si no.';
   const low = [['h', 'Tengo hambre… ¿me das algo de la despensa?'], ['l', 'Estoy un poquito sucia. ¿Me bañas?'], ['e', 'Tengo sueño… ¿me acuestas a dormir?'], ['f', '¿Me das cariño? Toca Mimar.']].filter(([k]) => c[k] < 35);
   if (low.length) return low[0][1];
   if (c.h > 80 && c.f > 80 && c.l > 70) return '¡Me siento genial! Gracias por cuidarme.';
@@ -239,15 +240,21 @@ function fridgeHTML() {
 const giftReady = () => (S.settings.gift || {}).last !== today();
 A.giftReady = giftReady;
 const PLACES = () => [
-  ['cuarto', 'x_cama', 'Mi cuarto'], ['regalo', giftReady() ? 'regalo_cerrado' : 'regalo_abierto', 'Regalo del día', giftReady()], ['juegos', 'plataforma_nube', 'Juegos'],
-  ['crecer', 'brotecito', 'Crecer'], ['coleccion', 'maca', 'Colección'], ['tienda', 'gift', 'Tiendita'],
-  ['visitas', 'casita', 'Visitas'], ['shey', 'shey', 'Antojos'], ['jardin', 'girasol', 'Mi jardín']
+  ['regalo', giftReady() ? 'regalo_cerrado' : 'regalo_abierto', 'Regalo del día', giftReady()], ['crecer', 'brotecito', 'Crecer'], ['coleccion', 'maca', 'Colección'],
+  ['tienda', 'gift', 'Tiendita'], ['visitas', 'casita', 'Visitas'], ['shey', 'shey', 'Antojos']
 ];
+const needsCare = () => { const p = P(); if (!p.active) return false; const c = care(p.active); return !c.sleep && (c.h < 30 || c.l < 25 || c.f < 25); };
+A.navDot = k => k === 'more' && (giftReady() || needsCare());
+const stripHead = h => h.slice(h.indexOf('\n') + 1);
 A.screens.rincon = () => {
   const p = P(); if (!p.active) return elegirHTML(true);
+  const tab = S.pcTab || 'cuidar';
+  const tabs = `<div class="seg pc-tabs"><button data-act="pcTab" data-v="cuidar" aria-pressed="${tab === 'cuidar'}">Cuidar</button><button data-act="pcTab" data-v="cuarto" aria-pressed="${tab === 'cuarto'}">Cuarto</button><button data-act="pcTab" data-v="jugar" aria-pressed="${tab === 'jugar'}">Jugar</button></div>`;
+  if (tab === 'cuarto') return `${A.header('rincon', starsPill())}${tabs}${stripHead(A.screens.cuarto())}`;
+  if (tab === 'jugar') return `${A.header('rincon', starsPill())}${tabs}${stripHead(A.screens.juegos())}`;
   const id = p.active, c = care(id), lv = level(id);
-  checkLevelUp();
-  return `${A.header('rincon', starsPill())}
+  checkLevelUp(); moneyMood();
+  return `${A.header('rincon', starsPill())}${tabs}
 <div class="pc-scene ${c.sleep ? 'dormida' : ''}" id="pcScene" style="background-image:url(${Pix.banner(R().bg || 'cielo')})">
 <div class="pc-say" id="pcSay">${esc(moodMsg(id, c))}</div>
 <div class="pc-stage" id="pcStage"><button class="pc-pet" id="pcPet" data-act="pcLove" aria-label="Mimar a ${esc(info(id).name)}">${petArt(id, 6, c.sleep ? 'sleepy' : '')}</button>${c.sleep ? `<img class="pixel pc-zz" alt="" src="${spr('zzz', 3)}">` : ''}</div>
@@ -258,12 +265,33 @@ A.screens.rincon = () => {
 <button class="pc-act" data-act="pcBath">${img('x_burbuja', 28)}Bañar</button>
 <button class="pc-act" data-act="pcSleep">${img(c.sleep ? 'star' : 'moon', 28)}${c.sleep ? 'Despertar' : 'Dormir'}</button>
 <button class="pc-act" data-act="pcLove">${img('heart', 28)}Mimar</button>
-<button class="pc-act" data-go="juegos">${img('game', 28)}Jugar</button>
+<button class="pc-act" data-act="pcTab" data-v="jugar">${img('game', 28)}Jugar</button>
 </div>
 ${fridgeHTML()}
-<section class="stack"><div class="ph"><span class="pill sm">Lugares</span><button class="btn sm" data-go="coleccion">Cambiar de mascota</button></div>
+<section class="stack"><div class="ph"><span class="pill sm">Más cositas</span><button class="btn sm" data-go="coleccion">Cambiar de mascota</button></div>
 <div class="pc-places">${PLACES().map(([go, ic, n, dot]) => `<button class="pc-place" data-go="${go}">${dot ? '<span class="pc-dot"></span>' : ''}<img class="pixel" alt="" src="${spr(ic, 3)}">${n}</button>`).join('')}</div></section>`;
 };
+ACT.pcTab = a => { S.pcTab = a.dataset.v; S.roomEdit = false; A.render(); window.scrollTo(0, 0); };
+A.after.rincon = el => { if (S.pcTab === 'cuarto' && A.after.cuarto) A.after.cuarto(el); };
+// tu mascota se conecta con tu plata: si no anotas se pone triste; si cumples tu presupuesto de la semana, gana un premio
+function daysSinceTx() { const real = S.tx.filter(t => !t.example && !t.recurring && !t.inst); if (!real.length) return 0; const last = real.reduce((m, t) => t.date > m ? t.date : m, ''); return Math.max(0, Math.round((A.parseYmd(today()) - A.parseYmd(last)) / 864e5)); }
+A.petDaysSinceTx = daysSinceTx;
+function moneyMood() {
+  const p = P(); if (!p.active) return; const c = care(p.active);
+  const dd = daysSinceTx(); if (dd >= 2) c.f = Math.min(c.f, Math.max(10, 60 - dd * 10));
+  // premio de la semana pasada (lunes a domingo) si no se pasó del presupuesto
+  const t = new Date(); const mon = addDays(t, -((t.getDay() + 6) % 7) - 7); const days = [0, 1, 2, 3, 4, 5, 6].map(i => ymd(addDays(mon, i))); const wk = days[0];
+  if (p.weekPrize === wk) return; p.weekPrize = wk;
+  const budget = A.budgetExpenses(false); if (!budget) return;
+  const logged = new Set(S.tx.filter(x => !x.example && !x.recurring).map(x => x.date)); if (days.filter(d => logged.has(d)).length < 3) return;
+  const perDay = budget / A.daysIn(A.ym(days[3])); const spent = A.spentOf(S.tx.filter(x => !x.example && days.includes(x.date)));
+  if (spent <= perDay * 7) { give(10); p.pantry.cupcake = (p.pantry.cupcake || 0) + 2; c.f = clamp(c.f + 20); A.saveSettings(); setTimeout(() => toast(`¡Cumpliste tu presupuesto de la semana! ${info(p.active).name} gana 2 cupcakes y tú 10 estrellitas.`), 400); }
+  else A.saveSettings();
+}
+A.petMoneyMood = moneyMood;
+// cerrar el día con Ale también le da de cenar a tu mascota
+const render0 = A.render;
+A.render = (...x) => { const p = P(); const d = today(); const rec = (S.fin.dayLog || {})[d]; if (p.active && rec && rec.closed && p.aleFed !== d) { p.aleFed = d; const c = care(p.active); c.h = clamp(c.h + 25); c.f = clamp(c.f + 10); A.saveSettings(); setTimeout(() => toast(`Ale le dio de cenar a ${info(p.active).name}`), 1200); } return render0(...x); };
 // tarjeta del Inicio con la mascota elegida
 A.rinconCard = () => {
   const p = P(); const b = bal();
@@ -436,6 +464,8 @@ function room() {
   const s = S.settings; const r = s.room = s.room || {};
   r.wall = r.wall || 'rosa'; r.floor = r.floor || 'madera';
   r.owned = r.owned || ['cama', 'ventana', 'alfombra', 'cojin', 'wall:rosa', 'floor:madera'];
+  if (r.items && !r.v2) { r.items.forEach(it => { const f = FURN[it.k]; if (f) { it.x = f.x; it.y = f.y; } }); }
+  r.v2 = true;
   if (!r.items) r.items = ['ventana', 'cama', 'alfombra', 'cojin'].map(k => ({ u: uid(), k, x: FURN[k].x, y: FURN[k].y }));
   return r;
 }
@@ -455,7 +485,7 @@ function roomHTML(r, opts) {
   opts = opts || {}; const edit = opts.edit;
   const items = r.items.filter(it => FURN[it.k]).map(it => ({ it, f: FURN[it.k] })).sort((a, b) => (a.f.flat ? -1 : 0) - (b.f.flat ? -1 : 0) || (a.it.y + a.f.h) - (b.it.y + b.f.h));
   const pets = (opts.pets || P().room).filter(k => allPets()[k]);
-  const spots = [[50, 70], [74, 76], [26, 80]];
+  const spots = [[48, 60], [74, 66], [24, 70]];
   return `<div class="room ${edit ? 'editing' : ''}" id="${opts.id || 'roomBox'}">
 <img class="pixel rm-wall" alt="" src="${Pix.sprite('x_pared_' + (r.wall || 'rosa'), 3)}"><img class="pixel rm-floor" alt="" src="${Pix.sprite('x_piso_' + (r.floor || 'madera'), 3)}">
 ${items.map(({ it, f }) => `<img class="pixel rm-it ${opts.sel === it.u ? 'sel' : ''}" alt="${esc(f.name)}" data-u="${it.u}" src="${Pix.sprite(furnSprite(it.k), 3)}" style="left:${it.x / 120 * 100}%;top:${it.y / 104 * 100}%;width:${f.w / 120 * 100}%;z-index:${f.flat ? 1 : 2 + Math.round(it.y + f.h)}">`).join('')}

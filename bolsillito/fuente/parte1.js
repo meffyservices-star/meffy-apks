@@ -105,7 +105,9 @@ A.screens.acctd = () => {
   return `<div class="ph"><div class="ph-left"><button class="navarrow" data-go="wallet" aria-label="Volver a Billetera">‹</button><span class="pill">${esc(a.name)}</span></div>${A.privBtn()}</div>
 <div class="card stack acct-hero ${isCard ? 'is-card' : ''}">
 <div class="row" style="gap:12px"><span class="ic">${iconHTML(a.icon, 44)}</span><div style="flex:1"><h3 style="margin:0">${isCard ? 'Lo que debes' : 'Saldo de hoy'}</h3><div class="big num ${bal < 0 ? 'neg' : ''}">${money(bal)}</div></div></div>
-${isCard ? `<div class="grid3"><div class="mini"><span>Cuotas de este mes</span><b class="num">${money(thisMonth)}</b></div><div class="mini"><span>Cuotas por venir</span><b class="num">${money(future)}</b></div><div class="mini"><span>Pagas el</span><b>${a.due ? 'día ' + a.due : '—'}</b></div></div>` : ''}
+${isCard ? `<div class="grid3"><div class="mini"><span>Cuotas de este mes</span><b class="num">${money(thisMonth)}</b></div><div class="mini"><span>Cuotas por venir</span><b class="num">${money(future)}</b></div><div class="mini"><span>Pagas el</span><b>${a.due ? 'día ' + a.due : '—'}</b></div></div>
+${(() => { const pay = cardPay(a); return pay ? `<div class="card-pay ${pay.soon ? 'soon' : ''}"><b>${pay.amount > 0 ? 'Para tu próximo pago: ' + money(pay.amount) : 'No debes nada por ahora'}</b><span>${a.cut ? 'Corte el día ' + a.cut + ' · ' : ''}Pagas el ${A.fmtDate(pay.date)}${pay.soon ? ' · ¡en ' + (pay.days <= 0 ? 'hoy' : pay.days === 1 ? '1 día' : pay.days + ' días') + '!' : ''}</span></div>` : ''; })()}
+<button class="btn sm" data-act="cardDates" data-id="${a.id}" style="align-self:flex-start">${a.due ? 'Cambiar fechas de corte y pago' : 'Poner fechas de corte y pago'}</button>` : ''}
 </div>
 ${isCard ? `<div class="seg"><button data-act="acctTab" data-v="mov" aria-pressed="${tab === 'mov'}">Movimientos</button><button data-act="acctTab" data-v="cuotas" aria-pressed="${tab === 'cuotas'}">Cuotas${mine.length ? ' · ' + mine.length : ''}</button></div>` : ''}
 ${tab === 'cuotas' && isCard ? `
@@ -197,6 +199,36 @@ ${(l.pays || []).length ? `<div class="list">${l.pays.map(p => `<div class="li">
   });
 }
 
+// ---- fechas de la tarjeta ----
+function nextDay(day) { const t = new Date(); const d0 = new Date(t.getFullYear(), t.getMonth(), Math.min(day, new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate())); if (ymd(d0) < today()) { const n = new Date(t.getFullYear(), t.getMonth() + 1, 1); n.setDate(Math.min(day, new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate())); return n; } return d0; }
+function cardPay(a) {
+  if (!a.due) return null; const d = nextDay(a.due); const days = Math.round((d - parseYmd(today())) / 864e5);
+  const owed = r2(Math.max(0, -A.acctBalance(a.id)));
+  return { date: ymd(d), days, amount: owed, soon: days <= 5 && owed > 0 };
+}
+A.cardPay = cardPay;
+ACT.cardDates = a => {
+  const ac = A.acct(a.dataset.id); if (!ac) return;
+  openSheet('Fechas de ' + ac.name, `<div class="formgrid"><label class="f">Día de corte<input class="in" id="cdC" type="number" min="1" max="31" value="${ac.cut || ''}" placeholder="Ej. 5"></label><label class="f">Día de pago<input class="in" id="cdP" type="number" min="1" max="31" value="${ac.due || ''}" placeholder="Ej. 20"></label>
+<p class="faint full" style="margin:0">El corte es el día en que el banco cierra tu cuenta del mes. El pago es el día límite para pagar. Te avisamos 5 días antes.</p>
+<button class="btn pink full" id="cdOk" style="justify-content:center;padding:12px">Guardar</button></div>`, sh => {
+    $('#cdOk', sh).onclick = () => { const c = Math.round(+$('#cdC').value), d = Math.round(+$('#cdP').value); ac.cut = c >= 1 && c <= 31 ? c : undefined; ac.due = d >= 1 && d <= 31 ? d : undefined; A.saveFin(); closeSheet(); A.render(); };
+  });
+};
+// ---- gráfico de patrimonio (últimos 6 meses) ----
+function netHistory(withA) {
+  const now = A.netWorth(withA); const eff = t => t.type === 'income' ? t.amount : t.type === 'expense' ? -t.amount : 0;
+  const cur = ym(today()); const out = [];
+  for (let i = 5; i >= 0; i--) { const k = A.addMonths(cur, -i); const end = k === cur ? today() : ymd(new Date(+k.slice(0, 4), +k.slice(5), 0)); const after = S.tx.filter(t => t.date > end).reduce((s, t) => s + eff(t), 0); out.push({ k, v: r2(now - after) }); }
+  return out;
+}
+function netChart(withA) {
+  const h = netHistory(withA); const vals = h.map(x => x.v); const max = Math.max(...vals, 0), min = Math.min(...vals, 0); const span = (max - min) || 1;
+  const W = 300, H = 96, bw = 34, gap = (W - bw * 6) / 5; const y0 = H - (0 - min) / span * H;
+  const diff = vals[5] - vals[4];
+  return `<div class="nw-chart"><svg viewBox="0 -14 ${W} ${H + 30}" role="img" aria-label="Patrimonio de los últimos 6 meses">${h.map((x, i) => { const y = H - (x.v - min) / span * H; const top = Math.min(y, y0), hh = Math.max(2, Math.abs(y0 - y)); const last = i === 5; return `<rect x="${i * (bw + gap)}" y="${top}" width="${bw}" height="${hh}" rx="6" fill="${x.v < 0 ? '#f7a8c0' : last ? 'var(--accent)' : '#ffc4d6'}"/>${S.priv ? '' : `<text x="${i * (bw + gap) + bw / 2}" y="${top - 4}" text-anchor="middle" font-size="10" font-weight="800" fill="#9b6b6b">${Math.abs(x.v) >= 1000 ? (x.v / 1000).toFixed(1).replace('.', ',') + 'k' : Math.round(x.v)}</text>`}<text x="${i * (bw + gap) + bw / 2}" y="${H + 14}" text-anchor="middle" font-size="11" font-weight="800" fill="#9b6b6b">${A.cap(A.MON3[+x.k.slice(5) - 1])}</text>`; }).join('')}</svg>
+<div class="faint" style="text-align:center">${diff >= 0 ? 'Este mes subió ' : 'Este mes bajó '}${money(Math.abs(diff))}</div></div>`;
+}
 // ---------------- Billetera ----------------
 A.PAGES.wallet = 'Billetera';
 A.screens.wallet = () => {
@@ -204,12 +236,14 @@ A.screens.wallet = () => {
   const td = today(); const lim = ymd(addDays(new Date(), 45));
   const up = S.fin.recurring.filter(r => r.active).map(r => ({ name: r.name, date: r.next, freq: r.freq, amount: +r.amount, income: r.type === 'income', icon: (A.cat(r.cat) || {}).icon || 's:repeat' }))
     .concat(insts().map(c => ({ c, d: nextCuota(c) })).filter(x => x.d && x.d >= td && x.d <= lim).map(({ c, d }) => ({ name: c.name + ' · cuota ' + (paid(c) + 1) + ' de ' + c.n, date: d, freq: 'cuota', amount: cuotaAmt(c), icon: 's:tarjeta' })))
-    .sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
+    .concat(S.fin.accounts.map(a => ({ a, pay: cardPay(a) })).filter(x => x.pay && x.pay.amount > 0 && x.pay.date <= lim).map(({ a, pay }) => ({ name: 'Pagar ' + a.name, date: pay.date, freq: 'tarjeta', amount: pay.amount, icon: a.icon || 's:tarjeta' })))
+    .sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5);
   return `${A.bannerHTML('wallet') || ''}
 ${A.header('wallet', `<div class="row" style="gap:6px">${A.privBtn()}<button class="btn sm" data-act="newacct">Agregar +</button></div>`)}
 <section class="stack">
 <div class="ph"><span class="pill sm">Patrimonio</span><div class="seg" style="min-width:190px"><button data-act="assetsToggle" data-v="0" aria-pressed="${!withA}">Sin activos</button><button data-act="assetsToggle" data-v="1" aria-pressed="${withA}">Con activos</button></div></div>
 <div class="card row" style="gap:14px"><img class="pixel" alt="" src="${Pix.sprite('gem', 4)}" style="width:52px;height:52px"><div><div class="big num">${money(A.netWorth(withA))}</div><div class="faint">Lo que tienes menos lo que debes</div></div></div>
+${netChart(withA)}
 </section>
 <section class="stack">
 <div class="ph"><span class="pill sm">Mis cuentas</span></div>
@@ -309,6 +343,19 @@ ACT.story = a => showStory(a.dataset.k || A.addMonths(ym(today()), -1));
 const monthScreen = A.screens.month;
 A.screens.month = () => { const k = S.month; const cur = ym(today()); const html = monthScreen(); if (k > cur) return html; const bn = A.bannerHTML('month') || ''; const at = bn ? html.indexOf(bn) : -1; const cut = at >= 0 ? at + bn.length : 0; return html.slice(0, cut) + `<button class="card row story-btn" data-act="story" data-k="${k}"><img class="pixel" alt="" src="${petSrc(3)}" style="width:44px;height:44px"><div style="flex:1;text-align:left"><b>Ver el resumen de ${esc(A.monthLabel(k))}</b><div class="faint">En historias, como en Instagram</div></div><span class="faint">›</span></button>` + html.slice(cut); };
 
+// ---------------- Avisos en el Inicio ----------------
+function alertsHTML() {
+  const k = ym(today()); const list = A.txIn(k).filter(t => !t.example); const by = A.byCat(list, 'expense');
+  const seen = (S.settings.alertSeen || {})[k] || [];
+  const cats = S.fin.categories.filter(c => c.type !== 'income' && +c.budget > 0 && (by[c.id] || 0) >= c.budget * .8 && !seen.includes(c.id)).map(c => ({ c, pc: Math.round((by[c.id] || 0) / c.budget * 100) })).sort((a, b) => b.pc - a.pc).slice(0, 3);
+  const cards = S.fin.accounts.map(a => ({ a, pay: cardPay(a) })).filter(x => x.pay && x.pay.soon && !seen.includes('pay:' + x.a.id + ':' + x.pay.date));
+  if (!cats.length && !cards.length) return '';
+  return `<div class="card stack alerts">${cards.map(({ a, pay }) => `<div class="al-row">${iconHTML(a.icon || 's:tarjeta', 28)}<div style="flex:1"><b>Paga ${esc(a.name)} ${pay.days <= 0 ? 'hoy' : pay.days === 1 ? 'mañana' : 'en ' + pay.days + ' días'}</b><div class="faint">${money(pay.amount)} · ${A.fmtDate(pay.date)}</div></div><button class="iconbtn" data-act="alOk" data-k="pay:${a.id}:${pay.date}" aria-label="Ya lo vi">×</button></div>`).join('')}
+${cats.map(({ c, pc }) => `<div class="al-row">${iconHTML(c.icon, 28)}<div style="flex:1"><b>${pc >= 100 ? 'Ya te pasaste en ' + esc(c.name) : 'Ya usaste el ' + pc + '% de ' + esc(c.name)}</b><span class="prog" style="margin-top:4px"><i style="width:${Math.min(100, pc)}%;${pc >= 100 ? 'background:#e0577f' : ''}"></i></span><div class="faint">${money(by[c.id] || 0)} de ${money(+c.budget)} este mes</div></div><button class="iconbtn" data-act="alOk" data-k="${c.id}" aria-label="Ya lo vi">×</button></div>`).join('')}</div>`;
+}
+ACT.alOk = a => { const k = ym(today()); const s = S.settings.alertSeen = S.settings.alertSeen || {}; Object.keys(s).forEach(m => { if (m !== k) delete s[m]; }); s[k] = (s[k] || []).concat(a.dataset.k); A.saveSettings(); A.render(); };
+const homeScreen = A.screens.home;
+A.screens.home = () => { const h = homeScreen(); const al = alertsHTML(); if (!al) return h; const i = h.indexOf('<div class="grid2">'); return i >= 0 ? h.slice(0, i) + al + h.slice(i) : al + h; };
 // ---------------- Arranque ----------------
 const st0 = A.start;
 A.start = async () => {

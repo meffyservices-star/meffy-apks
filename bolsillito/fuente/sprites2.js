@@ -171,17 +171,17 @@ const WALLS = {
   cielo: (p, x, y) => p.px(x, y, y < 30 ? '#d8eefb' : '#e6f4fd')
 };
 const WALL_DECO = {
-  rosa: p => { for (let y = 4; y < 52; y += 10) for (let x = (y / 10 % 2 ? 7 : 2); x < 120; x += 10) { p.px(x, y, '#f6b8c8'); p.px(x - 1, y, '#fff3f3'); p.px(x + 1, y, '#fff3f3'); p.px(x, y - 1, '#fff3f3'); p.px(x, y + 1, '#fff3f3'); } },
-  menta: p => { for (let y = 6; y < 52; y += 12) for (let x = 3; x < 120; x += 12) { p.px(x, y, '#ffffff'); p.px(x + 1, y + 1, '#b9e2c9'); } },
+  rosa: p => { for (let y = 4; y < 36; y += 10) for (let x = (y / 10 % 2 ? 7 : 2); x < 120; x += 10) { p.px(x, y, '#f6b8c8'); p.px(x - 1, y, '#fff3f3'); p.px(x + 1, y, '#fff3f3'); p.px(x, y - 1, '#fff3f3'); p.px(x, y + 1, '#fff3f3'); } },
+  menta: p => { for (let y = 6; y < 36; y += 12) for (let x = 3; x < 120; x += 12) { p.px(x, y, '#ffffff'); p.px(x + 1, y + 1, '#b9e2c9'); } },
   lila: () => {},
-  durazno: p => { for (let y = 2; y < 52; y += 12) for (let x = 2; x < 120; x += 12) { p.px(x, y, '#f7a8a0'); p.px(x + 1, y, '#f7a8a0'); p.px(x, y + 1, '#f7a8a0'); p.px(x + 1, y + 1, '#f7a8a0'); } },
-  cielo: p => { [[14, 10], [52, 6], [88, 14], [108, 4]].forEach(([cx, cy]) => { p.e(cx, cy, 8, 2.6, '#ffffff'); p.e(cx - 4, cy - 1.5, 3.5, 2.4, '#ffffff'); p.e(cx + 3, cy - 2, 4, 2.6, '#ffffff'); }); for (let i = 0; i < 18; i++) p.px((i * 37) % 118 + 1, 24 + (i * 13) % 26, '#ffffff'); }
+  durazno: p => { for (let y = 2; y < 36; y += 12) for (let x = 2; x < 120; x += 12) { p.px(x, y, '#f7a8a0'); p.px(x + 1, y, '#f7a8a0'); p.px(x, y + 1, '#f7a8a0'); p.px(x + 1, y + 1, '#f7a8a0'); } },
+  cielo: p => { [[14, 10], [52, 6], [88, 14], [108, 4]].forEach(([cx, cy]) => { p.e(cx, cy, 8, 2.6, '#ffffff'); p.e(cx - 4, cy - 1.5, 3.5, 2.4, '#ffffff'); p.e(cx + 3, cy - 2, 4, 2.6, '#ffffff'); }); for (let i = 0; i < 18; i++) p.px((i * 37) % 118 + 1, 20 + (i * 13) % 16, '#ffffff'); }
 };
-Object.keys(WALLS).forEach(k => Pix.define('x_pared_' + k, { w: 120, h: 62, flat: true, fn(p) {
-  for (let y = 0; y < 54; y++) for (let x = 0; x < 120; x++) WALLS[k](p, x, y);
+Object.keys(WALLS).forEach(k => Pix.define('x_pared_' + k, { w: 120, h: 46, flat: true, fn(p) {
+  for (let y = 0; y < 38; y++) for (let x = 0; x < 120; x++) WALLS[k](p, x, y);
   WALL_DECO[k](p);
-  p.r(0, 54, 120, 8, '#c98a52'); p.r(0, 54, 120, 1, '#e3a96a'); p.r(0, 61, 120, 1, '#7a4a2e');
-  for (let x = 4; x < 120; x += 12) { p.r(x, 56, 8, 4, '#b9794a'); p.r(x, 56, 8, 1, '#a8693f'); }
+  p.r(0, 38, 120, 8, '#c98a52'); p.r(0, 38, 120, 1, '#e3a96a'); p.r(0, 45, 120, 1, '#7a4a2e');
+  for (let x = 4; x < 120; x += 12) { p.r(x, 40, 8, 4, '#b9794a'); p.r(x, 40, 8, 1, '#a8693f'); }
 } }));
 const FLOORS = {
   madera: (x, y) => { const row = Math.floor(y / 6); const off = (row % 2) * 9; const seam = (x + off) % 18 === 0 || y % 6 === 0; return seam ? '#9a5f36' : (y % 6 === 1 ? '#d29a63' : ((x + off) % 18 < 9 ? '#c4864f' : '#bd7f49')); },
@@ -190,9 +190,9 @@ const FLOORS = {
   piedra: (x, y) => { const row = Math.floor(y / 7); const off = (row % 2) * 7; return ((x + off) % 14 === 0 || y % 7 === 0) ? '#b9b0a6' : ((x + y) % 5 ? '#e3ddd3' : '#d8d0c4'); },
   pasto: (x, y) => ((x * 7 + y * 13) % 9 === 0) ? '#a3d07f' : ((x * 3 + y) % 17 === 0 ? '#ffffff' : '#bfe39a')
 };
-Object.keys(FLOORS).forEach(k => Pix.define('x_piso_' + k, { w: 120, h: 42, flat: true, fn(p) {
+Object.keys(FLOORS).forEach(k => Pix.define('x_piso_' + k, { w: 120, h: 60, flat: true, fn(p) {
   p.r(0, 0, 120, 2, '#7a4a2e');
-  for (let y = 2; y < 42; y++) for (let x = 0; x < 120; x++) p.px(x, y, FLOORS[k](x, y - 2));
+  for (let y = 2; y < 60; y++) for (let x = 0; x < 120; x++) p.px(x, y, FLOORS[k](x, y - 2));
 } }));
 // ----- Muebles nuevos -----
 D('x_piano', 30, 26, p => {
@@ -231,4 +231,17 @@ D('x_flores', 16, 22, p => {
   p.e(8, 5, 2, 2, '#ffc4d6'); p.e(4, 6, 2, 2, '#fff09a'); p.e(12, 5, 2, 2, '#ece0fb'); p.px(8, 5, '#f27ea1'); p.px(4, 6, '#f5c94c'); p.px(12, 5, '#a385e0');
 });
 D('x_burbuja', 12, 12, p => { p.e(6, 6, 5, 5, '#d8eefb'); p.e(6, 6, 4, 4, '#eef8ff'); p.px(4, 3, '#ffffff'); p.px(3, 4, '#ffffff'); p.px(4, 4, '#ffffff'); });
+})();
+// regalo abierto: la tapa apoyada al costado (ya no flota)
+(function () {
+Pix.define('regalo_abierto', { w: 28, h: 24, fn(p) {
+  // interior y caja
+  p.r(5, 10, 18, 3, 'R'); p.r(6, 11, 16, 2, 'P');
+  p.r(5, 12, 18, 11, 'p'); p.r(12, 12, 4, 11, 'y'); p.r(12, 12, 4, 1, 'Y'); p.r(5, 12, 1, 11, 'r'); p.px(7, 14, 'w'); p.px(8, 13, 'w');
+  // brillo que sale de la caja
+  [[9, 7], [14, 4], [19, 7], [11, 3], [17, 2], [14, 8]].forEach(([x, y]) => p.px(x, y, 'y'));
+  p.px(14, 5, 'w'); p.px(13, 6, 'Y'); p.px(15, 6, 'Y');
+  // tapa apoyada a la derecha, inclinada sobre el piso
+  p.line(23, 23, 27, 12, 'P'); p.line(22, 23, 26, 12, 'P'); p.line(21, 22, 25, 12, 'p'); p.line(24, 18, 26, 18, 'y'); p.line(23, 19, 26, 17, 'y');
+} });
 })();
