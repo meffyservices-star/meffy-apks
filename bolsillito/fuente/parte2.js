@@ -96,10 +96,10 @@ const FCATS = [['todo', 'Todo'], ['camas', 'Camas y asientos'], ['mesas', 'Muebl
 const WALLS = { rosa: ['Rosa con puntitos', 0], cereza: ['Cerezas', 20], menta: ['Menta', 20], lila: ['Lila', 20], durazno: ['Durazno', 20], cielo: ['Cielo', 25] };
 const FLOORS = { madera: ['Madera clara', 0], rosa: ['Madera rosa', 20], cafe: ['Madera café', 20], lila: ['Madera lila', 20], cuadros: ['Cuadritos', 20], pasto: ['Pasto', 25] };
 const ROOMS = {
-  cuarto: { name: 'Mi cuarto', price: 0, wall: 'rosa', floor: 'madera' },
-  cocina: { name: 'Cocina', price: 120, wall: 'cereza', floor: 'cuadros', gift: ['cocina', 'mesa'] },
-  juegos: { name: 'Cuarto de juegos', price: 150, wall: 'lila', floor: 'lila', gift: ['alfombra_lila', 'peluche'] },
-  jardin: { name: 'Jardín', price: 150, wall: 'cielo', floor: 'pasto', gift: ['cerezo', 'flores'] }
+  cuarto: { name: 'Mi cuarto', price: 0, wall: 'rosa', floor: 'madera', icon: 'cama' },
+  cocina: { name: 'Cocina', price: 120, wall: 'cereza', floor: 'cuadros', gift: ['cocina', 'mesa'], icon: 'tetera' },
+  juegos: { name: 'Cuarto de juegos', price: 150, wall: 'lila', floor: 'lila', gift: ['alfombra_lila', 'peluche'], icon: 'peluche', short: 'Juegos' },
+  jardin: { name: 'Jardín', price: 150, wall: 'cielo', floor: 'pasto', gift: ['cerezo', 'flores'], icon: 'flores' }
 };
 // ropa de temporada (mismo sistema que la Tiendita)
 const SEAS_ACC = {
@@ -609,7 +609,7 @@ A.screens.cuarto = () => {
   const sty = (kind, k, n, price) => { const own = !price || r.owned.includes(kind + ':' + k); const on = rm[kind] === k; return `<button class="shop-tile ${on ? 'on' : ''}" data-act="rmStyle" data-kind="${kind}" data-k="${k}" data-p="${price}"><img class="pixel" alt="" src="${Pix.sprite('x_' + (kind === 'wall' ? 'pared_' : 'piso_') + k, 1)}" style="width:72px;height:34px;object-fit:cover;object-position:top;border-radius:6px">${on ? '<em style="color:#3f7a2f">Puesto</em>' : own ? '<em>Poner</em>' : `<span class="lock" style="background:#fff09a">${ST(12)} ${price}</span><em>Comprar</em>`}<span>${esc(n)}</span></button>`; };
   const keys = Object.keys(FURN).filter(k => fc === 'todo' || FURN[k].cat === fc || (fc === 'deco' && FURN[k].custom && !FURN[k].wall) || (fc === 'pared' && FURN[k].custom && FURN[k].wall));
   return `${sub('cuarto', 'rincon', starsPill())}
-<div class="chips rm-rooms">${Object.keys(r.rooms).map(k => `<button class="chip" data-act="rmRoom" data-k="${k}" aria-pressed="${r.cur === k}">${esc((ROOMS[k] || {}).name || k)}</button>`).join('')}<button class="chip" data-act="rmTab" data-v="cuartos">+ Más cuartos</button></div>
+<div class="rm-rooms">${Object.keys(r.rooms).map(k => { const ro = ROOMS[k] || {}; return `<button class="rm-door" data-act="rmRoom" data-k="${k}" aria-pressed="${r.cur === k}"><span class="rm-door-art" style="background-image:url(${Pix.sprite('x_piso_' + (ro.floor || 'madera'), 1)})"><img class="pixel" alt="" src="${Pix.sprite('x_' + (ro.icon || 'cama'), 2)}"></span><span class="rm-door-t">${esc(ro.short || ro.name || k)}</span></button>`; }).join('')}${Object.keys(r.rooms).length < Object.keys(ROOMS).length ? `<button class="rm-door add" data-act="rmTab" data-v="cuartos"><span class="rm-door-art"><b>+</b></span><span class="rm-door-t">Más</span></button>` : ''}</div>
 ${roomHTML(rm, { edit, sel: S.roomSel, inner: `<button class="btn sm rm-editbtn" data-act="rmEdit">${edit ? 'Listo' : 'Mover cosas'}</button>${edit && S.roomSel ? '<span class="rm-tools"><button class="btn sm" data-act="rmFlip">Voltear</button><button class="btn sm danger" data-act="rmRemove">Guardar</button></span>' : ''}` })}
 ${edit ? '<p class="faint" style="margin:0;text-align:center">Arrastra los muebles. Toca uno para voltearlo o guardarlo.</p>' : `<p class="faint" style="margin:0;text-align:center">${{ dia: 'Es de día', tarde: 'Está atardeciendo', noche: 'Es de noche: tus mascotas se van a dormir' }[dayPart()]}</p>`}
 <div class="seg"><button data-act="rmTab" data-v="muebles" aria-pressed="${tab === 'muebles'}">Muebles</button><button data-act="rmTab" data-v="paredes" aria-pressed="${tab === 'paredes'}">Pared y piso</button><button data-act="rmTab" data-v="cuartos" aria-pressed="${tab === 'cuartos'}">Cuartos</button><button data-go="tienda">Ropa</button></div>

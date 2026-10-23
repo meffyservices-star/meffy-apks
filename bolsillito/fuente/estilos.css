@@ -666,7 +666,16 @@ body.gaming { overflow: hidden; }
 .room .rm-editbtn { position: absolute; right: 6px; bottom: 6px; z-index: 500; background: #c44a72; color: #fff; border: 2px solid #fff; }
 .room .rm-tools { position: absolute; left: 6px; bottom: 6px; z-index: 500; display: flex; gap: 6px; }
 .room .rm-tools .btn { border: 2px solid #fff; }
-.rm-rooms { flex-wrap: nowrap; overflow-x: auto; }
+.rm-rooms { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; }
+.rm-rooms::-webkit-scrollbar { display: none; }
+.rm-door { flex: 0 0 auto; width: 74px; display: flex; flex-direction: column; align-items: center; gap: 5px; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; color: var(--ink, #5a3b46); }
+.rm-door-art { width: 66px; height: 58px; border-radius: 10px; border: 2.5px solid #e9cbd3; background-color: #fff; background-size: 220px auto; background-position: center; image-rendering: pixelated; display: grid; place-items: center; box-shadow: 0 3px 0 #e9cbd3; transition: transform .15s; }
+.rm-door-art img { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 2px 0 rgba(90,50,60,.18)); }
+.rm-door-t { font-size: 11.5px; font-weight: 800; line-height: 1.1; text-align: center; opacity: .75; }
+.rm-door[aria-pressed="true"] .rm-door-art { border-color: #ee7fa4; box-shadow: 0 3px 0 #d4628a; transform: translateY(-2px); }
+.rm-door[aria-pressed="true"] .rm-door-t { opacity: 1; color: #c44a72; }
+.rm-door.add .rm-door-art { border-style: dashed; box-shadow: none; background: #fff7fa; }
+.rm-door.add b { font-size: 26px; color: #ee7fa4; font-family: var(--f-display); }
 /* ===== Visitas: cajita, cartas, libro ===== */
 .vs-acts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .vs-acts .pc-act:disabled { opacity: .5; }
