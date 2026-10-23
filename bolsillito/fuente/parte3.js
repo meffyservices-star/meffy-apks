@@ -23,11 +23,10 @@ A.screens.juegos = () => {
   const g = GM();
   return `${sub('juegos', 'rincon', starsPill())}
 <button class="card gm-card sky" data-act="gmPlay" data-g="saltar"><div class="gm-art"><img class="pixel" alt="" src="${spr('plataforma_nube', 3)}" style="width:66px;position:absolute;left:4px;top:56px"><img class="pixel" alt="" src="${spr('plataforma', 3)}" style="width:66px;position:absolute;right:2px;top:20px"><img class="pixel gm-bounce" alt="" src="${spr(petSprite(), 4)}" style="width:54px;position:absolute;left:32px;top:6px"></div><div style="flex:1"><b class="mid" style="font-family:var(--f-display)">Saltar hasta las nubes</b><div class="faint">Atrapa estrellitas mientras subes. Cuidado: unas plataformas se rompen y las nubes se esfuman.</div><div class="tag gold" style="margin-top:6px">Tu récord · ${g.best.saltar || 0} m</div></div></button>
-<button class="card gm-card picnic" data-act="gmPlay" data-g="torre"><div class="gm-art">${[0, 1, 2, 3].map(i => `<span class="gm-pk" style="bottom:${4 + i * 12}px;left:${18 + [0, 6, -4, 3][i]}px;width:${74 - i * 6}px"></span>`).join('')}<img class="pixel gm-bounce" alt="" src="${spr(petSprite(), 3)}" style="width:40px;position:absolute;left:30px;bottom:52px"></div><div style="flex:1"><b class="mid" style="font-family:var(--f-display)">Torre de pancakes</b><div class="faint">Toca para soltar cada pancake encima del anterior. Lo que sobresale se cae. Cada 5 pisos ganas pancakes para la despensa.</div><div class="tag gold" style="margin-top:6px">Tu récord · ${g.best.torre || 0} pisos</div></div></button>
 <button class="card gm-card coins" data-act="gmPlay" data-g="monedas"><div class="gm-art">${['moneda', 'ticket', 'moneda'].map((f, i) => `<img class="pixel gm-fall" alt="" src="${spr(f, 3)}" style="width:28px;position:absolute;left:${10 + i * 26}px;top:${4 + (i % 2) * 18}px;animation-delay:-${i * .5}s">`).join('')}<img class="pixel" alt="" src="${spr('alcancia', 4)}" style="width:56px;position:absolute;left:24px;bottom:2px"></div><div style="flex:1"><b class="mid" style="font-family:var(--f-display)">Ahorra monedas, no antojos</b><div class="faint">Atrapa las monedas con tu cochinito y esquiva los antojos que te hacen gastar.</div><div class="tag gold" style="margin-top:6px">Tu récord · ${g.best.monedas || 0} monedas</div></div></button>
 <div class="card row" style="gap:10px">${img('estrellita', 28)}<div style="flex:1"><b>Hoy llevas ${g.stars} de ${GAME_CAP} estrellitas de juegos</b><div class="faint">Cada partida también le da +10 puntos a ${esc(A.petInfo ? A.petInfo(activePet()).name : 'tu mascota')} para crecer.</div></div></div>`;
 };
-ACT.gmPlay = a => a.dataset.g === 'saltar' ? jumpGame() : a.dataset.g === 'torre' ? towerGame() : catchGame('monedas');
+ACT.gmPlay = a => a.dataset.g === 'saltar' ? jumpGame() : catchGame('monedas');
 
 function loadImgs(map) { return Promise.all(Object.entries(map).map(([k, src]) => new Promise(res => { const i = new Image(); i.onload = () => res([k, i]); i.onerror = () => res([k, i]); i.src = src; }))).then(Object.fromEntries); }
 function gameShell(cls) {
@@ -116,70 +115,6 @@ async function jumpGame() {
 }
 
 // ---- Atrapar comidita ----
-// ---- Torre de pancakes ----
-async function towerGame() {
-  const sh = gameShell('tower'); let { w: W, h: H } = sh.fit();
-  const I = await loadImgs({ pet: spr(petSprite(), 4), fresa: spr('fresa', 3), mant: spr('i_mantequilla', 3) });
-  const PH = 16, BASEW = Math.min(170, W * .5);
-  let stack, cur, cam, camT, run = true, paused = true, raf, last = 0, falling, perfects, combo, msgT;
-  function reset() { stack = [{ x: W / 2 - BASEW / 2, w: BASEW, top: 0 }]; cam = 0; camT = 0; falling = []; perfects = 0; combo = 0; spawn(); }
-  function spawn() { const prev = stack[stack.length - 1]; const n = stack.length; const fromLeft = n % 2; cur = { x: fromLeft ? -prev.w : W, w: prev.w, dir: fromLeft ? 1 : -1, v: Math.min(7.5, 2.4 + n * .14) }; }
-  const yOf = i => H - 90 - i * PH + cam;
-  function drop() {
-    if (!run || paused || !cur) return; const prev = stack[stack.length - 1];
-    const L = Math.max(cur.x, prev.x), R = Math.min(cur.x + cur.w, prev.x + prev.w); const ov = R - L;
-    if (ov <= 0) { falling.push({ x: cur.x, w: cur.w, y: yOf(stack.length), vy: 0, r: 0 }); cur = null; setTimeout(over, 700); return; }
-    let nx = L, nw = ov;
-    if (Math.abs(cur.x - prev.x) <= 4) { nx = prev.x; nw = prev.w; perfects++; combo++; msgT = { t: 40, txt: combo > 1 ? `¡Perfecto x${combo}!` : '¡Perfecto!' }; if (combo >= 3 && nw < BASEW) { nw = Math.min(BASEW, nw + 10); nx = Math.max(0, nx - 5); } }
-    else { combo = 0; if (cur.x < prev.x) falling.push({ x: cur.x, w: prev.x - cur.x, y: yOf(stack.length), vy: 0, r: -.05 }); if (cur.x + cur.w > prev.x + prev.w) falling.push({ x: prev.x + prev.w, w: cur.x + cur.w - prev.x - prev.w, y: yOf(stack.length), vy: 0, r: .05 }); }
-    stack.push({ x: nx, w: nw, top: stack.length % 5 === 0 ? (stack.length % 10 === 0 ? 'mant' : 'fresa') : null });
-    if (navigator.vibrate) navigator.vibrate(15);
-    camT = Math.max(0, (stack.length - 8) * PH); spawn();
-  }
-  function step(dt) {
-    if (cur) { cur.x += cur.dir * cur.v * dt; const prev = stack[stack.length - 1]; if (cur.x > W) cur.dir = -1; if (cur.x + cur.w < 0) cur.dir = 1; }
-    cam += (camT - cam) * Math.min(1, .12 * dt);
-    falling.forEach(f => { f.vy += .5 * dt; f.y += f.vy * dt; }); falling = falling.filter(f => f.y < H + 60);
-    if (msgT) { msgT.t -= dt; if (msgT.t <= 0) msgT = null; }
-  }
-  function cake(g, x, y, w) {
-    const r = Math.min(8, w / 2);
-    g.fillStyle = '#c27a2e'; rrect(g, x, y + 2, w, PH - 2, r);
-    g.fillStyle = '#e8a04a'; rrect(g, x, y, w, PH - 4, r);
-    g.fillStyle = '#f5c26b'; rrect(g, x + 2, y + 1, Math.max(0, w - 4), 4, r);
-  }
-  function rrect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.fill(); }
-  function draw() {
-    const g = sh.g; const k = Math.min(1, stack.length / 40);
-    const grd = g.createLinearGradient(0, 0, 0, H); grd.addColorStop(0, k > .5 ? '#ffe0ec' : '#fff6e8'); grd.addColorStop(1, '#ffd9b8'); g.fillStyle = grd; g.fillRect(0, 0, W, H);
-    g.fillStyle = 'rgba(255,255,255,.5)'; for (let y = (cam * .4) % 40 - 40; y < H; y += 40) for (let x = 0; x < W; x += 40) g.fillRect(x + ((y / 40) % 2 ? 20 : 0), y, 2, 2);
-    const py = yOf(0) + PH; g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(W / 2, py + 4, BASEW * .75, 12, 0, 0, 7); g.fill(); g.fillStyle = '#f7cbd8'; g.beginPath(); g.ellipse(W / 2, py + 6, BASEW * .62, 6, 0, 0, 7); g.fill();
-    stack.forEach((s, i) => { const y = yOf(i); if (y > H + 20 || y < -40) return; cake(g, s.x, y, s.w); if (s.top) g.drawImage(I[s.top], s.x + s.w / 2 - 10, y - 14, 20, 20); });
-    const topY = yOf(stack.length - 1); const last = stack[stack.length - 1];
-    if (!cur && falling.length === 0) { }
-    g.drawImage(I.pet, last.x + last.w / 2 - 22, topY - 44, 44, 44);
-    if (cur) cake(g, cur.x, yOf(stack.length) - 0, cur.w);
-    falling.forEach(f => { g.save(); g.translate(f.x + f.w / 2, f.y + PH / 2); g.rotate(f.r * f.vy); cake(g, -f.w / 2, -PH / 2, f.w); g.restore(); });
-    if (msgT) { g.globalAlpha = Math.min(1, msgT.t / 15); g.font = '600 26px Fredoka, Nunito, sans-serif'; g.textAlign = 'center'; g.fillStyle = '#c44a72'; g.strokeStyle = '#fff'; g.lineWidth = 5; g.strokeText(msgT.txt, W / 2, H * .28); g.fillText(msgT.txt, W / 2, H * .28); g.globalAlpha = 1; }
-    $('#gmA', sh.ov).textContent = (stack.length - 1) + (stack.length === 2 ? ' piso' : ' pisos'); $('#gmB', sh.ov).innerHTML = `${img('panqueque', 16)} +${Math.floor((stack.length - 1) / 5)}`;
-  }
-  function loop(t) { if (!run) return; const dt = Math.min(2.2, last ? (t - last) / 16.67 : 1); last = t; if (!paused) step(dt); draw(); raf = requestAnimationFrame(loop); }
-  function over() {
-    run = false; cancelAnimationFrame(raf); const n = stack.length - 1; const gm = GM(); const rec = n > (gm.best.torre || 0); if (rec) gm.best.torre = n;
-    const pk = Math.floor(n / 5); const fr = Math.floor(perfects / 3); const pst = A.petState(); if (pk) pst.pantry.panqueque = (pst.pantry.panqueque || 0) + pk; if (fr) pst.pantry.fresa = (pst.pantry.fresa || 0) + fr;
-    const earned = payGame(Math.floor(n / 4)); A.petAddXp && A.petAddXp(10, 'game'); A.saveSettings();
-    endCard(sh, rec ? '¡NUEVO RÉCORD!' : '¡Se cayó la torre!', `<div class="gm-big">${n} ${n === 1 ? 'piso' : 'pisos'}</div><div class="gm-loot">${pk ? `<span>${img('panqueque', 26)}×${pk}</span>` : ''}${fr ? `<span>${img('fresa', 26)}×${fr}</span>` : ''}${!pk && !fr ? '<span class="faint">Con 5 pisos ya ganas pancakes</span>' : ''}</div>${pk || fr ? '<div class="faint">Se guardó en la despensa.</div>' : ''}<div class="row" style="justify-content:center;gap:6px;font-weight:800">${ST(18)} +${earned} estrellitas</div><div class="faint">${perfects} ${perfects === 1 ? 'pancake perfecto' : 'pancakes perfectos'}</div>`, towerGame);
-  }
-  const kd = e => { if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowDown') { e.preventDefault(); drop(); } if (e.key === 'Escape') sh.close(); };
-  addEventListener('keydown', kd);
-  sh.cv.addEventListener('pointerdown', e => { e.preventDefault(); drop(); });
-  $('.gm-pause', sh.ov).onclick = () => { paused = !paused; const m = $('.gm-msg', sh.ov); if (paused) { m.hidden = false; m.innerHTML = `<div class="gm-end"><div class="gm-k">PAUSA</div><div class="row" style="gap:8px;margin-top:10px"><button class="btn" data-x="out" style="flex:1;justify-content:center">Salir</button><button class="btn pink" data-x="go" style="flex:1;justify-content:center">Seguir</button></div></div>`; m.onclick = e => { const b = e.target.closest('[data-x]'); if (!b) return; if (b.dataset.x === 'out') sh.close(); else { paused = false; m.hidden = true; } }; } };
-  sh.close = () => { run = false; cancelAnimationFrame(raf); removeEventListener('keydown', kd); sh.ov.remove(); document.body.classList.remove('gaming'); if (S.route === 'juegos' || S.route === 'rincon') A.render(); };
-  reset(); const m = $('.gm-msg', sh.ov); m.hidden = false;
-  m.innerHTML = `<div class="gm-end"><div class="gm-k">TORRE DE PANCAKES</div><div class="gm-legend"><span>${img('panqueque', 34)}Apila</span><span>${img('fresa', 30)}Cada 5 pisos</span><span>${img('estrellita', 30)}Perfectos</span></div><div class="faint">El pancake va de lado a lado: toca la pantalla para soltarlo encima. Lo que sobresale se cae. Si lo sueltas justo encima es "¡Perfecto!" y no se achica.</div><button class="btn pink" data-x="go" style="justify-content:center;margin-top:10px;width:100%">¡A apilar!</button></div>`;
-  m.onclick = e => { if (e.target.closest('[data-x]')) { e.stopPropagation(); m.hidden = true; setTimeout(() => { paused = false; }, 150); } };
-  raf = requestAnimationFrame(loop);
-}
 async function catchGame(mode) {
   const coins = mode === 'monedas'; const sh = gameShell('catch' + (coins ? ' coins' : '')); let { w: W, h: H } = sh.fit();
   const ANTOJOS = ['ticket', 'labial', 'helado', 'bolsa', 'unas', 'palomitas', 'cart'];
