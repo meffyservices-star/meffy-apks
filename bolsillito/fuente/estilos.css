@@ -699,3 +699,7 @@ body.gaming { overflow: hidden; }
 .game.coins { background: #e8f8e4; }
 .jr-links { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .jr-links .jr-dreams { padding: 6px 8px; font-size: 12px; gap: 6px; }
+.room .rm-pet { aspect-ratio: 1; line-height: 0; }
+.room .rm-pet > img { position: absolute; left: 0; top: 0; width: 100%; height: auto; }
+.room .rm-pet > img.rm-acc { height: auto; }
+.room .rm-pet.guest::after { content: ''; position: absolute; left: 20%; right: 20%; bottom: -4%; height: 8%; border-radius: 50%; background: rgba(196,74,114,.35); }

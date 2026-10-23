@@ -317,7 +317,8 @@ function roomBody() {
   const c = p.active ? A.petCare(p.active) : null;
   const garden = ((S.settings.garden || {}).habits || []).slice(0, 6).map(h => ({ name: h.name.slice(0, 20), plant: habitInfo(h).plant }));
   const photos = ((S.settings.board || {}).items || []).map(x => x.img).filter(x => x && /^https?:/.test(x)).slice(0, 6);
-  return { rooms: r.rooms, cur: r.cur, pets: p.room, active: p.active || null, owned: p.owned, lv, logros, garden, photos, care: c ? { h: Math.round(c.h), f: Math.round(c.f), l: Math.round(c.l), sleep: !!c.sleep } : null };
+  const eqAll = (S.settings.rincon || {}).equip || {}; const equip = {}; p.room.concat(p.active ? [p.active] : []).forEach(k => { if (eqAll[k]) equip[k] = eqAll[k]; });
+  return { rooms: r.rooms, cur: r.cur, pets: p.room, equip, active: p.active || null, owned: p.owned, lv, logros, garden, photos, care: c ? { h: Math.round(c.h), f: Math.round(c.f), l: Math.round(c.l), sleep: !!c.sleep } : null };
 }
 async function publishRoom() {
   if (!online()) return null;
@@ -364,7 +365,7 @@ const did = (cur, kind) => (V.events || []).some(e => e.from_user === Store.uid 
 const giftsToday = () => (V.gifts || []).filter(g => g.from_user === Store.uid && g.day === today());
 function friendRoomView(cur) {
   const b = cur.body || {}; const rooms = b.rooms || (b.room ? { cuarto: b.room } : { cuarto: {} }); const rk = rooms[S.visitRoom] ? S.visitRoom : (b.cur && rooms[b.cur] ? b.cur : Object.keys(rooms)[0]);
-  const mine = activePet(); const guestPets = (b.pets || []).slice(0, 2).concat(mine && !(b.pets || []).includes(mine) ? [mine] : []);
+  const mine = activePet(); const guestPets = (b.pets || []).slice(0, mine ? 2 : 3).map(k => ({ k, eq: (b.equip || {})[k] }));
   const care = b.care; const pname = b.active && A.petInfo ? A.petInfo(b.active).name : 'su mascota';
   const sentLetters = (V.events || []).filter(n => n.from_user === Store.uid && n.to_user === cur.user_id && n.kind === 'letter').slice(0, 2);
   const signs = V.signs[cur.user_id]; if (!signs) loadSigns(cur.user_id).then(() => { if (S.route === 'visitas') A.render(); });

@@ -532,13 +532,13 @@ function dayPart() { const h = new Date().getHours() + new Date().getMinutes() /
 A.dayPart = dayPart;
 function boardPhotos() { return ((S.settings.board || {}).items || []).filter(x => x.img).map(x => x.img); }
 // dónde se pone cada mascota según los muebles que hay
-function petSpots(rm, pets, part, guest) {
+function petSpots(rm, pets, part, guestIdx) {
   const out = []; const used = new Set(); const items = rm.items.filter(i => FURN[i.k]);
   const find = pred => items.find(i => pred(FURN[i.k]) && !used.has(i.u));
   const PS = 22;
-  pets.forEach((k, idx) => {
+  pets.forEach((k, idx) => { const isGuest = idx === guestIdx;
     let spot = null;
-    if (part === 'noche' && k !== guest) { const b = find(f => f.bed); if (b) { used.add(b.u); const f = FURN[b.k]; spot = { x: b.x + f.w / 2 - PS / 2, y: b.y + 10, z: b.y + f.h + 1, sleep: true }; } }
+    if (part === 'noche' && !isGuest) { const b = find(f => f.bed); if (b) { used.add(b.u); const f = FURN[b.k]; spot = { x: b.x + f.w / 2 - PS / 2, y: b.y + 10, z: b.y + f.h + 1, sleep: true }; } }
     if (!spot && part !== 'noche') {
       const order = idx === 0 ? ['piano', 'table', 'seat'] : idx === 1 ? ['table', 'seat', 'piano'] : ['seat', 'piano', 'table'];
       for (const kind of order) {
@@ -549,19 +549,36 @@ function petSpots(rm, pets, part, guest) {
         break;
       }
     }
-    if (!spot) { const free = [[60, 84], [86, 88], [34, 92], [100, 100], [20, 104]][idx % 5]; spot = { x: free[0], y: free[1], z: free[1] + PS, sleep: part === 'noche' && k !== guest }; }
+    if (!spot) { const free = [[60, 84], [86, 88], [34, 92], [100, 100], [20, 104]][idx % 5]; spot = { x: free[0], y: free[1], z: free[1] + PS, sleep: part === 'noche' && !isGuest }; }
     out.push(Object.assign({ k }, spot));
   });
   return out;
 }
 const pct = (v, t) => (v / t * 100).toFixed(3) + '%';
+// dibuja una mascota con sus accesorios (los mismos cálculos que en la Tiendita)
+function dressed(id, eq, sc) {
+  const an = A.ANCH[id]; const base = `<img class="pixel" alt="" src="${petImgSrc(id, sc || 4)}" draggable="false">`;
+  if (!an || !eq) return base;
+  return base + ['neck', 'head', 'face'].map(slot => {
+    const a = A.ACC[eq[slot]]; if (!a) return '';
+    let left = an.hx - a.w / 2, top;
+    if (slot === 'head') { top = an.hy - a.h + 2 + (a.lift || 0); if (a.halo) top = an.hy - a.h - 1; if (a.side) { left = an.hx + 2; top = an.hy - 1; } }
+    else if (slot === 'face') top = an.fy - a.h / 2; else top = an.ny - 1;
+    return `<img class="pixel rm-acc" alt="" src="${Pix.sprite('acc_' + eq[slot], sc || 4)}" draggable="false" style="left:${left / 20 * 100}%;top:${top / 20 * 100}%;width:${a.w / 20 * 100}%">`;
+  }).join('');
+}
+A.petDressed = dressed;
 function roomHTML(rmIn, opts) {
   opts = opts || {}; const edit = opts.edit; const rm = Object.assign({ wall: 'rosa', floor: 'madera', items: [] }, rmIn || {});
   const part = opts.part || dayPart(); const night = part === 'noche';
   const photos = opts.photos || boardPhotos(); let ph = 0;
   const items = rm.items.filter(it => FURN[it.k]).map(it => ({ it, f: FURN[it.k] })).sort((a, b) => (a.f.flat ? 0 : a.f.wall ? 1 : 2) - (b.f.flat ? 0 : b.f.wall ? 1 : 2) || (a.it.y + a.f.h) - (b.it.y + b.f.h));
-  const pets = (opts.pets || P().room).filter(k => allPets()[k]);
-  const spots = petSpots(rm, pets, part, opts.guest);
+  // cada mascota con su ropa: la tuya con lo que le pusiste, la de tu amiga con lo que le puso ella
+  const myEq = (S.settings.rincon || {}).equip || {};
+  const list = (opts.pets || P().room).map(x => typeof x === 'string' ? { k: x, eq: opts.equip ? opts.equip[x] : myEq[x] } : x).filter(x => allPets()[x.k]);
+  if (opts.guest && allPets()[opts.guest]) list.push({ k: opts.guest, eq: myEq[opts.guest], guest: true });
+  const pets = list.map(x => x.k);
+  const spots = petSpots(rm, pets, part, list.findIndex(x => x.guest));
   const zOf = (it, f) => f.flat ? 1 : f.wall ? 2 : 10 + Math.round(it.y + f.h);
   const html = items.map(({ it, f }) => {
     const sp = it.k === 'ventana' && night ? 'x_ventana_noche' : furnSprite(it.k);
@@ -570,7 +587,7 @@ function roomHTML(rmIn, opts) {
     const glow = night && f.glow ? `<span class="rm-glow" style="left:${pct(it.x + f.glow[0] - f.glow[2], RW)};top:${pct(it.y + f.glow[1] - f.glow[2], RH)};width:${pct(f.glow[2] * 2, RW)}"></span>` : '';
     return `<img class="pixel rm-it ${opts.sel === it.u ? 'sel' : ''}" alt="${esc(f.name)}" data-u="${it.u}" draggable="false" src="${Pix.sprite(sp, 3)}" style="left:${pct(it.x, RW)};top:${pct(it.y, RH)};width:${pct(f.w, RW)};z-index:${zOf(it, f)};${it.fl ? 'transform:scaleX(-1);' : ''}">${extra}${glow}`;
   }).join('');
-  const petHtml = spots.map((s, i) => `<img class="pixel rm-pet ${s.sleep ? 'sleep' : ''}" alt="${esc(info(s.k).name)}" src="${petImgSrc(s.k, 4)}" style="left:${pct(s.x, RW)};top:${pct(s.y, RH)};z-index:${10 + Math.round(s.z)};animation-delay:-${i * .6}s">`
+  const petHtml = spots.map((s, i) => `<span class="rm-pet ${s.sleep ? 'sleep' : ''} ${list[i].guest ? 'guest' : ''}" aria-label="${esc(info(s.k).name)}" style="left:${pct(s.x, RW)};top:${pct(s.y, RH)};z-index:${10 + Math.round(s.z)};animation-delay:-${i * .6}s">${dressed(s.k, list[i].eq, 4)}</span>`
     + (s.sleep ? `<img class="pixel rm-zz" alt="" src="${spr('zzz', 2)}" style="left:${pct(s.x + 16, RW)};top:${pct(s.y - 8, RH)}">` : '')
     + (s.notes ? `<img class="pixel rm-note" alt="" src="${spr('music', 2)}" style="left:${pct(s.x + 18, RW)};top:${pct(s.y - 10, RH)}"><img class="pixel rm-note b" alt="" src="${spr('music', 2)}" style="left:${pct(s.x - 4, RW)};top:${pct(s.y - 6, RH)}">` : '')
     + (s.eat ? `<img class="pixel rm-food" alt="" src="${spr(['cupcake', 'dona', 'fresa', 'galleta'][i % 4], 2)}" style="left:${pct(s.eat.x, RW)};top:${pct(s.eat.y, RH)};z-index:${10 + Math.round(s.z) + 1}">` : '')).join('');
