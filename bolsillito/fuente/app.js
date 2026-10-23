@@ -51,16 +51,42 @@ menta: { k: '#3f7a55', P: '#6fcf9f', p: '#c8f0dc', R: '#3fae7c', l: '#e0f7ec', L
 noche: { k: '#2f2a5a', P: '#b48cf0', p: '#ddccff', R: '#9b6be0', l: '#d6dcff', L: '#8fa4f0', V: '#6b7fd6', b: '#d6dcff', B: '#8fa4f0', y: '#ffe27a', Y: '#f5c94c', g: '#c6e8ff', G: '#7fb6e8', D: '#5a8fd0', n: '#8a7ab8', N: '#5f528f', c: '#f3f0ff', C: '#e3ddff', w: '#fffdf0', a: '#ffe27a', A: '#f5c94c' },
 chocolate: { k: '#4a2c22', P: '#d0906e', p: '#f2d0bc', R: '#b0503a', l: '#f7e6d2', L: '#dcb08a', V: '#b98660', b: '#f7e6d2', B: '#dcb08a', y: '#ffeec2', Y: '#e6b062', g: '#e3d6a8', G: '#a08a4e', D: '#7a6838', c: '#fff4e6', C: '#f0dcc2', n: '#8a5a3c', N: '#5e3a26' }
 };
-function toURL(grid, scale, over) {
+function toURL(grid, scale, over, style) {
 const H = grid.length, W = grid[0].length, s = scale || 1;
 const cv = document.createElement('canvas'); cv.width = W * s; cv.height = H * s;
 const ctx = cv.getContext('2d');
+const cols = style ? mistria(grid, over, style) : null;
 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 const c = grid[y][x]; if (!c) continue;
-ctx.fillStyle = (over && over[c]) || PAL[c] || c; ctx.fillRect(x * s, y * s, s, s);
+ctx.fillStyle = (cols && cols[y][x]) || (over && over[c]) || PAL[c] || c; ctx.fillRect(x * s, y * s, s, s);
 }
 return cv.toDataURL();
 }
+// Estilo "Mistria": sombrita abajo-derecha, brillito arriba-izquierda y (en íconos) contorno del color de su relleno.
+function hexMix(a, b, t) { const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); const A = p(a), B = p(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
+function mistria(g, over, st) {
+const H = g.length, W = g[0].length;
+const hexOf = c => { const v = (over && over[c]) || PAL[c] || c; return /^#[0-9a-f]{6}$/i.test(v) ? v : null; };
+const col = (x, y) => (x < 0 || y < 0 || x >= W || y >= H) ? null : g[y][x];
+const lum = h => { const v = parseInt(h.slice(1), 16); return (v >> 16) * .3 + ((v >> 8) & 255) * .59 + (v & 255) * .11; };
+const border = (x, y) => { const q = col(x, y); if (!q) return true; if (q !== 'k') return false; return [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => !col(x + a, y + b)); };
+const out = g.map(r => r.map(() => null));
+for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+const c = col(x, y); if (!c || c === 'k') continue; const h = hexOf(c); if (!h || lum(h) < 90) continue;
+const e = (dx, dy, n) => { for (let k = 1; k <= n; k++) { if (border(x + dx * k, y + dy * k)) return k; const q = col(x + dx * k, y + dy * k); if (q === 'k' || q !== c) return 0; } return 0; };
+const below = e(0, 1, 2), right = e(1, 0, 1), above = e(0, -1, 1), left = e(-1, 0, 1);
+if (below === 1 || (below && right)) out[y][x] = hexMix(h, '#6a3a58', st.dk);
+else if (below === 2 || right === 1) out[y][x] = hexMix(h, '#6a3a58', st.dk * .5);
+else if (above === 1 && left) out[y][x] = hexMix(h, '#ffffff', st.lt);
+}
+if (st.selout) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+if (g[y][x] !== 'k' || !border(x, y)) continue;
+for (const [a, b] of [[0, -1], [-1, 0], [1, 0], [0, 1]]) { const q = col(x + a, y + b); const h = q && q !== 'k' && hexOf(q); if (h) { out[y][x] = hexMix(h, '#4a2238', .66); break; } }
+}
+return out;
+}
+const PET_STYLE = { dk: .16, lt: .35, selout: false }, ICON_STYLE = { dk: .2, lt: .4, selout: true };
+const PETS = /^(pudin|gochi|shey|canela|lunita|lunitaBlink|maca|dony|gela|cupi|acc_.*)$/;
 const DEFS = {
 home(p) { // mushroom cottage
 p.e(8, 7.2, 7, 5.2, 'P', (i, j) => j <= 7);
@@ -200,8 +226,14 @@ const key = name + '@' + (scale || 1);
 if (cache[key]) return cache[key];
 const [base, variant] = name.split('~');
 const d = DEFS[base]; if (!d) return '';
+let url;
+if (d.raw) { // ícono dibujado a mano con sus propios colores y contorno
+const pal = d.pal.split(','); const grid = d.raw.map(r => [...r].map(ch => ch === '.' ? null : pal[parseInt(ch, 36)]));
+url = toURL(grid, scale || 1, null, null);
+} else {
 const W = d.w || 16, H = d.h || 16, fn = d.fn || d;
-const url = toURL(paint(W, H, fn), scale || 1, VARIANTS[variant]);
+url = toURL(paint(W, H, fn), scale || 1, VARIANTS[variant], d.flat ? null : (PETS.test(base) ? PET_STYLE : ICON_STYLE));
+}
 cache[key] = url; return url;
 }
 function rnd(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
@@ -396,6 +428,48 @@ window.EMOJI_TO_ICON = {
 };
 window.FEEL_ICON = { feliz: 'f_feliz', tranquila: 'f_tranquila', emocionada: 'f_emocionada', cansada: 'f_cansada', aburrida: 'f_aburrida', triste: 'f_triste', estresada: 'f_estresada', ansiosa: 'f_ansiosa' };
 window.MOOD_ICON = { genial: 'f_emocionada', bien: 'f_feliz', normal: 'f_aburrida', cansado: 'f_cansada', dificil: 'f_triste' };
+// --- Bolsillito 2026: mascotas postre nuevas, ojito cerrado e íconos de la barra dibujados a mano ---
+D('maca', p => { // macarón rosa
+  p.e(10, 14.5, 7.8, 3.8, 'p'); p.e(10, 15, 6.8, 2.6, 'r');
+  p.r(3, 11, 15, 2, 'w'); p.r(3, 12, 15, 1, 'c');
+  p.e(10, 7.6, 7.8, 4.4, 'p'); p.e(10, 7, 6.8, 3.2, 'r');
+  p.px(7, 8, 'k'); p.px(13, 8, 'k'); p.px(7, 7, 'k'); p.px(13, 7, 'k'); p.r(5, 9, 2, 1, 'P'); p.r(14, 9, 2, 1, 'P'); p.px(10, 9, 'k');
+  p.px(6, 5, 'w'); p.px(7, 4, 'w');
+}, 20, 20);
+D('dony', p => { // dona glaseada
+  p.e(10, 11, 8.6, 7, 'a'); p.e(10, 10, 8, 6, 'h');
+  p.e(10, 6.6, 2, 1.4, 'a');
+  p.px(7, 11, 'k'); p.px(13, 11, 'k'); p.px(7, 10, 'k'); p.px(13, 10, 'k'); p.r(5, 12, 2, 1, 'P'); p.r(14, 12, 2, 1, 'P'); p.px(9, 12, 'k'); p.px(11, 12, 'k'); p.px(10, 13, 'k');
+  p.px(4, 8, 'y'); p.px(15, 7, 'b'); p.px(16, 11, 'y'); p.px(6, 6, 'P'); p.px(14, 5, 'g'); p.px(5, 14, 'b'); p.px(15, 14, 'P'); p.px(5, 7, 'w');
+}, 20, 20);
+D('gela', p => { // gelatina
+  p.r(4, 17, 13, 2, 'l'); p.r(3, 18, 15, 1, 'L');
+  p.e(10, 11, 7, 7, 'r'); p.r(3, 11, 15, 7, 'r'); p.e(10, 11, 5.6, 6, 'p');
+  p.r(5, 6, 11, 1, 'w'); p.px(5, 8, 'w'); p.px(5, 9, 'w');
+  p.px(7, 11, 'k'); p.px(13, 11, 'k'); p.px(7, 10, 'k'); p.px(13, 10, 'k'); p.r(5, 13, 2, 1, 'P'); p.r(14, 13, 2, 1, 'P'); p.px(10, 13, 'k');
+  p.e(10, 2.6, 1.6, 1.6, 'R'); p.px(10, 4, 'G');
+}, 20, 20);
+D('cupi', p => { // cupcake
+  p.e(10, 8, 7, 4.6, 'h'); p.e(10, 5, 4.6, 3, 'h'); p.e(10, 2.4, 1.8, 1.6, 'R');
+  p.r(4, 12, 13, 7, 'y'); p.r(6, 12, 1, 7, 'Y'); p.r(10, 12, 1, 7, 'Y'); p.r(14, 12, 1, 7, 'Y');
+  p.px(7, 8, 'k'); p.px(13, 8, 'k'); p.px(7, 7, 'k'); p.px(13, 7, 'k'); p.r(5, 10, 2, 1, 'P'); p.r(14, 10, 2, 1, 'P'); p.px(10, 10, 'k');
+  p.px(6, 5, 'w'); p.px(7, 4, 'w');
+}, 20, 20);
+D('silueta', p => { p.e(10, 12, 7.6, 6.2, 'C'); p.e(10, 8, 5, 4, 'C'); p.map(8, 9, ['.CC.', 'C..C', '...C', '..C.', '....', '..C.']); }, 20, 20);
+
+// alitas para la evolución
+D('ojo_cerrado', p => { p.map(1, 6, ['..L.........L..', '.LLL.......LLL.', '...LLLLLLLLL...', '.....L..L..L...']); });
+
+// ---------- Mascotas postre nuevas (20x20) ----------
+Pix.define('m_inicio', { raw: ["....................",".............01.....","............0231....","........44440231....",".......455554231....",".....44555555667....","....455555588889....","..4455555888888a99..",".455555888888aaaaa9.","45555888888aaaaaaaa9",".444bccccccccccd999.","...ebfghhhhhhfgdi...","...ebjjhkllmhjjdi...","...ebhhhknnmhhhdi...","...ebhhhknnmhhhdi...","...ebhhhknnohhhdi...","...ebhhhknnmhhhdi...","..ppqqqqrrrrqqqqpp..",".pssssssssssssssssp.","..pppppppppppppppp.."], pal: '#88574f,#7c4741,#d4a072,#b3774d,#944c60,#f2849f,#a86d4b,#784340,#d17089,#7e3f52,#b86279,#fff3e0,#fff5e4,#dec9bc,#997679,#b2dbf2,#91b1cd,#fff1dc,#8c666b,#8aa0bb,#c6916d,#d4ab8e,#a56848,#b8774c,#ffe08a,#6d654c,#ceb5ab,#9c6047,#8cc56a' });
+Pix.define('m_movs', { raw: ["....................","....000000000000....","...01111111111110...","...23333333333332...","...23333333333332...","...45555555555567...","...45555555555567...","...45588599999567...","...45588555555567...","...45555555555567...","...45588599999567...","...45588555555567...","...45555555555567...","...45588599999567...","...45588555555567...","...45555555555567...","...45555555555567...","...abbbbbbbbbbbba...","....aaaaaaaaaaaa....","...................."], pal: '#996676,#ffc9d7,#96596c,#f7a6bd,#99797f,#fffaf0,#ded0cc,#8c6971,#a6d886,#c9a7a0,#86616a,#cebcb9' });
+Pix.define('m_anotar', { raw: ["....................",".......011111.......",".....0123333344.....","....023333333554....","...12333333355554...","..1333333665555554..","..1333333665555554..",".133333556655555554.",".133335556655555554.",".133566666666665578.",".135566666666665778.",".455555556655577778.",".455555556655777778.","..4555555667777778..","..455555566777799a..","...4555577777799a...","....45577777999a....",".....44777799aa.....",".......8888aa.......","...................."], pal: '#987268,#966c53,#fce7b2,#f9d87d,#956641,#f6c94c,#ffffff,#d4a648,#88593f,#bb8d45,#7f503e' });
+Pix.define('m_mes', { raw: ["....................",".....00......00.....","....0110....0110....","..2331133333311334..",".256611666666116674.",".258811888888118874.",".258888888888888874.",".9aaaaaaaaaaaaaaaa9.",".bcccccccccccccccde.",".bcccccccccccccccde.",".bccfccfccfccfcccde.",".bcccccccccccccccde.",".bccccccccc8c8cccde.",".bccfccfccf888cccde.",".bcccccccccc8ccccde.",".bccfccfccfccfcccde.",".bcccccccccccccccde.",".ghhhhhhhhhhhhhhhhg.","..gggggggggggggggg..","...................."], pal: '#75484c,#a07a6a,#955566,#965e6d,#884559,#f59caf,#f7b3bf,#d4728b,#f2849f,#824255,#c46981,#99797f,#fffaf0,#ded0cc,#8c6971,#d9c0b4,#86616a,#cebcb9' });
+Pix.define('m_journal', { raw: ["....................","...00111111111112...","..0334444444444456..","..03377777777777586.","..03377777777777586.","..03379aaaaaaab7586.","..033798ccccc8b7586.","..033798ccc888b7586.","..0337ddddddddd7586.","..03377777777777586.","..03377777777777586.","..03377777777777586.","..03377777777777586.","..03377777777777586.","..0337777777ee77586.","..0337777777ee77586.","..0337777777ee77586.","..033fffffffeefff6..","...00gggggggeeggg...","............heh....."], pal: '#8d4a5d,#976673,#8a5062,#e07d97,#fac8d1,#d88da3,#99787e,#f7a6bd,#fff6ee,#fff7ee,#fff8ef,#decdca,#e8b5c2,#ceb9b8,#ffe08a,#c88196,#844b5d,#996f58' });
+Pix.define('m_mas', { raw: ["....................","....................","......01111111......","....012333333344....","...12333333335554...","..1333333335555554..",".133333335555555554.",".133333555555555554.",".133335555555555554.",".133677556775567754.",".455777557775577789.",".455777557775577789.",".455555555555888889.",".4555555555888888ab.","..4555555888888aab..","...45558888888aab...","....44888888aabb....","......999999bb......","....................","...................."], pal: '#99787c,#99777a,#fff7e8,#fff4e2,#997678,#fff1dc,#f28aac,#c4506f,#dbc5b8,#8b656a,#c0a59e,#815960' });
+Pix.define('m_billetera', { raw: ["....................","....................","....011111112.......","...03444444452......","..6637777777566666..",".688999999999888886.",".688888888888888886.",".abccccccccccccccde.",".abccccccccccccccde.",".abccccccccfggggghi.",".abccccccccfjkljjhi.",".abccccccccfjlljjhi.",".abccccccccfjlmjjhi.",".abccccccccnnnnnnno.",".abccccccccccccccde.",".abccccccccccccccde.",".pqqqqqqqqqqqqqqqqp.","..pppppppppppppppp..","....................","...................."], pal: '#7e6f5f,#857167,#715f51,#b8df9b,#cae6b0,#97b577,#8e5a4c,#a6d886,#e3a96a,#8fa46f,#88574f,#d4a072,#c98a52,#b3774d,#7c4741,#b98662,#cba386,#985c3e,#723d3c,#a8693f,#f9d87d,#f6c94c,#d4a648,#91563e,#6f3b3c,#784340,#a86d4b' });
+Pix.define('m_ojo', { raw: ["....................","....................","....................","....................",".....0011111111.....","...01223333333344...","..1233333553666664..",".133333755588666664.","13333335569886666664","133366559aaa88666664","46666688aaabcc66ddde","466666688bfccdddddde",".46666688cccgddddhe.","..466666dcgdddhhhi..","...44ddddddhhhhii...",".....eeeeeeiiii.....","....................","....................","....................","...................."], pal: '#997a81,#997b83,#fffcf6,#fffefb,#997b85,#a5cae9,#ffffff,#cee0ec,#7fb6e6,#767f9d,#3b4a7a,#42436c,#7797c0,#dbd0d4,#8b6975,#473e62,#7181a5,#c0aeb4,#815c68' });
+Pix.define('m_estrellita', { raw: ["....................","....................",".........00.........","........0110........","........2332........",".......233332.......","......22333322......","..0222333333332244..",".013333333333333554.","..0333333333333554..","...23336333365554...","....233733337554....",".....2333885554.....",".....2333555559.....","....233555555aa9....","....2355544aaaa9....","....45554..9aaa9....","....4544....99a9....",".....4........9.....","...................."], pal: '#976e53,#fbdc7c,#966940,#f9cf4a,#895b3f,#d6ab46,#ffffff,#3b2230,#e07d97,#80513e,#bd9044' });
 })();
 ;
 (function () {
@@ -551,7 +625,7 @@ if (!this.downloads) throw { code: 'unavailable' };
 return this.downloads.save({ filename, data });
 }
 };
-window.Store = Store;
+window.Store = Store; if (window.__offline) window.__offline(Store);
 })();
 ;
 (function () {
@@ -658,6 +732,7 @@ if (!fmtCache || fmtCache.cur !== cur) {
 fmtCache = { cur, f: new Intl.NumberFormat('es-EC', { style: 'currency', currency: cur, minimumFractionDigits: 2, maximumFractionDigits: 2 }), f0: new Intl.NumberFormat('es-EC', { style: 'currency', currency: cur, maximumFractionDigits: 0 }) };
 }
 const v = Math.round((n || 0) * 100) / 100;
+if (S.priv && !(opts && opts.real)) return '$••••';
 const s = (opts && opts.short && Math.abs(v) >= 1000 ? fmtCache.f0 : fmtCache.f).format(Math.abs(v));
 if (opts && opts.sign) return (v < 0 ? '−' : v > 0 ? '+' : '') + s;
 return (v < 0 ? '−' : '') + s;
@@ -697,7 +772,7 @@ const TXC = { // light / night
 cristal: ['#ffffff', 'rgba(84,56,66,.9)'], salvia: ['#e4f4cf', '#3d5232'], mantequilla: ['#fff6c4', '#5c5134'],
 durazno: ['#ffe6da', '#5e4140'], rosa: ['#ffe0ea', '#5d3550'], celeste: ['#def2fc', '#2f4a6b'], lila: ['#ece6fd', '#463a78']
 };
-const BASE_MAP = { home: 'apple', tx: 'list', add: 'plus', month: 'month', journal: 'book', more: 'more', year: 'year', goals: 'goal', recurring: 'repeat', rules: 'crystal', projections: 'sparkle', settings: 'gear', appearance: 'flower', plan: 'pudin', data: 'heart', rincon: 'gochi', tienda: 'gift', shey: 'shey' };
+const BASE_MAP = { home: 'm_inicio', wallet: 'm_billetera', tx: 'm_movs', add: 'm_anotar', month: 'm_mes', journal: 'm_journal', more: 'm_mas', loans: 'billetera_digital', cuotas: 'tarjeta', year: 'year', goals: 'goal', recurring: 'repeat', rules: 'crystal', projections: 'sparkle', settings: 'gear', appearance: 'flower', plan: 'pudin', data: 'heart', rincon: 'gochi', tienda: 'gift', shey: 'shey' };
 const packOf = v => Object.fromEntries(Object.entries(BASE_MAP).map(([k, n]) => [k, 's:' + n + (v ? '~' + v : '')]));
 const PACKS = {
 pixel: { name: 'Pixel Meffy', free: true, map: packOf('') },
@@ -707,10 +782,10 @@ noche: { name: 'Pixel noche', map: packOf('noche') },
 chocolate: { name: 'Pixel chocolate', map: packOf('chocolate') }
 };
 const PAGES = {
-home: 'Inicio', tx: 'Movimientos', month: 'Mes', journal: 'Journal', more: 'Más', year: 'Año', goals: 'Metas', recurring: 'Fijos', rules: 'Reglas',
+home: 'Inicio', wallet: 'Billetera', loans: 'Me deben / Debo', acctd: 'Cuenta', tx: 'Movimientos', month: 'Mes', journal: 'Journal', more: 'Más', year: 'Año', goals: 'Metas', recurring: 'Fijos', rules: 'Reglas',
 projections: 'Proyecciones', settings: 'Cuentas y categorías', appearance: 'Apariencia', plan: 'Meffy+', data: 'Mi perfil'
 };
-const S = { settings: null, fin: null, tx: [], route: 'home', month: ym(today()), filters: { q: '', type: 'all', cat: 'all', acct: 'all', month: 'all' } };
+const S = { priv: (() => { try { return localStorage.getItem('bolsillito:priv') === '1'; } catch (e) { return false; } })(), settings: null, fin: null, tx: [], route: 'home', month: ym(today()), filters: { q: '', type: 'all', cat: 'all', acct: 'all', month: 'all' } };
 function defaults() {
 const groups = [
 { id: 'ing', name: 'Ingresos', color: '#fff09a', kind: 'income' },
@@ -808,12 +883,15 @@ for (const t of S.tx) {
 if (t.type === 'income' && t.acct === id) b += t.amount;
 else if (t.type === 'expense' && t.acct === id) b -= t.amount;
 else if (t.type === 'transfer') { if (t.acct === id) b -= t.amount; if (t.to === id) b += t.amount; }
+else if (t.type === 'loan_out' && t.acct === id) b -= t.amount;
+else if (t.type === 'loan_in' && t.acct === id) b += t.amount;
 }
 return b;
 }
 function netWorth(withAssets) {
 let n = S.fin.accounts.reduce((s, a) => s + acctBalance(a.id), 0);
 if (withAssets) n += S.fin.assets.reduce((s, a) => s + (Number(a.value) || 0), 0);
+(S.fin.loans || []).forEach(l => { const left = Math.max(0, (+l.amount || 0) - (+l.paid || 0)); n += l.dir === 'out' ? -left : left; });
 return n;
 }
 const txIn = k => S.tx.filter(t => ym(t.date) === k);
@@ -920,11 +998,11 @@ let toastT;
 function toast(msg) {
 $$('.toast').forEach(n => n.remove()); clearTimeout(toastT);
 const n = document.createElement('div'); n.className = 'toast'; n.textContent = msg; n.setAttribute('role', 'status'); document.body.appendChild(n);
-toastT = setTimeout(() => n.remove(), 2600);
+toastT = setTimeout(() => { n.classList.add('out'); setTimeout(() => n.remove(), 320); }, 2400);
 }
 let sheetClose = null;
 function openSheet(title, html, mount, opts) {
-const scrim = $('#scrim'), sh = $('#sheet');
+const scrim = $('#scrim'); const sh0 = $('#sheet'); const sh = sh0.cloneNode(false); sh0.replaceWith(sh);
 sh.innerHTML = `<div class="grab"></div><div class="sheet-h"><h2>${esc(title)}</h2><button class="iconbtn" data-x aria-label="Cerrar">✕</button></div><div class="sheet-b">${html}</div>`;
 scrim.hidden = false; scrim.classList.toggle('jsheet', !!(opts && opts.paper));
 sheetClose = opts && opts.onClose;
@@ -984,14 +1062,15 @@ if (!b || b.hidden) return '';
 const src = b.img ? esc(b.img) : Pix.banner(b.preset || 'noche');
 return `<div class="banner"><img class="bg ${b.img ? '' : 'pixel'}" alt="" src="${src}"><button class="iconbtn edit" data-act="banner" data-k="${key}" aria-label="Cambiar banner">${px('pic', 22)}</button>${inner || ''}</div>`;
 }
+function privBtn(cls) { return `<button class="iconbtn priv ${cls || ''}" data-act="privacy" aria-pressed="${!!S.priv}" aria-label="${S.priv ? 'Mostrar las cifras' : 'Ocultar las cifras'}">${px(S.priv ? 'ojo_cerrado' : 'm_ojo', 26)}</button>`; }
 function header(key, right) {
 return `<div class="ph"><div class="ph-left"><span class="pill">${esc(PAGES[key])}</span><button class="ph-icon" data-act="pageicon" data-k="${key}" aria-label="Cambiar icono de ${esc(PAGES[key])}">${iconHTML(pageIcon(key), 34)}</button></div>${right || ''}</div>`;
 }
-const NAV = ['home', 'tx', 'add', 'month', 'journal', 'more'];
+const NAV = ['home', 'wallet', 'add', 'month', 'journal', 'more'];
 function renderNav() {
 $('#navIn').innerHTML = NAV.map(k => k === 'add'
 ? `<button class="fab" data-act="quickadd" aria-label="Registrar movimiento"><span class="ni">${iconHTML(pageIcon('add'), 30)}</span><span>Anotar</span></button>`
-: `<button data-go="${k}" ${S.route === k || (k === 'more' && !NAV.includes(S.route)) ? 'aria-current="page"' : ''}><span class="ni">${iconHTML(pageIcon(k), 32)}</span><span>${PAGES[k]}</span></button>`).join('');
+: `<button data-go="${k}" ${S.route === k || (k === 'wallet' && ['acctd', 'loans'].includes(S.route)) || (k === 'more' && !NAV.includes(S.route) && !['acctd', 'loans'].includes(S.route)) ? 'aria-current="page"' : ''}><span class="ni">${iconHTML(pageIcon(k), 32)}</span><span>${PAGES[k]}</span></button>`).join('');
 }
 function go(route) {
 if (route !== S.route && S.route === 'journal' && window.Journal) Journal.leave();
@@ -1014,9 +1093,9 @@ return `<div class="example-note"><span>Estás viendo datos de ejemplo para que 
 }
 function txRow(t) {
 const c = cat(t.cat); const a = acct(t.acct); const to = acct(t.to);
-const cls = t.type === 'income' ? 'income' : t.type === 'transfer' ? 'transfer' : t.recurring ? 'recurring' : '';
-const amt = t.type === 'income' ? `<span class="amt pos num">+${money(t.amount)}</span>` : t.type === 'transfer' ? `<span class="amt num">${money(t.amount)}</span>` : `<span class="amt num">−${money(t.amount)}</span>`;
-const sub = t.type === 'transfer' ? `${esc(a ? a.name : '?')} → ${esc(to ? to.name : '?')}` : `${esc(c ? c.name : 'Sin categoría')}${a ? ' · ' + esc(a.name) : ''}`;
+const cls = (t.type === 'income' || t.type === 'loan_in') ? 'income' : t.type === 'transfer' ? 'transfer' : t.recurring ? 'recurring' : '';
+const amt = (t.type === 'income' || t.type === 'loan_in') ? `<span class="amt pos num">+${money(t.amount)}</span>` : t.type === 'transfer' ? `<span class="amt num">${money(t.amount)}</span>` : `<span class="amt num">−${money(t.amount)}</span>`;
+const sub = t.type === 'transfer' ? `${esc(a ? a.name : '?')} → ${esc(to ? to.name : '?')}` : (t.type === 'loan_in' || t.type === 'loan_out') ? `Préstamo${a ? ' · ' + esc(a.name) : ''}` : `${esc(c ? c.name : 'Sin categoría')}${a ? ' · ' + esc(a.name) : ''}`;
 return `<button class="li ${cls}" data-act="edittx" data-id="${t.id}"><span class="ic">${iconHTML(t.type === 'transfer' ? 's:ui_transfer' : (c ? c.icon : 's:moneda'), 28)}</span><span class="tx-main"><b>${esc(t.note || (c ? c.name : 'Movimiento'))}</b><span>${sub}${t.feel && A_feels() && A_feels()[t.feel] ? ' · ' + A_feels()[t.feel].e : ''}${t.example ? ' · ejemplo' : ''}</span></span>${amt}</button>`;
 }
 screens.home = () => {
@@ -1028,12 +1107,12 @@ const perDay = Math.max(0, (budget - spent + todaySpent) / dLeft);
 const leftToday = perDay - todaySpent;
 const hr = new Date().getHours(); const hi = hr < 12 ? 'Buenos días' : hr < 19 ? 'Buenas tardes' : 'Buenas noches';
 const mascot = st.mascotOn ? `<button class="mascot" data-act="mascot" aria-label="Ale te da un consejo">${st.mascot && st.mascot.startsWith('i:') ? `<img alt="" src="${esc(st.mascot.slice(2))}">` : ((st.mascot || 's:pudin') === 's:pudin' && window.App && App.wear ? App.wear('ale', { scale: 4 }) : `<img class="pixel" alt="" src="${Pix.sprite((st.mascot || 's:pudin').slice(2), 4)}">`)}</button><div class="bubble" id="bubble">${esc(tip())}</div>` : '';
-const banner = bannerHTML('home', `<div class="greet">${hi}${st.name ? ', ' + esc(st.name) : ''} ✦<small>${cap(new Date().toLocaleDateString('es-EC', { weekday: 'long', day: 'numeric', month: 'long' }))}</small></div>${mascot}`);
+const banner = bannerHTML('home', `<div class="greet">${hi}${st.name ? ', ' + esc(st.name) : ''} ✦<small>${cap(new Date().toLocaleDateString('es-EC', { weekday: 'long', day: 'numeric', month: 'long' }))}</small></div>${mascot}${privBtn('onbanner')}`);
 const recent = S.tx.slice(0, 5);
 const withA = st.assetsInNet !== false;
 const upcoming = S.fin.recurring.filter(r => r.active).sort((a, b) => a.next.localeCompare(b.next)).slice(0, 3);
 return `
-${banner || header('home')}
+${banner || header('home', privBtn())}
 ${window.App && App.newsCard ? App.newsCard() : ''}
 ${exampleNote()}
 ${window.App && App.aleCard ? App.aleCard() : ''}
@@ -1044,26 +1123,8 @@ ${window.App && App.aleCard ? App.aleCard() : ''}
 ${A_rincon()}
 ${window.App && App.sheyReady && App.sheyReady() ? `<button class="card row" data-go="shey" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer;background:#f4edff;border-color:#e2d4fb"><img class="pixel" alt="" src="${Pix.sprite('shey', 3)}" style="width:48px;height:48px"><div style="flex:1"><b>Shey te espera</b> ${px('alerta', 16)}<div class="faint">${esc(App.sheyMsg())}</div></div></button>` : ''}
 <section class="stack">
-<div class="ph"><span class="pill sm">Movimientos recientes</span><button class="btn sm" data-act="quickadd">Nuevo +</button></div>
-<div class="list">${recent.length ? recent.map(txRow).join('') : '<div class="empty">Aún no anotas nada. Toca “Anotar” abajo para tu primer movimiento.</div>'}</div>
-${S.tx.length > 5 ? '<button class="btn ghost sm" data-go="tx" style="align-self:center">Ver todos →</button>' : ''}
-</section>
-<section class="stack">
-<div class="ph"><span class="pill sm">Patrimonio</span><div class="seg" style="min-width:190px"><button data-act="assetsToggle" data-v="0" aria-pressed="${!withA}">Sin activos</button><button data-act="assetsToggle" data-v="1" aria-pressed="${withA}">Con activos</button></div></div>
-<div class="card row" style="gap:14px"><img class="pixel" alt="" src="${Pix.sprite('gem', 4)}" style="width:52px;height:52px"><div><div class="big num">${money(netWorth(withA))}</div><div class="faint">Lo que tienes menos lo que debes</div></div></div>
-</section>
-<section class="stack">
-<div class="ph"><span class="pill sm">Billetera</span><button class="btn sm" data-act="newacct">Agregar +</button></div>
-${S.fin.accounts.length ? walletHTML(a => { const b = acctBalance(a.id); return `<button class="acct" data-act="editacct" data-id="${a.id}" style="width:100%;background:none;border:0;border-bottom:1px dashed var(--glass-line);text-align:left;color:inherit;font:inherit;cursor:pointer"><span class="ic">${iconHTML(a.icon, 32)}</span><span class="n">${esc(a.name)}<small>${esc(typeName(a.type))}${a.liability && a.due ? ' · paga el día ' + a.due : ''}</small></span><b class="num ${b < 0 ? 'neg' : ''}">${money(b)}</b></button>`; }) : '<div class="card empty">Agrega tu efectivo, bancos, tarjetas y cuentas virtuales.</div>'}
-</section>
-<section class="stack">
-<div class="ph"><span class="pill sm">Metas de ahorro</span><button class="btn sm" data-go="goals">Ver</button></div>
-<div class="card stack">${S.fin.goals.slice(0, 3).map(goalMini).join('') || '<div class="empty">Crea tu primera meta en “Metas”.</div>'}</div>
-</section>
-${upcoming.length ? `<section class="stack"><div class="ph"><span class="pill sm">Próximos pagos</span><button class="btn sm" data-go="recurring">Ver</button></div><div class="list">${upcoming.map(r => `<div class="li recurring"><span class="ic">${iconHTML((cat(r.cat) || {}).icon || 's:repeat', 28)}</span><span class="tx-main"><b>${esc(r.name)}</b><span>${fmtDate(r.next)} · ${esc(r.freq)}</span></span><span class="amt num ${r.type === 'income' ? 'pos' : ''}">${r.type === 'income' ? '+' : '−'}${money(r.amount)}</span></div>`).join('')}</div></section>` : ''}
-<section class="stack">
-<div class="ph"><span class="pill sm">Activos</span><button class="btn sm" data-act="newasset">Agregar +</button></div>
-<div class="card">${S.fin.assets.map(a => `<button class="acct" style="width:100%;background:none;border:0;border-bottom:1px dashed var(--glass-line);text-align:left" data-act="editasset" data-id="${a.id}"><span class="ic">${iconHTML(a.icon, 32)}</span><span class="n">${esc(a.name)}<small>Valor estimado</small></span><b class="num">${money(a.value)}</b></button>`).join('') || '<div class="empty">No tienes activos anotados.</div>'}</div>
+<div class="ph"><span class="pill sm">Movimientos</span><button class="btn sm" data-act="quickadd">Nuevo +</button></div>
+${txListBody()}
 </section>`;
 };
 function A_feels() { return window.App && App.FEELS; }
@@ -1082,16 +1143,13 @@ const g = S.fin.goals[0]; if (g && g.target) tips.push(`Te falta ${money(g.targe
 tips.push('Decora tu journal de hoy ✿'); tips.push('Soy Ale y cuido tu dinerito ✦');
 return tips[Math.floor(Math.random() * tips.length)];
 }
-screens.tx = () => {
+function txListBody() {
 const f = S.filters; const months = [...new Set(S.tx.map(t => ym(t.date)))].sort().reverse();
 let list = S.tx.filter(t => (f.type === 'all' || t.type === f.type) && (f.cat === 'all' || t.cat === f.cat) && (f.acct === 'all' || t.acct === f.acct || t.to === f.acct) && (f.month === 'all' || ym(t.date) === f.month));
 if (f.q) { const q = f.q.toLowerCase(); list = list.filter(t => (t.note || '').toLowerCase().includes(q) || ((cat(t.cat) || {}).name || '').toLowerCase().includes(q)); }
 const groups = {}; list.forEach(t => (groups[t.date] = groups[t.date] || []).push(t));
 const tot = { in: incomeOf(list), out: spentOf(list, { withSaving: true }) };
-return `
-${bannerHTML('tx') || ''}
-${header('tx', '<button class="btn sm" data-act="quickadd">Nuevo +</button>')}
-<div class="card stack">
+return `<div class="card stack">
 <input class="in" id="fq" placeholder="Buscar por nota o categoría" value="${esc(f.q)}" type="search">
 <div class="seg"><button data-f="type" data-v="all" aria-pressed="${f.type === 'all'}">Todo</button><button data-f="type" data-v="expense" aria-pressed="${f.type === 'expense'}">Gastos</button><button data-f="type" data-v="income" aria-pressed="${f.type === 'income'}">Ingresos</button><button data-f="type" data-v="transfer" aria-pressed="${f.type === 'transfer'}">Transf.</button></div>
 <div class="formgrid">
@@ -1102,9 +1160,14 @@ ${header('tx', '<button class="btn sm" data-act="quickadd">Nuevo +</button>')}
 <div class="row between faint"><span>${list.length} movimientos</span><span class="num"><span class="pos">+${money(tot.in)}</span> · <span class="neg">−${money(tot.out)}</span></span></div>
 </div>
 <div class="list">${Object.keys(groups).length ? Object.entries(groups).map(([d, items]) => `<div class="dayhead"><span>${fmtDate(d)}</span><span class="num">${money(items.reduce((s, t) => s + (t.type === 'income' ? t.amount : t.type === 'expense' ? -t.amount : 0), 0), { sign: true })}</span></div>${items.map(txRow).join('')}`).join('') : '<div class="card empty">No hay movimientos con estos filtros.</div>'}</div>`;
-};
+}
+screens.tx = () => `
+${bannerHTML('tx') || ''}
+${header('tx', '<button class="btn sm" data-act="quickadd">Nuevo +</button>')}
+${txListBody()}`;
+after.home = el => after.tx(el);
 after.tx = el => {
-const f = S.filters;
+const f = S.filters; if (!$('#fq', el)) return;
 $('#fq', el).oninput = e => { f.q = e.target.value; const pos = e.target.selectionStart; render(); const n = $('#fq'); n.focus(); n.setSelectionRange(pos, pos); };
 $('#fmonth', el).onchange = e => { f.month = e.target.value; render(); };
 $('#facct', el).onchange = e => { f.acct = e.target.value; render(); };
@@ -1325,8 +1388,9 @@ const act = a.dataset.act; const fn = ACTIONS[act]; if (fn) fn(a, e);
 });
 document.addEventListener('click', e => { const f = e.target.closest('[data-f]'); if (f && !e.target.closest('.sheet')) { S.filters[f.dataset.f] = f.dataset.v; render(); } });
 const ACTIONS = {
+privacy: () => { S.priv = !S.priv; try { localStorage.setItem('bolsillito:priv', S.priv ? '1' : '0'); } catch (e) {} render(); },
 quickadd: () => quickAdd(),
-edittx: a => quickAdd(S.tx.find(t => t.id === a.dataset.id)),
+edittx: a => { const t = S.tx.find(x => x.id === a.dataset.id); if (t && /^loan_/.test(t.type)) return go('loans'); quickAdd(t); },
 banner: a => pickBanner(a.dataset.k),
 pageicon: a => pickIcon(pageIcon(a.dataset.k), v => { S.settings.navIcons[a.dataset.k] = v; saveSettings(); renderNav(); render(); }, { title: 'Icono de ' + PAGES[a.dataset.k] }),
 assetsToggle: a => { S.settings.assetsInNet = a.dataset.v === '1'; saveSettings(); render(); },
@@ -1417,7 +1481,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) Store
 function applyThemeEarly() { /* CSS defaults already paint the sky */ }
 window.App = {
 start, S, $, $$, esc, uid, pad, ymd, parseYmd, addDays, today, ym, MONTHS, MON3, DOW, dowIdx, cap, monthLabel, addMonths, daysIn, isoWeek, weekStart,
-money, iconHTML, px, pageIcon, render, renderNav, go, toast, openSheet, closeSheet, pickIcon, pickBanner, plusPitch, bannerHTML, header, txRow, txOnDay, spentOf, incomeOf,
+money, iconHTML, px, pageIcon, privBtn, txListBody, render, renderNav, go, toast, openSheet, closeSheet, pickIcon, pickBanner, plusPitch, bannerHTML, header, txRow, txOnDay, spentOf, incomeOf,
 cat, acct, group, acctBalance, ACCT_TYPES, WALLET, typeName, walletHTML, netWorth, budgetExpenses, budgetIncome, byCat, txIn, isSaving, isPlus, saveSettings, saveFin, saveTxMonths, applyTheme, nextDate, quickAdd,
 THEMES, FONTS, TXC, PACKS, PAGES, EMOJI, SYMBOLS, screens, after, ACTIONS, goalMini, fmtDate, clearExamples, evalExpr, addTx,
 editCategory: (...a) => App._editCategory(...a)
@@ -1563,16 +1627,17 @@ $('#stDef', el).onchange = e => { S.settings.defaultAcct = e.target.value; A.sav
 function editAccount(id) {
 const a = id ? A.acct(id) : { id: uid(), name: '', type: 'ahorro', icon: 's:banco', start: 0 };
 if (a.type === 'banco') a.type = 'ahorro';
+const movOf = () => { let m = 0; for (const t of S.tx) { const v = Number(t.amount) || 0; if (t.type === 'income' && t.acct === a.id) m += v; else if (t.type === 'expense' && t.acct === a.id) m -= v; else if (t.type === 'transfer') { if (t.acct === a.id) m -= v; if (t.to === a.id) m += v; } } return m; }; const curBal = () => Math.round(((Number(a.start) || 0) + movOf()) * 100) / 100;
 const defIcon = t => (A.ACCT_TYPES.find(x => x[0] === t) || [, , 's:banco'])[2];
 const draw = () => openSheet(id ? 'Editar cuenta' : 'Nueva cuenta', `<div class="formgrid">
 <div class="full row" style="gap:12px"><button class="iconbtn" id="aI" type="button" style="width:64px;height:64px" aria-label="Cambiar icono">${iconHTML(a.icon, 44)}</button><span class="faint">Toca el icono para cambiarlo. Puedes subir el logo de tu banco o app.</span></div>
 <label class="f full">Nombre<input class="in" id="aN" value="${esc(a.name)}" placeholder="Ej. Banco de ahorros, Peigo, PayPal" autofocus></label>
 <label class="f full">Tipo<select class="in" id="aT">${A.ACCT_TYPES.map(([v, l]) => `<option value="${v}" ${a.type === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
-<label class="f">${id ? 'Saldo inicial' : 'Saldo de hoy'}<input class="in" id="aS" type="number" inputmode="decimal" step="0.01" value="${a.start}"></label>
+<label class="f">Saldo de hoy<input class="in" id="aS" type="number" inputmode="decimal" step="0.01" value="${curBal()}"></label>
 <label class="f">Día de pago (deudas)<input class="in" id="aD" type="number" min="1" max="31" value="${a.due || ''}"></label>
 <p class="faint full" style="margin:0">Para tarjetas de crédito y préstamos, escribe lo que debes en negativo (ej. −120).</p>
 <div class="full row">${id ? '<button class="btn danger" id="aDel">Borrar</button>' : ''}<button class="btn pink" id="aOk" style="flex:1;justify-content:center">Guardar</button></div></div>`, sh => {
-const read = () => { a.name = $('#aN').value.trim(); a.type = $('#aT').value; a.start = +$('#aS').value || 0; a.due = +$('#aD').value || undefined; a.liability = ['tarjeta', 'prestamo'].includes(a.type); };
+const read = () => { a.name = $('#aN').value.trim(); a.type = $('#aT').value; a.start = Math.round(((+$('#aS').value || 0) - movOf()) * 100) / 100; a.due = +$('#aD').value || undefined; a.liability = ['tarjeta', 'prestamo'].includes(a.type); };
 $('#aT', sh).onchange = () => { const wasDef = A.ACCT_TYPES.some(x => x[2] === a.icon); read(); if (wasDef) { a.icon = defIcon(a.type); $('#aI', sh).innerHTML = iconHTML(a.icon, 44); } };
 $('#aI', sh).onclick = () => { read(); A.pickIcon(a.icon, v => { a.icon = v; draw(); }, { upload: true, title: 'Icono de la cuenta' }); };
 $('#aOk', sh).onclick = () => { read(); if (!a.name) return toast('Ponle un nombre'); if (!S.fin.accounts.includes(a)) S.fin.accounts.push(a); A.saveFin(); closeSheet(); rerender(); };
@@ -1639,7 +1704,7 @@ return `${A.header('appearance')}
 <div class="card"><h3>Pack de iconos</h3><div class="stack">${Object.entries(A.PACKS).map(([id, p]) => `<button class="li" data-act="pack" data-v="${id}" style="${st.pack === id ? 'outline:2.5px solid var(--navy)' : ''}"><span class="tx-main"><b>${esc(p.name)} ${p.free || A.isPlus() ? '' : '<span class="tag gold">Meffy+</span>'}</b></span><span class="row" style="gap:4px">${['home', 'tx', 'month', 'journal', 'more'].map(k => iconHTML(p.map[k], 26)).join('')}</span></button>`).join('')}</div>
 <p class="faint">También puedes tocar el icono al lado del título de cada página para cambiarlo uno por uno.</p>
 <div class="row" style="flex-wrap:wrap">${['home', 'tx', 'add', 'month', 'journal', 'more'].map(k => `<button class="btn sm" data-act="pageicon" data-k="${k}">${iconHTML(A.pageIcon(k), 20)} ${esc(k === 'add' ? 'Botón anotar' : A.PAGES[k])}</button>`).join('')}${Object.keys(st.navIcons || {}).length ? '<button class="btn ghost sm" data-act="resetIcons">Volver al pack</button>' : ''}</div></div>
-<div class="card"><h3>Banners</h3><div class="stack">${['home', 'tx', 'month', 'year', 'goals'].map(k => { const b = st.banners[k] || {}; return `<button class="li" data-act="banner" data-k="${k}"><span class="tx-main"><b>${esc(A.PAGES[k])}</b><span>${b.hidden ? 'Oculto' : b.img ? 'Imagen propia' : esc((Pix.BANNERS[b.preset] || {}).name || '—')}</span></span>${b.hidden ? '' : `<img alt="" class="${b.img ? '' : 'pixel'}" src="${b.img ? esc(b.img) : Pix.banner(b.preset || 'noche')}" style="width:96px;height:37px;object-fit:cover;border-radius:8px">`}</button>`; }).join('')}</div></div>
+<div class="card"><h3>Banners</h3><div class="stack">${['home', 'wallet', 'month', 'year', 'goals'].map(k => { const b = st.banners[k] || {}; return `<button class="li" data-act="banner" data-k="${k}"><span class="tx-main"><b>${esc(A.PAGES[k])}</b><span>${b.hidden ? 'Oculto' : b.img ? 'Imagen propia' : esc((Pix.BANNERS[b.preset] || {}).name || '—')}</span></span>${b.hidden ? '' : `<img alt="" class="${b.img ? '' : 'pixel'}" src="${b.img ? esc(b.img) : Pix.banner(b.preset || 'noche')}" style="width:96px;height:37px;object-fit:cover;border-radius:8px">`}</button>`; }).join('')}</div></div>
 <div class="card"><h3>Mascota</h3>
 <div class="setrow"><span>Mostrar a Ale en Inicio</span><span class="toggle"><input type="checkbox" id="mOn" ${st.mascotOn ? 'checked' : ''}><span></span></span></div>
 <div class="row" style="flex-wrap:wrap;margin-top:8px"><button class="btn sm" data-act="mascotPick">${iconHTML(st.mascot, 24)} Cambiar mascota</button><button class="btn sm" data-act="donutPick">Centro de la dona ${A.isPlus() ? '' : '<span class="tag gold">Meffy+</span>'}</button></div></div>
@@ -2469,14 +2534,14 @@ $('#tbUndo').onclick = undo; $('#tbRedo').onclick = redo;
 $('#tbNight').onclick = () => { J.night = !J.night; draw(); };
 el.querySelector('.toolbar').addEventListener('click', e => { const b = e.target.closest('[data-tool]'); if (b) onTool(b.dataset.tool); });
 draw();
-if (!J.resizeBound) { J.resizeBound = true; addEventListener('resize', () => { if (S.route === 'journal') draw(); }); }
+if (!J.resizeBound) { J.resizeBound = true; let jW = innerWidth; addEventListener('resize', () => { if (S.route !== 'journal') return; const ae = document.activeElement; if (ae && ae.isContentEditable) return; if (Math.abs(innerWidth - jW) < 2) return; jW = innerWidth; draw(); }); }
 }
 function leave() { Store.flush && J.key && Store.docs['jr-' + J.key] && Store.flush('jr-' + J.key); J.sel = null; J.editing = null; J.tool = null; }
 function setHint(t) { const h = $('#jHint'); if (h) h.textContent = t || ''; }
 function setTool(t) {
 J.tool = J.tool === t ? null : t;
 $$('.toolbar [data-tool]').forEach(b => b.setAttribute('aria-pressed', b.dataset.tool === J.tool || (b.dataset.tool === 'view' && J.lock)));
-$$('.page').forEach(p => p.classList.toggle('drawing', J.tool === 'pen' || J.tool === 'eraser'));
+$$('.page').forEach(p => { p.classList.toggle('drawing', J.tool === 'pen' || J.tool === 'eraser'); p.classList.toggle('texting', J.tool === 'text'); });
 setHint(J.tool === 'text' ? 'Toca la página donde quieras escribir.' : J.tool === 'pen' ? 'Dibuja con el dedo o el mouse. Toca ✏️ otra vez para soltar el lápiz.' : J.tool === 'eraser' ? 'Pasa sobre los trazos para borrarlos.' : J.lock ? 'Modo solo ver: no se puede mover nada.' : '');
 }
 function draw() {
@@ -2497,7 +2562,7 @@ return `<div class="pagebox" style="width:${PW * J.scale}px;height:${PH * J.scal
 const total = J.doc.pages.length; const step = J.pagesShown;
 $('#jDots').innerHTML = Array.from({ length: Math.ceil(total / step) }, (_, k) => `<button aria-label="Página ${k * step + 1}" aria-current="${Math.floor(J.page / step) === k}" data-jp="${k * step}"></button>`).join('') + `<button aria-label="Agregar página" data-addpage style="width:auto;height:auto;background:none;font-weight:900;color:var(--ink)">＋</button>`;
 $('#jWeek').textContent = `Semana ${J.key.split('-W')[1]} · ${ds[0].getDate()} ${A.MON3[ds[0].getMonth()].toLowerCase()} – ${ds[6].getDate()} ${A.MON3[ds[6].getMonth()].toLowerCase()}`;
-$$('.page', wrap).forEach(pg => { bindPage(pg); paintInk(pg); });
+$$('.page', wrap).forEach(pg => { bindPage(pg); paintInk(pg); pg.classList.toggle('act', J.pagesShown === 2 && +pg.dataset.pi === actIdx()); });
 $$('[data-jp]').forEach(b => b.onclick = () => { J.page = +b.dataset.jp; J.sel = null; draw(); });
 $$('[data-addpage]').forEach(b => b.onclick = () => addPageSheet());
 const jy = $('[data-jy]', wrap), jm = $('[data-jm]', wrap), jt = $('[data-jt]', wrap);
@@ -2505,7 +2570,7 @@ if (jy) jy.onclick = jumpSheet; if (jm) jm.onclick = jumpSheet; if (jt) jt.oncli
 $$('[data-jk]', wrap).forEach(b => b.onclick = () => { leave(); J.key = b.dataset.jk; J.page = 0; render(root); });
 if (!two && !wrap._sw) { wrap._sw = true; bindSwipe(wrap); }
 $$('.toolbar [data-tool]').forEach(b => b.setAttribute('aria-pressed', b.dataset.tool === J.tool || (b.dataset.tool === 'view' && J.lock)));
-$$('.page').forEach(p => p.classList.toggle('drawing', J.tool === 'pen' || J.tool === 'eraser'));
+$$('.page').forEach(p => { p.classList.toggle('drawing', J.tool === 'pen' || J.tool === 'eraser'); p.classList.toggle('texting', J.tool === 'text'); });
 updateUndo(); showElbar();
 }
 function pageBg(p) { return J.night ? '#2b2742' : (p.bg || '#fffaf3'); }
@@ -2590,9 +2655,9 @@ if (e.k === 'habito') return `<div class="el-habit">${t}<div class="cells check"
 if (e.k === 'animo') return `<div class="el-habit">${t}<div class="cells mood">${['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((d, i) => `<button data-hb="${i}" class="${(e.on || [])[i] ? 'on' : ''}" title="${d}">${(e.on || [])[i] ? pxi(MOODS[e.on[i]], 18) : d}</button>`).join('')}</div></div>`;
 return `<div class="el-habit">${t}<div class="pbar" data-pbar><i style="width:${e.p || 0}%"></i></div><div style="text-align:right">${Math.round(e.p || 0)}%</div></div>`;
 }
-const curPage = () => J.doc.pages[J.page];
+const actIdx = () => (J.pagesShown === 2 && J.act === J.page + 1 && J.doc.pages[J.page + 1]) ? J.page + 1 : J.page; const curPage = () => J.doc.pages[actIdx()];
 function addEl(e, pi) {
-const p = J.doc.pages[pi == null ? J.page : pi]; if (!p) return;
+const p = J.doc.pages[pi == null ? actIdx() : pi]; if (!p) return;
 snapshot(); e.id = uid(); e.z = (Math.max(0, ...p.els.map(x => x.z || 1)) + 1); e.r = e.r || 0;
 if (e.x == null) { e.x = Math.round(Math.max(10, Math.min(PW - e.w - 10, (PW - e.w) / 2 + (Math.random() * 160 - 80)))); e.y = Math.round(Math.max(40, Math.min(PH - (e.h || 40) - 20, (PH - (e.h || 40)) / 2 + (Math.random() * 260 - 130)))); }
 p.els.push(e); J.sel = e.id; commit(); draw(); return e;
@@ -2618,7 +2683,7 @@ function bindPage(pg) {
 const pi = +pg.dataset.pi;
 pg.addEventListener('pointerdown', ev => {
 if (ev.button > 0) return;
-const p = J.doc.pages[pi]; const pt = toLocal(pg, ev);
+if (J.act !== pi) { J.act = pi; document.querySelectorAll('.page').forEach(n => n.classList.toggle('act', J.pagesShown === 2 && +n.dataset.pi === pi)); } const p = J.doc.pages[pi]; const pt = toLocal(pg, ev);
 if (J.tool === 'pen' && !J.lock) {
 ev.preventDefault(); pg.setPointerCapture(ev.pointerId); snapshot();
 const pen = PENS.find(x => x.id === J.pen.id) || PENS[1];
@@ -2680,9 +2745,9 @@ return;
 const editableTpl = ev.target.closest('[contenteditable="true"]');
 if (J.tool === 'text' && !J.lock) {
 ev.preventDefault(); if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-const e = addEl({ t: 'text', txt: '', w: 200, h: 30, x: Math.round(pt.x - 6), y: Math.round(pt.y - 14), fs: 20, f: 'hand', c: J.night ? '#f4eeff' : J.pen.color }, pi);
-J.tool = null; setTool(null);
-const n = $(`.el[data-id="${e.id}"]`); if (n) startEdit(n, e);
+const txOff = () => { pg.removeEventListener('pointerup', txUp); pg.removeEventListener('pointercancel', txOff); };
+const txUp = () => { txOff(); const e = addEl({ t: 'text', txt: '', w: 200, h: 30, x: Math.round(pt.x - 6), y: Math.round(pt.y - 14), fs: 20, f: 'hand', c: J.night ? '#f4eeff' : J.pen.color }, pi); J.tool = null; setTool(null); const n = $(`.el[data-id="${e.id}"]`); if (n) startEdit(n, e); };
+pg.addEventListener('pointerup', txUp); pg.addEventListener('pointercancel', txOff);
 return;
 }
 if (J.sel) { J.sel = null; J.editing = null; $$('.el.sel').forEach(n => n.classList.remove('sel')); showElbar(); }
@@ -2848,7 +2913,7 @@ commit(); draw(); paperSheet();
 }
 function templatesSheet() {
 const p = curPage(); if (!p) return;
-open('Plantilla de la página ' + (J.page + 1), Object.entries(TPLS).map(([k, n]) => `<button class="opt" data-tp="${k}" style="${p.tpl === k ? 'outline:2px solid #e2648f;' : ''}">${pxi({ semana: 'month', lista: 'check', gastos: 'moneda', mes: 'month', habitos: 'star', ahorro: 'piggy', deseos: 'gift', libre: 'ui_pagina' }[k], 20)} ${n}</button>`).join('') + '<p style="font-family:var(--f-body);font-size:12px;margin:8px 0 0">Tus decoraciones se quedan; solo cambia el contenido de fondo.</p>', sh => sh.addEventListener('click', e => { const b = e.target.closest('[data-tp]'); if (!b) return; snapshot(); p.tpl = b.dataset.tp; if (p.tpl !== 'libre' && p.tpl !== 'semana' && p.grid === 'cuadros') p.grid = 'lisa'; commit(); A.closeSheet(); draw(); }));
+open('Plantilla de la página ' + (actIdx() + 1), Object.entries(TPLS).map(([k, n]) => `<button class="opt" data-tp="${k}" style="${p.tpl === k ? 'outline:2px solid #e2648f;' : ''}">${pxi({ semana: 'month', lista: 'check', gastos: 'moneda', mes: 'month', habitos: 'star', ahorro: 'piggy', deseos: 'gift', libre: 'ui_pagina' }[k], 20)} ${n}</button>`).join('') + '<p style="font-family:var(--f-body);font-size:12px;margin:8px 0 0">Tus decoraciones se quedan; solo cambia el contenido de fondo.</p>', sh => sh.addEventListener('click', e => { const b = e.target.closest('[data-tp]'); if (!b) return; snapshot(); p.tpl = b.dataset.tp; if (p.tpl !== 'libre' && p.tpl !== 'semana' && p.grid === 'cuadros') p.grid = 'lisa'; commit(); A.closeSheet(); draw(); }));
 }
 function addPageSheet() {
 open('Páginas de esta semana', `<div class="lab">Agregar una página nueva</div>` + Object.entries(TPLS).map(([k, n]) => `<button class="opt" data-np="${k}">＋ ${n}</button>`).join('') + (J.doc.pages.length > 1 ? `<div class="lab">Esta página</div><button class="opt" data-delp style="color:#a3264f">✕ Borrar la página ${J.page + 1}</button>` : ''), sh => sh.addEventListener('click', e => {

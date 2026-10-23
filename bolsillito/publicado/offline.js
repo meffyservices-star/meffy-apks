@@ -1,28 +1,6 @@
 /* Bolsillito — offline-first layer for the Supabase store.
    Everything is saved on the phone first; changes are uploaded when there is internet. */
 
-/* Arreglos extra que se aplican al código de la app antes de arrancar (se suman a FIX de index.html). */
-(function () {
-  var MOV = 'const movOf = () => { let m = 0; for (const t of S.tx) { const v = Number(t.amount) || 0; if (t.type === \'income\' && t.acct === a.id) m += v; else if (t.type === \'expense\' && t.acct === a.id) m -= v; else if (t.type === \'transfer\') { if (t.acct === a.id) m -= v; if (t.to === a.id) m += v; } } return m; }; const curBal = () => Math.round(((Number(a.start) || 0) + movOf()) * 100) / 100;\n';
-  var EXTRA = [
-    // Editar cuenta: se escribe el SALDO DE HOY (lo que tienes ahora) y la app ajusta sola el punto de partida.
-    ["const defIcon = t => (A.ACCT_TYPES.find(x => x[0] === t) || [, , 's:banco'])[2];",
-     MOV + "const defIcon = t => (A.ACCT_TYPES.find(x => x[0] === t) || [, , 's:banco'])[2];"],
-    ["<label class=\"f\">${id ? 'Saldo inicial' : 'Saldo de hoy'}<input class=\"in\" id=\"aS\" type=\"number\" inputmode=\"decimal\" step=\"0.01\" value=\"${a.start}\"></label>",
-     "<label class=\"f\">Saldo de hoy<input class=\"in\" id=\"aS\" type=\"number\" inputmode=\"decimal\" step=\"0.01\" value=\"${curBal()}\"></label>"],
-    ["a.start = +$('#aS').value || 0;",
-     "a.start = Math.round(((+$('#aS').value || 0) - movOf()) * 100) / 100;"]
-  ];
-  var cur;
-  try {
-    Object.defineProperty(window, 'FIX', {
-      configurable: true,
-      get: function () { return cur; },
-      set: function (v) { cur = Array.isArray(v) ? v.concat(EXTRA) : v; }
-    });
-  } catch (e) {}
-})();
-
 window.__offline = function (Store) {
   var K = 'bolsillito:off:';
   function lsGet(k) { try { var v = localStorage.getItem(K + k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
