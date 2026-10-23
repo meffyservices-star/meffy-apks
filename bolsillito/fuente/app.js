@@ -1810,7 +1810,7 @@ const A = App, S = A.S, { $, $$, esc, money, ymd, addDays, toast } = A;
 const BGS = { cielo: { price: 0 }, picnic: { price: 20 }, pradera: { price: 20 }, atardecer: { price: 30 }, cerezo: { price: 30 }, estrellas: { price: 40 } };
 const UNLOCKS = {
 'washi:estrellas': { name: 'Washi Noche estrellada', price: 40, ic: 'ui_washi' }, 'washi:arcoiris': { name: 'Washi Arcoíris pastel', price: 40, ic: 'ui_washi' },
-'washi:durazno': { name: 'Washi Durazno con corazones', price: 40, ic: 'ui_washi' }, 'stickers:pixel': { name: 'Stickers de los mochis', price: 90, ic: 'gochi' }
+'washi:durazno': { name: 'Washi Durazno con corazones', price: 40, ic: 'ui_washi' }, 'stickers:pixel': { name: 'Stickers de las mascotas', price: 90, ic: 'gochi' }
 };
 function R() { S.settings.rincon = S.settings.rincon || { spent: 0, owned: [], equip: {}, bg: 'cielo', pets: 0, lastPet: '' }; return S.settings.rincon; }
 const ST = `<img class="pixel ico" alt="estrellitas" src="${Pix.sprite('estrellita', 3)}" style="width:16px;height:16px;vertical-align:-3px">`;
@@ -1866,7 +1866,7 @@ if (s.streak >= 7) return { k: 'wow', fx: 'star', msg: `¡${s.streak} días segu
 if (s.streak >= 1) return { k: 'happy', fx: 'espiral', msg: `Racha de ${s.streak} ${s.streak === 1 ? 'día' : 'días'}. ¡No la rompamos!` };
 return { k: 'calm', fx: 'nube', msg: 'Anota algo hoy y empezamos una racha juntas ✦' };
 }
-A.PAGES.rincon = 'Mis mochis';
+A.PAGES.rincon = 'Mi mascota';
 Object.values(A.PACKS).forEach(p => { p.map.rincon = p.map.rincon || (p === A.PACKS.pixel ? 's:gochi' : 'e:🍡'); });
 const NAMES = { gochi: 'Gochi', yaki: 'Yaki', shey: 'Shey' };
 function charHTML(id, sprite, mood) {
@@ -1908,7 +1908,7 @@ ${A.isPlus() ? `<div class="row between"><span>Regalo de Meffy+</span><b>+${(A.C
 A.rcExtrasHTML = bal => {
 const r = R(); const own = k => (r.owned || []).includes(k);
 const btn = (key, price) => own(key) ? '' : `<button class="btn sm ${bal >= price ? 'pink' : ''}" data-act="rcBuy" data-k="${key}" data-p="${price}" ${bal >= price ? '' : 'disabled'}>${ST} ${price}</button>`;
-return `<div class="card"><h3>Fondos para los mochis</h3><div class="bannergrid">${Object.entries(BGS).map(([k, b]) => `<button ${own('bg:' + k) || !b.price ? `data-act="rcBg" data-k="${k}"` : `data-act="rcBuy" data-k="bg:${k}" data-p="${b.price}"`} aria-pressed="${(r.bg || 'cielo') === k}" ${!own('bg:' + k) && b.price && bal < b.price ? 'disabled' : ''}><img class="pixel" alt="" src="${Pix.banner(k)}">${!own('bg:' + k) && b.price ? `<span class="lock" style="background:#fff09a">${ST} ${b.price}</span>` : ''}</button>`).join('')}</div></div>
+return `<div class="card"><h3>Fondos para tus mascotas</h3><div class="bannergrid">${Object.entries(BGS).map(([k, b]) => `<button ${own('bg:' + k) || !b.price ? `data-act="rcBg" data-k="${k}"` : `data-act="rcBuy" data-k="bg:${k}" data-p="${b.price}"`} aria-pressed="${(r.bg || 'cielo') === k}" ${!own('bg:' + k) && b.price && bal < b.price ? 'disabled' : ''}><img class="pixel" alt="" src="${Pix.banner(k)}">${!own('bg:' + k) && b.price ? `<span class="lock" style="background:#fff09a">${ST} ${b.price}</span>` : ''}</button>`).join('')}</div></div>
 <div class="card"><h3>Para tu journal</h3><div class="stack">${Object.entries(UNLOCKS).map(([k, u]) => `<div class="row between"><span style="width:30px">${A.px(u.ic, 24)}</span><span style="flex:1;font-weight:700">${esc(u.name)}</span>${own(k) || A.isPlus() ? '<span class="tag">Tuyo ✓</span>' : btn(k, u.price)}</div>`).join('')}</div></div>`;
 };
 const ACT = A.ACTIONS;
@@ -2303,8 +2303,8 @@ A.screens.plan = () => {
 const on = A.isPlus(); const P = A.CFG.plan; const type = S.settings.planType;
 const st = n => `<b>${n.toLocaleString('es-EC')}</b> ${A.px('estrellita', 16)}`;
 const nFree = Object.values(A.THEMES).filter(t => t.free).length;
-const rows = [['Movimientos, billetera, presupuestos y metas', 1, 1], ['Resumen del mes y del año', 1, 1], ['Journal decorable con todas las herramientas', 1, 1], ['Mochis, logros y Tiendita', 1, 1], ['Antojos y emociones con Shey', 1, 1], ['Cierre del día con Ale', 1, 1], ['Exportar e importar tus datos', 1, 1],
-[`${nFree} temas de color`, 1, 1], [`Los ${Object.keys(A.THEMES).length} temas de color`, 0, 1], ['Todas las letras', 0, 1], ['Packs de iconos de colores', 0, 1], ['Subir tus propios iconos y banners', 0, 1], ['Vestir a Ale con accesorios', 0, 1], ['Todos los accesorios para los mochis', 0, 1], ['Accesorios exclusivos', 0, 1], ['Estrellitas de regalo', 0, 1]];
+const rows = [['Movimientos, billetera, presupuestos y metas', 1, 1], ['Resumen del mes y del año', 1, 1], ['Journal decorable con todas las herramientas', 1, 1], ['Mascotas, logros y Tiendita', 1, 1], ['Antojos y emociones con Shey', 1, 1], ['Cierre del día con Ale', 1, 1], ['Exportar e importar tus datos', 1, 1],
+[`${nFree} temas de color`, 1, 1], [`Los ${Object.keys(A.THEMES).length} temas de color`, 0, 1], ['Todas las letras', 0, 1], ['Packs de iconos de colores', 0, 1], ['Subir tus propios iconos y banners', 0, 1], ['Vestir a Ale con accesorios', 0, 1], ['Todos los accesorios para las mascotas', 0, 1], ['Accesorios exclusivos', 0, 1], ['Estrellitas de regalo', 0, 1]];
 const card = (k, name, price, per, bonus, bonusTxt) => `<div class="card stack" style="${type === k && on ? 'border-color:var(--accent);background:var(--pill)' : ''}">
 <div class="row between"><b class="mid">${name}</b>${type === k && on ? '<span class="tag gold">TU PLAN</span>' : k === 'anual' ? '<span class="tag gold">AHORRAS ' + Math.max(0, Math.round((1 - P.annual / (P.monthly * 12)) * 100)) + '%</span>' : ''}</div>
 <div><span class="big">${money(price)}</span> <span class="muted">${per}</span></div>
@@ -2361,7 +2361,7 @@ ${row('Estrellitas de regalo cada mes (mensual)', num('plan.bonusMonthly', P.bon
 <label class="f">Etiqueta de promoción<input class="in" data-cf="plan.promo" value="${esc(P.promo || '')}"></label>
 <label class="f">Tu WhatsApp de contacto (para Meffy+ y contraseñas olvidadas)<input class="in" data-cf="plan.contact" value="${esc(P.contact || '')}" placeholder="Ej. 0991234567"></label></details>
 <details class="card"><summary><b>Estrellitas por acción</b></summary>
-${[['day', 'Anotar en el día'], ['goalTx', 'Poner dinero en una meta'], ['journalWeek', 'Decorar una semana del journal'], ['goalDone', 'Cumplir una meta'], ['monthUnder', 'Mes sin pasarse'], ['antojo', 'Resistir un antojo'], ['closeDay', 'Cerrar el día con Ale'], ['pet', 'Dar cariño a los mochis']].map(([k, l]) => row(l, num('rewards.' + k, R[k]))).join('')}</details>
+${[['day', 'Anotar en el día'], ['goalTx', 'Poner dinero en una meta'], ['journalWeek', 'Decorar una semana del journal'], ['goalDone', 'Cumplir una meta'], ['monthUnder', 'Mes sin pasarse'], ['antojo', 'Resistir un antojo'], ['closeDay', 'Cerrar el día con Ale'], ['pet', 'Dar cariño a la mascota']].map(([k, l]) => row(l, num('rewards.' + k, R[k]))).join('')}</details>
 <details class="card"><summary><b>Tiendita: accesorios</b></summary><p class="faint">Cambia nombre y precio. "Meffy+" lo vuelve exclusivo del plan; "Oculto" lo quita de la Tiendita.</p>${Object.entries(A.ACC).map(([k, a]) => accRow(k, a)).join('')}</details>
 <details class="card"><summary><b>Tiendita: fondos y journal</b></summary>
 ${Object.keys(A.RC.BGS).map(k => row(`Fondo “${esc((Pix.BANNERS[k] || {}).name || k)}”`, num('bgs.' + k, D.bgs[k] != null ? D.bgs[k] : ORIG.bgs[k]))).join('')}
@@ -2939,9 +2939,9 @@ function placeSym(s) { const w = Math.max(40, Math.min(300, s.length * 18)); add
 function stickersSheet() {
 const MOCHIS = ['gochi', 'canela', 'shey', 'pudin', 'gochi~fresa', 'canela~noche', 'shey~menta', 'pudin~chocolate', 'heart~noche', 'star~fresa', 'moon~menta', 'flower~noche'];
 const regalos = (S.settings.giftStickers || []).filter(n => Pix.has(n));
-open('Stickers', `${regalos.length ? `<div class="lab">Regalos de tus amigas</div><div class="emojigrid">${regalos.map(n => `<button data-sk="s:${n}"><img class="pixel" alt="" src="${Pix.sprite(n, 3)}"></button>`).join('')}</div>` : ''}<div class="lab">Stickers pixel</div><div class="emojigrid">${Pix.names.filter(n => !['gochi', 'canela', 'shey', 'pudin'].includes(n) && !/^(x_pared|x_piso|pg_|cp_|cf_|cfo_|__|m_|regalo_|plataforma)/.test(n)).map(n => `<button data-sk="s:${n}"><img class="pixel" alt="" src="${Pix.sprite(n, 3)}"></button>`).join('')}</div><div class="lab">Mochis y colores especiales ${A.isPlus() || (A.owns && A.owns('stickers:pixel')) ? '' : '<span class="tag gold">Meffy+</span>'}</div><div class="emojigrid">${MOCHIS.map(n => `<button data-sk="s:${n}" data-special="1"><img class="pixel" alt="" src="${Pix.sprite(n, 3)}"></button>`).join('')}</div>`, sh => sh.addEventListener('click', e => {
+open('Stickers', `${regalos.length ? `<div class="lab">Regalos de tus amigas</div><div class="emojigrid">${regalos.map(n => `<button data-sk="s:${n}"><img class="pixel" alt="" src="${Pix.sprite(n, 3)}"></button>`).join('')}</div>` : ''}<div class="lab">Stickers pixel</div><div class="emojigrid">${Pix.names.filter(n => !['gochi', 'canela', 'shey', 'pudin'].includes(n) && !/^(x_pared|x_piso|pg_|cp_|cf_|cfo_|__|m_|regalo_|plataforma)/.test(n)).map(n => `<button data-sk="s:${n}"><img class="pixel" alt="" src="${Pix.sprite(n, 3)}"></button>`).join('')}</div><div class="lab">Mascotas y colores especiales ${A.isPlus() || (A.owns && A.owns('stickers:pixel')) ? '' : '<span class="tag gold">Meffy+</span>'}</div><div class="emojigrid">${MOCHIS.map(n => `<button data-sk="s:${n}" data-special="1"><img class="pixel" alt="" src="${Pix.sprite(n, 3)}"></button>`).join('')}</div>`, sh => sh.addEventListener('click', e => {
 const b = e.target.closest('[data-sk]'); if (!b) return;
-if (b.dataset.special && !A.isPlus() && !(A.owns && A.owns('stickers:pixel'))) { A.closeSheet(); A.openSheet('Stickers especiales', A.plusPitch('Los stickers de los mochis vienen con Meffy+ o se compran en la Tiendita.'), s => s.addEventListener('click', ev => { if (ev.target.closest('[data-go-plan]')) { A.closeSheet(); A.go('plan'); } })); return; }
+if (b.dataset.special && !A.isPlus() && !(A.owns && A.owns('stickers:pixel'))) { A.closeSheet(); A.openSheet('Stickers especiales', A.plusPitch('Los stickers de las mascotas vienen con Meffy+ o se compran en la Tiendita.'), s => s.addEventListener('click', ev => { if (ev.target.closest('[data-go-plan]')) { A.closeSheet(); A.go('plan'); } })); return; }
 A.closeSheet(); addEl({ t: 'sticker', v: b.dataset.sk, w: 64, h: 64, r: Math.round(Math.random() * 20 - 10) });
 }));
 }

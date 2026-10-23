@@ -215,7 +215,7 @@ function addXp(id, n, kind) {
   if (!g) return 0; p.xpd[kind] = (p.xpd[kind] || 0) + g; p.xp[id] = (p.xp[id] || 0) + g; return g;
 }
 A.petAddXp = (n, kind) => { const id = P().active; if (id) addXp(id, n, kind || 'game'); };
-// premios por nivel (se ganan con el nivel más alto de tus mochis)
+// premios por nivel (se ganan con el nivel más alto de tus mascotas)
 const LV_PRIZES = [
   [2, 'food', 'dango', 3, '3 dangos para la despensa'], [3, 'stars', 15, 0, '15 estrellitas'], [4, 'wall', 'menta', 0, 'Pared menta para el cuarto'],
   [5, 'grow', 0, 0, 'Crece: ya no es chiquita'], [6, 'floor', 'cuadros', 0, 'Piso de cuadritos'], [7, 'acc', 'lazo', 0, 'Lazo rosa'],
@@ -260,7 +260,7 @@ function moodMsg(id, c) {
 }
 
 // ---------------- Pantalla principal: Mis mochis ----------------
-A.PAGES.rincon = 'Mis mochis';
+A.PAGES.rincon = 'Mi mascota';
 Object.assign(A.PAGES, { elegir: 'Elige tu mascota', cuarto: 'Mi cuarto', regalo: 'Regalo del día', crecer: 'Crecer', coleccion: 'Colección', logros: 'Logros', admincat: 'Agregar cosas nuevas' });
 pageIcon('cuarto', 'casita'); pageIcon('regalo', 'gift'); pageIcon('crecer', 'brote'); pageIcon('coleccion', 'paw'); pageIcon('logros', 'trofeo'); pageIcon('admincat', 'gear'); pageIcon('elegir', 'heart');
 const bar = (name, ic, v) => `<div class="pc-bar"><span class="pc-bar-ic">${img(ic, 22)}</span><span class="pc-bar-n">${name}</span><span class="pc-track"><i style="width:${v}%;background:${v < 30 ? '#e0577f' : v < 60 ? '#f5c94c' : '#7cbf5a'}"></i></span></div>`;
@@ -401,7 +401,7 @@ function elegirHTML(first) {
   return `${first ? `<div class="ph"><div class="ph-left"><span class="pill">Elige tu mascota</span></div>${starsPill()}</div>` : sub('elegir', 'coleccion', starsPill())}
 <div class="card el-hero"><span class="el-big">${petArt(sel, 7)}</span><div class="el-name">${esc(c.name)}</div><div class="el-desc">${esc(c.desc)}</div></div>
 <div class="card el-say">${esc(c.say)}</div>
-<div class="k-lbl">TUS MOCHIS Y LOS NUEVOS</div>
+<div class="k-lbl">TUS MASCOTAS Y LAS NUEVAS</div>
 <div class="el-grid">${Object.entries(pets).map(([k, pt]) => `<button class="el-pet ${k === sel ? 'on' : ''}" data-act="elSel" data-id="${k}" aria-pressed="${k === sel}"><img class="pixel" alt="" src="${spr(pt.sprite, 3)}" style="${p.owned.includes(k) || canGet(pt) ? '' : 'filter:saturate(.5) brightness(1.05)'}">${esc(pt.name)}${p.owned.includes(k) ? '' : '<span class="el-tag">NUEVA</span>'}</button>`).join('')}</div>
 ${btn}
 <p class="faint" style="text-align:center;margin:0">La que elijas es la que cuidas, la que vive en tu cuarto y la que juega contigo.</p>`;
@@ -429,13 +429,13 @@ A.screens.coleccion = () => {
   const p = P(); const pets = allPets(); const all = Object.keys(pets);
   const mine = all.filter(k => p.owned.includes(k)), others = all.filter(k => !p.owned.includes(k));
   const tag = k => k === p.active ? '<span class="tag gold">La que cuidas</span>' : p.room.includes(k) ? '<span class="tag">En el cuarto</span>' : '<span class="tag" style="background:#eee5dc;color:#8a5a4a">Guardada</span>';
-  return `${sub('coleccion', 'rincon', `<span class="pill sm">${mine.length} de ${all.length} mochis</span>`)}
-<div class="k-lbl">TUS MOCHIS</div>
+  return `${sub('coleccion', 'rincon', `<span class="pill sm">${mine.length} de ${all.length} mascotas</span>`)}
+<div class="k-lbl">TUS MASCOTAS</div>
 <div class="col-grid">${mine.map(k => `<button class="col-pet" data-act="colPet" data-id="${k}"><img class="pixel" alt="" src="${spr(pets[k].sprite, 3)}"><b>${esc(pets[k].name)}</b><span class="faint">nivel ${level(k).L}</span>${tag(k)}</button>`).join('')}</div>
 ${others.length ? `<div class="k-lbl">NUEVOS PARA ADOPTAR</div><div class="list">${others.map(k => { const pt = pets[k]; return `<button class="li" data-act="colNew" data-id="${k}"><span class="ic" style="width:52px;height:52px"><img class="pixel" alt="" src="${spr(pt.sprite, 3)}" style="width:48px"></span><span class="tx-main"><b>${esc(pt.name)}</b><span>${esc(pt.desc)}</span></span><span class="tag gold" style="white-space:nowrap">${howTxt(pt, k)}</span></button>`; }).join('')}</div>` : ''}
 <div class="k-lbl">MUY PRONTO</div>
 <div class="col-grid soon">${[0, 1, 2, 3].map(() => `<div class="col-pet"><img class="pixel" alt="" src="${spr('silueta', 3)}" style="opacity:.5"><span class="faint">¿?</span></div>`).join('')}</div>
-<p class="faint" style="margin:0">Elige hasta 3 mochis para que vivan en tu cuarto. Los demás se quedan guardados y los cambias cuando quieras.</p>`;
+<p class="faint" style="margin:0">Elige hasta 3 mascotas para que vivan en tu cuarto. Los demás se quedan guardados y los cambias cuando quieras.</p>`;
 };
 ACT.colNew = a => { S.elegirSel = a.dataset.id; A.go('elegir'); };
 ACT.colPet = a => {
@@ -448,8 +448,8 @@ ${A.ANCH[id] ? `<button class="btn" data-cp="dress" style="justify-content:cente
     const b = e.target.closest('[data-cp]'); if (!b) return; const k = b.dataset.cp;
     if (k === 'care') { setActive(id); closeSheet(); A.go('rincon'); return; }
     if (k === 'room') {
-      if (inRoom) { if (p.room.length <= 1) return toast('Tu cuarto necesita al menos un mochi'); p.room = p.room.filter(x => x !== id); }
-      else { if (p.room.length >= 3) return toast('Ya hay 3 mochis en el cuarto. Guarda uno primero.'); p.room.push(id); }
+      if (inRoom) { if (p.room.length <= 1) return toast('Tu cuarto necesita al menos una mascota'); p.room = p.room.filter(x => x !== id); }
+      else { if (p.room.length >= 3) return toast('Ya hay 3 mascotas en el cuarto. Guarda una primero.'); p.room.push(id); }
       A.saveSettings(); closeSheet(); A.render(); return;
     }
     if (k === 'dress') { S.shopWho = id; closeSheet(); A.go('tienda'); return; }
@@ -468,7 +468,7 @@ ${p.owned.length > 1 ? `<div class="chips">${p.owned.map(k => `<button class="ch
 <div class="k-lbl">CÓMO VA CAMBIANDO</div>
 <div class="gr-row">${stage('bebe', 'Chiquita', 'Nivel 1 a 4', lv.stage === 'bebe', true)}${stage('mochi', 'Grande', 'Desde el nivel 5', lv.stage === 'mochi', lv.L >= 5)}${stage('real', 'Con alitas', 'Desde el nivel 10', lv.stage === 'real', lv.L >= 10)}</div>
 <div class="k-lbl">PREMIOS POR NIVEL</div>
-<div class="card gr-path">${LV_PRIZES.map(([L, k, a, , t]) => { const ok = maxL >= L; return `<div class="gr-step ${ok ? 'ok' : ''}"><span class="gr-lv">${L}</span><span class="gr-ic">${img(k === 'food' ? a : k === 'stars' ? 'estrellita' : k === 'wall' ? 'casita' : k === 'floor' ? 'casita' : k === 'acc' ? 'acc_' + a : k === 'furn' ? 'x_' + a : k === 'wings' ? 'alitas' : 'brotecito', 28)}</span><span style="flex:1">${esc(t)}</span>${ok ? img('check', 18) : img('candado', 16)}</div>`; }).join('')}<p class="faint" style="margin:6px 0 0">Cuenta el nivel más alto de tus mochis. Los premios se guardan solos.</p></div>
+<div class="card gr-path">${LV_PRIZES.map(([L, k, a, , t]) => { const ok = maxL >= L; return `<div class="gr-step ${ok ? 'ok' : ''}"><span class="gr-lv">${L}</span><span class="gr-ic">${img(k === 'food' ? a : k === 'stars' ? 'estrellita' : k === 'wall' ? 'casita' : k === 'floor' ? 'casita' : k === 'acc' ? 'acc_' + a : k === 'furn' ? 'x_' + a : k === 'wings' ? 'alitas' : 'brotecito', 28)}</span><span style="flex:1">${esc(t)}</span>${ok ? img('check', 18) : img('candado', 16)}</div>`; }).join('')}<p class="faint" style="margin:6px 0 0">Cuenta el nivel más alto de tus mascotas. Los premios se guardan solos.</p></div>
 <div class="card stack"><b>Así gana puntos</b>
 ${[['list', 'Anotar un movimiento (hasta 6 al día)', '+5'], ['cupcake', 'Darle de comer o bañarla', '+3'], ['heart', 'Mimarla', '+1'], ['plataforma', 'Jugar un minijuego', '+10'], ['fuego', 'Llegar a una racha de 7 días', '+40'], ['goal', 'Cumplir una meta de ahorro', '+80']].map(([ic, t, n]) => `<div class="row" style="gap:10px">${img(ic, 26)}<span style="flex:1">${t}</span><span class="tag" style="background:#ece0fb;color:#5f4a8a">${n}</span></div>`).join('')}</div>
 `;
@@ -581,7 +581,7 @@ function roomHTML(rmIn, opts) {
   const spots = petSpots(rm, pets, part, list.findIndex(x => x.guest));
   const zOf = (it, f) => f.flat ? 1 : f.wall ? 2 : 10 + Math.round(it.y + f.h);
   const html = items.map(({ it, f }) => {
-    const sp = it.k === 'ventana' && night ? 'x_ventana_noche' : furnSprite(it.k);
+    const sp = night && ['ventana', 'ventana_lila', 'ventana_redonda'].includes(it.k) ? 'x_' + it.k + '_noche' : furnSprite(it.k);
     let extra = '';
     if (f.photo && photos.length) { const src = photos[ph++ % photos.length]; extra = `<span class="rm-photo" style="left:${pct(it.x + 2, RW)};top:${pct(it.y + 2, RH)};width:${pct(12, RW)};height:${pct(10, RH)};z-index:${zOf(it, f) + 1};background-image:url('${esc(src)}')"></span>`; }
     const glow = night && f.glow ? `<span class="rm-glow" style="left:${pct(it.x + f.glow[0] - f.glow[2], RW)};top:${pct(it.y + f.glow[1] - f.glow[2], RH)};width:${pct(f.glow[2] * 2, RW)}"></span>` : '';
@@ -611,7 +611,7 @@ A.screens.cuarto = () => {
   return `${sub('cuarto', 'rincon', starsPill())}
 <div class="chips rm-rooms">${Object.keys(r.rooms).map(k => `<button class="chip" data-act="rmRoom" data-k="${k}" aria-pressed="${r.cur === k}">${esc((ROOMS[k] || {}).name || k)}</button>`).join('')}<button class="chip" data-act="rmTab" data-v="cuartos">+ Más cuartos</button></div>
 ${roomHTML(rm, { edit, sel: S.roomSel, inner: `<button class="btn sm rm-editbtn" data-act="rmEdit">${edit ? 'Listo' : 'Mover cosas'}</button>${edit && S.roomSel ? '<span class="rm-tools"><button class="btn sm" data-act="rmFlip">Voltear</button><button class="btn sm danger" data-act="rmRemove">Guardar</button></span>' : ''}` })}
-${edit ? '<p class="faint" style="margin:0;text-align:center">Arrastra los muebles. Toca uno para voltearlo o guardarlo.</p>' : `<p class="faint" style="margin:0;text-align:center">${{ dia: 'Es de día', tarde: 'Está atardeciendo', noche: 'Es de noche: tus mochis se van a dormir' }[dayPart()]}</p>`}
+${edit ? '<p class="faint" style="margin:0;text-align:center">Arrastra los muebles. Toca uno para voltearlo o guardarlo.</p>' : `<p class="faint" style="margin:0;text-align:center">${{ dia: 'Es de día', tarde: 'Está atardeciendo', noche: 'Es de noche: tus mascotas se van a dormir' }[dayPart()]}</p>`}
 <div class="seg"><button data-act="rmTab" data-v="muebles" aria-pressed="${tab === 'muebles'}">Muebles</button><button data-act="rmTab" data-v="paredes" aria-pressed="${tab === 'paredes'}">Pared y piso</button><button data-act="rmTab" data-v="cuartos" aria-pressed="${tab === 'cuartos'}">Cuartos</button><button data-go="tienda">Ropa</button></div>
 ${tab === 'muebles' ? `<div class="chips">${FCATS.map(([k, n]) => `<button class="chip" data-act="rmCat" data-v="${k}" aria-pressed="${fc === k}">${n}</button>`).join('')}</div><div class="shop-grid">${keys.map(tile).join('')}</div>`
   : tab === 'paredes' ? `<div class="k-lbl">PARED</div><div class="shop-grid">${Object.entries(WALLS).map(([k, [n, pr]]) => sty('wall', k, n, pr)).join('')}</div><div class="k-lbl">PISO</div><div class="shop-grid">${Object.entries(FLOORS).map(([k, [n, pr]]) => sty('floor', k, n, pr)).join('')}</div>`
