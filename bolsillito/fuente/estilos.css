@@ -601,3 +601,20 @@ body.gaming { overflow: hidden; }
 .bd-photo span { display: flex; flex-direction: column; align-items: center; gap: 6px; font-weight: 800; color: var(--ink-soft); }
 .vs-code { font: 600 24px var(--f-display); letter-spacing: .06em; user-select: all; }
 @media (prefers-reduced-motion: reduce) { .pc-pet .mz, .rm-pet, .rg-fall, .rg-spark, .rg-btn, .rg-box.shake, .rg-rays, .gd-fly, .el-big { animation: none !important; } }
+
+/* ===== Journal: casillas, estrellitas, tiempo ===== */
+.el-checks { background: rgba(255,255,255,.55); border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; }
+.el-checks .ck-t { font-weight: 700; outline: none; border-bottom: 1.5px dashed #e6ddd2; padding-bottom: 2px; margin-bottom: 2px; }
+.ck-row { display: flex; align-items: flex-start; gap: 8px; line-height: 1.2; }
+.ck-row button { flex: none; width: 20px; height: 20px; margin-top: 1px; border-radius: 6px; border: 1.5px solid #cdbfb3; background: #fff; padding: 0; font-size: 13px; font-weight: 900; color: #3f8a55; display: grid; place-items: center; }
+.ck-row.on button { background: #b9ecc6; border-color: #6cc08b; }
+.ck-row.on span { text-decoration: line-through; opacity: .6; }
+.el-rating, .el-timer { background: rgba(255,255,255,.6); border-radius: 10px; border: 1px solid var(--paper-line); padding: 6px 8px; font-family: var(--f-mono); font-size: 12px; display: flex; flex-direction: column; gap: 4px; color: #4a3d3a; }
+.el-rating .ht, .el-timer .ht { outline: none; font-weight: 500; letter-spacing: .04em; }
+.el-rating .stars { display: flex; gap: 2px; flex-wrap: wrap; }
+.el-rating .stars button { border: 0; background: none; padding: 0; width: 26px; height: 26px; }
+.el-rating .stars img { width: 26px; height: 26px; }
+.el-timer .tm-row { display: flex; align-items: center; gap: 8px; }
+.el-timer .tm-row button { border: 1px solid #cdbfb3; background: #fff; border-radius: 8px; width: 30px; height: 28px; padding: 0; font-size: 12px; color: #6b3b3f; }
+.el-timer.run .tm-row button:first-child { background: #ffd1e3; border-color: #e2648f; }
+.el-timer .tm-v { font-family: var(--f-display); font-size: 22px; font-weight: 600; min-width: 70px; }

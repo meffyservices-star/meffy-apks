@@ -82,6 +82,16 @@ const SEASONS = [
   { id: 'valentin', name: 'San Valentín', from: '02-01', to: '02-14', pet: 'ale', look: 'corona_corazon', items: ['acc:corona_corazon', 'furn:flores'], when: 'en febrero' }
 ];
 A.SEASONS = SEASONS;
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const mdTxt = md => +md.slice(3) + ' de ' + MESES[+md.slice(0, 2) - 1];
+function allSeasons() {
+  const c = (A.CFG && A.CFG.catalog) || {}; const extra = (k, sid) => (c[k] || []).filter(x => x.how === 'temporada' && x.season === sid && !x.off);
+  const itemsFor = sid => extra('clothes', sid).map(x => 'acc:cc_' + x.id).concat(extra('furn', sid).map(x => 'furn:cf_' + x.id));
+  const base = SEASONS.map(s => Object.assign({}, s, { items: s.items.concat(itemsFor(s.id)) }));
+  const custom = (c.seasons || []).map(s => { const items = itemsFor(s.id); const look = items.find(k => k.startsWith('acc:')); return { id: s.id, name: s.name, from: s.from, to: s.to, pet: (P().active || 'gochi'), look: look ? look.slice(4) : null, items, when: 'del ' + mdTxt(s.from) + ' al ' + mdTxt(s.to), custom: true }; });
+  return base.concat(custom);
+}
+A.allSeasons = allSeasons;
 function inSeason(id, d) {
   const se = SEASONS.find(x => x.id === id) || ((A.CFG && A.CFG.catalog && A.CFG.catalog.seasons) || []).find(x => x.id === id); if (!se) return false;
   const md = (d || today()).slice(5);
@@ -96,7 +106,7 @@ function daysLeft(se) {
 A.seasonDaysLeft = daysLeft;
 
 // ---- cosas que agrega la administradora (se guardan en la configuración de la app) ----
-const catalog = () => { const c = (A.CFG && A.CFG.catalog) || {}; return { pets: c.pets || [], furn: c.furn || [], clothes: c.clothes || [], food: c.food || [] }; };
+const catalog = () => { const c = (A.CFG && A.CFG.catalog) || {}; return { pets: c.pets || [], furn: c.furn || [], clothes: c.clothes || [], food: c.food || [], seasons: c.seasons || [] }; };
 const defMap = (name, w, h, map) => Pix.define(name, { w, h, fn(p) { p.map(0, 0, map); } });
 let customKeys = { pets: [], furn: [], clothes: [], food: [] };
 function registerCatalog() {
@@ -568,7 +578,12 @@ A.screens.admincat = () => {
   return `${sub('admincat', 'admin', '<span class="tag gold">Solo tú</span>')}
 <div class="seg">${Object.entries(KINDS).map(([k, [n]]) => `<button data-act="catKind" data-v="${k}" aria-pressed="${k === kind}">${n}</button>`).join('')}</div>
 ${list.length ? `<div class="card"><h3>${KINDS[kind][0]}s que ya agregaste</h3><div class="list">${list.map(x => `<div class="li" style="${x.off ? 'opacity:.55' : ''}"><span class="ic" style="width:48px;height:48px"><img class="pixel" alt="" src="${Pix.sprite((kind === 'clothes' ? 'acc_' : '') + pre + x.id, 3)}" style="max-width:44px;max-height:44px"></span><span class="tx-main"><b>${esc(x.name)}</b><span>${esc(howLabel(x))}${x.off ? ' · oculto' : ''}</span></span><button class="btn sm" data-act="catEdit" data-id="${x.id}">Editar</button></div>`).join('')}</div></div>` : ''}
-<div class="card stack" id="catForm">${formHTML()}</div>`;
+<div class="card stack" id="catForm">${formHTML()}</div>
+<details class="card stack" ${S.seasOpen ? 'open' : ''}><summary><b>Temporadas</b> <span class="faint">(Noche de brujas, Navidad, San Valentín y las tuyas)</span></summary>
+<div class="list" style="margin:8px 0">${allSeasons().map(se => `<div class="li"><span class="tx-main"><b>${esc(se.name)}</b><span>${esc(se.when)}${inSeason(se.id) ? ' · <b>activa ahora</b>' : ''} · ${se.items.length} cosas</span></span>${se.custom ? `<button class="btn sm danger" data-act="seDel" data-id="${se.id}">Borrar</button>` : ''}</div>`).join('')}</div>
+<div class="formgrid"><label class="f full">Nueva temporada<input class="in" id="seName" placeholder="Ej. Día de la madre" maxlength="30"></label><label class="f">Desde<input class="in" id="seFrom" type="date"></label><label class="f">Hasta<input class="in" id="seTo" type="date"></label></div>
+<button class="btn" data-act="seAdd" style="justify-content:center">Agregar temporada</button>
+<p class="faint" style="margin:0">Se repite cada año en esas fechas. Luego, al agregar ropa o muebles, elige "Temporada" y escoge esta.</p></details>`;
 };
 function howLabel(x) { return x.how === 'stars' ? `${x.price} estrellitas` : x.how === 'logro' ? 'Por logro' : x.how === 'temporada' ? 'De temporada' : x.how === 'raro' ? 'Regalo raro' : 'Gratis'; }
 function formHTML() {
@@ -588,7 +603,7 @@ ${sizeSel}
 <div class="formgrid">
 ${ed.how === 'stars' || k === 'food' ? `<label class="f">Precio en estrellitas<input class="in" data-ed="price" type="number" min="0" value="${ed.price}"></label>` : ''}
 ${ed.how === 'logro' ? `<label class="f">Qué logro<select class="in" data-ed="ach">${A.RC.ACH.map(a => `<option value="${a.id}" ${ed.ach === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label>` : ''}
-${ed.how === 'temporada' ? `<label class="f">Qué temporada<select class="in" data-ed="season">${SEASONS.map(s => `<option value="${s.id}" ${ed.season === s.id ? 'selected' : ''}>${esc(s.name)} (${esc(s.when)})</option>`).join('')}</select></label>` : ''}
+${ed.how === 'temporada' ? `<label class="f">Qué temporada<select class="in" data-ed="season">${allSeasons().map(s => `<option value="${s.id}" ${ed.season === s.id ? 'selected' : ''}>${esc(s.name)} (${esc(s.when)})</option>`).join('')}</select></label>` : ''}
 </div>
 <div class="row" style="gap:8px;flex-wrap:wrap">${ed.id ? `<button class="btn" data-act="edOff">${ed.off ? 'Mostrar otra vez' : 'Ocultar'}</button><button class="btn danger" data-act="edDel">Borrar</button><button class="btn" data-act="edNew">Nueva</button>` : ''}<button class="btn pink" data-act="edSave" style="flex:1;justify-content:center">Guardar y publicar</button></div>
 <p class="faint" style="margin:0">Lo que guardes aquí les aparece a todas tus usuarias.</p>`;
@@ -639,6 +654,13 @@ async function saveCatalog() {
   A.render();
 }
 let latestCatalog = null;
+ACT.seAdd = () => {
+  const n = ($('#seName').value || '').trim(), f = $('#seFrom').value, t = $('#seTo').value;
+  if (!n || !f || !t) return toast('Pon el nombre y las dos fechas');
+  A.CFG.catalog = A.CFG.catalog || {}; const L = A.CFG.catalog.seasons = A.CFG.catalog.seasons || [];
+  L.push({ id: 'cs_' + uid(), name: n, from: f.slice(5), to: t.slice(5) }); S.seasOpen = true; saveCatalog();
+};
+ACT.seDel = a => { if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Segura?'; return; } A.CFG.catalog.seasons = (A.CFG.catalog.seasons || []).filter(x => x.id !== a.dataset.id); S.seasOpen = true; saveCatalog(); };
 ACT.catKind = a => { S.catKind = a.dataset.v; ed = null; A.render(); };
 ACT.catEdit = a => { const kind = S.catKind || 'pets'; const it = catalog()[kind].find(x => x.id === a.dataset.id); newDraft(kind, it); A.render(); setTimeout(() => { const f = $('#catForm'); if (f) f.scrollIntoView({ behavior: 'smooth' }); }, 50); };
 ACT.edNew = () => { newDraft(S.catKind || 'pets'); A.render(); };

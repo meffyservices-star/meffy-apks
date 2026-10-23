@@ -2513,16 +2513,18 @@ const tools = [
 ['images', 'pic', 'Imágenes', 'c2'], ['sticky', 'ui_nota', 'Notas adhesivas', 'c3'], ['washi', 'ui_washi', 'Washi', 'c6'], ['symbols', 'heart', 'Símbolos', 'c5'], ['stickers', 'star', 'Stickers', 'c7'],
 ['paper', 'ui_pagina', 'Página', 'c1'], ['templates', 'ui_plantilla', 'Plantillas', 'c4'], ['pages', 'ui_paginas', 'Páginas', 'c6'], ['marks', 'ui_marcador', 'Marcadores', 'c5']
 ];
+tools.splice(5, 0, ['blocks', 'check', 'Casillas, estrellitas y tiempo', 'c3']);
+J.tools = tools; const hidden = S.settings.jrHide || [];
 el.innerHTML = `
 <div class="jr-top">
 <div class="ph-left"><span class="pill">Mi journal</span><button class="ph-icon" data-act="pageicon" data-k="journal" aria-label="Cambiar icono">${A.iconHTML(A.pageIcon('journal'), 34)}</button></div>
 <div class="row" style="gap:6px"><button class="navarrow" id="jPrev" aria-label="Semana anterior">‹</button><button class="btn sm" id="jWeek"></button><button class="navarrow" id="jNext" aria-label="Semana siguiente">›</button></div>
 </div>
 <div class="toolbar" role="toolbar" aria-label="Herramientas del diario">
-${tools.map(([id, ic, lbl, c]) => `<button class="tb ${c}" data-tool="${id}" aria-label="${lbl}" title="${lbl}" aria-pressed="false">${pxi(ic, 24)}</button>`).join('')}
+${tools.filter(([id]) => !hidden.includes(id)).map(([id, ic, lbl, c]) => `<button class="tb ${c}" data-tool="${id}" aria-label="${lbl}" title="${lbl}" aria-pressed="false">${pxi(ic, 24)}</button>`).join('')}
 <span class="sep"></span>
 <button class="tb c1" id="tbUndo" aria-label="Deshacer" title="Deshacer">↶</button><button class="tb c1" id="tbRedo" aria-label="Rehacer" title="Rehacer">↷</button>
-<button class="tb c6" id="tbNight" aria-label="Papel de noche" title="Papel de noche">${pxi('ui_luna', 24)}</button>
+<button class="tb c6" id="tbNight" aria-label="Papel de noche" title="Papel de noche">${pxi('ui_luna', 24)}</button><button class="tb c1" id="tbCfg" aria-label="Elegir qué herramientas ver" title="Elegir qué herramientas ver">${pxi('gear', 22)}</button>
 </div>
 <div id="jHint" class="faint" style="text-align:center;min-height:18px"></div>
 <div class="book-wrap" id="bookWrap"></div>
@@ -2532,6 +2534,7 @@ $('#jNext').onclick = () => { leave(); J.key = weekKey(addDays(weekDates(J.key)[
 $('#jWeek').onclick = jumpSheet;
 $('#tbUndo').onclick = undo; $('#tbRedo').onclick = redo;
 $('#tbNight').onclick = () => { J.night = !J.night; draw(); };
+$('#tbCfg').onclick = toolsSheet;
 el.querySelector('.toolbar').addEventListener('click', e => { const b = e.target.closest('[data-tool]'); if (b) onTool(b.dataset.tool); });
 draw();
 if (!J.resizeBound) { J.resizeBound = true; let jW = innerWidth; addEventListener('resize', () => { if (S.route !== 'journal') return; const ae = document.activeElement; if (ae && ae.isContentEditable) return; if (Math.abs(innerWidth - jW) < 2) return; jW = innerWidth; draw(); }); }
@@ -2621,7 +2624,7 @@ return `<div class="wk" style="${ink}"><div class="wk-h"><b>Hábitos de la seman
 return p.title ? `<div class="wk" style="${ink}"><div class="tpl-title">${esc(p.title)}</div></div>` : '';
 }
 function elHTML(e) {
-const st = `left:${e.x}px;top:${e.y}px;width:${e.w}px;${e.t === 'text' ? '' : 'height:' + e.h + 'px;'}transform:rotate(${e.r || 0}deg);z-index:${e.z || 1}`;
+const st = `left:${e.x}px;top:${e.y}px;width:${e.w}px;${['text', 'checks', 'rating', 'timer'].includes(e.t) ? '' : 'height:' + e.h + 'px;'}transform:rotate(${e.r || 0}deg);z-index:${e.z || 1}`;
 let inner = '';
 if (e.t === 'text') inner = `<div class="el-text" style="font-size:${e.fs || 20}px;color:${e.c || (J.night ? '#f4eeff' : '#3a2f3b')};font-family:${fontOf(e.f)};text-align:${e.al || 'left'}" data-edit>${esc(e.txt || '')}</div>`;
 else if (e.t === 'sticky') inner = `<div class="el-sticky" style="background:${e.c};font-family:${fontOf(e.f)};font-size:${e.fs || 18}px;color:#3a2f3b" data-edit>${esc(e.txt || '')}</div>`;
@@ -2631,8 +2634,15 @@ else if (e.t === 'sym') inner = `<div class="el-sym" style="font-size:${e.fs || 
 else if (e.t === 'sticker') inner = `<div class="el-sticker" style="font-size:${Math.round(e.h * .82)}px">${e.v.startsWith('s:') ? `<img class="pixel" alt="" src="${Pix.sprite(e.v.slice(2), 4)}" draggable="false">` : e.v.startsWith('i:') ? `<img alt="" src="${esc(e.v.slice(2))}" draggable="false">` : esc(e.v.replace(/^e:/, ''))}</div>`;
 else if (e.t === 'shape') inner = `<div class="el-shape" style="width:100%;height:100%">${shapeSVG(e)}</div>`;
 else if (e.t === 'habit') inner = habitHTML(e);
+else if (e.t === 'checks') inner = `<div class="el-checks" style="font-family:${fontOf(e.f)};font-size:${e.fs || 17}px;color:${e.c || (J.night ? '#f4eeff' : '#3a2f3b')}">${e.title != null ? `<div class="ck-t" data-edit>${esc(e.title)}</div>` : ''}${(e.items || []).map((it, i) => `<div class="ck-row ${it.on ? 'on' : ''}"><button data-ck="${i}" aria-label="${it.on ? 'Hecho' : 'Pendiente'}">${it.on ? '✓' : ''}</button><span>${esc(it.txt)}</span></div>`).join('')}</div>`;
+else if (e.t === 'rating') inner = `<div class="el-rating"><div class="ht" data-edit>${esc(e.txt || '')}</div><div class="stars">${Array.from({ length: e.n || 5 }, (_, i) => `<button data-star="${i + 1}" aria-label="${i + 1} de ${e.n || 5}"><img class="pixel" alt="" src="${Pix.sprite('estrellita', 3)}" draggable="false" style="${i < (e.v || 0) ? '' : 'filter:grayscale(1) opacity(.35)'}"></button>`).join('')}</div></div>`;
+else if (e.t === 'timer') { const secs = Math.floor((e.secs || 0) + (e.run ? (Date.now() - e.run) / 1000 : 0)); inner = `<div class="el-timer ${e.run ? 'run' : ''}" data-run="${e.run || ''}"><div class="ht" data-edit>${esc(e.txt || '')}</div><div class="tm-row"><button data-tm="go" aria-label="${e.run ? 'Pausar' : 'Empezar'}">${e.run ? '❚❚' : '▶'}</button><b class="tm-v" data-secs="${e.secs || 0}">${fmtT(secs)}</b><button data-tm="reset" aria-label="Volver a cero">↺</button></div></div>`; }
+const deco = ['text', 'sticky', 'checks'].includes(e.t) ? `font-weight:${e.b ? 800 : 'inherit'};font-style:${e.i ? 'italic' : 'normal'};text-decoration:${[e.u ? 'underline' : '', e.s ? 'line-through' : ''].filter(Boolean).join(' ') || 'none'}` : '';
+if (deco) inner = `<div style="${deco};width:100%;height:100%">${inner}</div>`;
 return `<div class="el ${J.sel === e.id ? 'sel' : ''}" data-id="${e.id}" style="${st}">${inner}<span class="h rs" data-h="rs"></span><span class="h rt" data-h="rt"></span></div>`;
 }
+function fmtT(t) { const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, sec = t % 60; return (h ? h + ':' + pad(m) : m) + ':' + pad(sec); }
+setInterval(() => { if (S.route !== 'journal') return; $$('.el-timer.run').forEach(n => { const v = n.querySelector('.tm-v'); const run = +n.dataset.run; if (v && run) v.textContent = fmtT(Math.floor(+v.dataset.secs + (Date.now() - run) / 1000)); }); }, 1000);
 function fontOf(f) { return { hand: 'var(--f-hand)', mono: 'var(--f-mono)', caveat: "'Caveat', cursive", round: "'Nunito', sans-serif", pixel: "'Pixelify Sans', monospace", gaegu: "'Gaegu', cursive" }[f || 'hand']; }
 function shapeSVG(e) {
 const f = e.fill || '#ffd1e3', s = e.c || '#b06a8a', sw = 2;
@@ -2769,6 +2779,12 @@ const chk = ev.target.closest('[data-chk]');
 if (chk) { snapshot(); p.items = p.items || []; const k = +chk.dataset.chk; p.items[k] = Object.assign({}, p.items[k], { done: !(p.items[k] || {}).done }); commit(); draw(); return; }
 const hb2 = ev.target.closest('[data-hb2]');
 if (hb2) { snapshot(); p.hab = p.hab || { names: [], on: {} }; const k = hb2.dataset.hb2; p.hab.on[k] = !p.hab.on[k]; commit(); draw(); return; }
+const ck = ev.target.closest('[data-ck]'), stb = ev.target.closest('[data-star]'), tm = ev.target.closest('[data-tm]');
+if (ck || stb || tm) { const nd = ev.target.closest('.el'); if (!nd) return; const { e } = findEl(nd.dataset.id); snapshot();
+if (ck) { const it = e.items[+ck.dataset.ck]; it.on = !it.on; }
+if (stb) { const v = +stb.dataset.star; e.v = e.v === v ? v - 1 : v; }
+if (tm) { if (tm.dataset.tm === 'reset') { e.secs = 0; if (e.run) e.run = Date.now(); } else if (e.run) { e.secs = (e.secs || 0) + (Date.now() - e.run) / 1000; e.run = 0; } else e.run = Date.now(); }
+commit(); draw(); return; }
 const hb = ev.target.closest('[data-hb]'); const pb = ev.target.closest('[data-pbar]');
 const node = ev.target.closest('.el'); if (!node || (!hb && !pb)) return;
 const { e } = findEl(node.dataset.id); snapshot();
@@ -2793,7 +2809,8 @@ const bar = document.createElement('div'); bar.className = 'elbar';
 const colorable = ['text', 'sticky', 'sym', 'shape'].includes(e.t);
 bar.innerHTML = `${colorable ? `<input type="color" data-eb="color" value="${toHex(e.t === 'sticky' ? e.c : e.t === 'shape' ? (e.fill || '#ffd1e3') : (e.c || '#3a2f3b'))}" aria-label="Color">` : ''}
 ${e.t === 'shape' ? `<input type="color" data-eb="stroke" value="${toHex(e.c || '#b06a8a')}" aria-label="Color del borde">` : ''}
-${e.t === 'text' || e.t === 'sticky' ? `<button data-eb="font" title="Letra">Aa</button><button data-eb="align" title="Alinear">≡</button>` : ''}
+${e.t === 'text' || e.t === 'sticky' || e.t === 'checks' ? `<button data-eb="font" title="Letra">Aa</button>${e.t !== 'checks' ? '<button data-eb="align" title="Alinear">≡</button>' : ''}<button data-eb="fb" title="Negrita" style="font-weight:900;${e.b ? 'background:#ffd1e3' : ''}">B</button><button data-eb="fi" title="Cursiva" style="font-style:italic;${e.i ? 'background:#ffd1e3' : ''}">I</button><button data-eb="fu" title="Subrayado" style="text-decoration:underline;${e.u ? 'background:#ffd1e3' : ''}">U</button><button data-eb="fs" title="Tachado" style="text-decoration:line-through;${e.s ? 'background:#ffd1e3' : ''}">S</button><button data-eb="bigger" title="Más grande">A+</button><button data-eb="smaller" title="Más pequeña">A−</button>` : ''}
+${e.t === 'checks' ? `<button data-eb="items" title="Editar la lista">✎</button>` : ''}${e.t === 'rating' ? `<button data-eb="nstars" title="Cuántas estrellitas">${e.n || 5}★</button>` : ''}
 ${e.t === 'img' ? `<button data-eb="frame" title="Marco polaroid">▢</button><button data-eb="round" title="Redonda">◯</button>` : ''}
 ${e.t === 'washi' ? `<button data-eb="torn" title="Bordes rasgados">≈</button>` : ''}
 <button data-eb="up" title="Traer al frente">⬆</button><button data-eb="down" title="Enviar atrás">⬇</button><button data-eb="dup" title="Duplicar">⧉</button><button data-eb="del" title="Borrar">✕</button>`;
@@ -2823,6 +2840,10 @@ if (k === 'align') { const al = ['left', 'center', 'right']; e.al = al[(al.index
 if (k === 'frame') { e.frame = !e.frame; if (e.frame) e.round = false; }
 if (k === 'round') { e.round = !e.round; if (e.round) { e.frame = false; e.h = e.w; } }
 if (k === 'torn') e.torn = !e.torn;
+if (k === 'fb') e.b = !e.b; if (k === 'fi') e.i = !e.i; if (k === 'fu') e.u = !e.u; if (k === 'fs') e.s = !e.s;
+if (k === 'bigger') e.fs = Math.min(64, (e.fs || (e.t === 'checks' ? 17 : 20)) + 2); if (k === 'smaller') e.fs = Math.max(10, (e.fs || (e.t === 'checks' ? 17 : 20)) - 2);
+if (k === 'nstars') { e.n = (e.n || 5) >= 10 ? 3 : (e.n || 5) + 1; e.v = Math.min(e.v || 0, e.n); }
+if (k === 'items') { commit(); checksSheet(e); return; }
 commit(); draw();
 });
 }
@@ -2837,7 +2858,7 @@ if (t === 'view') { J.lock = !J.lock; J.sel = null; J.tool = null; draw(); setTo
 if (J.lock) { J.lock = false; }
 if (t === 'text' || t === 'eraser') { setTool(t); return; }
 if (t === 'pen') { if (J.tool === 'pen') { setTool('pen'); return; } penSheet(); return; }
-const sheets = { habits: habitsSheet, shapes: shapesSheet, images: imagesSheet, sticky: stickySheet, washi: washiSheet, symbols: symbolsSheet, stickers: stickersSheet, paper: paperSheet, templates: templatesSheet, pages: addPageSheet, marks: marksSheet };
+const sheets = { blocks: blocksSheet, habits: habitsSheet, shapes: shapesSheet, images: imagesSheet, sticky: stickySheet, washi: washiSheet, symbols: symbolsSheet, stickers: stickersSheet, paper: paperSheet, templates: templatesSheet, pages: addPageSheet, marks: marksSheet };
 if (sheets[t]) sheets[t]();
 }
 const open = (title, html, mount) => A.openSheet(title, `<div class="pop" style="box-shadow:none;border:0;padding:0;background:transparent">${html}</div>`, mount, { paper: true });
@@ -2859,6 +2880,26 @@ $('#inkC', sh).onchange = e => { J.pen.color = e.target.value; };
 function habitsSheet() {
 const opts = [['agua', 'gota', 'Agua del día', { w: 230, h: 64, txt: 'Agua' }], ['habito', 'check', 'Hábito de la semana', { w: 230, h: 64, txt: 'Leer 10 min' }], ['animo', 'f_feliz', 'Ánimo de la semana', { w: 230, h: 64, txt: 'Mi ánimo' }], ['progreso', 'ui_nota', 'Barra de progreso', { w: 220, h: 72, txt: 'Ahorro del mes', p: 40 }]];
 open('Hábitos', opts.map(([k, ic, n]) => `<button class="opt" data-hk="${k}"><span style="width:24px">${pxi(ic, 22)}</span>${n}</button>`).join(''), sh => sh.addEventListener('click', e => { const b = e.target.closest('[data-hk]'); if (!b) return; const o = opts.find(x => x[0] === b.dataset.hk); A.closeSheet(); addEl(Object.assign({ t: 'habit', k: o[0] }, JSON.parse(JSON.stringify(o[3])))); }));
+}
+function blocksSheet() {
+const opts = [['checks', 'check', 'Lista con casillas', 'Para marcar lo que ya hiciste'], ['rating', 'estrellita', 'Calificación con estrellitas', 'Califica tu día, una peli o un libro'], ['timer', 'x_reloj', 'Contador de tiempo', 'Cuánto estudiaste, leíste o trabajaste']];
+open('Casillas, estrellitas y tiempo', opts.map(([k, ic, n, d]) => `<button class="opt" data-bk="${k}"><span style="width:26px">${pxi(ic, 22)}</span><span><b>${n}</b><br><small style="font-family:var(--f-body)">${d}</small></span></button>`).join(''), sh => sh.addEventListener('click', ev => {
+const b = ev.target.closest('[data-bk]'); if (!b) return; const k = b.dataset.bk; A.closeSheet();
+if (k === 'checks') { const el = addEl({ t: 'checks', w: 230, h: 40, title: 'Pendientes', items: [{ txt: 'Anotar mis gastos', on: false }, { txt: 'Tomar agua', on: false }, { txt: 'Algo lindo para mí', on: false }], f: 'hand', fs: 17 }); checksSheet(el); }
+if (k === 'rating') addEl({ t: 'rating', w: 220, h: 40, txt: 'Mi día', n: 5, v: 0 });
+if (k === 'timer') addEl({ t: 'timer', w: 200, h: 40, txt: 'Estudié', secs: 0, run: 0 });
+}));
+}
+function checksSheet(e) {
+open('Lista con casillas', `<label class="lab">Título (opcional)</label><input class="in" id="ckT" value="${esc(e.title || '')}" maxlength="40" style="margin-bottom:8px"><label class="lab">Una cosa por línea</label><textarea class="in" id="ckL" style="min-height:150px">${esc((e.items || []).map(i => i.txt).join('\n'))}</textarea><button class="btn pink" id="ckOk" style="justify-content:center;width:100%;margin-top:8px">Listo</button>`, sh => {
+$('#ckOk', sh).onclick = () => { snapshot(); const old = e.items || []; e.title = $('#ckT', sh).value.trim(); e.items = $('#ckL', sh).value.split('\n').map(x => x.trim()).filter(Boolean).slice(0, 20).map((txt, i) => ({ txt, on: !!(old.find(o => o.txt === txt) || {}).on })); commit(); A.closeSheet(); draw(); };
+});
+}
+function toolsSheet() {
+const hidden = new Set(S.settings.jrHide || []);
+open('Tus herramientas', `<p style="font-family:var(--f-body);font-size:13px;margin:0 0 8px">Elige cuáles quieres ver en la barra del journal.</p>${J.tools.filter(([id]) => id !== 'view').map(([id, ic, lbl]) => `<label class="opt" style="cursor:pointer"><input type="checkbox" data-tv="${id}" ${hidden.has(id) ? '' : 'checked'}> <span style="width:24px">${pxi(ic, 20)}</span>${lbl}</label>`).join('')}`, sh => sh.addEventListener('change', ev => {
+const t = ev.target.dataset.tv; if (!t) return; ev.target.checked ? hidden.delete(t) : hidden.add(t); S.settings.jrHide = [...hidden]; A.saveSettings(); render(root);
+}));
 }
 function shapesSheet() {
 open('Formas', SHAPES.map(s => `<button class="opt" data-sh="${s}"><span style="width:28px;height:28px;display:inline-block">${shapeSVG({ k: s, fill: '#ffd1e3', c: '#b06a8a' })}</span>${A.cap(s)}</button>`).join(''), sh => sh.addEventListener('click', e => { const b = e.target.closest('[data-sh]'); if (!b) return; A.closeSheet(); const line = b.dataset.sh.startsWith('línea'); addEl({ t: 'shape', k: b.dataset.sh, w: line ? 160 : 90, h: line ? 12 : 90, fill: ['#ffd1e3', '#d3e8ff', '#fff1a8', '#d2f0dc', '#e2d7ff'][Math.floor(Math.random() * 5)], c: '#b06a8a' }); }));
@@ -2911,13 +2952,23 @@ if (b.dataset.bg) p.bg = b.dataset.bg; if (b.dataset.gr) p.grid = b.dataset.gr; 
 commit(); draw(); paperSheet();
 }));
 }
+function myTpls() { return S.settings.jrTpls = S.settings.jrTpls || []; }
+function pageFromTpl(t) { const pg = JSON.parse(JSON.stringify(t.page)); pg.id = uid(); (pg.els || []).forEach(e => e.id = uid()); pg.els = pg.els || []; return pg; }
 function templatesSheet() {
-const p = curPage(); if (!p) return;
-open('Plantilla de la página ' + (actIdx() + 1), Object.entries(TPLS).map(([k, n]) => `<button class="opt" data-tp="${k}" style="${p.tpl === k ? 'outline:2px solid #e2648f;' : ''}">${pxi({ semana: 'month', lista: 'check', gastos: 'moneda', mes: 'month', habitos: 'star', ahorro: 'piggy', deseos: 'gift', libre: 'ui_pagina' }[k], 20)} ${n}</button>`).join('') + '<p style="font-family:var(--f-body);font-size:12px;margin:8px 0 0">Tus decoraciones se quedan; solo cambia el contenido de fondo.</p>', sh => sh.addEventListener('click', e => { const b = e.target.closest('[data-tp]'); if (!b) return; snapshot(); p.tpl = b.dataset.tp; if (p.tpl !== 'libre' && p.tpl !== 'semana' && p.grid === 'cuadros') p.grid = 'lisa'; commit(); A.closeSheet(); draw(); }));
+const p = curPage(); if (!p) return; const mine = myTpls();
+open('Plantilla de la página ' + (actIdx() + 1), Object.entries(TPLS).map(([k, n]) => `<button class="opt" data-tp="${k}" style="${p.tpl === k ? 'outline:2px solid #e2648f;' : ''}">${pxi({ semana: 'month', lista: 'check', gastos: 'moneda', mes: 'month', habitos: 'star', ahorro: 'piggy', deseos: 'gift', libre: 'ui_pagina' }[k], 20)} ${n}</button>`).join('') + '<p style="font-family:var(--f-body);font-size:12px;margin:8px 0 0">Tus decoraciones se quedan; solo cambia el contenido de fondo.</p>'
++ `<div class="lab">Mis plantillas</div>${mine.length ? mine.map(t => `<div style="display:flex;gap:6px;align-items:center"><button class="opt" data-mt="${t.id}" style="flex:1">${pxi('ui_plantilla', 20)} ${esc(t.name)}</button><button class="opt" data-mtdel="${t.id}" style="width:auto;color:#a3264f" aria-label="Borrar ${esc(t.name)}">✕</button></div>`).join('') : '<p style="font-family:var(--f-body);font-size:12px;margin:0 0 6px">Decora una página como te guste y guárdala aquí para usarla otras semanas.</p>'}
+<input class="in" id="mtName" placeholder="Nombre (ej. Mi semana bonita)" maxlength="30" style="margin:6px 0"><button class="opt" data-mtsave>${pxi('ui_plantilla', 20)} Guardar esta página como plantilla</button>`, sh => sh.addEventListener('click', e => {
+const b = e.target.closest('[data-tp]'); if (b) { snapshot(); p.tpl = b.dataset.tp; if (p.tpl !== 'libre' && p.tpl !== 'semana' && p.grid === 'cuadros') p.grid = 'lisa'; commit(); A.closeSheet(); draw(); return; }
+const sv = e.target.closest('[data-mtsave]'); if (sv) { if (mine.length >= 12) { A.toast('Tienes 12 plantillas. Borra una para guardar otra.'); return; } const pg = JSON.parse(JSON.stringify(p)); delete pg.id; delete pg.days; delete pg.cells; mine.push({ id: uid(), name: ($('#mtName', sh).value || '').trim() || 'Mi plantilla ' + (mine.length + 1), page: pg }); A.saveSettings(); A.toast('Plantilla guardada'); A.closeSheet(); return; }
+const u = e.target.closest('[data-mt]'); if (u) { const t = mine.find(x => x.id === u.dataset.mt); if (!t) return; if (!u.dataset.s && (p.els || []).length) { u.dataset.s = 1; u.innerHTML = '¿Reemplazar lo que tiene esta página? Toca otra vez'; return; } snapshot(); J.doc.pages[actIdx()] = pageFromTpl(t); commit(); A.closeSheet(); draw(); return; }
+const d = e.target.closest('[data-mtdel]'); if (d) { if (!d.dataset.s) { d.dataset.s = 1; d.textContent = '¿Seguro?'; return; } S.settings.jrTpls = mine.filter(x => x.id !== d.dataset.mtdel); A.saveSettings(); A.closeSheet(); templatesSheet(); }
+}));
 }
 function addPageSheet() {
-open('Páginas de esta semana', `<div class="lab">Agregar una página nueva</div>` + Object.entries(TPLS).map(([k, n]) => `<button class="opt" data-np="${k}">＋ ${n}</button>`).join('') + (J.doc.pages.length > 1 ? `<div class="lab">Esta página</div><button class="opt" data-delp style="color:#a3264f">✕ Borrar la página ${J.page + 1}</button>` : ''), sh => sh.addEventListener('click', e => {
+open('Páginas de esta semana', `<div class="lab">Agregar una página nueva</div>` + Object.entries(TPLS).map(([k, n]) => `<button class="opt" data-np="${k}">＋ ${n}</button>`).join('') + myTpls().map(t => `<button class="opt" data-npm="${t.id}">＋ ${pxi('ui_plantilla', 18)} ${esc(t.name)}</button>`).join('') + (J.doc.pages.length > 1 ? `<div class="lab">Esta página</div><button class="opt" data-delp style="color:#a3264f">✕ Borrar la página ${J.page + 1}</button>` : ''), sh => sh.addEventListener('click', e => {
 const b = e.target.closest('[data-np]');
+const bm = e.target.closest('[data-npm]'); if (bm) { const t = myTpls().find(x => x.id === bm.dataset.npm); if (t) { snapshot(); J.doc.pages.push(pageFromTpl(t)); J.page = J.doc.pages.length - 1; if (J.pagesShown === 2 && J.page % 2) J.page -= 1; commit(); A.closeSheet(); draw(); } return; }
 if (b) { snapshot(); J.doc.pages.push(blankPage(b.dataset.np, b.dataset.np === 'libre' ? 'cuadros' : 'lisa')); J.page = J.doc.pages.length - 1; if (J.pagesShown === 2 && J.page % 2) J.page -= 1; commit(); A.closeSheet(); draw(); }
 const d = e.target.closest('[data-delp]');
 if (d) { if (!d.dataset.s) { d.dataset.s = 1; d.textContent = '¿Segura? Toca otra vez'; return; } snapshot(); J.doc.pages.splice(J.page, 1); J.page = Math.max(0, J.page - 1); commit(); A.closeSheet(); draw(); }
