@@ -618,3 +618,12 @@ body.gaming { overflow: hidden; }
 .el-timer .tm-row button { border: 1px solid #cdbfb3; background: #fff; border-radius: 8px; width: 30px; height: 28px; padding: 0; font-size: 12px; color: #6b3b3f; }
 .el-timer.run .tm-row button:first-child { background: #ffd1e3; border-color: #e2648f; }
 .el-timer .tm-v { font-family: var(--f-display); font-size: 22px; font-weight: 600; min-width: 70px; }
+.jr-dreams { display: flex; align-items: center; gap: 8px; width: 100%; border: 2px dashed var(--glass-line); background: var(--glass); border-radius: 14px; padding: 6px 12px; font: 800 13px var(--f-body); color: var(--ink); cursor: pointer; }
+.jr-dreams span:first-of-type { flex: 1; text-align: left; }
+.gr-path { display: flex; flex-direction: column; gap: 6px; }
+.gr-step { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14px; opacity: .6; }
+.gr-step.ok { opacity: 1; }
+.gr-lv { width: 28px; height: 28px; border-radius: 50%; background: #ece0fb; color: #5f4a8a; display: grid; place-items: center; font: 600 13px var(--f-display); flex: none; }
+.gr-step.ok .gr-lv { background: #a385e0; color: #fff; }
+.gr-ic { width: 32px; display: flex; justify-content: center; flex: none; }
+.gr-ic img { max-height: 28px; object-fit: contain; }

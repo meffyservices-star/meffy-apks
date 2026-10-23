@@ -1495,7 +1495,7 @@ const sc = A.screens, after = A.after, ACT = A.ACTIONS;
 const rerender = () => { A.render(); };
 function avatarHTML(cls) { return S.settings.photo ? `<img class="avatar ${cls}" alt="Tu foto" src="${esc(S.settings.photo)}">` : `<img class="avatar ${cls} pixel" alt="" src="${Pix.sprite('pudin', 5)}" style="object-fit:contain;padding:8px">`; }
 A.avatarHTML = avatarHTML;
-const MENU = ['rincon', 'jardin', 'tablero', 'tienda', 'year', 'goals', 'recurring', 'projections', 'rules', 'settings', 'appearance', 'plan', 'data'];
+const MENU = ['rincon', 'logros', 'jardin', 'tienda', 'year', 'goals', 'recurring', 'projections', 'rules', 'settings', 'appearance', 'plan', 'data'];
 sc.more = () => `
 ${A.header('more')}
 <button class="card row" data-go="data" style="gap:14px;text-align:left;width:100%;color:inherit;font:inherit;cursor:pointer">${avatarHTML('')}<div style="min-width:0"><b class="mid" style="display:block">${esc(S.settings.name || 'Tu perfil')}</b><div class="faint">${A.isPlus() ? '<span class="tag gold">Meffy+</span> ' : ''}${S.settings.photo ? 'Toca para editar tu perfil' : 'Toca para poner tu foto y tu nombre'}</div></div></button>
@@ -2526,6 +2526,7 @@ ${tools.filter(([id]) => !hidden.includes(id)).map(([id, ic, lbl, c]) => `<butto
 <button class="tb c1" id="tbUndo" aria-label="Deshacer" title="Deshacer">↶</button><button class="tb c1" id="tbRedo" aria-label="Rehacer" title="Rehacer">↷</button>
 <button class="tb c6" id="tbNight" aria-label="Papel de noche" title="Papel de noche">${pxi('ui_luna', 24)}</button><button class="tb c1" id="tbCfg" aria-label="Elegir qué herramientas ver" title="Elegir qué herramientas ver">${pxi('gear', 22)}</button>
 </div>
+<button class="jr-dreams" data-go="tablero">${pxi('pic', 22)}<span>Mi tablero de sueños</span><span class="faint">›</span></button>
 <div id="jHint" class="faint" style="text-align:center;min-height:18px"></div>
 <div class="book-wrap" id="bookWrap"></div>
 <div class="jr-dots" id="jDots"></div>`;

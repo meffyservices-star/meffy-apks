@@ -180,9 +180,30 @@ function addXp(id, n, kind) {
   if (!g) return 0; p.xpd[kind] = (p.xpd[kind] || 0) + g; p.xp[id] = (p.xp[id] || 0) + g; return g;
 }
 A.petAddXp = (n, kind) => { const id = P().active; if (id) addXp(id, n, kind || 'game'); };
+// premios por nivel (se ganan con el nivel más alto de tus mochis)
+const LV_PRIZES = [
+  [2, 'food', 'dango', 3, '3 dangos para la despensa'], [3, 'stars', 15, 0, '15 estrellitas'], [4, 'wall', 'menta', 0, 'Pared menta para el cuarto'],
+  [5, 'grow', 0, 0, 'Crece: ya no es chiquita'], [6, 'floor', 'cuadros', 0, 'Piso de cuadritos'], [7, 'acc', 'lazo', 0, 'Lazo rosa'],
+  [8, 'furn', 'piano', 0, 'El piano para tu cuarto'], [9, 'stars', 30, 0, '30 estrellitas'], [10, 'wings', 0, 0, 'Le salen alitas'],
+  [12, 'furn', 'hongo', 0, 'Lámpara de hongo'], [15, 'stars', 80, 0, '80 estrellitas']
+];
+A.LV_PRIZES = LV_PRIZES;
+function claimPrizes() {
+  const p = P(); const maxL = Math.max(1, ...p.owned.map(k => level(k).L)); const from = p.lvClaim || 1; if (maxL <= from) return [];
+  const got = LV_PRIZES.filter(([L]) => L > from && L <= maxL); const r = room();
+  got.forEach(([, k, a, n]) => {
+    if (k === 'food') p.pantry[a] = (p.pantry[a] || 0) + n;
+    if (k === 'stars') give(a);
+    if (k === 'wall' || k === 'floor') { const key = k + ':' + a; if (!r.owned.includes(key)) r.owned.push(key); }
+    if (k === 'acc') { const ro = R(); ro.owned = ro.owned || []; if (!ro.owned.includes('acc:' + a)) ro.owned.push('acc:' + a); }
+    if (k === 'furn') { if (!r.owned.includes(a)) r.owned.push(a); }
+  });
+  p.lvClaim = maxL; return got;
+}
 function checkLevelUp() {
   const p = P(); let msg = null;
-  p.owned.forEach(id => { const L = level(id).L; if ((p.lvSeen[id] || 0) < L) { if (p.lvSeen[id]) msg = `¡${info(id).name} subió a nivel ${L}!` + (L === 5 ? ' Ya es una mochi grande.' : L === 10 ? ' ¡Ahora es una mochi real con alitas!' : L === 8 ? ' Se desbloqueó el piano para tu cuarto.' : ''); p.lvSeen[id] = L; } });
+  p.owned.forEach(id => { const L = level(id).L; if ((p.lvSeen[id] || 0) < L) { if (p.lvSeen[id]) msg = `¡${info(id).name} subió a nivel ${L}!` + (L === 5 ? ' Ya creció.' : L === 10 ? ' ¡Le salieron alitas!' : ''); p.lvSeen[id] = L; } });
+  const got = claimPrizes(); if (got.length) msg = (msg ? msg + ' ' : '') + 'Ganaste: ' + got.map(x => x[4]).join(', ') + '.';
   if (msg) { A.saveSettings(); setTimeout(() => toast(msg), 300); }
 }
 function petArt(id, sc, cls) {
@@ -220,8 +241,7 @@ A.giftReady = giftReady;
 const PLACES = () => [
   ['cuarto', 'x_cama', 'Mi cuarto'], ['regalo', giftReady() ? 'regalo_cerrado' : 'regalo_abierto', 'Regalo del día', giftReady()], ['juegos', 'plataforma_nube', 'Juegos'],
   ['crecer', 'brotecito', 'Crecer'], ['coleccion', 'maca', 'Colección'], ['tienda', 'gift', 'Tiendita'],
-  ['jardin', 'girasol', 'Mi jardín'], ['tablero', 'pic', 'Sueños'], ['visitas', 'casita', 'Visitas'],
-  ['shey', 'shey', 'Antojos'], ['logros', 'trofeo', 'Logros']
+  ['visitas', 'casita', 'Visitas'], ['shey', 'shey', 'Antojos'], ['jardin', 'girasol', 'Mi jardín']
 ];
 A.screens.rincon = () => {
   const p = P(); if (!p.active) return elegirHTML(true);
@@ -383,16 +403,18 @@ A.screens.crecer = () => {
 ${p.owned.length > 1 ? `<div class="chips">${p.owned.map(k => `<button class="chip" data-act="grSel" data-id="${k}" aria-pressed="${k === id}">${esc(info(k).name)}</button>`).join('')}</div>` : ''}
 <div class="card row" style="gap:14px"><span style="width:96px;flex:none">${petArt(id, 5)}</span><div style="flex:1;min-width:0" class="stack"><div class="mid" style="font-family:var(--f-display);font-size:22px">${esc(pt.name)} · nivel ${lv.L}</div><span class="prog" style="height:14px"><i style="width:${Math.round(lv.cur / lv.need * 100)}%;background:#a385e0"></i></span><div class="faint">${lv.cur} de ${lv.need} puntos para el nivel ${lv.L + 1}</div></div></div>
 <div class="k-lbl">CÓMO VA CAMBIANDO</div>
-<div class="gr-row">${stage('bebe', 'Bebé', 'Nivel 1 a 4', lv.stage === 'bebe', true)}${stage('mochi', 'Mochi', 'Desde el nivel 5', lv.stage === 'mochi', lv.L >= 5)}${stage('real', 'Mochi real', 'Desde el nivel 10', lv.stage === 'real', lv.L >= 10)}</div>
+<div class="gr-row">${stage('bebe', 'Chiquita', 'Nivel 1 a 4', lv.stage === 'bebe', true)}${stage('mochi', 'Grande', 'Desde el nivel 5', lv.stage === 'mochi', lv.L >= 5)}${stage('real', 'Con alitas', 'Desde el nivel 10', lv.stage === 'real', lv.L >= 10)}</div>
+<div class="k-lbl">PREMIOS POR NIVEL</div>
+<div class="card gr-path">${LV_PRIZES.map(([L, k, a, , t]) => { const ok = maxL >= L; return `<div class="gr-step ${ok ? 'ok' : ''}"><span class="gr-lv">${L}</span><span class="gr-ic">${img(k === 'food' ? a : k === 'stars' ? 'estrellita' : k === 'wall' ? 'casita' : k === 'floor' ? 'casita' : k === 'acc' ? 'acc_' + a : k === 'furn' ? 'x_' + a : k === 'wings' ? 'alitas' : 'brotecito', 28)}</span><span style="flex:1">${esc(t)}</span>${ok ? img('check', 18) : img('candado', 16)}</div>`; }).join('')}<p class="faint" style="margin:6px 0 0">Cuenta el nivel más alto de tus mochis. Los premios se guardan solos.</p></div>
 <div class="card stack"><b>Así gana puntos</b>
 ${[['list', 'Anotar un movimiento (hasta 6 al día)', '+5'], ['cupcake', 'Darle de comer o bañarla', '+3'], ['heart', 'Mimarla', '+1'], ['plataforma', 'Jugar un minijuego', '+10'], ['fuego', 'Llegar a una racha de 7 días', '+40'], ['goal', 'Cumplir una meta de ahorro', '+80']].map(([ic, t, n]) => `<div class="row" style="gap:10px">${img(ic, 26)}<span style="flex:1">${t}</span><span class="tag" style="background:#ece0fb;color:#5f4a8a">${n}</span></div>`).join('')}</div>
-<div class="gr-hint">${img('x_piano', 40)}<span>${maxL >= 8 ? 'El piano ya está desbloqueado para tu cuarto.' : 'En el nivel 8 se desbloquea el piano para el cuarto.'}</span></div>`;
+`;
 };
 function stageArt(id, k) {
   const s = spr(info(id).sprite, 4);
   if (k === 'bebe') return `<img class="pixel" alt="" src="${s}" style="width:52px;margin-top:22px">`;
   if (k === 'mochi') return `<img class="pixel" alt="" src="${s}" style="width:76px">`;
-  return `<span class="gr-real"><img class="pixel gr-alas" alt="" src="${spr('alitas', 6)}"><img class="pixel" alt="" src="${s}" style="width:76px;position:relative"><img class="pixel gr-crown" alt="" src="${spr('acc_corona', 3)}"></span>`;
+  return `<span class="gr-real"><img class="pixel gr-alas" alt="" src="${spr('alitas', 6)}"><img class="pixel" alt="" src="${s}" style="width:76px;position:relative"></span>`;
 }
 ACT.grSel = a => { S.growId = a.dataset.id; A.render(); };
 
@@ -400,7 +422,7 @@ ACT.grSel = a => { S.growId = a.dataset.id; A.render(); };
 A.screens.logros = () => {
   const s = A.rcStats(); const ACH = A.RC.ACH; const RW = (A.CFG && A.CFG.rewards) || {};
   const tab = S.rcTab || 'logros';
-  return `${sub('logros', 'rincon', starsPill())}
+  return `${sub('logros', 'more', starsPill())}
 <div class="grid2"><div class="card"><h3>Racha</h3><div class="mid">${s.streak} ${s.streak === 1 ? 'día' : 'días'}</div><div class="faint">Mejor racha: ${s.best}</div></div><div class="card"><h3>Estrellitas</h3><div class="mid">${ST(20)} ${bal()}</div><div class="faint">Ganas ${RW.day || 2} por cada día que anotas</div></div></div>
 <div class="seg"><button data-act="rcTab" data-v="logros" aria-pressed="${tab !== 'como'}">Logros</button><button data-act="rcTab" data-v="como" aria-pressed="${tab === 'como'}">Cómo ganar</button></div>
 ${tab !== 'como' ? `<div class="list">${ACH.map(a => { const ok = a.ok(s); return `<div class="li" style="${ok ? '' : 'opacity:.6'}"><span class="ic" style="${ok ? 'background:#fff09a' : 'filter:grayscale(1)'}">${A.px(a.ic, 28)}</span><span class="tx-main"><b>${esc(a.name)}</b><span>${esc(a.desc)}</span></span><span class="amt">${ok ? img('check', 20) : '+' + a.prize + ' ' + ST(14)}</span></div>`; }).join('')}</div>` : `<div class="card stack">

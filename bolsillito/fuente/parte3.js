@@ -256,7 +256,7 @@ A.screens.tablero = () => {
   const words = b.words.map((w, i) => `<button class="bd-word" data-act="bdWord" data-i="${i}" style="--rot:${i % 2 ? 3 : -4}deg">${esc(w)}</button>`);
   const mix = []; cards.forEach((c, i) => { mix.push(c); if (i === 1 && words[0]) mix.push(words[0]); if (i === 3 && words[1]) mix.push(words[1]); });
   if (cards.length < 2) words.forEach(w => mix.push(w));
-  return `${sub('tablero', 'rincon', `<button class="btn sm" data-act="bdAdd">Agregar +</button>`)}
+  return `${sub('tablero', 'journal', `<button class="btn sm" data-act="bdAdd">Agregar +</button>`)}
 <button class="pill bd-title" data-act="bdTitle">${esc(b.title)}</button>
 <div class="board">${mix.join('') || ''}${!b.items.length ? `<button class="pol" data-act="bdAdd" style="--rot:-2deg"><img class="pixel pol-tape" alt="" src="${spr('ui_washi', 3)}"><span class="pol-pic"><span class="pol-empty">${img('pic', 30)}Pon aquí la foto de tu primer sueño</span></span><span class="pol-cap">Mi primer sueño</span></button>` : ''}
 <img class="pixel bd-st a" alt="" src="${spr('star', 3)}"><img class="pixel bd-st b" alt="" src="${spr('heart', 3)}"><img class="pixel bd-st c" alt="" src="${spr('sparkle', 3)}"></div>
