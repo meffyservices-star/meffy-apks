@@ -12,7 +12,7 @@ const out = path.join(dir, 'publicado');
 // app.js + los módulos nuevos (parte1.js…), que se meten antes de la última línea que arranca la app
 function juntarJS() {
   const app = fs.readFileSync(path.join(src, 'app.js'), 'utf8');
-  const extra = ['parte1.js', 'sprites2.js', 'sprites3.js', 'parte2.js', 'parte3.js', 'cocina.js'].filter(f => fs.existsSync(path.join(src, f))).map(f => '\n;' + fs.readFileSync(path.join(src, f), 'utf8') + '\n');
+  const extra = ['parte1.js', 'sprites2.js', 'sprites3.js', 'parte2.js', 'parte3.js'].filter(f => fs.existsSync(path.join(src, f))).map(f => '\n;' + fs.readFileSync(path.join(src, f), 'utf8') + '\n');
   const cut = app.lastIndexOf(';document.getElementById(\'bootImg\')');
   return app.slice(0, cut) + extra.join('') + app.slice(cut);
 }

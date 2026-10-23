@@ -249,6 +249,7 @@ ${netChart(withA)}
 <div class="ph"><span class="pill sm">Mis cuentas</span></div>
 ${S.fin.accounts.length ? A.walletHTML(a => { const b = A.acctBalance(a.id); const nc = insts().filter(c => c.acct === a.id && paid(c) < c.n).length; return `<button class="acct" data-act="acctd" data-id="${a.id}" style="width:100%;background:none;border:0;border-bottom:1px dashed var(--glass-line);text-align:left;color:inherit;font:inherit;cursor:pointer"><span class="ic">${iconHTML(a.icon, 32)}</span><span class="n">${esc(a.name)}<small>${esc(A.typeName(a.type))}${a.liability && a.due ? ' · paga el día ' + a.due : ''}${nc ? ' · ' + nc + (nc === 1 ? ' compra' : ' compras') + ' a cuotas' : ''}</small></span><b class="num ${b < 0 ? 'neg' : ''}">${money(b)}</b></button>`; }) : '<div class="card empty">Agrega tu efectivo, bancos, tarjetas y cuentas virtuales.</div>'}
 </section>
+${(() => { const L = findSubs(); if (!L.length) return ''; const m = r2(L.reduce((s2, x) => s2 + x.monthly, 0)); return `<button class="card row" data-go="suscripciones" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer">${iconHTML('s:repeat', 34)}<div style="flex:1"><b>Tus suscripciones: ${money(m)} al mes</b><div class="faint">${L.length} ${L.length === 1 ? 'suscripción' : 'suscripciones'} · ${money(r2(m * 12))} al año</div></div><span class="faint">›</span></button>`; })()}
 <section class="stack">
 <div class="ph"><span class="pill sm">Me deben / Debo</span><button class="btn sm" data-go="loans">Ver</button></div>
 <div class="grid2">
@@ -268,7 +269,7 @@ ${up.length ? `<section class="stack"><div class="ph"><span class="pill sm">Pró
 };
 
 // ---------------- Resumen del mes en historias ----------------
-const STORY_BG = [['cerezo', '#ffe3ee', '#ffc9da', '#c44a72'], ['nubes', '#dcefff', '#bfe1fb', '#2f5f85'], ['picnic', '#fff0de', '#ffd5b8', '#a34a24'], [null, '#efe4ff', '#d9c6fb', '#6a4fb0'], ['jardin', '#e8f8e4', '#cdeec3', '#3f7a2f']];
+const STORY_BG = [['cerezo', '#ffe3ee', '#ffc9da', '#c44a72'], ['nubes', '#dcefff', '#bfe1fb', '#2f5f85'], ['picnic', '#fff0de', '#ffd5b8', '#a34a24'], [null, '#efe4ff', '#d9c6fb', '#6a4fb0'], ['jardin', '#e8f8e4', '#cdeec3', '#3f7a2f'], ['atardecer', '#ffe9d6', '#ffc9b0', '#a34a24'], ['estrellas', '#ece6ff', '#cfc2f7', '#4a3f8f']];
 function monthData(k) {
   const real = A.txIn(k).filter(t => !t.example);
   const prevK = A.addMonths(k, -1); const prev = A.txIn(prevK).filter(t => !t.example);
@@ -295,10 +296,13 @@ function slides(d) {
 }
 function showStory(k) {
   const d = monthData(k); if (!d.n) { toast('Ese mes no tiene movimientos para resumir'); return; }
-  const S2 = slides(d); let i = 0;
+  playStory(slides(d));
+}
+function playStory(S2, label) {
+  let i = 0;
   const ov = document.createElement('div'); ov.className = 'story'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-label', 'Resumen del mes');
   const paint = () => {
-    const [bn, c1, c2, ink] = STORY_BG[i];
+    const [bn, c1, c2, ink] = STORY_BG[i % STORY_BG.length];
     ov.style.background = (bn ? `url(${Pix.banner(bn)}) center bottom/100% auto no-repeat,` : 'radial-gradient(circle,rgba(255,255,255,.9) 1px,transparent 1.8px) 0 0/24px 24px,') + `linear-gradient(180deg,${c1},${c2})`;
     ov.style.setProperty('--st-ink', ink);
     ov.innerHTML = `<div class="st-bars-top">${S2.map((_, j) => `<span><i style="width:${j <= i ? 100 : 0}%"></i></span>`).join('')}</div>
@@ -313,7 +317,34 @@ function showStory(k) {
   const key = e => { if (e.key === 'Escape') close(); if (e.key === 'ArrowRight') $('.st-tap.r', ov).click(); if (e.key === 'ArrowLeft') $('.st-tap.l', ov).click(); };
   document.addEventListener('keydown', key); document.body.appendChild(ov); paint();
 }
-A.showStory = showStory;
+A.showStory = showStory; A.playStory = playStory;
+// ---- tu año en historias ----
+function yearSlides(y) {
+  const real = S.tx.filter(t => !t.example && t.date.slice(0, 4) === String(y)); if (!real.length) return null;
+  const spent = A.spentOf(real), inc = A.incomeOf(real);
+  const months = [...new Set(real.map(t => t.date.slice(0, 7)))].sort(); const per = months.map(m => ({ m, v: A.spentOf(real.filter(t => t.date.slice(0, 7) === m)), inc: A.incomeOf(real.filter(t => t.date.slice(0, 7) === m)) }));
+  const best = per.filter(x => x.v > 0).sort((a, b) => a.v - b.v)[0], worst = per.slice().sort((a, b) => b.v - a.v)[0];
+  const bc = {}; real.filter(t => t.type === 'expense').forEach(t => { bc[t.cat] = (bc[t.cat] || 0) + t.amount; });
+  const top = Object.entries(bc).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([id, v]) => ({ c: A.cat(id) || { name: 'Otros', icon: 's:moneda' }, v }));
+  const days = new Set(real.filter(t => !t.recurring).map(t => t.date)).size; const st = A.rcStats ? A.rcStats() : { best: 0, goalsDone: 0 };
+  const mName = m => A.cap(A.MONTHS[+m.slice(5) - 1]);
+  const pst = A.petState ? A.petState() : null; const pid = pst && pst.active; const lv = pid ? A.petLevel(pid).L : 0;
+  const resist = (S.fin.antojos || []).filter(a => a.status === 'resistido' && (a.decided || '').slice(0, 4) === String(y)).length;
+  return [
+    `<div class="st-kick">TU AÑO EN BOLSILLITO</div><div class="st-huge">${y}</div><img class="pixel st-pet st-flota" alt="" src="${petSrc(8)}"><div class="st-text">Un año entero cuidando tu dinerito. Mira todo lo que lograste.</div>`,
+    `<div class="st-kick">EN ${y} GASTASTE</div><div class="st-huge">${money(spent)}</div>${inc ? `<div class="st-box">Te entraron ${money(inc)}${inc > spent ? ' y te quedaron ' + money(inc - spent) : ''}</div>` : ''}<img class="pixel st-pet st-flota" alt="" src="${Pix.sprite('alcancia', 8)}">`,
+    best ? `<div class="st-kick">TU MEJOR MES</div><div class="st-huge st-mid">${esc(mName(best.m))}</div><div class="st-box">Fue el mes que menos gastaste: ${money(best.v)}</div>${worst && worst.m !== best.m ? `<div class="st-text">Y el más gastador fue ${esc(mName(worst.m))}, con ${money(worst.v)}.</div>` : ''}<img class="pixel st-pet st-flota" alt="" src="${Pix.sprite('trofeo', 7)}">` : null,
+    top.length ? `<div class="st-kick">LO QUE MÁS TE GUSTÓ</div>${iconHTML(top[0].c.icon, 100)}<div class="st-huge st-mid">${esc(top[0].c.name)}</div><div class="st-box st-bars">${top.map(x => `<div class="row" style="gap:8px">${iconHTML(x.c.icon, 22)}<b style="width:96px;text-align:left">${esc(x.c.name)}</b><span class="prog" style="flex:1"><i style="width:${Math.round(x.v / top[0].v * 100)}%"></i></span><b class="num">${money(x.v)}</b></div>`).join('')}</div>` : null,
+    `<div class="st-kick">TUS NÚMEROS DEL AÑO</div><div class="st-grid"><div class="st-stat">${iconHTML('s:list', 30)}<b>${real.length}</b><span>movimientos</span></div><div class="st-stat">${iconHTML('s:month', 30)}<b>${days}</b><span>días anotando</span></div><div class="st-stat">${iconHTML('s:fuego', 30)}<b>${st.best}</b><span>mejor racha</span></div><div class="st-stat">${iconHTML('s:goal', 30)}<b>${st.goalsDone || 0}</b><span>metas cumplidas</span></div><div class="st-stat">${iconHTML('s:shey', 30)}<b>${resist}</b><span>antojos resistidos</span></div><div class="st-stat">${iconHTML('s:pic', 30)}<b>${months.length}</b><span>meses</span></div></div>`,
+    pid ? `<div class="st-kick">TU MASCOTA CRECIÓ CONTIGO</div><img class="pixel st-pet st-flota" alt="" src="${petSrc(8)}"><div class="st-huge st-mid">${esc(A.petInfo(pid).name)} · nivel ${lv}</div><div class="st-box">Tienes ${pst.owned.length} mochis en tu colección.</div>` : null,
+    `<div class="st-kick">NOS VEMOS EN ${y + 1}</div><div class="st-pets">${['gochi', 'pudin', 'shey'].map((n, i) => `<img class="pixel st-flota" style="animation-delay:${i * .3}s;width:${i === 1 ? 120 : 92}px" alt="" src="${Pix.sprite(n, 6)}">`).join('')}</div><div class="st-huge st-mid">¡Gracias por este año!</div><div class="st-box">Que el próximo venga con más ahorros y más días bonitos.</div>`
+  ].filter(Boolean);
+}
+function showYear(y) { const sl = yearSlides(y); if (!sl) return toast('Ese año no tiene movimientos para resumir'); playStory(sl); }
+A.showYearStory = showYear;
+ACT.yearStory = a => showYear(+(a.dataset.y || new Date().getFullYear()));
+const yearScreen = A.screens.year;
+if (yearScreen) A.screens.year = () => { const h = yearScreen(); const y = +(S.year || new Date().getFullYear()); const btn = `<button class="card row story-btn" data-act="yearStory" data-y="${y}"><img class="pixel" alt="" src="${petSrc(3)}" style="width:44px;height:44px"><div style="flex:1;text-align:left"><b>Ver tu ${y} en historias</b><div class="faint">Tu año completo, como en Instagram</div></div><span class="faint">›</span></button>`; const bn = A.bannerHTML('year') || ''; const at = bn ? h.indexOf(bn) : -1; const cut = at >= 0 ? at + bn.length : 0; return h.slice(0, cut) + btn + h.slice(cut); };
 async function saveImage(ov) {
   // dibuja la historia actual en una imagen sencilla (fondo, mascota y textos)
   const W = 1080, H = 1920; const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
@@ -343,6 +374,44 @@ ACT.story = a => showStory(a.dataset.k || A.addMonths(ym(today()), -1));
 const monthScreen = A.screens.month;
 A.screens.month = () => { const k = S.month; const cur = ym(today()); const html = monthScreen(); if (k > cur) return html; const bn = A.bannerHTML('month') || ''; const at = bn ? html.indexOf(bn) : -1; const cut = at >= 0 ? at + bn.length : 0; return html.slice(0, cut) + `<button class="card row story-btn" data-act="story" data-k="${k}"><img class="pixel" alt="" src="${petSrc(3)}" style="width:44px;height:44px"><div style="flex:1;text-align:left"><b>Ver el resumen de ${esc(A.monthLabel(k))}</b><div class="faint">En historias, como en Instagram</div></div><span class="faint">›</span></button>` + html.slice(cut); };
 
+// ---------------- Detector de suscripciones ----------------
+const SUBS_WORDS = /netflix|spotify|youtube|disney|hbo|\bmax\b|prime|amazon|apple|icloud|google one|google|deezer|crunchyroll|paramount|star\+|canva|chatgpt|openai|claude|notion|duolingo|xbox|playstation|nintendo|twitch|patreon|onlyfans|gym|gimnasio|suscrip|membres|plan |claro|movistar|cnt|tidal|audible|kindle|adobe|microsoft|office|dropbox|tinder|bumble|uber one|rappi pro|pedidosya plus/i;
+const FREQ_MES = { semanal: 52 / 12, quincenal: 26 / 12, mensual: 1, bimestral: .5, trimestral: 1 / 3, semestral: 1 / 6, anual: 1 / 12 };
+function findSubs() {
+  const ign = S.settings.subsIgnore || []; const out = new Map();
+  S.fin.recurring.filter(r => r.active && r.type === 'expense' && !r.example).forEach(r => {
+    if (!(r.cat === 'subs' || SUBS_WORDS.test(r.name))) return; const k = 'r:' + r.id; if (ign.includes(k)) return;
+    out.set(k, { k, name: r.name, monthly: r2(+r.amount * (FREQ_MES[r.freq] || 1)), icon: (A.cat(r.cat) || {}).icon || 's:repeat', from: 'Pago fijo', last: r.next });
+  });
+  const norm = t => (t || '').toLowerCase().replace(/[0-9.,$]/g, '').replace(/\s+/g, ' ').trim();
+  const groups = {};
+  S.tx.filter(t => t.type === 'expense' && !t.example && !t.recurring && !t.inst).forEach(t => { const n = norm(t.note); if (!n && t.cat !== 'subs') return; const key = n || ('cat:' + t.cat + ':' + Math.round(t.amount)); (groups[key] = groups[key] || []).push(t); });
+  Object.entries(groups).forEach(([key, L]) => {
+    const months = [...new Set(L.map(t => t.date.slice(0, 7)))]; const named = SUBS_WORDS.test(key) || L.some(t => t.cat === 'subs');
+    if (!(named || months.length >= 2)) return;
+    const amts = L.map(t => t.amount).sort((a, b) => a - b); const med = amts[Math.floor(amts.length / 2)];
+    const similar = L.filter(t => Math.abs(t.amount - med) <= med * .15); if (!named && similar.length < 2) return;
+    const recentMonths = months.filter(m => m >= A.addMonths(ym(today()), -3)); if (!recentMonths.length) return;
+    if (!named && months.length < 2) return;
+    const k = 't:' + key; if (ign.includes(k) || [...out.values()].some(x => norm(x.name) === key)) return;
+    const last = L.reduce((m, t) => t.date > m ? t.date : m, '');
+    out.set(k, { k, name: L[L.length - 1].note || (A.cat(L[0].cat) || {}).name || 'Suscripción', monthly: r2(med), icon: (A.cat(L[0].cat) || {}).icon || 's:repeat', from: `Lo pagaste ${months.length} ${months.length === 1 ? 'mes' : 'meses'}`, last });
+  });
+  return [...out.values()].sort((a, b) => b.monthly - a.monthly);
+}
+A.findSubs = findSubs;
+A.PAGES.suscripciones = 'Mis suscripciones';
+Object.values(A.PACKS).forEach(pk => { pk.map.suscripciones = pk.map.suscripciones || ('s:repeat' + (pk.map.home && pk.map.home.includes('~') ? '~' + pk.map.home.split('~')[1] : '')); });
+A.screens.suscripciones = () => {
+  const L = findSubs(); const m = r2(L.reduce((s2, x) => s2 + x.monthly, 0));
+  return `${A.subHeader ? A.subHeader('suscripciones', 'more') : A.header('suscripciones')}
+<div class="card stack subs-hero"><h3>Pagas en suscripciones</h3><div class="big num">${money(m)}<span class="faint" style="font-size:15px"> al mes</span></div><div class="faint">Son ${money(r2(m * 12))} al año. ${m > 0 ? '¿Las usas todas?' : ''}</div></div>
+${L.length ? `<div class="list">${L.map(x => `<div class="li"><span class="ic">${iconHTML(x.icon, 30)}</span><span class="tx-main"><b>${esc(x.name)}</b><span>${esc(x.from)} · ${money(r2(x.monthly * 12))} al año</span></span><span class="amt num">${money(x.monthly)}/mes</span><button class="iconbtn" data-act="subIgn" data-k="${esc(x.k)}" aria-label="No es suscripción" style="width:30px;height:30px;box-shadow:none;font-size:15px">×</button></div>`).join('')}</div>` : '<div class="card empty">No encontramos suscripciones. Las buscamos en tus pagos fijos y en gastos que se repiten cada mes, como Netflix, Spotify o el gimnasio.</div>'}
+<p class="faint" style="margin:0">Las encontramos solitas en tus pagos fijos y en gastos que se repiten cada mes. Si algo no es una suscripción, tócale la ×. Tip: ponle la categoría "Suscripciones" a esos gastos para que salgan siempre.</p>
+${(S.settings.subsIgnore || []).length ? '<button class="btn sm" data-act="subReset">Volver a mostrar las que quitaste</button>' : ''}`;
+};
+ACT.subIgn = a => { S.settings.subsIgnore = (S.settings.subsIgnore || []).concat(a.dataset.k); A.saveSettings(); A.render(); };
+ACT.subReset = () => { S.settings.subsIgnore = []; A.saveSettings(); A.render(); };
 // ---------------- Avisos en el Inicio ----------------
 function alertsHTML() {
   const k = ym(today()); const list = A.txIn(k).filter(t => !t.example); const by = A.byCat(list, 'expense');
@@ -367,6 +436,7 @@ A.start = async () => {
   const cur = ym(today()), prev = A.addMonths(cur, -1);
   if (S.settings.lastStory !== cur && A.txIn(prev).some(t => !t.example)) { S.settings.lastStory = cur; A.saveSettings(); setTimeout(() => showStory(prev), 900); }
   else if (!S.settings.lastStory) { S.settings.lastStory = cur; A.saveSettings(); }
+  const yy = new Date().getFullYear(); if (new Date().getMonth() === 0 && new Date().getDate() <= 10 && S.settings.lastYearStory !== yy && yearSlides(yy - 1)) { S.settings.lastYearStory = yy; A.saveSettings(); setTimeout(() => showYear(yy - 1), 1600); }
   A.renderNav(); A.render();
 };
 })();

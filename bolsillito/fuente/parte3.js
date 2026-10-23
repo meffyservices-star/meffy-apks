@@ -24,7 +24,6 @@ A.screens.juegos = () => {
   return `${sub('juegos', 'rincon', starsPill())}
 <button class="card gm-card sky" data-act="gmPlay" data-g="saltar"><div class="gm-art"><img class="pixel" alt="" src="${spr('plataforma_nube', 3)}" style="width:66px;position:absolute;left:4px;top:56px"><img class="pixel" alt="" src="${spr('plataforma', 3)}" style="width:66px;position:absolute;right:2px;top:20px"><img class="pixel gm-bounce" alt="" src="${spr(petSprite(), 4)}" style="width:54px;position:absolute;left:32px;top:6px"></div><div style="flex:1"><b class="mid" style="font-family:var(--f-display)">Saltar hasta las nubes</b><div class="faint">Atrapa estrellitas mientras subes. Cuidado: unas plataformas se rompen y las nubes se esfuman.</div><div class="tag gold" style="margin-top:6px">Tu récord · ${g.best.saltar || 0} m</div></div></button>
 <button class="card gm-card picnic" data-act="gmPlay" data-g="atrapar"><div class="gm-art">${['fresa', 'dona', 'galleta'].map((f, i) => `<img class="pixel gm-fall" alt="" src="${spr(f, 3)}" style="width:28px;position:absolute;left:${10 + i * 26}px;top:${4 + (i % 2) * 18}px;animation-delay:-${i * .5}s">`).join('')}<img class="pixel" alt="" src="${spr(petSprite(), 4)}" style="width:54px;position:absolute;left:24px;bottom:2px"></div><div style="flex:1"><b class="mid" style="font-family:var(--f-display)">Atrapar comidita</b><div class="faint">Toda la comida que atrapes va directo a la despensa. Esquiva las gotas de lluvia.</div><div class="tag gold" style="margin-top:6px">Tu récord · ${g.best.atrapar || 0} cositas</div></div></button>
-<button class="card gm-card kitchen" data-go="cocina"><div class="gm-art">${img('k_olla', 70, 3, 'position:absolute;left:18px;bottom:6px')}${img('pastel', 34, 3, 'position:absolute;left:4px;top:4px')}${img('tanghulu', 30, 3, 'position:absolute;right:4px;top:6px')}${img(petSprite(), 40, 3, 'position:absolute;right:0;bottom:2px')}</div><div style="flex:1"><b class="mid" style="font-family:var(--f-display)">Cocinita</b><div class="faint">Cocina pasteles, tanghulu, ramen, galletas y más, paso a paso. Lo que cocinas va a la despensa.</div><div class="tag gold" style="margin-top:6px">${Object.keys(A.RECIPES || {}).length} recetas</div></div></button>
 <button class="card gm-card coins" data-act="gmPlay" data-g="monedas"><div class="gm-art">${['moneda', 'ticket', 'moneda'].map((f, i) => `<img class="pixel gm-fall" alt="" src="${spr(f, 3)}" style="width:28px;position:absolute;left:${10 + i * 26}px;top:${4 + (i % 2) * 18}px;animation-delay:-${i * .5}s">`).join('')}<img class="pixel" alt="" src="${spr('alcancia', 4)}" style="width:56px;position:absolute;left:24px;bottom:2px"></div><div style="flex:1"><b class="mid" style="font-family:var(--f-display)">Ahorra monedas, no antojos</b><div class="faint">Atrapa las monedas con tu cochinito y esquiva los antojos que te hacen gastar.</div><div class="tag gold" style="margin-top:6px">Tu récord · ${g.best.monedas || 0} monedas</div></div></button>
 <div class="card row" style="gap:10px">${img('estrellita', 28)}<div style="flex:1"><b>Hoy llevas ${g.stars} de ${GAME_CAP} estrellitas de juegos</b><div class="faint">Cada partida también le da +10 puntos a ${esc(A.petInfo ? A.petInfo(activePet()).name : 'tu mascota')} para crecer.</div></div></div>`;
 };
@@ -538,6 +537,134 @@ A.navDotVisits = () => (V.gifts || []).some(g => g.to_user === Store.uid && !g.o
 // cuando cambias tu cuarto, se actualiza lo que ven tus amigas
 let pubT = null; const saveSet = A.saveSettings;
 A.saveSettings = (...x) => { const r = saveSet(...x); if (S.settings.visitCode && online()) { clearTimeout(pubT); pubT = setTimeout(() => publishRoom().catch(() => {}), 4000); } return r; };
+// ================= Journal: páginas compartidas con amigas =================
+A.PAGES.compartidas = 'Páginas con amigas'; pageIcon('compartidas', 'heart');
+const SH = { rows: {}, base: {}, local: {}, timers: {}, chans: {}, list: null, loading: false };
+const jk = id => 'sh-' + id, idOf = key => key.slice(3);
+const clone = o => JSON.parse(JSON.stringify(o));
+const sameJ = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+function m3(base, loc, rem, keyFn) {
+  const B = new Map((base || []).map(x => [keyFn(x), x])), L = new Map((loc || []).map(x => [keyFn(x), x])), R = new Map((rem || []).map(x => [keyFn(x), x]));
+  const out = []; const seen = new Set();
+  [...(loc || []), ...(rem || [])].forEach(x => { const k = keyFn(x); if (seen.has(k)) return; seen.add(k); const b = B.get(k), l = L.get(k), r = R.get(k);
+    if (l && r) out.push(!sameJ(l, b) ? l : r); else if (l) { if (!b) out.push(l); } else if (r) { if (!b) out.push(r); } });
+  return out;
+}
+function mergeDoc(base, loc, rem) {
+  base = base || { pages: [] }; const bp = new Map((base.pages || []).map(p => [p.id, p])), rp = new Map((rem.pages || []).map(p => [p.id, p]));
+  const pages = m3(base.pages, loc.pages, rem.pages, p => p.id).map(p => {
+    const lp = (loc.pages || []).find(x => x.id === p.id), r = rp.get(p.id), b = bp.get(p.id); if (!lp || !r) return p;
+    const out = Object.assign({}, r); ['bg', 'grid', 'gridColor', 'gs', 'tpl'].forEach(k => { if (!b || lp[k] !== b[k]) out[k] = lp[k]; });
+    out.els = m3(b && b.els, lp.els, r.els, e => e.id); out.strokes = m3(b && b.strokes, lp.strokes, r.strokes, st => JSON.stringify(st).slice(0, 200) + JSON.stringify(st).length);
+    return out;
+  });
+  return { pages };
+}
+async function pushShared(key) {
+  const id = idOf(key); const loc = SH.local[key]; if (!loc || !online()) return;
+  try {
+    const { data: row } = await Store.sb.from('shared_pages').select('body, updated_at').eq('id', id).maybeSingle();
+    const merged = row && row.body && row.body.pages ? mergeDoc(SH.base[id], loc, row.body) : loc;
+    const { error } = await Store.sb.from('shared_pages').update({ body: merged, updated_by: Store.uid, updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) throw error;
+    SH.base[id] = clone(merged); if (SH.rows[id]) SH.rows[id].body = clone(merged); delete SH.local[key];
+    if (!sameJ(merged, loc) && window.Journal) Journal.reload();
+  } catch (e) { console.warn(e); toast('No se pudo guardar la página compartida. Se reintenta solita.'); SH.timers[key] = setTimeout(() => pushShared(key), 5000); }
+}
+window.Shared = {
+  doc: key => { const r = SH.rows[idOf(key)]; return SH.local[key] || (r && r.body && r.body.pages ? r.body : null); },
+  title: key => { const r = SH.rows[idOf(key)]; if (!r) return 'Página compartida'; const others = Object.entries(r.names || {}).filter(([u]) => u !== Store.uid).map(([, n]) => n); return r.title + (others.length ? ' · con ' + others.join(', ') : ''); },
+  save: (key, doc) => { SH.local[key] = clone(doc); clearTimeout(SH.timers[key]); SH.timers[key] = setTimeout(() => pushShared(key), 1200); },
+  flush: key => { if (SH.timers[key] && SH.local[key]) { clearTimeout(SH.timers[key]); pushShared(key); } }
+};
+function listen(id) {
+  if (SH.chans[id] || !Store.sb.channel) return;
+  SH.chans[id] = Store.sb.channel('sp-' + id).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'shared_pages', filter: 'id=eq.' + id }, pl => {
+    const row = pl.new; if (!row || row.updated_by === Store.uid) return; const key = jk(id);
+    if (SH.local[key]) { SH.local[key] = mergeDoc(SH.base[id], SH.local[key], row.body); }
+    SH.rows[id] = Object.assign(SH.rows[id] || {}, row); SH.base[id] = clone(row.body);
+    if (window.Journal && Journal.key === key) Journal.reload();
+  }).subscribe();
+}
+async function loadShared() {
+  if (!online() || SH.loading) return; SH.loading = true;
+  try { const { data } = await Store.sb.from('shared_pages').select('id, owner, members, names, title, body, updated_by, updated_at').order('updated_at', { ascending: false }).limit(30); SH.list = data || []; SH.list.forEach(r => { SH.rows[r.id] = r; if (!SH.base[r.id]) SH.base[r.id] = clone(r.body); }); }
+  catch (e) { SH.list = SH.list || []; } finally { SH.loading = false; if (S.route === 'compartidas') A.render(); }
+}
+A.screens.compartidas = () => {
+  if (!online()) return `${sub('compartidas', 'journal')}<div class="card empty">${img('heart', 40)}<p>Las páginas con amigas necesitan internet y tu cuenta.</p></div>`;
+  if (!SH.list) loadShared();
+  const hidden = S.settings.shHidden || [];
+  const L2 = (SH.list || []).filter(r => !hidden.includes(r.id));
+  return `${sub('compartidas', 'journal', '<button class="btn sm pink" data-act="shNew">Nueva +</button>')}
+<div class="card row" style="gap:12px">${img('pg_abrazo', 44)}<div style="flex:1"><b>Decoren una página juntas</b><div class="faint">Las dos pueden escribir, dibujar y pegar stickers en la misma página. Los cambios de tu amiga te aparecen solitos.</div></div></div>
+${SH.list ? (L2.length ? `<div class="list">${L2.map(r => { const others = Object.entries(r.names || {}).filter(([u]) => u !== Store.uid).map(([, n]) => n); const n = ((r.body || {}).pages || []).reduce((s2, p) => s2 + (p.els || []).length, 0); return `<button class="li" data-act="shOpen" data-id="${r.id}"><span class="ic">${img('ui_paginas', 28)}</span><span class="tx-main"><b>${esc(r.title)}</b><span>Con ${esc(others.join(', ') || 'nadie todavía')} · ${n} cositas · ${ago(r.updated_at)}</span></span><span class="faint">›</span></button>`; }).join('')}</div>` : '<div class="card empty">Todavía no tienes páginas con amigas. Crea una y elige con quién decorarla.</div>') : '<div class="card empty">Cargando…</div>'}
+${(SH.list || []).some(r => hidden.includes(r.id)) ? '<button class="btn sm" data-act="shShowAll">Mostrar las ocultas</button>' : ''}`;
+};
+ACT.shOpen = async a => { const id = a.dataset.id; listen(id); Journal.openKey(jk(id)); };
+ACT.shShowAll = () => { S.settings.shHidden = []; A.saveSettings(); A.render(); };
+ACT.shNew = async () => {
+  const fr = (S.settings.friends || []); await Promise.all(fr.filter(f => !V.cache[f.code]).map(f => fetchRoom(f.code).then(r => { if (r) V.cache[f.code] = r; }).catch(() => {})));
+  const ok = fr.filter(f => V.cache[f.code]);
+  if (!ok.length) return toast('Primero agrega a una amiga en Visitas con su código');
+  const pick = new Set();
+  openSheet('Nueva página con amigas', `<div class="stack"><label class="f">Nombre de la página<input class="in" id="shT" maxlength="40" placeholder="Ej. Nuestro viaje a la playa"></label>
+<div class="f">¿Con quién? (hasta 5)<div class="list">${ok.map(f => `<label class="li" style="cursor:pointer"><input type="checkbox" data-fu="${V.cache[f.code].user_id}" data-fn="${esc(V.cache[f.code].name)}"> <span class="tx-main"><b>${esc(V.cache[f.code].name)}</b><span>${esc(f.code)}</span></span></label>`).join('')}</div></div>
+<button class="btn pink" id="shOk" style="justify-content:center">Crear y empezar a decorar</button></div>`, sh => {
+    sh.addEventListener('change', e => { const u = e.target.dataset.fu; if (!u) return; e.target.checked ? pick.add(u) : pick.delete(u); if (pick.size > 5) { e.target.checked = false; pick.delete(u); toast('Hasta 5 amigas'); } });
+    $('#shOk', sh).onclick = async () => {
+      if (!pick.size) return toast('Elige al menos una amiga');
+      const names = { [Store.uid]: myName() }; $$('[data-fu]', sh).forEach(c => { if (c.checked) names[c.dataset.fu] = c.dataset.fn; });
+      const body = { pages: [{ id: uid(), tpl: 'libre', bg: '#fffaf3', grid: 'puntos', gridColor: '#f2c6d6', gs: 16, els: [], strokes: [], days: {} }] };
+      const { data, error } = await Store.sb.from('shared_pages').insert({ owner: Store.uid, members: [Store.uid, ...pick], names, title: ($('#shT').value || '').trim() || 'Página compartida', body, updated_by: Store.uid }).select('id, owner, members, names, title, body, updated_by, updated_at').single();
+      if (error) return toast('No se pudo crear. Revisa tu conexión.');
+      SH.rows[data.id] = data; SH.base[data.id] = clone(data.body); SH.list = [data].concat(SH.list || []); closeSheet(); listen(data.id); Journal.openKey(jk(data.id));
+    };
+  });
+};
+// mandar una plantilla a una amiga desde el journal (también se puede desde su cajita)
+A.sendTplTo = async (code, tpl) => {
+  const r = V.cache[code] || await fetchRoom(code).catch(() => null); if (!r) return toast('No encontramos a tu amiga');
+  const { error } = await Store.sb.from('gifts').insert({ to_user: r.user_id, from_user: Store.uid, from_name: myName(), kind: 'tpl', item: tpl.name.slice(0, 60), qty: 1, payload: { name: tpl.name, page: tpl.page } });
+  toast(error ? 'No se pudo mandar' : `¡Plantilla enviada a ${r.name}!`);
+};
+// ================= Recordatorio para anotar =================
+const VAPID = 'BJZS49m-TRZOYs2Ansy5qpS72ybEIoIuvTQYbO28jCCe8McNclVj2j6KI2Jkp0qetmzJuC4N8tsDi9zzV7X35n4';
+A.PAGES.recordatorio = 'Recordatorio'; pageIcon('recordatorio', 'alerta');
+const RM = () => (S.settings.reminder = S.settings.reminder || { on: false, hour: 20 });
+const canPush = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent); const standalone = () => window.matchMedia && matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+const b64u = s => { const p = '='.repeat((4 - s.length % 4) % 4); const r = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...r].map(c => c.charCodeAt(0))); };
+const tz = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Guayaquil'; } catch (e) { return 'America/Guayaquil'; } };
+const hourTxt = h => (h % 12 || 12) + (h < 12 ? ' de la mañana' : h < 19 ? ' de la tarde' : ' de la noche');
+A.screens.recordatorio = () => {
+  const r = RM(); const perm = canPush() ? Notification.permission : 'no';
+  return `${sub('recordatorio', 'more')}
+<div class="card row" style="gap:12px">${img(petSprite(), 56)}<div style="flex:1"><b>Te aviso para anotar</b><div class="faint">Todos los días a la hora que elijas, ${esc(A.petInfo ? A.petInfo(activePet()).name : 'tu mascota')} te recuerda anotar tus gastos. Si ese día ya anotaste, no te molesta.</div></div></div>
+${!online() ? '<div class="card empty">El recordatorio necesita internet y tu cuenta de Bolsillito.</div>' : !canPush() ? `<div class="card empty">${isIOS() && !standalone() ? 'En iPhone primero agrega Bolsillito a tu pantalla de inicio (botón Compartir → "Agregar a inicio") y ábrela desde ahí.' : 'Este navegador no permite notificaciones. Prueba con Chrome o instalando la app.'}</div>`
+  : `<div class="card stack"><div class="setrow"><span><b>Recordatorio diario</b></span><span class="toggle"><input type="checkbox" id="rmOn" ${r.on ? 'checked' : ''}><span></span></span></div>
+<label class="f">¿A qué hora?<select class="in" id="rmH">${Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === r.hour ? 'selected' : ''}>${hourTxt(h)}</option>`).join('')}</select></label>
+${perm === 'denied' ? '<p class="faint" style="margin:0;color:#c44a72">Bloqueaste las notificaciones para Bolsillito. Actívalas en los ajustes de tu navegador o celular.</p>' : ''}
+<button class="btn" data-act="rmTest" style="justify-content:center">Mandarme uno de prueba</button></div>`}
+<p class="faint" style="margin:0">Puedes apagarlo cuando quieras. Las notificaciones solo dicen que anotes: nunca muestran tus cifras.</p>`;
+};
+async function rmSave(on, hour) {
+  const r = RM(); r.hour = hour; A.saveSettings();
+  if (!on) { r.on = false; A.saveSettings(); if (r.endpoint && online()) await Store.sb.from('push_subs').update({ enabled: false }).eq('endpoint', r.endpoint); toast('Recordatorio apagado'); return; }
+  const p = await Notification.requestPermission(); if (p !== 'granted') { toast('Necesito permiso para mandarte notificaciones'); r.on = false; A.saveSettings(); A.render(); return; }
+  try {
+    const reg = await navigator.serviceWorker.ready; let subn = await reg.pushManager.getSubscription(); if (!subn) subn = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(VAPID) });
+    const j = subn.toJSON(); const pet = A.petInfo ? A.petInfo(activePet()).name : '';
+    const { error } = await Store.sb.from('push_subs').upsert({ endpoint: j.endpoint, user_id: Store.uid, p256dh: j.keys.p256dh, auth: j.keys.auth, hour, tz: tz(), pet, enabled: true }, { onConflict: 'endpoint' });
+    if (error) throw error; r.on = true; r.endpoint = j.endpoint; A.saveSettings(); toast(`¡Listo! Te aviso todos los días a las ${hourTxt(hour)}`);
+  } catch (e) { console.warn(e); r.on = false; A.saveSettings(); toast('No se pudo activar el recordatorio en este celular'); }
+  A.render();
+}
+A.after.recordatorio = el => { const on = $('#rmOn', el), h = $('#rmH', el); if (on) on.onchange = () => rmSave(on.checked, +h.value); if (h) h.onchange = () => { if (RM().on) rmSave(true, +h.value); else { RM().hour = +h.value; A.saveSettings(); } }; };
+ACT.rmTest = async () => { if (Notification.permission !== 'granted' && (await Notification.requestPermission()) !== 'granted') return toast('Necesito permiso para mandarte notificaciones'); const reg = await navigator.serviceWorker.ready; reg.showNotification('Bolsillito', { body: `¿Anotamos lo de hoy? ${A.petInfo ? A.petInfo(activePet()).name : 'Tu mascota'} te está esperando.`, icon: '/icon-192.png', tag: 'bolsillito-prueba' }); };
+// avisa al servidor que hoy ya anotaste (así no te manda el recordatorio)
+const render2 = A.render;
+A.render = (...x) => { const r = S.settings.reminder; const d = today(); if (r && r.on && r.endpoint && r.logged !== d && online() && S.tx.some(t => t.date === d && !t.example && !t.recurring)) { r.logged = d; Store.sb.from('push_subs').update({ last_log: d }).eq('endpoint', r.endpoint).then(() => {}, () => {}); } return render2(...x); };
 // ---------------- Arranque ----------------
 const st0 = A.start;
 A.start = async () => { await st0(); birthdayGift(); if (online() && S.settings.visitCode) setTimeout(() => { loadInbox().then(() => { A.renderNav(); }).catch(() => {}); }, 2500); };

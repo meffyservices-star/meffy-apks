@@ -1,4 +1,4 @@
-const C = 'bolsillito-v8';
+const C = 'bolsillito-v9';
 const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
 const CORE = ['/', '/offline.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', CDN].concat([0, 1, 2, 3, 4, 5].map(i => '/p' + i + '.bin?v=1'));
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
@@ -22,4 +22,13 @@ self.addEventListener('fetch', e => {
     const r = await Promise.race([net.catch(() => null), new Promise(res => setTimeout(() => res(null), 3000))]);
     return r || cached;
   })());
+});
+// Recordatorio para anotar (notificaciones)
+self.addEventListener('push', e => {
+  let d = {}; try { d = e.data ? e.data.json() : {}; } catch (er) { d = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Bolsillito', { body: d.body || '¿Anotamos lo de hoy?', icon: '/icon-192.png', badge: '/icon-192.png', tag: 'bolsillito-recordatorio', data: { url: d.url || '/' } }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(ws => { const w = ws.find(c => 'focus' in c); return w ? w.focus() : self.clients.openWindow((e.notification.data && e.notification.data.url) || '/'); }));
 });

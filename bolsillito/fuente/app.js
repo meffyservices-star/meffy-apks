@@ -1495,7 +1495,7 @@ const sc = A.screens, after = A.after, ACT = A.ACTIONS;
 const rerender = () => { A.render(); };
 function avatarHTML(cls) { return S.settings.photo ? `<img class="avatar ${cls}" alt="Tu foto" src="${esc(S.settings.photo)}">` : `<img class="avatar ${cls} pixel" alt="" src="${Pix.sprite('pudin', 5)}" style="object-fit:contain;padding:8px">`; }
 A.avatarHTML = avatarHTML;
-const MENU = ['rincon', 'logros', 'tienda', 'year', 'goals', 'recurring', 'projections', 'rules', 'settings', 'appearance', 'plan', 'data'];
+const MENU = ['rincon', 'logros', 'tienda', 'suscripciones', 'recordatorio', 'year', 'goals', 'recurring', 'projections', 'rules', 'settings', 'appearance', 'plan', 'data'];
 sc.more = () => `
 ${A.header('more')}
 <button class="card row" data-go="data" style="gap:14px;text-align:left;width:100%;color:inherit;font:inherit;cursor:pointer">${avatarHTML('')}<div style="min-width:0"><b class="mid" style="display:block">${esc(S.settings.name || 'Tu perfil')}</b><div class="faint">${A.isPlus() ? '<span class="tag gold">Meffy+</span> ' : ''}${S.settings.photo ? 'Toca para editar tu perfil' : 'Toca para poner tu foto y tu nombre'}</div></div></button>
@@ -2487,17 +2487,18 @@ const pxi = (n, s) => `<img class="pixel" alt="" src="${Pix.sprite(n, 3)}" style
 const J = { key: null, doc: null, page: 0, tool: null, pen: { id: 'gel', color: INKS[0], w: 2 }, sel: null, editing: null, hist: [], fut: [], lock: false, night: false, scale: 1, pagesShown: 1 };
 function weekKey(d) { const w = A.isoWeek(d); return w.y + '-W' + pad(w.w); }
 function weekDates(key) { // Monday of ISO week
+if (key.startsWith('sh-')) key = weekKey(new Date());
 const [y, w] = key.split('-W').map(Number); const jan4 = new Date(y, 0, 4); const mon = addDays(jan4, -A.dowIdx(jan4) + (w - 1) * 7);
 return Array.from({ length: 7 }, (_, i) => addDays(mon, i));
 }
 function blankPage(tpl, grid) { return { id: uid(), tpl, bg: '#fffaf3', grid: grid || (tpl === 'semana' ? 'lisa' : 'cuadros'), gridColor: '#e6ddd2', gs: 16, els: [], strokes: [], days: {} }; }
 function loadWeek(key) {
-J.key = key; const d = Store.get('jr-' + key);
-J.doc = d ? JSON.parse(JSON.stringify(d)) : { pages: [blankPage('semana'), blankPage('libre', 'cuadros')] };
+J.key = key; const d = key.startsWith('sh-') ? (window.Shared && Shared.doc(key)) : Store.get('jr-' + key);
+J.doc = d ? JSON.parse(JSON.stringify(d)) : key.startsWith('sh-') ? { pages: [blankPage('libre', 'cuadros')] } : { pages: [blankPage('semana'), blankPage('libre', 'cuadros')] };
 J.hist = []; J.fut = []; J.sel = null; J.editing = null;
 if (J.page >= J.doc.pages.length) J.page = 0;
 }
-function persist() { Store.put('jr-' + J.key, J.doc); }
+function persist() { if (J.key.startsWith('sh-')) { window.Shared && Shared.save(J.key, J.doc); return; } Store.put('jr-' + J.key, J.doc); }
 function snapshot() { J.hist.push(JSON.stringify(J.doc)); if (J.hist.length > 60) J.hist.shift(); J.fut = []; updateUndo(); }
 function commit() { persist(); updateUndo(); }
 function undo() { if (!J.hist.length) return; J.fut.push(JSON.stringify(J.doc)); J.doc = JSON.parse(J.hist.pop()); J.sel = null; persist(); draw(); }
@@ -2526,13 +2527,14 @@ ${tools.filter(([id]) => !hidden.includes(id)).map(([id, ic, lbl, c]) => `<butto
 <button class="tb c1" id="tbUndo" aria-label="Deshacer" title="Deshacer">↶</button><button class="tb c1" id="tbRedo" aria-label="Rehacer" title="Rehacer">↷</button>
 <button class="tb c6" id="tbNight" aria-label="Papel de noche" title="Papel de noche">${pxi('ui_luna', 24)}</button><button class="tb c1" id="tbCfg" aria-label="Elegir qué herramientas ver" title="Elegir qué herramientas ver">${pxi('gear', 22)}</button>
 </div>
-<div class="jr-links"><button class="jr-dreams" data-go="tablero">${pxi('pic', 22)}<span>Mis sueños</span><span class="faint">›</span></button><button class="jr-dreams" data-go="jardin">${pxi('girasol', 22)}<span>Mi jardín</span><span class="faint">›</span></button></div>
+<div class="jr-links"><button class="jr-dreams" data-go="tablero">${pxi('pic', 22)}<span>Mis sueños</span><span class="faint">›</span></button><button class="jr-dreams" data-go="jardin">${pxi('girasol', 22)}<span>Mi jardín</span><span class="faint">›</span></button><button class="jr-dreams" data-go="compartidas">${pxi('heart', 22)}<span>Con amigas</span><span class="faint">›</span></button></div>
 <div id="jHint" class="faint" style="text-align:center;min-height:18px"></div>
 <div class="book-wrap" id="bookWrap"></div>
 <div class="jr-dots" id="jDots"></div>`;
-$('#jPrev').onclick = () => { leave(); J.key = weekKey(addDays(weekDates(J.key)[0], -7)); J.page = 0; render(root); };
+if (J.key.startsWith('sh-')) { $('#jPrev').onclick = () => { leave(); J.key = weekKey(new Date()); J.page = 0; render(root); }; $('#jNext').style.visibility = 'hidden'; $('#jWeek').onclick = () => A.go('compartidas'); $('#jPrev').setAttribute('aria-label', 'Volver a mi semana'); }
+else $('#jPrev').onclick = () => { leave(); J.key = weekKey(addDays(weekDates(J.key)[0], -7)); J.page = 0; render(root); };
 $('#jNext').onclick = () => { leave(); J.key = weekKey(addDays(weekDates(J.key)[0], 7)); J.page = 0; render(root); };
-$('#jWeek').onclick = jumpSheet;
+if (!J.key.startsWith('sh-')) $('#jWeek').onclick = jumpSheet;
 $('#tbUndo').onclick = undo; $('#tbRedo').onclick = redo;
 $('#tbNight').onclick = () => { J.night = !J.night; draw(); };
 $('#tbCfg').onclick = toolsSheet;
@@ -2540,7 +2542,7 @@ el.querySelector('.toolbar').addEventListener('click', e => { const b = e.target
 draw();
 if (!J.resizeBound) { J.resizeBound = true; let jW = innerWidth; addEventListener('resize', () => { if (S.route !== 'journal') return; const ae = document.activeElement; if (ae && ae.isContentEditable) return; if (Math.abs(innerWidth - jW) < 2) return; jW = innerWidth; draw(); }); }
 }
-function leave() { Store.flush && J.key && Store.docs['jr-' + J.key] && Store.flush('jr-' + J.key); J.sel = null; J.editing = null; J.tool = null; }
+function leave() { if (J.key && J.key.startsWith('sh-') && window.Shared) Shared.flush(J.key); Store.flush && J.key && Store.docs['jr-' + J.key] && Store.flush('jr-' + J.key); J.sel = null; J.editing = null; J.tool = null; }
 function setHint(t) { const h = $('#jHint'); if (h) h.textContent = t || ''; }
 function setTool(t) {
 J.tool = J.tool === t ? null : t;
@@ -2565,7 +2567,7 @@ return `<div class="pagebox" style="width:${PW * J.scale}px;height:${PH * J.scal
 }).join('')}</div>`;
 const total = J.doc.pages.length; const step = J.pagesShown;
 $('#jDots').innerHTML = Array.from({ length: Math.ceil(total / step) }, (_, k) => `<button aria-label="Página ${k * step + 1}" aria-current="${Math.floor(J.page / step) === k}" data-jp="${k * step}"></button>`).join('') + `<button aria-label="Agregar página" data-addpage style="width:auto;height:auto;background:none;font-weight:900;color:var(--ink)">＋</button>`;
-$('#jWeek').textContent = `Semana ${J.key.split('-W')[1]} · ${ds[0].getDate()} ${A.MON3[ds[0].getMonth()].toLowerCase()} – ${ds[6].getDate()} ${A.MON3[ds[6].getMonth()].toLowerCase()}`;
+$('#jWeek').textContent = J.key.startsWith('sh-') ? (window.Shared ? Shared.title(J.key) : 'Página compartida') : `Semana ${J.key.split('-W')[1]} · ${ds[0].getDate()} ${A.MON3[ds[0].getMonth()].toLowerCase()} – ${ds[6].getDate()} ${A.MON3[ds[6].getMonth()].toLowerCase()}`;
 $$('.page', wrap).forEach(pg => { bindPage(pg); paintInk(pg); pg.classList.toggle('act', J.pagesShown === 2 && +pg.dataset.pi === actIdx()); });
 $$('[data-jp]').forEach(b => b.onclick = () => { J.page = +b.dataset.jp; J.sel = null; draw(); });
 $$('[data-addpage]').forEach(b => b.onclick = () => addPageSheet());
@@ -2959,11 +2961,12 @@ function pageFromTpl(t) { const pg = JSON.parse(JSON.stringify(t.page)); pg.id =
 function templatesSheet() {
 const p = curPage(); if (!p) return; const mine = myTpls();
 open('Plantilla de la página ' + (actIdx() + 1), Object.entries(TPLS).map(([k, n]) => `<button class="opt" data-tp="${k}" style="${p.tpl === k ? 'outline:2px solid #e2648f;' : ''}">${pxi({ semana: 'month', lista: 'check', gastos: 'moneda', mes: 'month', habitos: 'star', ahorro: 'piggy', deseos: 'gift', libre: 'ui_pagina' }[k], 20)} ${n}</button>`).join('') + '<p style="font-family:var(--f-body);font-size:12px;margin:8px 0 0">Tus decoraciones se quedan; solo cambia el contenido de fondo.</p>'
-+ `<div class="lab">Mis plantillas</div>${mine.length ? mine.map(t => `<div style="display:flex;gap:6px;align-items:center"><button class="opt" data-mt="${t.id}" style="flex:1">${pxi('ui_plantilla', 20)} ${esc(t.name)}</button><button class="opt" data-mtdel="${t.id}" style="width:auto;color:#a3264f" aria-label="Borrar ${esc(t.name)}">✕</button></div>`).join('') : '<p style="font-family:var(--f-body);font-size:12px;margin:0 0 6px">Decora una página como te guste y guárdala aquí para usarla otras semanas.</p>'}
++ `<div class="lab">Mis plantillas</div>${mine.length ? mine.map(t => `<div style="display:flex;gap:6px;align-items:center"><button class="opt" data-mt="${t.id}" style="flex:1">${pxi('ui_plantilla', 20)} ${esc(t.name)}</button>${(S.settings.friends || []).length && A.sendTplTo ? `<button class="opt" data-mtsend="${t.id}" style="width:auto" aria-label="Mandar ${esc(t.name)} a una amiga">${pxi('pg_carta', 18)}</button>` : ''}<button class="opt" data-mtdel="${t.id}" style="width:auto;color:#a3264f" aria-label="Borrar ${esc(t.name)}">✕</button></div>`).join('') : '<p style="font-family:var(--f-body);font-size:12px;margin:0 0 6px">Decora una página como te guste y guárdala aquí para usarla otras semanas.</p>'}
 <input class="in" id="mtName" placeholder="Nombre (ej. Mi semana bonita)" maxlength="30" style="margin:6px 0"><button class="opt" data-mtsave>${pxi('ui_plantilla', 20)} Guardar esta página como plantilla</button>`, sh => sh.addEventListener('click', e => {
 const b = e.target.closest('[data-tp]'); if (b) { snapshot(); p.tpl = b.dataset.tp; if (p.tpl !== 'libre' && p.tpl !== 'semana' && p.grid === 'cuadros') p.grid = 'lisa'; commit(); A.closeSheet(); draw(); return; }
 const sv = e.target.closest('[data-mtsave]'); if (sv) { if (mine.length >= 12) { A.toast('Tienes 12 plantillas. Borra una para guardar otra.'); return; } const pg = JSON.parse(JSON.stringify(p)); delete pg.id; delete pg.days; delete pg.cells; mine.push({ id: uid(), name: ($('#mtName', sh).value || '').trim() || 'Mi plantilla ' + (mine.length + 1), page: pg }); A.saveSettings(); A.toast('Plantilla guardada'); A.closeSheet(); return; }
 const u = e.target.closest('[data-mt]'); if (u) { const t = mine.find(x => x.id === u.dataset.mt); if (!t) return; if (!u.dataset.s && (p.els || []).length) { u.dataset.s = 1; u.innerHTML = '¿Reemplazar lo que tiene esta página? Toca otra vez'; return; } snapshot(); J.doc.pages[actIdx()] = pageFromTpl(t); commit(); A.closeSheet(); draw(); return; }
+const sd = e.target.closest('[data-mtsend]'); if (sd) { const t = mine.find(x => x.id === sd.dataset.mtsend); A.closeSheet(); open('¿A quién se la mandas?', (S.settings.friends || []).map(f => `<button class="opt" data-fsend="${esc(f.code)}">${pxi('heart', 18)} ${esc(f.name || f.code)}</button>`).join(''), s2 => s2.addEventListener('click', ev => { const b = ev.target.closest('[data-fsend]'); if (!b) return; A.closeSheet(); A.sendTplTo(b.dataset.fsend, t); })); return; }
 const d = e.target.closest('[data-mtdel]'); if (d) { if (!d.dataset.s) { d.dataset.s = 1; d.textContent = '¿Seguro?'; return; } S.settings.jrTpls = mine.filter(x => x.id !== d.dataset.mtdel); A.saveSettings(); A.closeSheet(); templatesSheet(); }
 }));
 }
@@ -3008,6 +3011,8 @@ if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(
 if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); }
 if ((e.key === 'Delete' || e.key === 'Backspace') && J.sel) { const f = findEl(J.sel); if (f) { snapshot(); f.p.els = f.p.els.filter(x => x !== f.e); J.sel = null; commit(); draw(); } }
 });
-window.Journal = { render, leave };
+function openKey(key) { leave(); J.key = key; J.page = 0; J.sel = null; if (S.route === 'journal' && root) render(root); else A.go('journal'); }
+function reload() { if (!J.key || !J.key.startsWith('sh-') || J.editing || S.route !== 'journal') return; const pg = J.page; loadWeek(J.key); J.page = Math.min(pg, J.doc.pages.length - 1); draw(); }
+window.Journal = { render, leave, openKey, reload, get key() { return J.key; } };
 })();
 ;document.getElementById('bootImg').src = Pix.sprite('pudin', 6); App.start();
