@@ -43,29 +43,64 @@ const FOODS = {
 };
 A.FOODS = FOODS;
 const FURN = {
-  cama: { name: 'Camita', w: 34, h: 26, price: 0, x: 2, y: 50 },
-  ventana: { name: 'Ventana', w: 34, h: 32, price: 0, x: 6, y: 4 },
-  alfombra: { name: 'Alfombra', w: 44, h: 18, price: 0, x: 38, y: 78, flat: true },
-  cojin: { name: 'Cojín', w: 18, h: 12, price: 0, x: 98, y: 90 },
-  planta: { name: 'Planta grande', w: 22, h: 30, price: 25, x: 98, y: 44 },
-  lampara: { name: 'Lámpara de pie', w: 16, h: 36, price: 20, x: 80, y: 30 },
-  lampara_mesa: { name: 'Lámpara de mesa', w: 16, h: 18, price: 15, x: 38, y: 36 },
-  mesita: { name: 'Mesita de noche', w: 18, h: 18, price: 15, x: 37, y: 54 },
-  estante: { name: 'Estante', w: 30, h: 34, price: 40, x: 86, y: 8 },
-  cuadro: { name: 'Cuadro', w: 20, h: 16, price: 15, x: 48, y: 10 },
-  reloj: { name: 'Reloj', w: 14, h: 18, price: 30, x: 72, y: 8 },
-  luces: { name: 'Lucecitas', w: 60, h: 10, price: 20, x: 42, y: 0 },
-  mesa: { name: 'Mesa de té', w: 28, h: 24, price: 30, x: 62, y: 74 },
-  sofa: { name: 'Sofá', w: 36, h: 22, price: 45, x: 64, y: 54 },
-  flores: { name: 'Florero', w: 16, h: 22, price: 15, x: 104, y: 80 },
-  piano: { name: 'Piano', w: 30, h: 26, price: 60, lvl: 8, x: 84, y: 50 },
-  hongo: { name: 'Lámpara de hongo', w: 18, h: 22, how: 'raro', x: 100, y: 70 },
-  calabaza: { name: 'Calabaza', w: 18, h: 16, price: 30, season: 'halloween', x: 98, y: 84 },
-  arbolito: { name: 'Arbolito', w: 22, h: 30, price: 40, season: 'navidad', x: 4, y: 40 }
+  // camas y asientos
+  cama: { name: 'Camita', w: 26, h: 34, price: 0, x: 8, y: 30, cat: 'camas', bed: true },
+  cama_nube: { name: 'Cama de nube', w: 30, h: 34, price: 70, x: 56, y: 30, cat: 'camas', bed: true },
+  sofa: { name: 'Sofá rosa', w: 32, h: 20, price: 35, x: 20, y: 70, cat: 'camas', seat: [8, 4] },
+  sofa_amarillo: { name: 'Sofá amarillo', w: 32, h: 20, price: 35, x: 90, y: 70, cat: 'camas', seat: [8, 4] },
+  sillon: { name: 'Sillón menta', w: 16, h: 18, price: 20, x: 110, y: 60, cat: 'camas', seat: [0, 2] },
+  silla: { name: 'Sillita', w: 10, h: 14, price: 8, x: 80, y: 90, cat: 'mesas' },
+  puff: { name: 'Puff corazón', w: 18, h: 16, price: 20, x: 64, y: 96, cat: 'camas', seat: [0, 0] },
+  cojin: { name: 'Cojín', w: 14, h: 10, price: 0, x: 104, y: 104, cat: 'camas', seat: [-2, -6] },
+  // mesas y muebles
+  mesa: { name: 'Mesa con mantel', w: 26, h: 20, price: 30, x: 96, y: 92, cat: 'mesas', table: true },
+  mesa_te: { name: 'Mesa de té', w: 18, h: 18, price: 25, x: 60, y: 72, cat: 'mesas', table: true },
+  mesita: { name: 'Mesita de noche', w: 12, h: 14, price: 12, x: 36, y: 36, cat: 'mesas', glow: [6, 0, 14] },
+  comoda: { name: 'Cómoda', w: 22, h: 20, price: 30, x: 116, y: 18, cat: 'mesas' },
+  tocador: { name: 'Tocador con espejo', w: 22, h: 26, price: 40, x: 4, y: 6, cat: 'mesas' },
+  estante: { name: 'Estante de libros', w: 22, h: 30, price: 35, x: 116, y: 4, cat: 'mesas' },
+  chimenea: { name: 'Chimenea', w: 26, h: 28, price: 60, x: 46, y: 6, cat: 'mesas', glow: [13, 21, 30] },
+  cocina: { name: 'Cocinita', w: 32, h: 24, price: 50, x: 100, y: 10, cat: 'mesas' },
+  cofre: { name: 'Cofre', w: 14, h: 11, price: 15, x: 120, y: 112, cat: 'mesas' },
+  piano: { name: 'Piano', w: 26, h: 22, price: 60, lvl: 8, x: 108, y: 34, cat: 'mesas', piano: true },
+  // alfombras
+  alfombra: { name: 'Alfombra a cuadros', w: 34, h: 22, price: 0, x: 54, y: 66, flat: true, cat: 'alfombras' },
+  alfombra_verde: { name: 'Alfombra verde', w: 34, h: 24, price: 20, x: 20, y: 66, flat: true, cat: 'alfombras' },
+  alfombra_flor: { name: 'Alfombra de flor', w: 26, h: 24, price: 20, x: 58, y: 104, flat: true, cat: 'alfombras' },
+  alfombra_girasol: { name: 'Alfombra girasol', w: 26, h: 24, price: 20, x: 96, y: 60, flat: true, cat: 'alfombras' },
+  alfombra_lila: { name: 'Alfombra lila', w: 30, h: 22, price: 20, x: 50, y: 60, flat: true, cat: 'alfombras' },
+  // plantas y adornos
+  cerezo: { name: 'Cerezo en maceta', w: 18, h: 26, price: 25, x: 124, y: 30, cat: 'deco' },
+  planta: { name: 'Plantita', w: 14, h: 18, price: 10, x: 4, y: 100, cat: 'deco' },
+  planta_grande: { name: 'Planta grande', w: 20, h: 30, price: 25, x: 2, y: 64, cat: 'deco' },
+  flores: { name: 'Florero', w: 12, h: 14, price: 12, x: 128, y: 70, cat: 'deco' },
+  cristal: { name: 'Cristal rosa', w: 10, h: 16, price: 15, x: 132, y: 92, cat: 'deco' },
+  peluche: { name: 'Conejito de peluche', w: 14, h: 16, price: 15, x: 40, y: 104, cat: 'deco' },
+  lampara: { name: 'Lámpara de pie', w: 10, h: 26, price: 20, x: 2, y: 34, cat: 'luces', glow: [5, 4, 26] },
+  lampara_mesa: { name: 'Lámpara de mesa', w: 12, h: 14, price: 15, x: 36, y: 26, cat: 'luces', glow: [6, 4, 18] },
+  hongo: { name: 'Lámpara de hongo', w: 14, h: 18, how: 'raro', x: 126, y: 50, cat: 'luces', glow: [7, 5, 22] },
+  calabaza: { name: 'Calabaza', w: 14, h: 12, price: 30, season: 'halloween', x: 84, y: 112, cat: 'deco' },
+  arbolito: { name: 'Arbolito', w: 18, h: 26, price: 40, season: 'navidad', x: 2, y: 34, cat: 'deco', glow: [9, 10, 20] },
+  // pared
+  ventana: { name: 'Ventana', w: 22, h: 20, price: 0, x: 84, y: 4, wall: true, cat: 'pared' },
+  cuadro: { name: 'Cuadrito', w: 16, h: 13, price: 12, x: 34, y: 6, wall: true, cat: 'pared' },
+  marco: { name: 'Marco con tu foto', w: 16, h: 14, price: 15, x: 64, y: 5, wall: true, cat: 'pared', photo: true },
+  corona: { name: 'Corona de flores', w: 16, h: 16, price: 15, x: 20, y: 4, wall: true, cat: 'pared' },
+  aplique: { name: 'Lamparita de pared', w: 8, h: 12, price: 15, x: 110, y: 8, wall: true, cat: 'luces', glow: [4, 6, 16] },
+  luces: { name: 'Lucecitas', w: 48, h: 9, price: 20, x: 48, y: 0, wall: true, cat: 'luces', glow: [24, 4, 34] },
+  estrellas: { name: 'Guirnalda de estrellas', w: 40, h: 10, price: 20, x: 52, y: 0, wall: true, cat: 'pared' },
+  reloj: { name: 'Reloj', w: 12, h: 18, price: 25, x: 70, y: 6, wall: true, cat: 'pared' }
 };
 A.FURN = FURN;
-const WALLS = { rosa: ['Rosa con flores', 0], menta: ['Menta', 20], lila: ['Lila', 20], durazno: ['Durazno', 20], cielo: ['Cielo', 25] };
-const FLOORS = { madera: ['Madera', 0], cuadros: ['Cuadritos', 20], alfombra: ['Alfombrado', 20], piedra: ['Piedra', 20], pasto: ['Pasto', 25] };
+const FCATS = [['todo', 'Todo'], ['camas', 'Camas y asientos'], ['mesas', 'Muebles'], ['alfombras', 'Alfombras'], ['deco', 'Plantas y adornos'], ['luces', 'Luces'], ['pared', 'Pared']];
+const WALLS = { rosa: ['Rosa con puntitos', 0], cereza: ['Cerezas', 20], menta: ['Menta', 20], lila: ['Lila', 20], durazno: ['Durazno', 20], cielo: ['Cielo', 25] };
+const FLOORS = { madera: ['Madera clara', 0], rosa: ['Madera rosa', 20], cafe: ['Madera café', 20], lila: ['Madera lila', 20], cuadros: ['Cuadritos', 20], pasto: ['Pasto', 25] };
+const ROOMS = {
+  cuarto: { name: 'Mi cuarto', price: 0, wall: 'rosa', floor: 'madera' },
+  cocina: { name: 'Cocina', price: 120, wall: 'cereza', floor: 'cuadros', gift: ['cocina', 'mesa'] },
+  juegos: { name: 'Cuarto de juegos', price: 150, wall: 'lila', floor: 'lila', gift: ['alfombra_lila', 'peluche'] },
+  jardin: { name: 'Jardín', price: 150, wall: 'cielo', floor: 'pasto', gift: ['cerezo', 'flores'] }
+};
 // ropa de temporada (mismo sistema que la Tiendita)
 const SEAS_ACC = {
   calabaza: { slot: 'head', name: 'Gorrito de calabaza', price: 30, season: 'halloween', map: ['...G....', '..aaaa..', '.aAaaAa.', 'aaAaaAaa', 'aaAaaAaa'] },
@@ -115,7 +150,7 @@ function registerCatalog() {
   customKeys = { pets: [], furn: [], clothes: [], food: [] };
   const c = catalog();
   c.pets.forEach(x => { const k = 'cp_' + x.id; defMap(k, x.w || 20, x.h || 20, x.map); customKeys.pets.push(k); if (!x.off) A.ANCH[k] = { hx: (x.w || 20) / 2, hy: x.hy || 5, fy: x.fy || 10, ny: x.ny || 15, sprite: k, name: x.name }; });
-  c.furn.forEach(x => { const k = 'cf_' + x.id; defMap(k, x.w, x.h, x.map); customKeys.furn.push(k); FURN[k] = { name: x.name, w: x.w, h: x.h, price: +x.price || 0, how: x.how, ach: x.ach, season: x.season, sprite: k, x: Math.max(0, 60 - x.w / 2), y: x.wall ? 10 : 62, off: x.off, custom: true }; });
+  c.furn.forEach(x => { const k = 'cf_' + x.id; defMap(k, x.w, x.h, x.map); customKeys.furn.push(k); FURN[k] = { name: x.name, w: x.w, h: x.h, price: +x.price || 0, how: x.how, ach: x.ach, season: x.season, sprite: k, x: Math.max(0, 72 - x.w / 2), y: x.wall ? 4 : 70, cat: x.wall ? 'pared' : 'deco', wall: !!x.wall, off: x.off, custom: true }; });
   c.food.forEach(x => { const k = 'cfo_' + x.id; defMap(k, x.w || 16, x.h || 16, x.map); customKeys.food.push(k); FOODS[k] = { name: x.name, art: x.name, gain: +x.gain || 20, price: +x.price || 3, sprite: k, off: x.off, custom: true }; });
   c.clothes.forEach(x => { const k = 'cc_' + x.id; customKeys.clothes.push(k); addAcc(k, { slot: x.slot || 'head', name: x.name, price: +x.price || 10, season: x.how === 'temporada' ? x.season : null, ach: x.how === 'logro' ? x.ach : null, raro: x.how === 'raro', map: x.map.map(r => r), off: x.off, offAdmin: x.off, custom: true }); });
   seasonGate();
@@ -196,7 +231,7 @@ function claimPrizes() {
     if (k === 'stars') give(a);
     if (k === 'wall' || k === 'floor') { const key = k + ':' + a; if (!r.owned.includes(key)) r.owned.push(key); }
     if (k === 'acc') { const ro = R(); ro.owned = ro.owned || []; if (!ro.owned.includes('acc:' + a)) ro.owned.push('acc:' + a); }
-    if (k === 'furn') { if (!r.owned.includes(a)) r.owned.push(a); }
+    if (k === 'furn') { if (!cnt(a)) addInv(a, 1); }
   });
   p.lvClaim = maxL; return got;
 }
@@ -241,10 +276,10 @@ const giftReady = () => (S.settings.gift || {}).last !== today();
 A.giftReady = giftReady;
 const PLACES = () => [
   ['regalo', giftReady() ? 'regalo_cerrado' : 'regalo_abierto', 'Regalo del día', giftReady()], ['crecer', 'brotecito', 'Crecer'], ['coleccion', 'maca', 'Colección'],
-  ['tienda', 'gift', 'Tiendita'], ['visitas', 'casita', 'Visitas'], ['shey', 'shey', 'Antojos']
+  ['tienda', 'gift', 'Tiendita'], ['visitas', 'casita', 'Visitas', !!(A.navDotVisits && A.navDotVisits())], ['shey', 'shey', 'Antojos']
 ];
 const needsCare = () => { const p = P(); if (!p.active) return false; const c = care(p.active); return !c.sleep && (c.h < 30 || c.l < 25 || c.f < 25); };
-A.navDot = k => k === 'more' && (giftReady() || needsCare());
+A.navDot = k => k === 'more' && (giftReady() || needsCare() || !!(A.navDotVisits && A.navDotVisits()));
 const stripHead = h => h.slice(h.indexOf('\n') + 1);
 A.screens.rincon = () => {
   const p = P(); if (!p.active) return elegirHTML(true);
@@ -459,98 +494,165 @@ ${[['Anotar al menos un movimiento en el día', RW.day], ['Poner dinero en una m
 <p class="faint" style="margin:0">Los movimientos de ejemplo y los pagos fijos automáticos no cuentan: solo lo que anotas tú.</p></div>`}`;
 };
 
-// ---------------- Cuarto ----------------
+// ---------------- Cuarto (visto desde arriba) ----------------
+const RW = 144, RH = 132, WALLH = 34;
 function room() {
   const s = S.settings; const r = s.room = s.room || {};
-  r.wall = r.wall || 'rosa'; r.floor = r.floor || 'madera';
-  r.owned = r.owned || ['cama', 'ventana', 'alfombra', 'cojin', 'wall:rosa', 'floor:madera'];
-  if (r.items && !r.v2) { r.items.forEach(it => { const f = FURN[it.k]; if (f) { it.x = f.x; it.y = f.y; } }); }
-  r.v2 = true;
-  if (!r.items) r.items = ['ventana', 'cama', 'alfombra', 'cojin'].map(k => ({ u: uid(), k, x: FURN[k].x, y: FURN[k].y }));
+  r.owned = r.owned || ['cama', 'ventana', 'alfombra', 'cojin'];
+  r.inv = r.inv || {};
+  if (!r.rooms) {
+    const fix = { alfombra: 'lila', piedra: 'madera' };
+    r.rooms = { cuarto: { wall: WALLS[r.wall] ? r.wall : 'rosa', floor: FLOORS[r.floor] ? r.floor : (fix[r.floor] || 'madera'), items: (r.items || ['ventana', 'cama', 'alfombra', 'cojin'].map(k => ({ k }))).filter(it => FURN[it.k]).map(it => ({ u: uid(), k: it.k, x: FURN[it.k].x, y: FURN[it.k].y })) } };
+    delete r.items; delete r.wall; delete r.floor; delete r.v2;
+  }
+  r.cur = r.rooms[r.cur] ? r.cur : 'cuarto';
+  r.owned = r.owned.map(k => k === 'wall:piedra' ? 'floor:madera' : k);
   return r;
 }
 A.roomState = room;
+const curRoom = () => { const r = room(); return r.rooms[r.cur]; };
+const cnt = k => { const r = room(); return r.inv[k] != null ? r.inv[k] : (r.owned.includes(k) ? 1 : 0); };
+const placedN = k => Object.values(room().rooms).reduce((n, rm) => n + rm.items.filter(i => i.k === k).length, 0);
+function addInv(k, n) { const r = room(); r.inv[k] = cnt(k) + (n || 1); if (r.inv[k] > 0 && !r.owned.includes(k)) r.owned.push(k); if (r.inv[k] <= 0) { r.inv[k] = 0; r.owned = r.owned.filter(x => x !== k); } }
+A.furnFree = k => cnt(k) - placedN(k);
+A.furnTake = k => { if (cnt(k) - placedN(k) < 1) return false; addInv(k, -1); return true; };
 const furnSprite = k => FURN[k].sprite || 'x_' + k;
+A.furnSprite = furnSprite;
 const maxLevel = () => Math.max(1, ...P().owned.map(k => level(k).L));
 function furnLock(k) {
-  const f = FURN[k]; const r = room();
-  if (r.owned.includes(k)) return null;
+  const f = FURN[k];
+  if (cnt(k)) return null;
   if (f.lvl && maxLevel() < f.lvl) return 'Nivel ' + f.lvl;
-  if (f.season && !inSeason(f.season)) { const se = SEASONS.find(s => s.id === f.season); return se ? se.name : 'Temporada'; }
+  if (f.season && !inSeason(f.season)) { const se = allSeasons().find(s => s.id === f.season); return se ? se.name : 'Temporada'; }
   if (f.how === 'raro') return 'Regalo raro';
   if (f.how === 'logro' && !achOk(f.ach)) return 'Logro';
   return null;
 }
-function roomHTML(r, opts) {
-  opts = opts || {}; const edit = opts.edit;
-  const items = r.items.filter(it => FURN[it.k]).map(it => ({ it, f: FURN[it.k] })).sort((a, b) => (a.f.flat ? -1 : 0) - (b.f.flat ? -1 : 0) || (a.it.y + a.f.h) - (b.it.y + b.f.h));
-  const pets = (opts.pets || P().room).filter(k => allPets()[k]);
-  const spots = [[48, 60], [74, 66], [24, 70]];
-  return `<div class="room ${edit ? 'editing' : ''}" id="${opts.id || 'roomBox'}">
-<img class="pixel rm-wall" alt="" src="${Pix.sprite('x_pared_' + (r.wall || 'rosa'), 3)}"><img class="pixel rm-floor" alt="" src="${Pix.sprite('x_piso_' + (r.floor || 'madera'), 3)}">
-${items.map(({ it, f }) => `<img class="pixel rm-it ${opts.sel === it.u ? 'sel' : ''}" alt="${esc(f.name)}" data-u="${it.u}" src="${Pix.sprite(furnSprite(it.k), 3)}" style="left:${it.x / 120 * 100}%;top:${it.y / 104 * 100}%;width:${f.w / 120 * 100}%;z-index:${f.flat ? 1 : 2 + Math.round(it.y + f.h)}">`).join('')}
-${pets.map((k, i) => `<img class="pixel rm-pet" alt="${esc(info(k).name)}" src="${petImgSrc(k, 4)}" style="left:${spots[i % 3][0] / 120 * 100}%;top:${spots[i % 3][1] / 104 * 100}%;z-index:${2 + spots[i % 3][1] + 22};animation-delay:-${i * .6}s">`).join('')}
-${opts.inner || ''}</div>`;
+function dayPart() { const h = new Date().getHours() + new Date().getMinutes() / 60; return h >= 19 || h < 6 ? 'noche' : h >= 17 ? 'tarde' : 'dia'; }
+A.dayPart = dayPart;
+function boardPhotos() { return ((S.settings.board || {}).items || []).filter(x => x.img).map(x => x.img); }
+// dónde se pone cada mascota según los muebles que hay
+function petSpots(rm, pets, part, guest) {
+  const out = []; const used = new Set(); const items = rm.items.filter(i => FURN[i.k]);
+  const find = pred => items.find(i => pred(FURN[i.k]) && !used.has(i.u));
+  const PS = 22;
+  pets.forEach((k, idx) => {
+    let spot = null;
+    if (part === 'noche' && k !== guest) { const b = find(f => f.bed); if (b) { used.add(b.u); const f = FURN[b.k]; spot = { x: b.x + f.w / 2 - PS / 2, y: b.y + 10, z: b.y + f.h + 1, sleep: true }; } }
+    if (!spot && part !== 'noche') {
+      const order = idx === 0 ? ['piano', 'table', 'seat'] : idx === 1 ? ['table', 'seat', 'piano'] : ['seat', 'piano', 'table'];
+      for (const kind of order) {
+        const it = find(f => f[kind]); if (!it) continue; used.add(it.u); const f = FURN[it.k];
+        if (kind === 'piano') spot = { x: it.x + f.w / 2 - PS / 2, y: it.y + f.h - 8, z: it.y + f.h + 2, notes: true };
+        if (kind === 'table') spot = { x: it.x - PS + 6, y: it.y + f.h - PS + 2, z: it.y + f.h, eat: { x: it.x + f.w / 2 - 4, y: it.y + 2 } };
+        if (kind === 'seat') spot = { x: it.x + f.w / 2 - PS / 2 + f.seat[0], y: it.y - PS / 2 + f.seat[1], z: it.y + f.h + 1 };
+        break;
+      }
+    }
+    if (!spot) { const free = [[60, 84], [86, 88], [34, 92], [100, 100], [20, 104]][idx % 5]; spot = { x: free[0], y: free[1], z: free[1] + PS, sleep: part === 'noche' && k !== guest }; }
+    out.push(Object.assign({ k }, spot));
+  });
+  return out;
 }
-A.roomHTML = roomHTML;
+const pct = (v, t) => (v / t * 100).toFixed(3) + '%';
+function roomHTML(rmIn, opts) {
+  opts = opts || {}; const edit = opts.edit; const rm = Object.assign({ wall: 'rosa', floor: 'madera', items: [] }, rmIn || {});
+  const part = opts.part || dayPart(); const night = part === 'noche';
+  const photos = opts.photos || boardPhotos(); let ph = 0;
+  const items = rm.items.filter(it => FURN[it.k]).map(it => ({ it, f: FURN[it.k] })).sort((a, b) => (a.f.flat ? 0 : a.f.wall ? 1 : 2) - (b.f.flat ? 0 : b.f.wall ? 1 : 2) || (a.it.y + a.f.h) - (b.it.y + b.f.h));
+  const pets = (opts.pets || P().room).filter(k => allPets()[k]);
+  const spots = petSpots(rm, pets, part, opts.guest);
+  const zOf = (it, f) => f.flat ? 1 : f.wall ? 2 : 10 + Math.round(it.y + f.h);
+  const html = items.map(({ it, f }) => {
+    const sp = it.k === 'ventana' && night ? 'x_ventana_noche' : furnSprite(it.k);
+    let extra = '';
+    if (f.photo && photos.length) { const src = photos[ph++ % photos.length]; extra = `<span class="rm-photo" style="left:${pct(it.x + 2, RW)};top:${pct(it.y + 2, RH)};width:${pct(12, RW)};height:${pct(10, RH)};z-index:${zOf(it, f) + 1};background-image:url('${esc(src)}')"></span>`; }
+    const glow = night && f.glow ? `<span class="rm-glow" style="left:${pct(it.x + f.glow[0] - f.glow[2], RW)};top:${pct(it.y + f.glow[1] - f.glow[2], RH)};width:${pct(f.glow[2] * 2, RW)}"></span>` : '';
+    return `<img class="pixel rm-it ${opts.sel === it.u ? 'sel' : ''}" alt="${esc(f.name)}" data-u="${it.u}" draggable="false" src="${Pix.sprite(sp, 3)}" style="left:${pct(it.x, RW)};top:${pct(it.y, RH)};width:${pct(f.w, RW)};z-index:${zOf(it, f)};${it.fl ? 'transform:scaleX(-1);' : ''}">${extra}${glow}`;
+  }).join('');
+  const petHtml = spots.map((s, i) => `<img class="pixel rm-pet ${s.sleep ? 'sleep' : ''}" alt="${esc(info(s.k).name)}" src="${petImgSrc(s.k, 4)}" style="left:${pct(s.x, RW)};top:${pct(s.y, RH)};z-index:${10 + Math.round(s.z)};animation-delay:-${i * .6}s">`
+    + (s.sleep ? `<img class="pixel rm-zz" alt="" src="${spr('zzz', 2)}" style="left:${pct(s.x + 16, RW)};top:${pct(s.y - 8, RH)}">` : '')
+    + (s.notes ? `<img class="pixel rm-note" alt="" src="${spr('music', 2)}" style="left:${pct(s.x + 18, RW)};top:${pct(s.y - 10, RH)}"><img class="pixel rm-note b" alt="" src="${spr('music', 2)}" style="left:${pct(s.x - 4, RW)};top:${pct(s.y - 6, RH)}">` : '')
+    + (s.eat ? `<img class="pixel rm-food" alt="" src="${spr(['cupcake', 'dona', 'fresa', 'galleta'][i % 4], 2)}" style="left:${pct(s.eat.x, RW)};top:${pct(s.eat.y, RH)};z-index:${10 + Math.round(s.z) + 1}">` : '')).join('');
+  return `<div class="room-frame"><div class="room ${edit ? 'editing' : ''} t-${part}" id="${opts.id || 'roomBox'}">
+<img class="pixel rm-wall" alt="" src="${Pix.sprite('x_pared_' + (WALLS[rm.wall] ? rm.wall : 'rosa'), 3)}"><img class="pixel rm-floor" alt="" src="${Pix.sprite('x_piso_' + (FLOORS[rm.floor] ? rm.floor : 'madera'), 3)}">
+${html}${petHtml}<span class="rm-shade"></span>
+${opts.inner || ''}</div><span class="room-door"></span></div>`;
+}
+A.roomHTML = (rm, opts) => roomHTML(rm, opts);
 A.PAGES.cuarto = 'Mi cuarto';
 A.screens.cuarto = () => {
-  const r = room(); const tab = S.roomTab || 'muebles'; const edit = !!S.roomEdit;
-  const placed = new Set(r.items.map(i => i.k));
+  const r = room(); const rm = curRoom(); const tab = S.roomTab || 'muebles'; const edit = !!S.roomEdit; const fc = S.furnCat || 'todo';
   const tile = k => {
-    const f = FURN[k]; if (f.off && !r.owned.includes(k)) return '';
-    const own = r.owned.includes(k), lock = furnLock(k), on = placed.has(k);
-    const lbl = on ? '<em style="color:#3f7a2f">Puesto</em>' : own ? '<em>Poner</em>' : lock ? `<em>${esc(lock)}</em>` : `<span class="lock" style="background:#fff09a">${ST(12)} ${f.price}</span><em>Comprar</em>`;
-    return `<button class="shop-tile ${on ? 'on' : ''}" data-act="rmFurn" data-k="${k}" ${!own && lock ? 'disabled' : ''}><img class="pixel" alt="" src="${Pix.sprite(furnSprite(k), 2)}" style="width:${Math.min(68, f.w * 2)}px">${lbl}<span>${esc(f.name)}</span></button>`;
+    const f = FURN[k]; const n = cnt(k), used = placedN(k), free = n - used, lock = furnLock(k);
+    if (f.off && !n) return '';
+    const lbl = free > 0 ? `<em style="color:#3f7a2f">Poner${n > 1 ? ' · tienes ' + free : ''}</em>` : n ? `<em>Puesto · comprar otro</em><span class="lock" style="background:#fff09a">${ST(12)} ${f.price || 0}</span>` : lock ? `<em>${esc(lock)}</em>` : `<span class="lock" style="background:#fff09a">${ST(12)} ${f.price || 0}</span><em>Comprar</em>`;
+    return `<button class="shop-tile ${used ? 'on' : ''}" data-act="rmFurn" data-k="${k}" ${!n && lock ? 'disabled' : ''}><img class="pixel" alt="" src="${Pix.sprite(furnSprite(k), 2)}" style="max-width:${Math.min(68, f.w * 2)}px;max-height:56px">${lbl}<span>${esc(f.name)}</span></button>`;
   };
-  const sty = (kind, k, n, price) => { const own = r.owned.includes(kind + ':' + k); const on = r[kind] === k; return `<button class="shop-tile ${on ? 'on' : ''}" data-act="rmStyle" data-kind="${kind}" data-k="${k}" data-p="${price}"><img class="pixel" alt="" src="${Pix.sprite('x_' + (kind === 'wall' ? 'pared_' : 'piso_') + k, 1)}" style="width:72px;height:36px;object-fit:cover;border-radius:6px">${on ? '<em style="color:#3f7a2f">Puesto</em>' : own || !price ? '<em>Poner</em>' : `<span class="lock" style="background:#fff09a">${ST(12)} ${price}</span><em>Comprar</em>`}<span>${esc(n)}</span></button>`; };
+  const sty = (kind, k, n, price) => { const own = !price || r.owned.includes(kind + ':' + k); const on = rm[kind] === k; return `<button class="shop-tile ${on ? 'on' : ''}" data-act="rmStyle" data-kind="${kind}" data-k="${k}" data-p="${price}"><img class="pixel" alt="" src="${Pix.sprite('x_' + (kind === 'wall' ? 'pared_' : 'piso_') + k, 1)}" style="width:72px;height:34px;object-fit:cover;object-position:top;border-radius:6px">${on ? '<em style="color:#3f7a2f">Puesto</em>' : own ? '<em>Poner</em>' : `<span class="lock" style="background:#fff09a">${ST(12)} ${price}</span><em>Comprar</em>`}<span>${esc(n)}</span></button>`; };
+  const keys = Object.keys(FURN).filter(k => fc === 'todo' || FURN[k].cat === fc || (fc === 'deco' && FURN[k].custom && !FURN[k].wall) || (fc === 'pared' && FURN[k].custom && FURN[k].wall));
   return `${sub('cuarto', 'rincon', starsPill())}
-${roomHTML(r, { edit, sel: S.roomSel, inner: `<button class="btn sm rm-editbtn" data-act="rmEdit">${edit ? 'Listo' : 'Mover cosas'}</button>${edit && S.roomSel ? '<button class="btn sm danger rm-del" data-act="rmRemove">Quitar</button>' : ''}` })}
-${edit ? '<p class="faint" style="margin:0;text-align:center">Arrastra los muebles para moverlos. Toca uno y luego "Quitar" para guardarlo.</p>' : ''}
-<div class="seg"><button data-act="rmTab" data-v="muebles" aria-pressed="${tab === 'muebles'}">Muebles</button><button data-act="rmTab" data-v="paredes" aria-pressed="${tab === 'paredes'}">Paredes y pisos</button><button data-go="tienda">Ropa</button></div>
-${tab === 'muebles' ? `<div class="shop-grid">${Object.keys(FURN).map(tile).join('')}</div>` : `<div class="k-lbl">PAREDES</div><div class="shop-grid">${Object.entries(WALLS).map(([k, [n, pr]]) => sty('wall', k, n, pr)).join('')}</div><div class="k-lbl">PISOS</div><div class="shop-grid">${Object.entries(FLOORS).map(([k, [n, pr]]) => sty('floor', k, n, pr)).join('')}</div>`}
-<p class="faint" style="margin:0">Aquí viven ${P().room.map(k => esc(info(k).name)).join(', ')}. Los cambias en Colección.</p>`;
+<div class="chips rm-rooms">${Object.keys(r.rooms).map(k => `<button class="chip" data-act="rmRoom" data-k="${k}" aria-pressed="${r.cur === k}">${esc((ROOMS[k] || {}).name || k)}</button>`).join('')}<button class="chip" data-act="rmTab" data-v="cuartos">+ Más cuartos</button></div>
+${roomHTML(rm, { edit, sel: S.roomSel, inner: `<button class="btn sm rm-editbtn" data-act="rmEdit">${edit ? 'Listo' : 'Mover cosas'}</button>${edit && S.roomSel ? '<span class="rm-tools"><button class="btn sm" data-act="rmFlip">Voltear</button><button class="btn sm danger" data-act="rmRemove">Guardar</button></span>' : ''}` })}
+${edit ? '<p class="faint" style="margin:0;text-align:center">Arrastra los muebles. Toca uno para voltearlo o guardarlo.</p>' : `<p class="faint" style="margin:0;text-align:center">${{ dia: 'Es de día', tarde: 'Está atardeciendo', noche: 'Es de noche: tus mochis se van a dormir' }[dayPart()]}</p>`}
+<div class="seg"><button data-act="rmTab" data-v="muebles" aria-pressed="${tab === 'muebles'}">Muebles</button><button data-act="rmTab" data-v="paredes" aria-pressed="${tab === 'paredes'}">Pared y piso</button><button data-act="rmTab" data-v="cuartos" aria-pressed="${tab === 'cuartos'}">Cuartos</button><button data-go="tienda">Ropa</button></div>
+${tab === 'muebles' ? `<div class="chips">${FCATS.map(([k, n]) => `<button class="chip" data-act="rmCat" data-v="${k}" aria-pressed="${fc === k}">${n}</button>`).join('')}</div><div class="shop-grid">${keys.map(tile).join('')}</div>`
+  : tab === 'paredes' ? `<div class="k-lbl">PARED</div><div class="shop-grid">${Object.entries(WALLS).map(([k, [n, pr]]) => sty('wall', k, n, pr)).join('')}</div><div class="k-lbl">PISO</div><div class="shop-grid">${Object.entries(FLOORS).map(([k, [n, pr]]) => sty('floor', k, n, pr)).join('')}</div>`
+  : `<div class="list">${Object.entries(ROOMS).map(([k, ro]) => `<div class="li"><span class="ic" style="width:70px;height:48px;border-radius:10px;overflow:hidden"><img class="pixel" alt="" src="${Pix.sprite('x_piso_' + ro.floor, 1)}" style="width:70px;height:48px;object-fit:cover"></span><span class="tx-main"><b>${esc(ro.name)}</b><span>${ro.gift ? 'Viene con ' + ro.gift.map(g => esc(FURN[g].name.toLowerCase())).join(' y ') : 'Tu cuarto de siempre'}</span></span>${r.rooms[k] ? `<button class="btn sm" data-act="rmRoom" data-k="${k}">${r.cur === k ? 'Aquí estás' : 'Ir'}</button>` : `<button class="btn sm pink" data-act="rmBuyRoom" data-k="${k}" ${bal() < ro.price ? 'disabled' : ''}>${ST(12)} ${ro.price}</button>`}</div>`).join('')}</div>`}
+<p class="faint" style="margin:0">Aquí viven ${P().room.map(k => esc(info(k).name)).join(', ')}. Los cambias en Colección. Los marcos muestran las fotos de tu tablero de sueños.</p>`;
 };
 ACT.rmTab = a => { S.roomTab = a.dataset.v; A.render(); };
+ACT.rmCat = a => { S.furnCat = a.dataset.v; A.render(); };
+ACT.rmRoom = a => { room().cur = a.dataset.k; S.roomSel = null; A.saveSettings(); A.render(); };
+ACT.rmBuyRoom = a => {
+  const k = a.dataset.k, ro = ROOMS[k], r = room(); if (r.rooms[k]) return;
+  if (!a.dataset.sure) { a.dataset.sure = 1; a.textContent = `¿Comprar por ${ro.price}?`; return; }
+  if (!spend(ro.price)) return;
+  r.rooms[k] = { wall: ro.wall, floor: ro.floor, items: [] }; r.owned.push('wall:' + ro.wall, 'floor:' + ro.floor);
+  (ro.gift || []).forEach(g => { addInv(g, 1); r.rooms[k].items.push({ u: uid(), k: g, x: FURN[g].x, y: FURN[g].y }); });
+  r.cur = k; S.roomTab = 'muebles'; A.saveSettings(); toast(`¡${ro.name} es tuya!`); A.render();
+};
 ACT.rmEdit = () => { if (S.roomEdit) A.saveSettings(); S.roomEdit = !S.roomEdit; S.roomSel = null; A.render(); };
-ACT.rmRemove = () => { const r = room(); r.items = r.items.filter(i => i.u !== S.roomSel); S.roomSel = null; A.saveSettings(); A.render(); };
-function placeFurn(k) { const r = room(); const f = FURN[k]; if (r.items.some(i => i.k === k)) return; r.items.push({ u: uid(), k, x: f.x, y: f.y }); }
+ACT.rmRemove = () => { const rm = curRoom(); rm.items = rm.items.filter(i => i.u !== S.roomSel); S.roomSel = null; A.saveSettings(); A.render(); };
+ACT.rmFlip = () => { const it = curRoom().items.find(i => i.u === S.roomSel); if (it) { it.fl = !it.fl; A.saveSettings(); A.render(); } };
+function placeFurn(k) { const f = FURN[k]; if (!f || cnt(k) - placedN(k) < 1) return false; const rm = curRoom(); const n = rm.items.filter(i => i.k === k).length; rm.items.push({ u: uid(), k, x: Math.min(RW - f.w, f.x + n * 6), y: Math.min(RH - f.h, f.y + n * 4) }); return true; }
 A.placeFurn = placeFurn;
-A.giveFurn = k => { const r = room(); if (!r.owned.includes(k)) r.owned.push(k); };
+A.giveFurn = (k, n) => addInv(k, n || 1);
 ACT.rmFurn = a => {
-  const k = a.dataset.k, f = FURN[k], r = room();
-  if (r.items.some(i => i.k === k)) { r.items = r.items.filter(i => i.k !== k); A.saveSettings(); A.render(); return; }
-  if (!r.owned.includes(k)) {
-    if (furnLock(k)) return;
-    if (f.price) { if (!a.dataset.sure) { a.dataset.sure = 1; const e = a.querySelector('em'); if (e) e.textContent = `¿Comprar por ${f.price}?`; return; } if (!spend(f.price)) return; }
-    r.owned.push(k); toast(`¡${f.name} para tu cuarto!`);
+  const k = a.dataset.k, f = FURN[k];
+  if (cnt(k) - placedN(k) < 1) {
+    if (cnt(k) === 0 && furnLock(k)) return;
+    if (f.how === 'raro' || f.lvl && !f.price) return toast('Ese mueble no se compra');
+    const price = f.price || 0;
+    if (price) { if (!a.dataset.sure) { a.dataset.sure = 1; const e = a.querySelector('em'); if (e) e.textContent = `¿Comprar por ${price}?`; return; } if (!spend(price)) return; }
+    addInv(k, 1); toast(`¡${f.name} para tu cuarto!`);
   }
   placeFurn(k); A.saveSettings(); A.render();
 };
 ACT.rmStyle = a => {
   const kind = a.dataset.kind, k = a.dataset.k, price = +a.dataset.p, r = room(); const key = kind + ':' + k;
-  if (!r.owned.includes(key) && price) { if (!a.dataset.sure) { a.dataset.sure = 1; const e = a.querySelector('em'); if (e) e.textContent = `¿Comprar por ${price}?`; return; } if (!spend(price)) return; r.owned.push(key); }
-  r[kind] = k; A.saveSettings(); A.render();
+  if (price && !r.owned.includes(key)) { if (!a.dataset.sure) { a.dataset.sure = 1; const e = a.querySelector('em'); if (e) e.textContent = `¿Comprar por ${price}?`; return; } if (!spend(price)) return; r.owned.push(key); }
+  curRoom()[kind] = k; A.saveSettings(); A.render();
 };
 A.after.cuarto = el => {
   const box = el.querySelector('#roomBox'); if (!box || !S.roomEdit) return;
   let drag = null;
   box.addEventListener('pointerdown', e => {
     const t = e.target.closest('.rm-it'); if (!t) return; e.preventDefault();
-    const it = room().items.find(i => i.u === t.dataset.u); if (!it) return;
-    const rc = box.getBoundingClientRect(); drag = { t, it, sx: e.clientX, sy: e.clientY, ox: it.x, oy: it.y, k: 120 / rc.width, moved: false };
+    const it = curRoom().items.find(i => i.u === t.dataset.u); if (!it) return;
+    const rc = box.getBoundingClientRect(); drag = { t, it, sx: e.clientX, sy: e.clientY, ox: it.x, oy: it.y, k: RW / rc.width, moved: false };
     try { t.setPointerCapture(e.pointerId); } catch (er) { } $$('.rm-it.sel', box).forEach(x => x.classList.remove('sel')); t.classList.add('sel');
   });
   box.addEventListener('pointermove', e => {
     if (!drag) return; const f = FURN[drag.it.k];
     const dx = (e.clientX - drag.sx) * drag.k, dy = (e.clientY - drag.sy) * drag.k; if (Math.abs(dx) + Math.abs(dy) > 1) drag.moved = true;
-    drag.it.x = Math.round(Math.max(-f.w / 3, Math.min(120 - f.w * 2 / 3, drag.ox + dx))); drag.it.y = Math.round(Math.max(0, Math.min(104 - f.h, drag.oy + dy)));
-    drag.t.style.left = drag.it.x / 120 * 100 + '%'; drag.t.style.top = drag.it.y / 104 * 100 + '%'; drag.t.style.zIndex = f.flat ? 1 : 2 + drag.it.y + f.h;
+    drag.it.x = Math.round(Math.max(0, Math.min(RW - f.w, drag.ox + dx)));
+    drag.it.y = Math.round(f.wall ? Math.max(0, Math.min(WALLH - f.h + 4, drag.oy + dy)) : Math.max(WALLH - f.h + 6, Math.min(RH - f.h, drag.oy + dy)));
+    drag.t.style.left = pct(drag.it.x, RW); drag.t.style.top = pct(drag.it.y, RH); drag.t.style.zIndex = f.flat ? 1 : f.wall ? 2 : 10 + drag.it.y + f.h;
   });
   const end = () => { if (!drag) return; const u = drag.it.u; drag = null; S.roomSel = u; A.saveSettings(); A.render(); };
   box.addEventListener('pointerup', end); box.addEventListener('pointercancel', end);
 };
-
 // ---------------- Regalo del día ----------------
 function weekDays() { const t = new Date(); const dow = (t.getDay() + 6) % 7; const mon = addDays(t, -dow); return [0, 1, 2, 3, 4, 5, 6].map(i => ymd(addDays(mon, i))); }
 function G() { const g = S.settings.gift = S.settings.gift || {}; g.opened = (g.opened || []).filter(d => d >= ymd(addDays(new Date(), -14))); return g; }
@@ -559,7 +661,7 @@ function rollGift() {
   const big = t === wk[6] && wk.slice(0, 6).every(d => g.opened.includes(d));
   if (big) {
     if (!p.owned.includes('gela')) return { kind: 'pet', id: 'gela', name: 'Gela', src: spr('gela', 5), big };
-    if (!r.owned.includes('hongo')) return { kind: 'furn', id: 'hongo', name: FURN.hongo.name, src: Pix.sprite('x_hongo', 4), stars: 10, big };
+    if (!cnt('hongo')) return { kind: 'furn', id: 'hongo', name: FURN.hongo.name, src: Pix.sprite('x_hongo', 4), stars: 10, big };
     const rareAcc = Object.entries(A.ACC).find(([k, a]) => a.raro && !(R().owned || []).includes('acc:' + k));
     if (rareAcc) return { kind: 'acc', id: rareAcc[0], name: rareAcc[1].name, src: spr('acc_' + rareAcc[0], 6), big };
     return { kind: 'stars', n: 50, name: '50 estrellitas', src: spr('estrellita', 6), big };
@@ -567,7 +669,7 @@ function rollGift() {
   const x = Math.random();
   if (x < .42) { const n = 5 + Math.floor(Math.random() * 11); return { kind: 'stars', n, name: n + ' estrellitas', src: spr('estrellita', 6) }; }
   if (x < .80) { const ks = Object.keys(FOODS).filter(k => !FOODS[k].off); const k = ks[Math.floor(Math.random() * ks.length)]; const n = 2 + Math.floor(Math.random() * 2); return { kind: 'food', id: k, n, name: `${n} × ${FOODS[k].name}`, src: spr(FOODS[k].sprite || k, 6), stars: 3 }; }
-  if (x < .95) { const ks = Object.keys(FURN).filter(k => !r.owned.includes(k) && !furnLock(k) && FURN[k].price && FURN[k].price <= 40); if (ks.length) { const k = ks[Math.floor(Math.random() * ks.length)]; return { kind: 'furn', id: k, name: FURN[k].name, src: Pix.sprite(furnSprite(k), 4), stars: 5 }; } }
+  if (x < .95) { const ks = Object.keys(FURN).filter(k => !cnt(k) && !furnLock(k) && FURN[k].price && FURN[k].price <= 40); if (ks.length) { const k = ks[Math.floor(Math.random() * ks.length)]; return { kind: 'furn', id: k, name: FURN[k].name, src: Pix.sprite(furnSprite(k), 4), stars: 5 }; } }
   const acc = Object.entries(A.ACC).filter(([k, a]) => !a.plus && !a.off && !a.season && a.price <= 20 && !(R().owned || []).includes('acc:' + k));
   if (acc.length) { const [k, a] = acc[Math.floor(Math.random() * acc.length)]; return { kind: 'acc', id: k, name: a.name, src: spr('acc_' + k, 6), stars: 5 }; }
   return { kind: 'stars', n: 12, name: '12 estrellitas', src: spr('estrellita', 6) };
@@ -576,7 +678,7 @@ function applyGift(w) {
   const p = P(), r = room();
   if (w.kind === 'stars') give(w.n);
   if (w.kind === 'food') { p.pantry[w.id] = (p.pantry[w.id] || 0) + w.n; }
-  if (w.kind === 'furn') { if (!r.owned.includes(w.id)) r.owned.push(w.id); }
+  if (w.kind === 'furn') addInv(w.id, 1);
   if (w.kind === 'acc') { const ro = R(); ro.owned = (ro.owned || []).concat('acc:' + w.id); seasonGate(); }
   if (w.kind === 'pet') { if (!p.owned.includes(w.id)) { p.owned.push(w.id); p.since[w.id] = today(); } }
   if (w.stars) give(w.stars);
@@ -605,7 +707,7 @@ ACT.rgOpen = () => {
 };
 ACT.rgDone = () => {
   const w = S.giftShown; S.giftShown = null; if (!w) return A.render();
-  if (w.kind === 'furn') { placeFurn(w.id); A.saveSettings(); A.go('cuarto'); }
+  if (w.kind === 'furn') { placeFurn(w.id); A.saveSettings(); S.pcTab = 'cuarto'; A.go('rincon'); }
   else if (w.kind === 'food') A.go('rincon');
   else if (w.kind === 'acc') { S.shopSec = A.ACC[w.id].slot; A.go('tienda'); }
   else if (w.kind === 'pet') { setActive(w.id); A.go('rincon'); }
@@ -706,6 +808,7 @@ async function saveCatalog() {
   A.render();
 }
 let latestCatalog = null;
+A.saveCatalog = () => saveCatalog();
 ACT.seAdd = () => {
   const n = ($('#seName').value || '').trim(), f = $('#seFrom').value, t = $('#seTo').value;
   if (!n || !f || !t) return toast('Pon el nombre y las dos fechas');
