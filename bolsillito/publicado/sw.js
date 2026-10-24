@@ -1,4 +1,4 @@
-const C = 'bolsillito-v26';
+const C = 'bolsillito-v27';
 const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
 const CORE = ['/', '/offline.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', CDN].concat([0, 1, 2, 3, 4, 5].map(i => '/p' + i + '.bin?v=1'));
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
@@ -23,6 +23,7 @@ self.addEventListener('fetch', e => {
     return;
   }
   if (u.origin !== location.origin) return;
+  if (/^\/(descargar|\.well-known\/)/.test(u.pathname)) return;
   // Internet primero, pero si tarda más de 3 s (o no hay) se abre lo guardado en el celular.
   const key = e.request.mode === 'navigate' ? '/' : e.request;
   e.respondWith((async () => {

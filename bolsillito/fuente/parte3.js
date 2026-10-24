@@ -645,6 +645,12 @@ const VAPID = 'BJZS49m-TRZOYs2Ansy5qpS72ybEIoIuvTQYbO28jCCe8McNclVj2j6KI2Jkp0qet
 A.PAGES.recordatorio = 'Recordatorio'; pageIcon('recordatorio', 'alerta');
 const RM = () => (S.settings.reminder = S.settings.reminder || { on: false, hour: 20 });
 const canPush = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const isAndroid = () => /android/i.test(navigator.userAgent);
+try { if (/^android-app:\/\/com\.meffy\.bolsillito/.test(document.referrer)) localStorage.setItem('bolsi_twa', '1'); } catch (e) {}
+const isApp = () => { try { return localStorage.getItem('bolsi_twa') === '1'; } catch (e) { return false; } };
+A.isApp = isApp;
+const appCard = () => isAndroid() && !isApp() ? `<div class="card row app-dl" style="gap:12px;background:#fff7d6">${img('phone', 40)}<div style="flex:1"><b>Bolsillito ya es una app</b><div class="faint">Descárgala para Android: se abre sin barra del navegador y los avisos llegan como de app.</div></div><a class="btn pink sm" href="/descargar" style="text-decoration:none">Descargar</a></div>` : '';
+A.appCard = appCard;
 const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent); const standalone = () => window.matchMedia && matchMedia('(display-mode: standalone)').matches || navigator.standalone;
 const b64u = s => { const p = '='.repeat((4 - s.length % 4) % 4); const r = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...r].map(c => c.charCodeAt(0))); };
 const tz = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Guayaquil'; } catch (e) { return 'America/Guayaquil'; } };
@@ -658,7 +664,7 @@ ${!online() ? '<div class="card empty">El recordatorio necesita internet y tu cu
 <label class="f">¿A qué hora?<select class="in" id="rmH">${Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === r.hour ? 'selected' : ''}>${hourTxt(h)}</option>`).join('')}</select></label>
 ${perm === 'denied' ? '<p class="faint" style="margin:0;color:#c44a72">Bloqueaste las notificaciones para Bolsillito. Actívalas en los ajustes de tu navegador o celular.</p>' : ''}
 <button class="btn" data-act="rmTest" style="justify-content:center">Mandarme uno de prueba</button></div>`}
-${!standalone() && !isIOS() ? `<div class="card stack" style="background:#fff7d6"><b>¿El aviso dice el link de la página?</b><div class="faint">Pasa cuando abres Bolsillito desde el navegador o con un acceso directo. Instálala como app y los avisos dirán solo "Bolsillito", como las demás apps.</div>${A.installEvt ? '<button class="btn pink" data-act="installApp" style="justify-content:center">Instalar Bolsillito</button>' : '<div class="faint">En Chrome toca el menú ⋮ y luego <b>"Instalar app"</b> (no "Agregar a pantalla de inicio"). Si ya tenías un acceso directo, bórralo primero.</div>'}</div>` : ''}
+${appCard()}${!standalone() && !isIOS() && !isAndroid() ? `<div class="card stack" style="background:#fff7d6"><b>¿El aviso dice el link de la página?</b><div class="faint">Pasa cuando abres Bolsillito desde el navegador o con un acceso directo. Instálala como app y los avisos dirán solo "Bolsillito", como las demás apps.</div>${A.installEvt ? '<button class="btn pink" data-act="installApp" style="justify-content:center">Instalar Bolsillito</button>' : '<div class="faint">En Chrome toca el menú ⋮ y luego <b>"Instalar app"</b> (no "Agregar a pantalla de inicio"). Si ya tenías un acceso directo, bórralo primero.</div>'}</div>` : ''}
 <p class="faint" style="margin:0">Puedes apagarlo cuando quieras. Las notificaciones solo dicen que anotes: nunca muestran tus cifras.</p>`;
 };
 addEventListener('beforeinstallprompt', e => { e.preventDefault(); A.installEvt = e; if (S.route === 'recordatorio') A.render(); });
