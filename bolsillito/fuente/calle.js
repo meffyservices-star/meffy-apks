@@ -46,6 +46,67 @@ const BIOMES = [
 let bioShift = 0; // solo para probar los escenarios
 const bioOf = r => BIOMES[(Math.floor(Math.max(0, r) / BIO_LEN) + bioShift) % BIOMES.length];
 
+// ---------------- Sonido de ambiente (hecho con ruiditos y notas, sin archivos) ----------------
+// Cada escenario tiene su fondo suavecito y sus detalles: pajaritos, bocinas, olas y gaviotas, viento y campanitas, cajita musical.
+// Además suena lo que tienes cerca: el carro que pasa, el río y el tren.
+const AMB = {
+  pradera: { bed: { wind: .7 }, ev: ['birds', 'birds', 'leaves'], every: [2.5, 6] },
+  ciudad: { bed: { traffic: .9, wind: .15 }, ev: ['honk', 'honk', 'bike'], every: [3.5, 8] },
+  playa: { bed: { wind: .25 }, waves: true, ev: ['gull', 'gull'], every: [4, 9] },
+  nieve: { bed: { wind: .75 }, ev: ['bells', 'gust'], every: [4, 8] },
+  dulce: { bed: { wind: .12 }, ev: ['musicbox', 'musicbox', 'sparkle'], every: [2.5, 5] }
+};
+function ambience() {
+  const ac = window.Sfx && window.Sfx.ctx && window.Sfx.ctx(); if (!ac) return null;
+  const VOL = .9;
+  const out = ac.createGain(); out.gain.value = .0001; out.connect(ac.destination);
+  const now = () => ac.currentTime;
+  const mkBuf = brown => { const b = ac.createBuffer(1, ac.sampleRate * 3, ac.sampleRate), d = b.getChannelData(0); let l = 0; for (let i = 0; i < d.length; i++) { const w = Math.random() * 2 - 1; if (brown) { l = (l + .02 * w) / 1.02; d[i] = l * 3.2; } else d[i] = w * .5; } return b; };
+  const brownB = mkBuf(true), whiteB = mkBuf(false);
+  const srcs = [];
+  const bed = (buf, type, freq, q) => { const s = ac.createBufferSource(); s.buffer = buf; s.loop = true; const f = ac.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q || .7; const g = ac.createGain(); g.gain.value = 0; s.connect(f).connect(g).connect(out); s.start(0, Math.random() * 2); srcs.push(s); return { g, f }; };
+  const B = { wind: bed(brownB, 'lowpass', 520), traffic: bed(brownB, 'lowpass', 260), waves: bed(brownB, 'lowpass', 900), river: bed(whiteB, 'bandpass', 1400, .5), rumble: bed(brownB, 'lowpass', 140) };
+  const LV = { wind: .06, traffic: .045, waves: .06, river: .04, rumble: .35 };
+  const set = (k, v) => B[k].g.gain.setTargetAtTime(v, now(), .35);
+  const pan = p => { const n = ac.createStereoPanner ? ac.createStereoPanner() : null; if (n) { n.pan.value = Math.max(-1, Math.min(1, p || 0)); n.connect(out); return n; } return out; };
+  const tone = (f, t0, dur, type, vol, f2, p) => { const t = now() + t0, o = ac.createOscillator(), g = ac.createGain(); o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + Math.min(.02, dur / 3)); g.gain.exponentialRampToValueAtTime(.0001, t + dur); o.connect(g).connect(pan(p)); o.start(t); o.stop(t + dur + .03); };
+  const whoosh = (t0, dur, vol, f1, f2, p1, p2) => { const t = now() + t0, s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = whiteB; f.type = 'bandpass'; f.Q.value = 1.4; f.frequency.setValueAtTime(f1, t); f.frequency.exponentialRampToValueAtTime(f2, t + dur); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + dur * .45); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    let dst = out; if (ac.createStereoPanner) { const pn = ac.createStereoPanner(); pn.pan.setValueAtTime(p1 || 0, t); pn.pan.linearRampToValueAtTime(p2 || 0, t + dur); pn.connect(out); dst = pn; }
+    s.connect(f).connect(g).connect(dst); s.start(t, Math.random() * 2); s.stop(t + dur + .05); };
+  const PENTA = [1047, 1175, 1319, 1568, 1760, 2093];
+  const EV = {
+    birds() { const p = Math.random() * 1.4 - .7, n = 2 + Math.floor(Math.random() * 3), b = 2400 + Math.random() * 900; for (let i = 0; i < n; i++) tone(b, i * .11, .07, 'sine', .018, b * 1.35, p); if (Math.random() < .5) tone(b * .9, n * .11 + .12, .18, 'sine', .014, b * 1.2, p); },
+    leaves() { whoosh(0, 1.2, .025, 2500, 4200, -.4, .4); },
+    honk() { const p = Math.random() * 1.6 - .8, f = Math.random() < .5 ? 392 : 466; tone(f, 0, .16, 'square', .006, 0, p); tone(f * 1.26, 0, .16, 'square', .005, 0, p); if (Math.random() < .5) { tone(f, .22, .1, 'square', .006, 0, p); tone(f * 1.26, .22, .1, 'square', .005, 0, p); } },
+    bike() { const p = Math.random() * 1.4 - .7; tone(2637, 0, .25, 'sine', .012, 0, p); tone(2637, .18, .3, 'sine', .01, 0, p); },
+    gull() { const p = Math.random() * 1.4 - .7; tone(1500, 0, .28, 'triangle', .014, 950, p); tone(1650, .32, .32, 'triangle', .012, 1000, p); },
+    bells() { const p = Math.random() * 1.2 - .6; [0, .22, .44].forEach((t, i) => tone([1568, 1976, 2349][i], t, .9, 'sine', .009, 0, p)); },
+    gust() { whoosh(0, 2.2, .025, 300, 900, -.6, .6); },
+    musicbox() { let t = 0; const n = 3 + Math.floor(Math.random() * 3); for (let i = 0; i < n; i++) { tone(PENTA[Math.floor(Math.random() * PENTA.length)], t, .7, 'triangle', .011); t += .18 + Math.random() * .12; } },
+    sparkle() { for (let i = 0; i < 5; i++) tone(2400 + i * 260, i * .05, .2, 'sine', .006); }
+  };
+  let bio = null, nextEv = now() + 2, live = true, muted = false, lastWhoosh = 0;
+  out.gain.setTargetAtTime(VOL, now(), .8);
+  return {
+    // se llama en cada cuadro con lo que pasa en el juego
+    update(st) {
+      if (!live || muted) return;
+      const b = st.bio; const cfg = AMB[b] || AMB.pradera;
+      if (b !== bio) { bio = b; ['wind', 'traffic', 'waves'].forEach(k => set(k, (cfg.bed[k] || 0) * LV[k])); nextEv = now() + 1 + Math.random() * 2; }
+      if (cfg.waves) { const w = .5 + .5 * Math.sin(now() * Math.PI * 2 / 6.5); B.waves.g.gain.setTargetAtTime(LV.waves * (.25 + .75 * w * w), now(), .3); }
+      // el río y el tren se oyen más fuerte mientras más cerca estés
+      set('river', LV.river * Math.min(1.4, st.water));
+      set('rumble', LV.rumble * st.train);
+      if (now() >= nextEv) { const e = cfg.ev[Math.floor(Math.random() * cfg.ev.length)]; try { EV[e](); } catch (er) { } nextEv = now() + cfg.every[0] + Math.random() * (cfg.every[1] - cfg.every[0]); }
+    },
+    // un carrito pasa a tu lado: fiuuu de un lado al otro
+    pass(dir, near, big) { if (!live || muted || now() - lastWhoosh < .12) return; lastWhoosh = now(); whoosh(0, big ? .7 : .45, (big ? .09 : .065) * near, big ? 260 : 500, big ? 700 : 1300, -.8 * dir, .8 * dir); },
+    pause() { muted = true; out.gain.setTargetAtTime(.0001, now(), .15); },
+    resume() { muted = false; out.gain.setTargetAtTime(VOL, now(), .3); },
+    stop() { if (!live) return; live = false; out.gain.setTargetAtTime(.0001, now(), .25); setTimeout(() => { srcs.forEach(s => { try { s.stop(); } catch (e) { } }); try { out.disconnect(); } catch (e) { } }, 1200); }
+  };
+}
+
 // ---------------- El juego ----------------
 async function calleGame(opts) {
   opts = opts || {}; bioShift = opts.bioShift || 0;
@@ -56,6 +117,7 @@ async function calleGame(opts) {
   sizes();
   const rnd = (a, b) => a + Math.random() * (b - a), pick = a => a[Math.floor(Math.random() * a.length)];
   const hsh = (a, b) => { let h = (a * 374761393 + b * 668265263) >>> 0; h = (h ^ (h >> 13)) * 1274126177 >>> 0; return (h ^ (h >> 16)) >>> 0; };
+  let amb = null; // sonido de ambiente
   let lanes, nextRow, safe, lastType, lastDir, me, hop, queue, cam, camMin, started, score, coinsGot, dead, parts, banner, seenBio, run = true, paused = true, last = 0, raf, frame = 0, bump = 0;
 
   // ---- generar carriles ----
@@ -150,7 +212,8 @@ async function calleGame(opts) {
   function step(dt) {
     frame += dt;
     Object.values(lanes).forEach(l => {
-      if (l.type === 'road') l.cars.forEach(c => { c.x += l.sp * dt; if (l.sp > 0 && c.x > COLS + 4) c.x -= l.L; if (l.sp < 0 && c.x + c.len < -4) c.x += l.L; });
+      if (l.type === 'road') { const near = Math.abs(l.r - me.r) <= 1, px = me.x + .5; l.cars.forEach(c => { c.x += l.sp * dt; if (l.sp > 0 && c.x > COLS + 4) c.x -= l.L; if (l.sp < 0 && c.x + c.len < -4) c.x += l.L;
+        const sg = Math.sign(c.x + c.len / 2 - px); if (near && amb && !dead && c.sg && sg !== c.sg && Math.abs(c.x + c.len / 2 - px) < 2) amb.pass(l.sp > 0 ? 1 : -1, l.r === me.r ? 1 : .6, c.len > 2); c.sg = sg; }); }
       if (l.type === 'water' && l.logs.length) l.logs.forEach(o => { o.x += l.sp * dt; if (l.sp > 0 && o.x > COLS + 4) o.x -= l.L; if (l.sp < 0 && o.x + o.len < -4) o.x += l.L; });
       if (l.type === 'rail') {
         l.t -= dt;
@@ -162,6 +225,7 @@ async function calleGame(opts) {
     parts.forEach(p => { p.x += p.vx * dt; p.oy += p.vy * dt * P; p.vy += (p.gr || .12) * dt; p.life -= dt; }); parts = parts.filter(p => p.life > 0);
     if (banner) { banner.t -= dt; if (banner.t <= 0) banner = null; }
     if (bump > 0) bump -= dt; me.sq += (1 - me.sq) * Math.min(1, .25 * dt);
+    if (amb) { let wt = 0, tr = 0; for (let d = -2; d <= 2; d++) { const q = laneAt(me.r + d); if (q && q.type === 'water') wt += 1 - Math.abs(d) * .3; } for (let d = -4; d <= 4; d++) { const q = laneAt(me.r + d); if (q && q.type === 'rail' && q.train && q.train.x < COLS + 1 && q.train.x + q.train.len > -1) tr = Math.max(tr, 1 - Math.abs(d) / 5); } amb.update({ bio: bioOf(Math.max(0, me.r)).id, water: wt * .55, train: tr }); }
     if (dead) { dead.t += dt; if (dead.kind === 'eagle') dead.cy = (dead.cy || 0) + 0; if (dead.t > (dead.kind === 'eagle' ? 90 : 70)) over(); return; }
     if (hop) { hop.t += dt / 6.5; if (hop.t >= 1) land(); }
     if (dead) return;
@@ -317,7 +381,7 @@ async function calleGame(opts) {
   }
   function loop(t) { if (!run) return; const dt = Math.min(2.2, last ? (t - last) / 16.67 : 1); last = t; if (!paused) step(dt); if (run) draw(); raf = requestAnimationFrame(loop); }
   function over() {
-    if (!run) return; A.gameMusic.stop(); run = false; cancelAnimationFrame(raf);
+    if (!run) return; A.gameMusic.stop(); if (amb) amb.stop(); run = false; cancelAnimationFrame(raf);
     const gm = GM(); const rec = score > (gm.best.calle || 0); if (rec) gm.best.calle = score; gsfx(rec ? 'record' : 'over');
     const want = coinsGot + Math.floor(score / 8); const earned = payGame(want); A.petAddXp && A.petAddXp(10, 'game'); A.saveSettings();
     const why = { car: '¡Ay, un carrito!', splash: '¡Splash! Al agua', train: '¡Cuidado con el tren!', eagle: 'Te llevó la nubecita' }[dead ? dead.kind : ''] || '¡Buen viaje!';
@@ -335,12 +399,12 @@ async function calleGame(opts) {
   const kd = e => { const m = { ArrowUp: [1, 0], w: [1, 0], ' ': [1, 0], ArrowDown: [-1, 0], s: [-1, 0], ArrowLeft: [0, -1], a: [0, -1], ArrowRight: [0, 1], d: [0, 1] }[e.key]; if (m) { e.preventDefault(); tryMove(m[0], m[1]); } if (e.key === 'Escape') sh.close(); };
   addEventListener('keydown', kd);
   const pauseBtn = $('.gm-pause', sh.ov);
-  pauseBtn.onclick = () => { if (dead || !run) return; paused = !paused; gsfx('tick'); paused ? A.gameMusic.pause() : A.gameMusic.resume(); const m = $('.gm-msg', sh.ov); if (paused) { m.hidden = false; m.innerHTML = `<div class="gm-end"><div class="gm-k">PAUSA</div><div class="row" style="gap:8px;margin-top:10px"><button class="btn" data-x="out" style="flex:1;justify-content:center">Salir</button><button class="btn pink" data-x="go" style="flex:1;justify-content:center">Seguir</button></div></div>`; m.onclick = e => { const b = e.target.closest('[data-x]'); if (!b) return; if (b.dataset.x === 'out') sh.close(); else { paused = false; m.hidden = true; A.gameMusic.resume(); } }; } };
-  sh.close = () => { A.gameMusic.stop(); run = false; cancelAnimationFrame(raf); removeEventListener('keydown', kd); sh.ov.remove(); document.body.classList.remove('gaming'); if (S.route === 'juegos' || S.route === 'rincon') A.render(); };
+  pauseBtn.onclick = () => { if (dead || !run) return; paused = !paused; gsfx('tick'); paused ? A.gameMusic.pause() : A.gameMusic.resume(); if (amb) paused ? amb.pause() : amb.resume(); const m = $('.gm-msg', sh.ov); if (paused) { m.hidden = false; m.innerHTML = `<div class="gm-end"><div class="gm-k">PAUSA</div><div class="row" style="gap:8px;margin-top:10px"><button class="btn" data-x="out" style="flex:1;justify-content:center">Salir</button><button class="btn pink" data-x="go" style="flex:1;justify-content:center">Seguir</button></div></div>`; m.onclick = e => { const b = e.target.closest('[data-x]'); if (!b) return; if (b.dataset.x === 'out') sh.close(); else { paused = false; m.hidden = true; A.gameMusic.resume(); if (amb) amb.resume(); } }; } };
+  sh.close = () => { A.gameMusic.stop(); if (amb) amb.stop(); run = false; cancelAnimationFrame(raf); removeEventListener('keydown', kd); sh.ov.remove(); document.body.classList.remove('gaming'); if (S.route === 'juegos' || S.route === 'rincon') A.render(); };
   addEventListener('resize', () => { if (!run) return; const r = sh.fit(); W = r.w; H = r.h; }, { once: true });
   sh.ov.__st = () => ({ me, lanes, cam, hop, dead, score, coinsGot, T, tryMove, set: v => Object.assign(me, v), unpause: () => { paused = false; } });
   reset();
-  const go = () => { const m = $('.gm-msg', sh.ov); m.hidden = true; paused = false; gsfx('start'); A.gameMusic.start('calle'); };
+  const go = () => { const m = $('.gm-msg', sh.ov); m.hidden = true; paused = false; gsfx('start'); A.gameMusic.start('calle'); try { amb = ambience(); } catch (e) { amb = null; } };
   if (opts.quick) go(); else menu(sh, go, () => sh.close(), () => { sh.close(); calleGame(); });
   raf = requestAnimationFrame(loop);
 }

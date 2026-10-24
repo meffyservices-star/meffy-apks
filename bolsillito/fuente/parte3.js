@@ -790,6 +790,7 @@ const Sfx = (() => {
   };
   const hashVoice = id => { let h = 0; for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; const base = 440 + (h % 9) * 70, up = 1.15 + (h >> 4) % 5 * .1, n = 2 + (h >> 8) % 2, type = ['sine', 'triangle', 'square'][(h >> 10) % 3]; return () => { for (let i = 0; i < n; i++) tone(base * (1 + i * .12), i * .09, .12, type, type === 'square' ? .022 : .045, base * up * (1 + i * .12)); }; };
   return {
+    ctx() { if (!on()) return null; try { return mk(); } catch (e) { return null; } }, // para el sonido de ambiente de los juegos
     play(n, force) {
       if (!on() || !SOUNDS[n]) return; if (!force && Date.now() - lastTap > 2500) return; // solo cuando tú hiciste algo
       try { mk(); SOUNDS[n](); } catch (e) { }
