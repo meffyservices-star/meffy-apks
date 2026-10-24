@@ -23,6 +23,7 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
 ## Historial
 
 - **24-oct-2026**
+  - Juego de saltar: siempre hay una plataforma alcanzable. Las que se rompen ahora son trampas extra (no reemplazan a la plataforma que te deja seguir) y el hueco máximo entre plataformas útiles quedó por debajo de lo que sube un salto.
   - Música para los juegos: en el panel de admin (Música de los juegos) se sube una canción por juego, con volumen y prendido/apagado. Se guarda en Supabase Storage, bucket `music` (solo la admin puede subir).
   - Sonidos en Cuidar (burbujas al bañar, luz al dormir y despertar, mimos, "ñam ñam" al comer), en los minijuegos y en el cuarto.
   - Cada mascota tiene su propia vocecita al tocarla en el cuarto (las nuevas del panel reciben una sacada de su nombre).

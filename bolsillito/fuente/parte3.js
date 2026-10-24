@@ -70,10 +70,25 @@ async function jumpGame() {
   let me, plats, coins, cam, coinsGot, maxH, run = true, paused = false, tilt = 0, keyDir = 0, touchDir = 0, last = 0, raf;
   const rnd = (a, b) => a + Math.random() * (b - a);
   function platAt(y) { const hgt = (H - y + cam) / 10; const r = Math.random(); const t = hgt > 40 && r < Math.min(.28, .08 + hgt / 1200) ? 'rota' : hgt > 25 && r > 1 - Math.min(.25, .06 + hgt / 1500) ? 'nube' : 'p'; return { x: rnd(4, W - PW - 4), y, t, gone: false, vy: 0, spring: t === 'p' && Math.random() < .07, dx: hgt > 60 && t === 'p' && Math.random() < .2 ? rnd(-1, 1) : 0 }; }
+  // El salto sube ~170 px. Entre una plataforma que sí sirve y la siguiente nunca hay más de SAFE,
+  // y las que se rompen son "trampas" extra: nunca reemplazan a la plataforma que te deja seguir.
+  const SAFE = 118;
+  function spawn(top) {
+    const lo = maxH < 50 ? 46 : 54, hi = Math.min(SAFE, (maxH < 50 ? 70 : 84) + Math.min(30, maxH / 15));
+    const y = top - rnd(lo, hi); const p = platAt(y);
+    if (p.t === 'rota') {
+      p.y = top - (top - y) * rnd(.35, .6); plats.push(p);
+      const q = platAt(y); q.t = 'p'; q.spring = false; q.dx = 0;
+      if (Math.abs(q.x - p.x) < PW + 10) q.x = p.x + PW + 20 <= W - PW - 4 ? rnd(p.x + PW + 20, W - PW - 4) : rnd(4, Math.max(4, p.x - PW - 20));
+      plats.push(q);
+    } else plats.push(p);
+    if (Math.random() < .35) coins.push({ x: rnd(10, W - 30), y: y - rnd(30, 60), got: false });
+    return y;
+  }
   function reset() {
     me = { x: W / 2 - PET / 2, y: H - 140, vy: -11, vx: 0, face: 1 }; plats = []; coins = []; cam = 0; coinsGot = 0; maxH = 0;
     plats.push({ x: W / 2 - PW / 2, y: H - 80, t: 'p', gone: false, vy: 0, dx: 0 });
-    let y = H - 80; while (y > -H) { y -= rnd(46, 70); plats.push(platAt(y)); if (Math.random() < .35) coins.push({ x: rnd(10, W - 30), y: y - rnd(30, 60), got: false }); }
+    let y = H - 80; while (y > -H) y = spawn(y);
   }
   function step(dt) {
     const dir = keyDir || touchDir || tilt;
@@ -94,7 +109,7 @@ async function jumpGame() {
     if (me.y < H * .42) { const d = H * .42 - me.y; me.y += d; cam += d; plats.forEach(p => p.y += d); coins.forEach(c => c.y += d); }
     maxH = Math.max(maxH, Math.floor(cam / 10));
     plats = plats.filter(p => p.y < H + 40 && !(p.fade && p.fade <= 0)); coins = coins.filter(c => c.y < H + 40 && !c.got);
-    let top = Math.min(...plats.map(p => p.y)); while (top > -60) { top -= rnd(maxH < 50 ? 46 : 54, (maxH < 50 ? 70 : 84) + Math.min(36, maxH / 15)); plats.push(platAt(top - cam * 0)); if (Math.random() < .35) coins.push({ x: rnd(10, W - 30), y: top - rnd(30, 60), got: false }); }
+    let top = Math.min(...plats.map(p => p.y)); while (top > -60) top = spawn(top);
     if (me.y > H + 20) over();
   }
   function draw() {
