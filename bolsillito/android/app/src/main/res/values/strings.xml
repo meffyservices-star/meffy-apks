@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Bolsillito</string>
+    <string name="asset_statements">[{\"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": {\"namespace\": \"web\", \"site\": \"https://bolsillito.vercel.app\"}}]</string>
+    <string name="share_target">{\"action\": \"/compartir\", \"method\": \"POST\", \"enctype\": \"multipart/form-data\", \"params\": {\"title\": \"title\", \"text\": \"text\", \"files\": [{\"name\": \"img\", \"accept\": [\"image/*\"]}]}}</string>
+</resources>
