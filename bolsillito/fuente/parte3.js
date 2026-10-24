@@ -868,19 +868,21 @@ A.ocrImage = async file => {
 };
 async function readShared() {
   if (!/[?&]compartido=1/.test(location.search)) return;
-  try { history.replaceState(null, '', '/'); } catch (e) {}
+  try { history.replaceState({ r: 'home' }, '', '/'); } catch (e) {}
   let d = {}, img = null;
   try { const c = await caches.open('bolsi-compartido'); const r = await c.match('/__compartido.json'); if (r) d = await r.json(); const ri = await c.match('/__compartido.img'); if (ri) img = await ri.blob(); await caches.delete('bolsi-compartido'); } catch (e) {}
   let text = [d.title, d.text].filter(Boolean).join(' ').trim();
   if (img) { toast('Leyendo tu captura…'); try { text = (text + ' ' + await A.ocrImage(img)).trim(); } catch (e) { toast(navigator.onLine ? 'No pude leer la imagen. Completa los datos tú.' : 'Para leer capturas necesitas internet'); } }
   if (!text) { A.quickAdd(null, {}); return; }
-  const r = A.parseMoneyText(text, { shared: true });
+  const r = img ? A.parseReceipt(text) : A.parseMoneyText(text, { shared: true });
   const preset = { type: r.type || 'expense', note: r.note || '', date: r.date || today() };
   if (r.amount) preset.amount = r.amount; if (r.acct) preset.acct = r.acct;
   const c = r.cat && A.cat(r.cat); if (c && (preset.type === 'income') === (c.type === 'income')) preset.cat = r.cat;
   A.quickAdd(null, preset); setTimeout(() => toast(r.amount ? 'Revisa lo que entendí y toca Guardar' : 'No encontré el monto, escríbelo tú'), 300);
 }
 
+// sin menú del navegador al mantener presionado (salvo donde se escribe)
+addEventListener('contextmenu', e => { if (!e.target.closest('input, textarea, [contenteditable]')) e.preventDefault(); });
 // ---------------- Arranque ----------------
 const st0 = A.start;
 A.start = async () => { await st0(); applyLook(); A.renderNav(); readShared(); birthdayGift(); loadWx(); if (online() && S.settings.visitCode) setTimeout(() => { loadInbox().then(() => { A.renderNav(); }).catch(() => {}); }, 2500); };

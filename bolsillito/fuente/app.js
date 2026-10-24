@@ -935,7 +935,7 @@ const flush = () => { if (run) { out.push(String(tot + cur)); run = null; cur = 
 for (let i = 0; i < tk.length; i++) {
 const w = tk[i]; const lw = w.toLowerCase().replace(/[.,;:!?]$/, '');
 if (/^\s+$/.test(w)) { if (!run) out.push(w); continue; }
-if (lw in NUMW && !((lw === 'un' || lw === 'una') && !run && !/^(d[oó]lar|d[oó]lares|mil|millón)/i.test(tk[i + 2] || ''))) { const v = NUMW[lw]; if (v === 1000) { tot += (cur || 1) * 1000; cur = 0; } else cur += v; run = true; if (/[.,;:!?]$/.test(w)) { flush(); out.push(w.slice(-1)); } continue; }
+if (lw in NUMW && !((lw === 'un' || lw === 'una') && !run && !/^(d[oó]lar|d[oó]lares|mil|millón)/i.test(tk[i + 2] || ''))) { const v = NUMW[lw]; if (run && v !== 1000) { const last = cur % 100; if ((v < 10 && last % 10 !== 0) || (v >= 10 && v < 100 && last !== 0) || (v >= 100 && cur !== 0)) { flush(); out.push(' '); } } if (v === 1000) { tot += (cur || 1) * 1000; cur = 0; } else cur += v; run = true; if (/[.,;:!?]$/.test(w)) { flush(); out.push(w.slice(-1)); } continue; }
 if (lw === 'y' && run && /^\s+$/.test(tk[i + 1] || '') && ((tk[i + 2] || '').toLowerCase() in NUMW)) continue;
 if (run) { flush(); out.push(' '); }
 out.push(w);
@@ -945,6 +945,8 @@ flush(); return out.join('').replace(/ {2,}/g, ' ');
 function parseMoneyText(raw, opt) {
 opt = opt || {};
 let tx = ' ' + wordsToDigits(String(raw || '').replace(/\s+/g, ' ')) + ' ';
+// "3 80", "3:80", "$3 80" dichos en voz = 3,80
+if (opt.voice) tx = tx.replace(/(\d{1,4})(?:\s+|:|\s*,\s+)(\d{2})(?!\d|[.,]\d|\s*(?:personas|amigas|amigos))/g, '$1.$2');
 const lo = tx.toLowerCase(); const r = { type: null, amount: 0, acct: null, date: null, note: '', split: 0, cat: null };
 // monto
 let m, used = '';
@@ -987,6 +989,26 @@ if (note.length > 40) note = note.slice(0, 40).trim();
 r.note = note ? (opt.shared && /^[A-ZÁÉÍÓÚÑ0-9 &.'-]+$/.test(note) ? note.split(' ').map(w => w.length <= 3 ? w : w.charAt(0) + w.slice(1).toLowerCase()).join(' ') : note.charAt(0).toUpperCase() + note.slice(1).toLowerCase()) : '';
 r.cat = guessCat(r.note) || guessCat(lo);
 r.amount = Math.round(r.amount * 100) / 100;
+return r;
+}
+// Capturas de transferencias: se lee por renglones con etiquetas (Monto, Concepto, Beneficiario…) y se descarta el texto raro
+function parseReceipt(raw) {
+const lines = String(raw || '').split(/\n+/).map(l => l.trim()).filter(Boolean);
+const r = parseMoneyText(lines.join(' '), { shared: true });
+const lab = re => { for (let i = 0; i < lines.length; i++) { const m = lines[i].match(re); if (m) { const v = (m[1] || '').trim() || (lines[i + 1] || '').trim(); if (v) return v; } } return ''; };
+const amt = lab(/^(?:monto|valor|total|importe|cantidad|monto (?:transferido|enviado|a pagar)|valor (?:transferido|enviado|pagado)|pagaste|enviaste|recibiste)\b[\s:$]*(.*)$/i);
+if (amt) { const m = amt.match(/(\d{1,3}(?:[.,]\d{3})*[.,]\d{2}|\d+(?:[.,]\d{1,2})?)/); if (m) r.amount = Math.round(toNum(m[1]) * 100) / 100; }
+const concept = lab(/^(?:concepto|descripci[oó]n|motivo|asunto|detalle|glosa|comentario|nota|mensaje|raz[oó]n)\b[\s:]*(.*)$/i);
+const who = lab(/^(?:beneficiario|destinatario|para|a nombre de|nombre(?: del beneficiario)?|enviado a|transferiste a|ordenante|remitente|de parte de|recibiste de)\b[\s:]*(.*)$/i);
+const clean = v => v.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñü0-9 .&-]/g, ' ').replace(/\s+/g, ' ').trim();
+const ok = v => v && v.length >= 3 && /[a-záéíóúñ]{3,}/i.test(v) && v.replace(/[^a-záéíóúñü ]/gi, '').length / v.length > .75 && !/^(no|ninguno|n\/a|sin)/i.test(v);
+const tc = v => v.toLowerCase().replace(/(^|\s)\S/g, x => x.toUpperCase());
+const c1 = clean(concept), w1 = clean(who);
+if (ok(c1)) r.note = c1.length > 3 && c1 === c1.toUpperCase() ? tc(c1) : c1.charAt(0).toUpperCase() + c1.slice(1);
+else if (ok(w1)) r.note = (r.type === 'income' ? 'De ' : 'Transferencia a ') + tc(w1).split(' ').slice(0, 3).join(' ');
+else r.note = /transfer/i.test(raw) ? 'Transferencia' : (ok(r.note) && r.note.split(' ').length <= 4 ? r.note : '');
+r.note = r.note.slice(0, 40);
+r.cat = guessCat(r.note) || null;
 return r;
 }
 function toNum(x) { x = String(x); if (/^\d{1,3}([.,]\d{3})+$/.test(x)) return +x.replace(/[.,]/g, ''); if (/[.,]\d{3}[.,]\d{1,2}$/.test(x)) x = x.replace(/[.,](?=\d{3}[.,])/g, ''); return parseFloat(x.replace(',', '.')) || 0; }
@@ -1081,6 +1103,14 @@ if (mount) mount(sh);
 const f = sh.querySelector('[autofocus]'); if (f && matchMedia('(pointer:fine)').matches) f.focus();
 return sh;
 }
+addEventListener('popstate', e => {
+if (!$('#scrim').hidden) { closeSheet(); try { history.pushState({ r: S.route }, ''); } catch (er) {} return; }
+const r = e.state && e.state.r;
+if (NAVSTACK.length) NAVSTACK.pop();
+const to = r || NAVSTACK[NAVSTACK.length - 1] || 'home';
+if (!NAVSTACK.length) NAVSTACK.push(to);
+if (to !== S.route) go(to, true);
+});
 function closeSheet() { $('#scrim').hidden = true; $('#sheet').innerHTML = ''; const f = sheetClose; sheetClose = null; if (f) f(); }
 addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#scrim').hidden) closeSheet(); });
 function pickIcon(current, onPick, opts) {
@@ -1144,7 +1174,13 @@ $('#navIn').innerHTML = NAV.map(k => k === 'add'
 ? `<button class="fab" data-act="quickadd" aria-label="Registrar movimiento"><span class="ni">${iconHTML(pageIcon('add'), 30)}</span><span>Anotar</span></button>`
 : `<button data-go="${k}" ${S.route === k || (k === 'wallet' && ['acctd', 'loans'].includes(S.route)) || (k === 'more' && !NAV.includes(S.route) && !['acctd', 'loans'].includes(S.route)) ? 'aria-current="page"' : ''}><span class="ni">${iconHTML(pageIcon(k), 32)}${window.App && App.navDot && App.navDot(k) ? '<i class="nav-dot"></i>' : ''}</span><span>${PAGES[k]}</span></button>`).join('');
 }
-function go(route) {
+const NAVSTACK = [];
+function go(route, fromPop) {
+if (!fromPop && route !== S.route) {
+if (NAVSTACK.length > 1 && NAVSTACK[NAVSTACK.length - 2] === route) { history.back(); return; }
+if (!NAVSTACK.length) NAVSTACK.push(S.route);
+NAVSTACK.push(route); try { history.pushState({ r: route }, ''); } catch (e) {}
+}
 if (route !== S.route && S.route === 'journal' && window.Journal) Journal.leave();
 S.route = route; renderNav(); render(); window.scrollTo(0, 0);
 }
@@ -1438,7 +1474,7 @@ if (!manualCat && t.type !== 'transfer') { const g = guessCat(note.value); if (g
 if (!expr) { const m = note.value.match(/(\d+(?:[.,]\d{1,2})?)/); if (m) { $('.val', box).textContent = money(parseFloat(m[1].replace(',', '.'))); } }
 };
 const refreshCats = () => { $$('[data-cat]', box).forEach(b => b.setAttribute('aria-pressed', b.dataset.cat === t.cat)); const ic = $('.qa-amt > span', box); if (ic) ic.innerHTML = iconHTML((cat(t.cat) || {}).icon || 's:moneda', 34); const pb = $('[data-pane="cat"] b', box); if (pb) pb.textContent = (cat(t.cat) || {}).name || 'Categoría'; };
-const qs = $('#qaShot', box); if (qs) qs.onchange = async () => { const file = qs.files && qs.files[0]; if (!file) return; const ex = $('.expr', box); if (ex) ex.textContent = 'Leyendo tu captura…'; try { const txt = await window.App.ocrImage(file); const r = parseMoneyText(txt, { shared: true }); if (!r.amount && !r.note) { toast('No encontré un monto en la imagen'); draw(); return; } applyParsed(r); toast('Leí tu captura. Revisa y toca Guardar'); } catch (er) { toast(navigator.onLine ? 'No pude leer la imagen' : 'Para leer capturas necesitas internet'); draw(); } };
+const qs = $('#qaShot', box); if (qs) qs.onchange = async () => { const file = qs.files && qs.files[0]; if (!file) return; const ex = $('.expr', box); if (ex) ex.textContent = 'Leyendo tu captura…'; try { const txt = await window.App.ocrImage(file); const r = parseReceipt(txt); if (!r.amount && !r.note) { toast('No encontré un monto en la imagen'); draw(); return; } applyParsed(r); toast('Leí tu captura. Revisa y toca Guardar'); } catch (er) { toast(navigator.onLine ? 'No pude leer la imagen' : 'Para leer capturas necesitas internet'); draw(); } };
 $$('[data-spname]', box).forEach(i => i.oninput = () => { t.split.names[+i.dataset.spname] = i.value; });
 const qd = $('#qaDate', box); if (qd) qd.onchange = e => { t.date = e.target.value || today(); draw(); };
 const ac = $('#qaAcct', box); if (ac) ac.onchange = e => { t.acct = e.target.value; };
@@ -1452,7 +1488,7 @@ let said = '';
 const mic = $('[data-mic]', box); if (mic) mic.classList.add('on'); const ex = $('.expr', box); if (ex) ex.textContent = 'Te escucho… di algo como "gasté 3,50 en café"';
 rec.onresult = ev => { said = Array.from(ev.results).map(x => x[0].transcript).join(' '); const e2 = $('.expr', box); if (e2) e2.textContent = '“' + said + '”'; };
 rec.onerror = ev => { if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') toast('Dale permiso al micrófono para anotar con la voz'); else if (ev.error === 'network') toast('Para la voz necesitas internet'); else if (ev.error !== 'no-speech' && ev.error !== 'aborted') toast('No te escuché bien, intenta otra vez'); };
-rec.onend = () => { rec = null; const m2 = $('[data-mic]', box); if (m2) m2.classList.remove('on'); if (!said.trim()) { draw(); return; } applyParsed(parseMoneyText(said)); toast('Escuché: “' + said.trim() + '”. Revisa y toca Guardar'); };
+rec.onend = () => { rec = null; const m2 = $('[data-mic]', box); if (m2) m2.classList.remove('on'); if (!said.trim()) { draw(); return; } applyParsed(parseMoneyText(said, { voice: true })); toast('Escuché: “' + said.trim() + '”. Revisa y toca Guardar'); };
 try { rec.start(); } catch (er) { rec = null; toast('No se pudo usar el micrófono'); }
 };
 const applyParsed = r => {
@@ -1623,7 +1659,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) Store
 function applyThemeEarly() { /* CSS defaults already paint the sky */ }
 window.App = {
 start, S, $, $$, esc, uid, pad, ymd, parseYmd, addDays, today, ym, MONTHS, MON3, DOW, dowIdx, cap, monthLabel, addMonths, daysIn, isoWeek, weekStart,
-money, iconHTML, px, pageIcon, parseMoneyText, privBtn, txListBody, render, renderNav, go, toast, openSheet, closeSheet, pickIcon, pickBanner, plusPitch, bannerHTML, header, txRow, txOnDay, spentOf, incomeOf,
+money, iconHTML, px, pageIcon, parseMoneyText, parseReceipt, privBtn, txListBody, render, renderNav, go, toast, openSheet, closeSheet, pickIcon, pickBanner, plusPitch, bannerHTML, header, txRow, txOnDay, spentOf, incomeOf,
 cat, acct, group, acctBalance, ACCT_TYPES, WALLET, typeName, walletHTML, netWorth, budgetExpenses, budgetIncome, byCat, txIn, isSaving, isPlus, saveSettings, saveFin, saveTxMonths, applyTheme, nextDate, quickAdd,
 THEMES, FONTS, TXC, PACKS, PAGES, EMOJI, SYMBOLS, screens, after, ACTIONS, goalMini, fmtDate, clearExamples, evalExpr, addTx,
 editCategory: (...a) => App._editCategory(...a)
