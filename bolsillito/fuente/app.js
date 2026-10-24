@@ -2467,6 +2467,7 @@ if (t.dataset.themeFree) { const set = new Set(draft.freeThemes || []); t.checke
 A.ACTIONS.cfgSave = async () => {
 const before = JSON.stringify(A.CFG.news);
 if (JSON.stringify(draft.news) !== before) draft.news.id = Date.now().toString(36);
+['catalog', 'probador', 'look'].forEach(k => { if (A.CFG[k] !== undefined) draft[k] = JSON.parse(JSON.stringify(A.CFG[k])); });
 A.CFG = merge(DEFAULTS(), draft); apply();
 try { await Store.saveConfig(A.CFG); toast('Cambios guardados ✦'); } catch (e) { toast('No se pudo guardar. Revisa tu conexión.'); }
 draft = null; A.render();

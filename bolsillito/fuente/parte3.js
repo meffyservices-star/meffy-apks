@@ -766,7 +766,97 @@ ACT.wxGps = () => {
 };
 // ---------------- Tiendita con toldo y letrero ----------------
 { const tScreen = A.screens.tienda; A.screens.tienda = () => { const h = tScreen(); const i = h.indexOf('<div class="ph">'); if (i < 0) return h; let j = h.indexOf('</div>', h.indexOf('</div>', i) + 6) + 6; const pn = A.petInfo ? A.petInfo(A.petActive()).name : 'tu mascota'; return h.slice(0, j) + `<div class="awning" aria-hidden="true"></div><div class="shop-sign">${img('gift', 22)}Tiendita de ${esc(pn)}</div>` + h.slice(j); }; }
+// ---------------- Personalizar la app (solo la dueña) ----------------
+// Iconos: cambia un dibujito por otro en TODA la app. Nombres: renombra secciones. Secciones: apaga las que no quieras mostrar.
+const LOOK = () => (A.CFG && A.CFG.look) || {};
+const origSprite = Pix.sprite;
+Pix.sprite = (n, sc) => { const m = LOOK().icons; if (m && n) { const [b, v] = String(n).split('~'); const t = m[b]; if (t && t !== b && Pix.has(t)) return origSprite(t + (v ? '~' + v : ''), sc); } return origSprite(n, sc); };
+Pix.origSprite = origSprite;
+const ORIGP = Object.assign({}, A.PAGES);
+function applyLook() {
+  const L = LOOK(); Object.keys(ORIGP).forEach(k => { A.PAGES[k] = (L.names && L.names[k]) || ORIGP[k]; });
+  let st = document.getElementById('lookOff'); if (!st) { st = document.createElement('style'); st.id = 'lookOff'; document.head.appendChild(st); }
+  const off = Store.isOwner ? [] : (L.off || []); st.textContent = off.map(k => `[data-go="${k}"]`).join(',') + (off.length ? '{display:none!important}' : '');
+  if (off.includes(S.route)) A.go('home');
+}
+A.applyLook = applyLook;
+async function saveLook(msg) { applyLook(); try { await Store.saveConfig(A.CFG); toast(msg || 'Guardado. Ya lo ven todas.'); } catch (e) { toast('No se pudo guardar. Revisa tu conexión.'); } A.renderNav(); A.render(); }
+const look = () => { A.CFG.look = A.CFG.look || {}; const L = A.CFG.look; L.icons = L.icons || {}; L.names = L.names || {}; L.off = L.off || []; return L; };
+Object.assign(A.PAGES, { adminlook: 'Personalizar la app' }); ORIGP.adminlook = 'Personalizar la app'; pageIcon('adminlook', 'flower');
+const baseOf = v => String(v || '').replace(/^s:/, '').split('~')[0];
+const oimg = (n, size) => `<img class="pixel" alt="" src="${origSprite(n, 3)}" style="width:${size}px;height:${size}px;object-fit:contain">`;
+const cimg = (n, size) => `<img class="pixel" alt="" src="${Pix.sprite(n, 3)}" style="width:${size}px;height:${size}px;object-fit:contain">`;
+const NAVK = ['home', 'wallet', 'add', 'month', 'journal', 'more'];
+const OFFABLE = ['rincon', 'logros', 'tienda', 'suscripciones', 'recordatorio', 'year', 'goals', 'recurring', 'projections', 'rules', 'juegos', 'jardin', 'tablero', 'visitas', 'coleccion', 'regalo', 'crecer', 'shey', 'cuarto', 'loans', 'cuotas'];
+function iconTiles(list) {
+  const L = LOOK().icons || {};
+  return `<div class="lk-grid">${list.filter(([n]) => n && Pix.has(n)).map(([n, label]) => `<button data-act="lkPick" data-n="${esc(n)}" data-l="${esc(label)}"><span class="lk-ic">${cimg(n, 34)}${L[n] ? '<i class="lk-dot" title="Cambiado"></i>' : ''}</span><span>${esc(label)}</span></button>`).join('')}</div>`;
+}
+A.screens.adminlook = () => {
+  if (!Store.isOwner) return `${sub('adminlook', 'admin')}<div class="card empty">Esta sección es solo para la dueña de la app.</div>`;
+  const tab = S.lookTab || 'icons'; const L = LOOK(); const map = A.PACKS.pixel.map;
+  const tabs = `<div class="tabs-line">${[['icons', 'Iconos'], ['names', 'Nombres'], ['off', 'Secciones']].map(([k, l]) => `<button data-act="lkTab" data-v="${k}" aria-pressed="${tab === k}">${l}</button>`).join('')}</div>`;
+  let body = '';
+  if (tab === 'icons') {
+    const seen = new Set(); const uniq = arr => arr.filter(([n]) => n && !seen.has(n) && seen.add(n));
+    const nav = uniq(NAVK.map(k => [baseOf(map[k]), A.PAGES[k] || 'Anotar']));
+    const secs = uniq(Object.keys(map).filter(k => !NAVK.includes(k) && A.PAGES[k]).map(k => [baseOf(map[k]), A.PAGES[k]]));
+    const cats = uniq((S.fin.categories || []).filter(c => /^s:/.test(c.icon || '')).map(c => [baseOf(c.icon), c.name]));
+    const accs = uniq((S.fin.accounts || []).filter(c => /^s:/.test(c.icon || '')).map(c => [baseOf(c.icon), c.name]));
+    const changed = Object.keys(L.icons || {});
+    body = `<div class="card stack"><b>Toca un icono para cambiarlo</b><span class="faint">El cambio se ve en toda la app y para todas las usuarias: en la barra, en las categorías, en los movimientos, en todo lugar donde salga ese dibujito. Los que tienen puntito rosa ya están cambiados.</span></div>
+<div class="card"><h3>Barra de abajo</h3>${iconTiles(nav)}</div>
+<div class="card"><h3>Secciones</h3>${iconTiles(secs)}</div>
+<div class="card"><h3>Categorías</h3>${iconTiles(cats)}</div>
+<div class="card"><h3>Cuentas</h3>${iconTiles(accs)}</div>
+${changed.length ? `<div class="card"><h3>Ya cambiados</h3>${iconTiles(changed.map(n => [n, n]))}</div>` : ''}
+<button class="card row" data-act="lkAny" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer">${cimg('sparkle', 36)}<div style="flex:1"><b>Cambiar cualquier otro dibujito</b><div class="faint">Comidas, estrellitas, adornos, lo que sea</div></div><span class="faint">›</span></button>`;
+  } else if (tab === 'names') {
+    const keys = [...new Set(NAVK.concat(['rincon', 'logros', 'tienda', 'suscripciones', 'recordatorio', 'year', 'goals', 'recurring', 'projections', 'rules', 'juegos', 'jardin', 'tablero', 'visitas', 'coleccion', 'regalo', 'crecer', 'shey', 'cuarto', 'loans', 'settings', 'appearance', 'plan', 'data']))].filter(k => ORIGP[k]);
+    body = `<div class="card stack"><b>Ponle otro nombre a las secciones</b><span class="faint">Déjalo vacío para usar el nombre original. Los nombres cortos se ven mejor en la barra de abajo.</span>
+${keys.map(k => `<div class="setrow"><span class="row" style="gap:8px">${cimg(baseOf(map[k]) || 'sparkle', 24)}<span class="faint" style="min-width:0">${esc(ORIGP[k])}</span></span><input class="in" data-lkname="${k}" value="${esc((L.names || {})[k] || '')}" placeholder="${esc(ORIGP[k])}" maxlength="24" style="max-width:170px"></div>`).join('')}
+<button class="btn pink" data-act="lkNames" style="justify-content:center">Guardar nombres</button></div>`;
+  } else {
+    body = `<div class="card stack"><b>Prende o apaga secciones</b><span class="faint">Las apagadas desaparecen para tus usuarias. Tú las sigues viendo para poder revisarlas y prenderlas cuando quieras.</span>
+${OFFABLE.filter(k => ORIGP[k]).map(k => `<div class="setrow"><span class="row" style="gap:8px">${cimg(baseOf(map[k]) || 'sparkle', 24)}${esc(A.PAGES[k])}</span><span class="toggle"><input type="checkbox" data-lkoff="${k}" ${(L.off || []).includes(k) ? '' : 'checked'}><span></span></span></div>`).join('')}</div>`;
+  }
+  return `${sub('adminlook', 'admin', '<span class="tag gold">Solo tú</span>')}${tabs}${body}`;
+};
+A.after.adminlook = el => {
+  el.addEventListener('change', e => { const t = e.target; if (!t.dataset.lkoff) return; const L = look(); const k = t.dataset.lkoff; L.off = L.off.filter(x => x !== k); if (!t.checked) L.off.push(k); saveLook(t.checked ? `${A.PAGES[k]} está prendida` : `${A.PAGES[k]} quedó apagada para tus usuarias`); });
+};
+ACT.lkTab = a => { S.lookTab = a.dataset.v; A.render(); };
+ACT.lkNames = () => { const L = look(); $$('[data-lkname]').forEach(i => { const v = i.value.trim(); if (v) L.names[i.dataset.lkname] = v; else delete L.names[i.dataset.lkname]; }); saveLook('Nombres guardados. Ya los ven todas.'); };
+function pickerGrid(exclude) {
+  const all = Pix.names.filter(n => n !== exclude && !/^(x_pared|x_piso|pg_|__|regalo_|plataforma)/.test(n));
+  const mine = all.filter(n => n.startsWith('ci_'));
+  return `${mine.length ? `<div class="lab">Tus iconos</div><div class="emojigrid">${mine.map(n => `<button data-to="${n}">${oimg(n, 30)}</button>`).join('')}</div>` : ''}
+<div class="lab">Todos los dibujitos</div><input class="in" id="lkQ" type="search" placeholder="Buscar (ej. cafe, gift, star)" style="margin-bottom:8px"><div class="emojigrid" id="lkAll">${all.filter(n => !n.startsWith('ci_')).map(n => `<button data-to="${n}" data-q="${n.toLowerCase()}">${oimg(n, 30)}</button>`).join('')}</div>`;
+}
+function bindSearch(sh) { const q = sh.querySelector('#lkQ'); if (q) q.oninput = () => { const v = q.value.toLowerCase().trim(); sh.querySelectorAll('#lkAll [data-q]').forEach(b => b.style.display = !v || b.dataset.q.includes(v) ? '' : 'none'); }; }
+ACT.lkPick = a => {
+  const n = a.dataset.n, label = a.dataset.l || n; const cur = (LOOK().icons || {})[n];
+  openSheet('Cambiar icono: ' + label, `<div class="stack">
+<div class="row" style="gap:14px;justify-content:center"><div class="stack" style="align-items:center;gap:2px">${oimg(n, 48)}<span class="faint">Original</span></div>${cur ? `<span class="faint">›</span><div class="stack" style="align-items:center;gap:2px">${oimg(cur, 48)}<span class="faint">Ahora</span></div>` : ''}</div>
+<div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn pink" data-lk="draw" style="flex:1;justify-content:center">Dibujar o subir uno nuevo</button>${cur ? '<button class="btn" data-lk="reset" style="flex:1;justify-content:center">Volver al original</button>' : ''}</div>
+${pickerGrid(n)}</div>`, sh => { bindSearch(sh); sh.addEventListener('click', e => {
+    const b = e.target.closest('[data-to],[data-lk]'); if (!b) return; const L = look();
+    if (b.dataset.to) { L.icons[n] = b.dataset.to; closeSheet(); saveLook('Icono cambiado. Ya lo ven todas.'); }
+    else if (b.dataset.lk === 'reset') { delete L.icons[n]; closeSheet(); saveLook('Volvió el icono original'); }
+    else if (b.dataset.lk === 'draw') { closeSheet(); S.lookTarget = n; S.catKind = 'icons'; A.go('admincat'); setTimeout(() => { ACT.edNew && ACT.edNew(); toast('Dibuja o sube tu icono y toca Guardar. Lo pongo en lugar de ' + label + '.'); }, 30); }
+  }); });
+};
+ACT.lkAny = () => openSheet('¿Qué dibujito quieres cambiar?', `<div class="stack"><p class="faint" style="margin:0">Elige el que quieres reemplazar. Después eliges por cuál.</p>${pickerGrid('')}</div>`, sh => { bindSearch(sh); sh.addEventListener('click', e => { const b = e.target.closest('[data-to]'); if (!b) return; closeSheet(); setTimeout(() => ACT.lkPick({ dataset: { n: b.dataset.to, l: b.dataset.to } }), 60); }); });
+// al guardar un icono dibujado para reemplazar otro, se aplica solo
+{ const save0 = ACT.edSave; ACT.edSave = (...x) => {
+  const tgt = S.lookTarget; const before = new Set(((A.CFG.catalog || {}).icons || []).map(i => i.id));
+  const r = save0(...x);
+  if (tgt) { const nu = ((A.CFG.catalog || {}).icons || []).find(i => !before.has(i.id)); if (nu) { S.lookTarget = null; look().icons[tgt] = 'ci_' + nu.id; setTimeout(() => { saveLook('Listo, tu icono nuevo ya reemplazó al anterior'); A.go('adminlook'); }, 400); } }
+  return r;
+}; }
+{ const adm = A.screens.admin; A.screens.admin = () => { const h = adm(); if (!Store.isOwner) return h; const btn = `<button class="card row" data-go="adminlook" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer">${cimg('m_inicio', 40)}${cimg('ramen', 32)}<div style="flex:1"><b>Personalizar la app</b><div class="faint">Cambia iconos, nombres de secciones y prende o apaga secciones para todas</div></div><span class="faint">›</span></button>`; const i = h.indexOf('<details'); return i > 0 ? h.slice(0, i) + btn + h.slice(i) : h + btn; }; }
+
 // ---------------- Arranque ----------------
 const st0 = A.start;
-A.start = async () => { await st0(); birthdayGift(); loadWx(); if (online() && S.settings.visitCode) setTimeout(() => { loadInbox().then(() => { A.renderNav(); }).catch(() => {}); }, 2500); };
+A.start = async () => { await st0(); applyLook(); A.renderNav(); birthdayGift(); loadWx(); if (online() && S.settings.visitCode) setTimeout(() => { loadInbox().then(() => { A.renderNav(); }).catch(() => {}); }, 2500); };
 })();
