@@ -23,6 +23,7 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
 ## Historial
 
 - **24-oct-2026**
+  - Los textos de la mascota de Inicio ahora usan el nombre y el dibujito de la mascota que tenga cada usuaria (Ale, Pandy o la que elija): el consejo "Soy … y cuido tu dinerito", el cierre del día (título, tarjeta, frase de la noche y aviso) y los textos de recompensas. En el panel, las **Frases de la noche** aceptan `{nombre}` (y "Ale" también se cambia solo).
   - Cruzar la calle tiene sonido de ambiente propio por escenario (pajaritos, tráfico y bocinas, olas y gaviotas, viento y campanitas, cajita musical) y sonidos cercanos: el carro que pasa a tu lado, el río y el tren. Va bajito y se apaga si la usuaria quitó los sonidos.
   - Juego nuevo **Cruzar la calle** (estilo Crossy Road), en `fuente/calle.js`: calles con carros, ríos con troncos y nenúfares, vías de tren con aviso, y 5 escenarios que cambian cada 34 pasos (Pradera, Ciudad pastel, Playa, Bosque nevado, Dulcelandia). Lo que se atrapa son estrellitas para la tienda. Si te quedas quieta, la nubecita te alcanza.
   - Personajes del juego: Pandy de inicio, selector dentro del juego y máquina gacha (30 estrellitas; los repetidos devuelven 10). Trae 6 personajes pixel propios (Pollito, Ranita, Gatito, Pingüino, Conejita, Unicornio) y la admin agrega más en el panel → Agregar cosas nuevas → **Personaje** (máquina gacha con rareza, con estrellitas o gratis).

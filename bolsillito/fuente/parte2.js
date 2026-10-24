@@ -348,9 +348,9 @@ function moneyMood() {
   else A.saveSettings();
 }
 A.petMoneyMood = moneyMood;
-// cerrar el día con Ale también le da de cenar a tu mascota
+// cerrar el día también le da de cenar a tu mascota
 const render0 = A.render;
-A.render = (...x) => { const p = P(); const d = today(); const rec = (S.fin.dayLog || {})[d]; if (p.active && rec && rec.closed && p.aleFed !== d) { p.aleFed = d; const c = care(p.active); c.h = clamp(c.h + 25); c.f = clamp(c.f + 10); A.saveSettings(); setTimeout(() => toast(`Ale le dio de cenar a ${info(p.active).name}`), 1200); } return render0(...x); };
+A.render = (...x) => { const p = P(); const d = today(); const rec = (S.fin.dayLog || {})[d]; if (p.active && rec && rec.closed && p.aleFed !== d) { p.aleFed = d; const c = care(p.active); c.h = clamp(c.h + 25); c.f = clamp(c.f + 10); A.saveSettings(); setTimeout(() => toast(`${info(p.active).name} cenó rico al cerrar el día`), 1200); } return render0(...x); };
 // tarjeta del Inicio con la mascota elegida
 A.rinconCard = () => {
   const p = P(); const b = bal();
@@ -513,7 +513,7 @@ A.screens.logros = () => {
 <div class="grid2"><div class="card"><h3>Racha</h3><div class="mid">${s.streak} ${s.streak === 1 ? 'día' : 'días'}</div><div class="faint">Mejor racha: ${s.best}</div></div><div class="card"><h3>Estrellitas</h3><div class="mid">${ST(20)} ${bal()}</div><div class="faint">Ganas ${RW.day || 2} por cada día que anotas</div></div></div>
 <div class="seg"><button data-act="rcTab" data-v="logros" aria-pressed="${tab !== 'como'}">Logros</button><button data-act="rcTab" data-v="como" aria-pressed="${tab === 'como'}">Cómo ganar</button></div>
 ${tab !== 'como' ? `<div class="list">${ACH.map(a => { const ok = a.ok(s); return `<div class="li" style="${ok ? '' : 'opacity:.6'}"><span class="ic" style="${ok ? 'background:#fff09a' : 'filter:grayscale(1)'}">${A.px(a.ic, 28)}</span><span class="tx-main"><b>${esc(a.name)}</b><span>${esc(a.desc)}</span></span><span class="amt">${ok ? img('check', 20) : '+' + a.prize + ' ' + ST(14)}</span></div>`; }).join('')}</div>` : `<div class="card stack">
-${[['Anotar al menos un movimiento en el día', RW.day], ['Poner dinero en una meta', RW.goalTx], ['Decorar una semana del journal', RW.journalWeek], ['Cumplir una meta', RW.goalDone], ['Terminar un mes sin pasarte', RW.monthUnder], ['Resistir un antojo con Shey', RW.antojo], ['Cerrar el día con Ale', RW.closeDay], ['Darle cariño a tu mascota (una vez al día)', RW.pet]].map(([t, n]) => `<div class="row between"><span>${t}</span><b>+${n || 0} ${ST(14)}</b></div>`).join('')}
+${[['Anotar al menos un movimiento en el día', RW.day], ['Poner dinero en una meta', RW.goalTx], ['Decorar una semana del journal', RW.journalWeek], ['Cumplir una meta', RW.goalDone], ['Terminar un mes sin pasarte', RW.monthUnder], ['Resistir un antojo con tu mascota', RW.antojo], [esc(A.conMascota('Cerrar el día con {nombre}')), RW.closeDay], ['Darle cariño a tu mascota (una vez al día)', RW.pet]].map(([t, n]) => `<div class="row between"><span>${t}</span><b>+${n || 0} ${ST(14)}</b></div>`).join('')}
 <div class="row between"><span>Abrir el regalo del día</span><b>sorpresa</b></div><div class="row between"><span>Jugar los minijuegos</span><b>hasta 40 al día</b></div><div class="row between"><span>Regar tu jardín de hábitos</span><b>+1 ${ST(14)} por hábito</b></div>
 <p class="faint" style="margin:0">Los movimientos de ejemplo y los pagos fijos automáticos no cuentan: solo lo que anotas tú.</p></div>`}`;
 };

@@ -1240,7 +1240,7 @@ const todaySpent = spentOf(txOnDay(today())); const todayIn = incomeOf(txOnDay(t
 const perDay = Math.max(0, (budget - spent + todaySpent) / dLeft);
 const leftToday = perDay - todaySpent;
 const hr = new Date().getHours(); const hi = hr < 12 ? 'Buenos días' : hr < 19 ? 'Buenas tardes' : 'Buenas noches';
-const mascot = st.mascotOn ? `<button class="mascot" data-act="mascot" aria-label="Ale te da un consejo">${st.mascot && st.mascot.startsWith('i:') ? `<img alt="" src="${esc(st.mascot.slice(2))}">` : ((st.mascot || 's:pudin') === 's:pudin' && window.App && App.wear ? App.wear('ale', { scale: 4 }) : `<img class="pixel" alt="" src="${Pix.sprite((st.mascot || 's:pudin').slice(2), 4)}">`)}</button><div class="bubble" id="bubble">${esc(tip())}</div>` : '';
+const mascot = st.mascotOn ? `<button class="mascot" data-act="mascot" aria-label="${esc(mascotWho().name)} te da un consejo">${st.mascot && st.mascot.startsWith('i:') ? `<img alt="" src="${esc(st.mascot.slice(2))}">` : ((st.mascot || 's:pudin') === 's:pudin' && window.App && App.wear ? App.wear('ale', { scale: 4 }) : `<img class="pixel" alt="" src="${Pix.sprite((st.mascot || 's:pudin').slice(2), 4)}">`)}</button><div class="bubble" id="bubble">${esc(tip())}</div>` : '';
 const banner = bannerHTML('home', `<div class="greet">${hi}${st.name ? ', ' + esc(st.name) : ''} ✦<small>${cap(new Date().toLocaleDateString('es-EC', { weekday: 'long', day: 'numeric', month: 'long' }))}</small></div>${mascot}${privBtn('onbanner')}`);
 const recent = S.tx.slice(0, 5);
 const withA = st.assetsInNet !== false;
@@ -1272,6 +1272,18 @@ function A_feels() { return window.App && App.FEELS; }
 function A_rincon() { return window.App && App.rinconCard ? App.rinconCard() : ''; }
 function goalMini(g) { const p = g.target ? Math.min(100, g.saved / g.target * 100) : 0; return `<div class="row"><span style="width:34px;display:grid;place-items:center">${iconHTML(g.icon, 28)}</span><div style="flex:1;min-width:0"><div class="row between"><b>${esc(g.name)}</b><span class="faint num">${money(g.saved)} / ${money(g.target)}</span></div><div class="prog"><i style="width:${p}%"></i></div></div></div>`; }
 function fmtDate(s) { const d = parseYmd(s); return d.toLocaleDateString('es-EC', { weekday: 'short', day: 'numeric', month: 'short' }); }
+// quién es la mascota que sale en Inicio (Ale, Pandy o la que elijas): su nombre y su dibujito
+function mascotWho() {
+const m = S.settings.mascot || 's:pudin';
+const all = App.allPets ? App.allPets() : {}; const act = App.petActive ? App.petActive() : null; const actP = act && all[act];
+if (m.startsWith('i:')) return { name: actP ? actP.name : 'tu mascota', img: m.slice(2) };
+const sp = m.slice(2); const base = sp.split('~')[0];
+const pet = actP && actP.sprite === base ? actP : Object.values(all).find(p => p.sprite === base);
+return { name: pet ? pet.name : (base === 'pudin' ? 'Ale' : 'tu mascota'), sprite: sp };
+}
+function mascotImg(size, scale) { const w = mascotWho(); return w.img ? `<img alt="" src="${esc(w.img)}" style="width:${size}px;height:${size}px;object-fit:contain;flex:none">` : `<img class="pixel" alt="" src="${Pix.sprite(w.sprite, scale || 4)}" style="width:${size}px;height:${size}px;flex:none">`; }
+// cambia {nombre} (o "Ale") en un texto por el nombre de la mascota de Inicio
+function conMascota(t) { const n = mascotWho().name; const r = String(t || '').replace(/\{nombre\}/gi, n).replace(/\bAle\b/g, n); return r.charAt(0).toUpperCase() + r.slice(1); }
 function tip() {
 const k = ym(today()); const list = txIn(k); const spent = spentOf(list); const budget = budgetExpenses(false);
 const bc = byCat(list); const top = Object.entries(bc).sort((a, b) => b[1] - a[1])[0];
@@ -1281,7 +1293,7 @@ if (budget && spent / budget > .9) tips.push('Ya usaste casi todo tu presupuesto
 else if (budget) tips.push(`Llevas el ${Math.round(spent / budget * 100)}% de tu presupuesto del mes.`);
 if (top && cat(top[0])) tips.push(`Tu categoría más gastada: ${cat(top[0]).name}.`);
 const g = S.fin.goals[0]; if (g && g.target) tips.push(`Te falta ${money(g.target - g.saved)} para “${g.name}”.`);
-tips.push('Decora tu journal de hoy ✿'); tips.push('Soy Ale y cuido tu dinerito ✦');
+tips.push('Decora tu journal de hoy ✿'); tips.push(conMascota('Soy {nombre} y cuido tu dinerito ✦'));
 return tips[Math.floor(Math.random() * tips.length)];
 }
 function dayClosed(d) { try { return (JSON.parse(localStorage.getItem('bolsi_days') || '[]')).includes(d); } catch (e) { return false; } }
@@ -1682,7 +1694,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) Store
 function applyThemeEarly() { /* CSS defaults already paint the sky */ }
 window.App = {
 start, S, $, $$, esc, uid, pad, ymd, parseYmd, addDays, today, ym, MONTHS, MON3, DOW, dowIdx, cap, monthLabel, addMonths, daysIn, isoWeek, weekStart,
-money, iconHTML, px, pageIcon, parseMoneyText, parseReceipt, catOrderList, sortCats, orderCats, privBtn, txListBody, render, renderNav, go, toast, openSheet, closeSheet, pickIcon, pickBanner, plusPitch, bannerHTML, header, txRow, txOnDay, spentOf, incomeOf,
+money, iconHTML, px, pageIcon, mascotWho, mascotImg, conMascota, parseMoneyText, parseReceipt, catOrderList, sortCats, orderCats, privBtn, txListBody, render, renderNav, go, toast, openSheet, closeSheet, pickIcon, pickBanner, plusPitch, bannerHTML, header, txRow, txOnDay, spentOf, incomeOf,
 cat, acct, group, acctBalance, ACCT_TYPES, WALLET, typeName, walletHTML, netWorth, budgetExpenses, budgetIncome, byCat, txIn, isSaving, isPlus, saveSettings, saveFin, saveTxMonths, applyTheme, nextDate, quickAdd,
 THEMES, FONTS, TXC, PACKS, PAGES, EMOJI, SYMBOLS, screens, after, ACTIONS, goalMini, fmtDate, clearExamples, evalExpr, addTx,
 editCategory: (...a) => App._editCategory(...a)
@@ -1915,7 +1927,7 @@ return `${A.header('appearance')}
 <div class="row" style="flex-wrap:wrap">${['home', 'tx', 'add', 'month', 'journal', 'more'].map(k => `<button class="btn sm" data-act="pageicon" data-k="${k}">${iconHTML(A.pageIcon(k), 20)} ${esc(k === 'add' ? 'Botón anotar' : A.PAGES[k])}</button>`).join('')}${Object.keys(st.navIcons || {}).length ? '<button class="btn ghost sm" data-act="resetIcons">Volver al pack</button>' : ''}</div></div>
 <div class="card"><h3>Banners</h3><div class="stack">${['home', 'wallet', 'month', 'year', 'goals'].map(k => { const b = st.banners[k] || {}; return `<button class="li" data-act="banner" data-k="${k}"><span class="tx-main"><b>${esc(A.PAGES[k])}</b><span>${b.hidden ? 'Oculto' : b.img ? 'Imagen propia' : esc((Pix.BANNERS[b.preset] || {}).name || '—')}</span></span>${b.hidden ? '' : `<img alt="" class="${b.img ? '' : 'pixel'}" src="${b.img ? esc(b.img) : Pix.banner(b.preset || 'noche')}" style="width:96px;height:37px;object-fit:cover;border-radius:8px">`}</button>`; }).join('')}</div></div>
 <div class="card"><h3>Mascota</h3>
-<div class="setrow"><span>Mostrar a Ale en Inicio</span><span class="toggle"><input type="checkbox" id="mOn" ${st.mascotOn ? 'checked' : ''}><span></span></span></div>
+<div class="setrow"><span>Mostrar a tu mascota en Inicio</span><span class="toggle"><input type="checkbox" id="mOn" ${st.mascotOn ? 'checked' : ''}><span></span></span></div>
 <div class="row" style="flex-wrap:wrap;margin-top:8px"><button class="btn sm" data-act="mascotPick">${iconHTML(st.mascot, 24)} Cambiar mascota</button><button class="btn sm" data-act="donutPick">Centro de la dona ${A.isPlus() ? '' : '<span class="tag gold">Meffy+</span>'}</button></div></div>
 <div class="card"><h3>Colores de los movimientos</h3>${['expense', 'income', 'transfer', 'recurring'].map(k => `<div class="setrow"><span>${{ expense: 'Gasto', income: 'Ingreso', transfer: 'Transferencia', recurring: 'Pago fijo' }[k]}</span><div class="swatches">${Object.entries(A.TXC).map(([n, c]) => `<button class="sw" title="${n}" data-act="txc" data-k="${k}" data-v="${n}" aria-pressed="${(st.txColors || {})[k] === n}" style="background:${c[S.night ? 1 : 0]}"></button>`).join('')}</div></div>`).join('')}</div>
 <div class="card"><h3>Detalles</h3>
@@ -2108,7 +2120,7 @@ ${tab === 'como' ? `<div class="card stack">
 <div class="row between"><span>Cumplir una meta</span><b>+${RW().goalDone} ${ST}</b></div>
 <div class="row between"><span>Terminar un mes sin pasarte</span><b>+${RW().monthUnder} ${ST}</b></div>
 <div class="row between"><span>Resistir un antojo con tu mascota</span><b>+${RW().antojo} ${ST}</b></div>
-<div class="row between"><span>Cerrar el día con Ale</span><b>+${RW().closeDay} ${ST}</b></div>
+<div class="row between"><span>${esc(A.conMascota('Cerrar el día con {nombre}'))}</span><b>+${RW().closeDay} ${ST}</b></div>
 <div class="row between"><span>Darles cariño (una vez al día)</span><b>+${RW().pet} ${ST}</b></div>
 ${A.isPlus() ? `<div class="row between"><span>Regalo de Meffy+</span><b>+${(A.CFG && A.CFG.plan[S.settings.planType === 'anual' ? 'bonusAnnual' : 'bonusMonthly']) || 0} ${ST}</b></div>` : ''}
 <div class="row between"><span>Cada logro desbloqueado</span><b>su premio</b></div>
@@ -2305,12 +2317,12 @@ function summary(d) {
 d = d || A.today();
 const n = dayNumbers(d); const L = log(); const rec = L[d] || {};
 let mood = rec.mood || null; let sentTo = null;
-const FR = (A.CFG && A.CFG.phrases && A.CFG.phrases.length) ? A.CFG.phrases : FRASES; const frase = FR[(+d.slice(8) + +d.slice(5, 7)) % FR.length];
+const FR = (A.CFG && A.CFG.phrases && A.CFG.phrases.length) ? A.CFG.phrases : FRASES; const frase = A.conMascota(FR[(+d.slice(8) + +d.slice(5, 7)) % FR.length]);
 const goals = S.fin.goals.filter(g => !g.example || S.settings.examples);
 const top = n.tx.filter(t => t.type === 'expense').sort((a, b) => b.amount - a.amount).slice(0, 4);
-openSheet(d === A.today() ? 'Cierre del día con Ale' : 'Cierre del ' + A.fmtDate(d), `
+openSheet(d === A.today() ? 'Cierre del día con ' + A.mascotWho().name : 'Cierre del ' + A.fmtDate(d), `
 <div class="stack">
-<div class="row" style="gap:12px"><img class="pixel" alt="" src="${Pix.sprite('pudin', 4)}" style="width:72px;height:72px;flex:none"><div class="bubble-in">${rec.closed ? '¡Este día ya está cerrado! Igual puedes cambiar tu carita.' : n.tx.length ? `Hoy anotaste ${n.tx.length} ${n.tx.length === 1 ? 'movimiento' : 'movimientos'}. Te cuento cómo te fue ✦` : 'Hoy no anotaste nada. Si gastaste algo, anótalo antes de dormir y lo vemos juntos.'}</div></div>
+<div class="row" style="gap:12px">${A.mascotImg(72, 4)}<div class="bubble-in">${rec.closed ? '¡Este día ya está cerrado! Igual puedes cambiar tu carita.' : n.tx.length ? `Hoy anotaste ${n.tx.length} ${n.tx.length === 1 ? 'movimiento' : 'movimientos'}. Te cuento cómo te fue ✦` : 'Hoy no anotaste nada. Si gastaste algo, anótalo antes de dormir y lo vemos juntos.'}</div></div>
 <div class="grid2">
 <div class="card flat"><h3>Gastaste hoy</h3><div class="mid num">${money(n.spent)}</div>${n.income ? `<div class="faint pos">Entró ${money(n.income)}</div>` : ''}</div>
 <div class="card flat"><h3>${n.left >= 0 ? 'Te quedó' : 'Te pasaste'}</h3><div class="mid num ${n.left >= 0 ? 'pos' : 'neg'}">${money(Math.abs(n.left))}</div><div class="faint">de ${money(n.perDay)} para hoy</div></div>
@@ -2340,16 +2352,16 @@ toast(`¡${money(amt)} a “${goal.name}”! ✦`); g.closest('.card').innerHTML
 $('#aleClose', sh).onclick = () => {
 const was = !!(L[d] && L[d].closed);
 L[d] = Object.assign({}, L[d], { closed: true, mood, note: $('#aleNote').value.trim() }); A.saveFin(); closeSheet();
-toast(was ? 'Guardado ✦' : '¡Día cerrado! Ale te desea dulces sueños ✦ +1 estrellita'); A.render();
+toast(was ? 'Guardado ✦' : '¡Día cerrado! ' + A.conMascota('{nombre} te desea dulces sueños ✦ +1 estrellita')); A.render();
 };
 });
 }
 A.aleSummary = summary;
 A.aleCard = () => {
 const d = A.today(); const rec = (S.fin.dayLog || {})[d]; const h = new Date().getHours();
-if (rec && rec.closed) return `<button class="card row" data-act="aleOpen" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer"><img class="pixel" alt="" src="${Pix.sprite('pudin', 3)}" style="width:44px;height:44px"><div style="flex:1"><b>Día cerrado ${rec.mood ? A.DAY_MOODS[rec.mood].e : '✓'}</b><div class="faint">Ale guardó tu día. ¡Hasta mañana!</div></div></button>`;
+if (rec && rec.closed) return `<button class="card row" data-act="aleOpen" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer">${A.mascotImg(44, 3)}<div style="flex:1"><b>Día cerrado ${rec.mood ? A.DAY_MOODS[rec.mood].e : '✓'}</b><div class="faint">${esc(A.conMascota('{nombre} guardó tu día. ¡Hasta mañana!'))}</div></div></button>`;
 if (h < 17) return '';
-return `<button class="card row" data-act="aleOpen" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer;background:#fff6c4;border-color:#f6e3a3"><img class="pixel" alt="" src="${Pix.sprite('pudin', 3)}" style="width:48px;height:48px"><div style="flex:1"><b>¿Cerramos el día?</b> ${A.px('moon', 18)}<div class="faint">Ale tiene tu resumen de hoy listo</div></div><span class="faint">›</span></button>`;
+return `<button class="card row" data-act="aleOpen" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer;background:#fff6c4;border-color:#f6e3a3">${A.mascotImg(48, 3)}<div style="flex:1"><b>¿Cerramos el día?</b> ${A.px('moon', 18)}<div class="faint">${esc(A.conMascota('{nombre} tiene tu resumen de hoy listo'))}</div></div><span class="faint">›</span></button>`;
 };
 A.ACTIONS.aleOpen = () => summary();
 const tipFn = A.ACTIONS.mascot;
@@ -2440,7 +2452,7 @@ return `${A.header('tienda', `<span class="pill sm" style="background:#fff09a;co
 ${aleLocked ? '<button class="btn pink" data-go="plan" style="justify-content:center">Conoce Meffy+</button>' : ''}
 <div class="seg">${Object.entries(SLOTS).map(([k, n]) => `<button data-act="shopSec" data-v="${k}" aria-pressed="${sec === k}">${n}</button>`).join('')}<button data-act="shopSec" data-v="mas" aria-pressed="${sec === 'mas'}">Más cositas</button></div>
 ${sec === 'mas' ? (A.rcExtrasHTML ? A.rcExtrasHTML(bal) : '') : `<div class="shop-grid">${Object.entries(ACC).filter(([, a]) => a.slot === sec && !a.off).map(([id, a]) => tile(id, a)).join('')}</div>`}
-<p class="faint" style="margin:0">Gana estrellitas anotando tus gastos, resistiendo antojos con tu mascota y cerrando el día con Ale. Las cosas marcadas con Meffy+ vienen incluidas en el plan.</p>`;
+<p class="faint" style="margin:0">Gana estrellitas anotando tus gastos, resistiendo antojos con tu mascota y cerrando el día con tu mascota. Las cosas marcadas con Meffy+ vienen incluidas en el plan.</p>`;
 };
 const ACT = A.ACTIONS;
 ACT.shopWho = a => { S.shopWho = a.dataset.v; A.render(); };
@@ -2516,7 +2528,7 @@ A.screens.plan = () => {
 const on = A.isPlus(); const P = A.CFG.plan; const type = S.settings.planType;
 const st = n => `<b>${n.toLocaleString('es-EC')}</b> ${A.px('estrellita', 16)}`;
 const nFree = Object.values(A.THEMES).filter(t => t.free).length;
-const rows = [['Movimientos, billetera, presupuestos y metas', 1, 1], ['Resumen del mes y del año', 1, 1], ['Journal decorable con todas las herramientas', 1, 1], ['Mascotas, logros y Tiendita', 1, 1], ['Antojos y emociones con Shey', 1, 1], ['Cierre del día con Ale', 1, 1], ['Exportar e importar tus datos', 1, 1],
+const rows = [['Movimientos, billetera, presupuestos y metas', 1, 1], ['Resumen del mes y del año', 1, 1], ['Journal decorable con todas las herramientas', 1, 1], ['Mascotas, logros y Tiendita', 1, 1], ['Antojos y emociones con Shey', 1, 1], ['Cierre del día con tu mascota', 1, 1], ['Exportar e importar tus datos', 1, 1],
 [`${nFree} temas de color`, 1, 1], [`Los ${Object.keys(A.THEMES).length} temas de color`, 0, 1], ['Todas las letras', 0, 1], ['Packs de iconos de colores', 0, 1], ['Subir tus propios iconos y banners', 0, 1], ['Vestir a Ale con accesorios', 0, 1], ['Todos los accesorios para las mascotas', 0, 1], ['Accesorios exclusivos', 0, 1], ['Estrellitas de regalo', 0, 1]];
 const card = (k, name, price, per, bonus, bonusTxt) => `<div class="card stack" style="${type === k && on ? 'border-color:var(--accent);background:var(--pill)' : ''}">
 <div class="row between"><b class="mid">${name}</b>${type === k && on ? '<span class="tag gold">TU PLAN</span>' : k === 'anual' ? '<span class="tag gold">AHORRAS ' + Math.max(0, Math.round((1 - P.annual / (P.monthly * 12)) * 100)) + '%</span>' : ''}</div>
@@ -2566,7 +2578,7 @@ draft = draft || JSON.parse(JSON.stringify(A.CFG));
 const D = draft; const R = D.rewards; const P = D.plan;
 const accRow = (k, a) => { const o = Object.assign({}, ORIG.acc[k], D.shop[k] || {}); return `<div class="setrow" style="flex-wrap:wrap"><span class="row" style="gap:8px;min-width:0;flex:1 1 160px"><img class="pixel" alt="" src="${Pix.sprite('acc_' + k, 3)}" style="width:${Math.min(40, a.w * 3)}px"><input class="in" data-cf="shop.${k}.name" value="${esc(o.name)}" style="min-width:0"></span><span class="row" style="gap:6px">${A.px('estrellita', 16)}${num('shop.' + k + '.price', o.price || 0)}<label class="chip"><input type="checkbox" data-cf="shop.${k}.plus" ${o.plus ? 'checked' : ''}> Meffy+</label><label class="chip"><input type="checkbox" data-cf="shop.${k}.off" ${o.off ? 'checked' : ''}> Oculto</label></span></div>`; };
 return `${A.header('admin', '<span class="tag gold">Solo tú</span>')}
-<div class="card"><b>Panel de admin</b><p class="muted" style="margin:6px 0 0">Aquí manejas a tus usuarias y cambias precios, estrellitas, la Tiendita, los logros, las frases de Ale y las novedades.</p></div>
+<div class="card"><b>Panel de admin</b><p class="muted" style="margin:6px 0 0">Aquí manejas a tus usuarias y cambias precios, estrellitas, la Tiendita, los logros, las frases de la noche y las novedades.</p></div>
 ${Store.mode === 'supa' ? usersHTML() : ''}
 <details class="card" open><summary><b>Meffy+</b></summary>
 ${row('Precio mensual ($)', num('plan.monthly', P.monthly, .01))}${row('Precio anual ($)', num('plan.annual', P.annual, .01))}
@@ -2574,14 +2586,14 @@ ${row('Estrellitas de regalo cada mes (mensual)', num('plan.bonusMonthly', P.bon
 <label class="f">Etiqueta de promoción<input class="in" data-cf="plan.promo" value="${esc(P.promo || '')}"></label>
 <label class="f">Tu WhatsApp de contacto (para Meffy+ y contraseñas olvidadas)<input class="in" data-cf="plan.contact" value="${esc(P.contact || '')}" placeholder="Ej. 0991234567"></label></details>
 <details class="card"><summary><b>Estrellitas por acción</b></summary>
-${[['day', 'Anotar en el día'], ['goalTx', 'Poner dinero en una meta'], ['journalWeek', 'Decorar una semana del journal'], ['goalDone', 'Cumplir una meta'], ['monthUnder', 'Mes sin pasarse'], ['antojo', 'Resistir un antojo'], ['closeDay', 'Cerrar el día con Ale'], ['pet', 'Dar cariño a la mascota']].map(([k, l]) => row(l, num('rewards.' + k, R[k]))).join('')}</details>
+${[['day', 'Anotar en el día'], ['goalTx', 'Poner dinero en una meta'], ['journalWeek', 'Decorar una semana del journal'], ['goalDone', 'Cumplir una meta'], ['monthUnder', 'Mes sin pasarse'], ['antojo', 'Resistir un antojo'], ['closeDay', 'Cerrar el día'], ['pet', 'Dar cariño a la mascota']].map(([k, l]) => row(l, num('rewards.' + k, R[k]))).join('')}</details>
 <details class="card"><summary><b>Tiendita: accesorios</b></summary><p class="faint">Cambia nombre y precio. "Meffy+" lo vuelve exclusivo del plan; "Oculto" lo quita de la Tiendita.</p>${Object.entries(A.ACC).map(([k, a]) => accRow(k, a)).join('')}</details>
 <details class="card"><summary><b>Tiendita: fondos y journal</b></summary>
 ${Object.keys(A.RC.BGS).map(k => row(`Fondo “${esc((Pix.BANNERS[k] || {}).name || k)}”`, num('bgs.' + k, D.bgs[k] != null ? D.bgs[k] : ORIG.bgs[k]))).join('')}
 ${Object.entries(A.RC.UNLOCKS).map(([k, u]) => row(esc(u.name), num('unlocks.' + k, D.unlocks[k] != null ? D.unlocks[k] : ORIG.unlocks[k]))).join('')}</details>
 <details class="card"><summary><b>Logros</b></summary>${A.RC.ACH.map(a => row(`${A.px(a.ic, 18)} ${esc(a.name)}`, num('ach.' + a.id, D.ach[a.id] != null ? D.ach[a.id] : ORIG.ach[a.id]))).join('')}</details>
 <details class="card"><summary><b>Temas gratis</b></summary><div class="chips">${Object.entries(A.THEMES).map(([k, t]) => `<label class="chip"><input type="checkbox" data-theme-free="${k}" ${(D.freeThemes || []).includes(k) ? 'checked' : ''}> ${esc(t.name)}</label>`).join('')}</div></details>
-<details class="card"><summary><b>Frases de Ale</b></summary><p class="faint">Una frase por línea. Ale elige una cada noche.</p><textarea class="in" data-cf-lines="phrases" style="min-height:160px">${esc((D.phrases || []).join('\n'))}</textarea></details>
+<details class="card"><summary><b>Frases de la noche</b></summary><p class="faint">Una frase por línea. Cada noche sale una al cerrar el día, dicha por la mascota de cada usuaria. Escribe {nombre} donde va el nombre de su mascota (si escribes Ale, también se cambia).</p><textarea class="in" data-cf-lines="phrases" style="min-height:160px">${esc((D.phrases || []).join('\n'))}</textarea></details>
 <details class="card"><summary><b>Novedades en Inicio</b></summary>
 <div class="setrow"><span>Mostrar tarjeta de novedades</span><span class="toggle"><input type="checkbox" data-cf="news.on" ${D.news.on ? 'checked' : ''}><span></span></span></div>
 <label class="f">Título<input class="in" data-cf="news.title" value="${esc(D.news.title || '')}"></label>
