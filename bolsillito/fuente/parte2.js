@@ -97,6 +97,7 @@ const WALLS = { rosa: ['Rosa con puntitos', 0], cereza: ['Cerezas', 20], menta: 
 const FLOORS = { madera: ['Madera clara', 0], rosa: ['Madera rosa', 20], cafe: ['Madera café', 20], lila: ['Madera lila', 20], cuadros: ['Cuadritos', 20], pasto: ['Pasto', 25] };
 const ROOMS = {
   cuarto: { name: 'Mi cuarto', price: 0, wall: 'rosa', floor: 'madera', icon: 'cama' },
+  sala: { name: 'Sala de cuidar', short: 'Sala', price: 0, wall: 'menta', floor: 'madera', icon: 'sofa_lila' },
   cocina: { name: 'Cocina', price: 120, wall: 'cereza', floor: 'cuadros', gift: ['cocina', 'mesa'], icon: 'tetera' },
   juegos: { name: 'Cuarto de juegos', price: 150, wall: 'lila', floor: 'lila', gift: ['alfombra_lila', 'peluche'], icon: 'peluche', short: 'Juegos' },
   jardin: { name: 'Jardín', price: 150, wall: 'cielo', floor: 'pasto', gift: ['cerezo', 'flores'], icon: 'flores' }
@@ -163,7 +164,7 @@ function registerCatalog() {
   customKeys = { pets: [], furn: [], clothes: [], food: [], icons: [], walls: [], floors: [] };
   const c = catalog();
   c.pets.forEach(x => { const k = 'cp_' + x.id; defX(k, x, x.w || 20, x.h || 20); customKeys.pets.push(k); if (!x.off && !notYet(x)) A.ANCH[k] = { hx: x.pal ? 10 : (x.w || 20) / 2, hy: x.hy || 5, fy: x.fy || 10, ny: x.ny || 15, sprite: k, name: x.name }; });
-  c.furn.forEach(x => { const k = 'cf_' + x.id; defX(k, x, x.w, x.h); customKeys.furn.push(k); const fw = x.dw || x.w, fh = x.dh || x.h; if (notYet(x)) return; FURN[k] = { name: x.name, w: fw, h: fh, price: x.how === 'free' ? 0 : +x.price || 0, how: x.how, ach: x.ach, season: x.season, sprite: k, x: Math.max(0, 72 - fw / 2), y: x.wall ? 4 : 70, cat: x.wall ? 'pared' : 'deco', wall: !!x.wall, off: x.off, custom: true }; });
+  c.furn.forEach(x => { const k = 'cf_' + x.id; defX(k, x, x.w, x.h); customKeys.furn.push(k); const fw = x.dw || x.w, fh = x.dh || x.h; if (notYet(x)) return; FURN[k] = { name: x.name, w: fw, h: fh, price: x.how === 'free' ? 0 : +x.price || 0, how: x.how, ach: x.ach, season: x.season, sprite: k, x: Math.max(0, 72 - fw / 2), y: x.wall ? 4 : 70, cat: x.cat || (x.wall ? 'pared' : 'deco'), wall: !!x.wall, off: x.off, custom: true }; });
   c.food.forEach(x => { const k = 'cfo_' + x.id; defX(k, x, x.w || 16, x.h || 16); customKeys.food.push(k); if (notYet(x)) return; FOODS[k] = { name: x.name, art: x.name, gain: +x.gain || 20, price: +x.price || 3, sprite: k, off: x.off, custom: true }; });
   c.clothes.forEach(x => { const k = 'cc_' + x.id; customKeys.clothes.push(k); if (notYet(x)) return; addAcc(k, { slot: x.slot || 'head', name: x.name, price: x.how === 'free' ? 0 : +x.price || 10, season: x.how === 'temporada' ? x.season : null, ach: x.how === 'logro' ? x.ach : null, raro: x.how === 'raro', map: x.map.map(r => r), off: x.off, offAdmin: x.off, custom: true, dx: +x.dx || 0, dy: +x.dy || 0 }, x.pal ? x : null); if (x.dw && !x.pal) { const a = A.ACC[k]; const r0 = a.h / a.w; a.w = x.dw; a.h = x.dw * r0; } });
   c.icons.forEach(x => { if (x.off || notYet(x)) return; const k = 'ci_' + x.id; defX(k, x, x.w || 16, x.h || 16); customKeys.icons.push(k); });
@@ -294,7 +295,7 @@ const giftReady = () => (S.settings.gift || {}).last !== today();
 A.giftReady = giftReady;
 const PLACES = () => [
   ['regalo', giftReady() ? 'regalo_cerrado' : 'regalo_abierto', 'Regalo del día', giftReady()], ['crecer', 'brotecito', 'Crecer'], ['coleccion', 'maca', 'Colección'],
-  ['tienda', 'gift', 'Tiendita'], ['visitas', 'casita', 'Visitas', !!(A.navDotVisits && A.navDotVisits())], ['shey', 'shey', 'Antojos']
+  ['tienda', 'gift', 'Tiendita'], ['visitas', 'casita', 'Visitas', !!(A.navDotVisits && A.navDotVisits())], ['shey', (info(P().active || 'shey') || {}).sprite || 'shey', 'Antojos']
 ];
 const needsCare = () => { const p = P(); if (!p.active) return false; const c = care(p.active); return !c.sleep && (c.h < 30 || c.l < 25 || c.f < 25); };
 A.navDot = k => k === 'more' && (giftReady() || needsCare() || !!(A.navDotVisits && A.navDotVisits()));
@@ -308,7 +309,7 @@ A.screens.rincon = () => {
   const id = p.active, c = care(id), lv = level(id);
   checkLevelUp(); moneyMood();
   return `${A.header('rincon', starsPill())}${tabs}
-<div class="pc-scene ${c.sleep ? 'dormida' : ''}" id="pcScene" style="background-image:url(${Pix.banner(R().bg || 'cielo')})">
+<div class="pc-scene pc-sala ${c.sleep ? 'dormida' : ''}" id="pcScene"><div class="pc-room">${roomHTML(room().rooms.sala, { pets: [], id: 'salaRoom' })}</div><button class="pc-decor" data-act="pcDecor">${img('x_marco', 18)} Decorar</button>
 <div class="pc-say" id="pcSay">${esc(moodMsg(id, c))}</div>
 <div class="pc-stage" id="pcStage"><button class="pc-pet" id="pcPet" data-act="pcLove" aria-label="Mimar a ${esc(info(id).name)}">${petArt(id, 6, c.sleep ? 'sleepy' : '')}</button>${c.sleep ? `<img class="pixel pc-zz" alt="" src="${spr('zzz', 3)}">` : ''}</div>
 <button class="pc-lv" data-go="crecer">${esc(info(id).name)} · nivel ${lv.L}</button>
@@ -324,6 +325,7 @@ ${fridgeHTML()}
 <section class="stack"><div class="ph"><span class="pill sm">Más cositas</span><button class="btn sm" data-go="coleccion">Cambiar de mascota</button></div>
 <div class="pc-places">${PLACES().map(([go, ic, n, dot]) => `<button class="pc-place" data-go="${go}">${dot ? '<span class="pc-dot"></span>' : ''}<img class="pixel" alt="" src="${spr(ic, 3)}">${n}</button>`).join('')}</div></section>`;
 };
+ACT.pcDecor = () => { room().cur = 'sala'; S.pcTab = 'cuarto'; S.roomTab = 'muebles'; A.saveSettings(); A.render(); window.scrollTo(0, 0); };
 ACT.pcTab = a => { S.pcTab = a.dataset.v; S.roomEdit = false; A.render(); window.scrollTo(0, 0); };
 A.after.rincon = el => { if (S.pcTab === 'cuarto' && A.after.cuarto) A.after.cuarto(el); };
 // tu mascota se conecta con tu plata: si no anotas se pone triste; si cumples tu presupuesto de la semana, gana un premio
@@ -522,6 +524,11 @@ function room() {
     const fix = { alfombra: 'lila', piedra: 'madera' };
     r.rooms = { cuarto: { wall: WALLS[r.wall] ? r.wall : 'rosa', floor: FLOORS[r.floor] ? r.floor : (fix[r.floor] || 'madera'), items: (r.items || ['ventana', 'cama', 'alfombra', 'cojin'].map(k => ({ k }))).filter(it => FURN[it.k]).map(it => ({ u: uid(), k: it.k, x: FURN[it.k].x, y: FURN[it.k].y })) } };
     delete r.items; delete r.wall; delete r.floor; delete r.v2;
+  }
+  if (!r.rooms.sala) { // la sala donde cuidas a tu mascota (se puede decorar)
+    const D = [['banderines', 50, 1], ['marco', 18, 8], ['ventana', 104, 6], ['sofa_lila', 4, 38], ['lampara', 38, 34], ['planta_grande', 120, 34], ['alfombra_corazon', 59, 92], ['tetera', 126, 76]].filter(([k]) => FURN[k]);
+    r.rooms.sala = { wall: 'menta', floor: 'madera', items: D.map(([k, x, y]) => ({ u: uid(), k, x, y })) };
+    D.forEach(([k]) => { if (!r.owned.includes(k)) r.owned.push(k); const pl = Object.values(r.rooms).reduce((n, rm) => n + rm.items.filter(i => i.k === k).length, 0); r.inv[k] = Math.max(r.inv[k] != null ? r.inv[k] : (r.owned.includes(k) ? 1 : 0), pl); });
   }
   r.cur = r.rooms[r.cur] ? r.cur : 'cuarto';
   r.owned = r.owned.map(k => k === 'wall:piedra' ? 'floor:madera' : k);
@@ -810,7 +817,7 @@ function formHTML() {
   return `<b>${ed.id ? 'Editar: ' + esc(ed.name) : KIND_NEW[k]}</b>
 <div class="formgrid">
 <label class="f">Nombre<input class="in" data-ed="name" value="${esc(ed.name)}" placeholder="${PH[k]}"></label>
-${k === 'pets' ? `<label class="f">Cómo es<input class="in" data-ed="desc" value="${esc(ed.desc)}" placeholder="Ej. Muy dormilona"></label>` : k === 'food' ? `<label class="f">Llena la pancita (+)<input class="in" data-ed="gain" type="number" value="${ed.gain}"></label>` : k === 'clothes' ? `<label class="f">Dónde se pone<select class="in" data-ed="slot">${[['head', 'Cabeza'], ['face', 'Cara'], ['neck', 'Cuello']].map(([v, n]) => `<option value="${v}" ${ed.slot === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>` : k === 'furn' ? `<label class="f">Va en<select class="in" data-ed="wall"><option value="" ${!ed.wall ? 'selected' : ''}>El piso</option><option value="1" ${ed.wall ? 'selected' : ''}>La pared</option></select></label>` : ''}
+${k === 'pets' ? `<label class="f">Cómo es<input class="in" data-ed="desc" value="${esc(ed.desc)}" placeholder="Ej. Muy dormilona"></label>` : k === 'food' ? `<label class="f">Llena la pancita (+)<input class="in" data-ed="gain" type="number" value="${ed.gain}"></label>` : k === 'clothes' ? `<label class="f">Dónde se pone<select class="in" data-ed="slot">${[['head', 'Cabeza'], ['face', 'Cara'], ['neck', 'Cuello']].map(([v, n]) => `<option value="${v}" ${ed.slot === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>` : k === 'furn' ? `<label class="f">Va en<select class="in" data-ed="wall"><option value="" ${!ed.wall ? 'selected' : ''}>El piso</option><option value="1" ${ed.wall ? 'selected' : ''}>La pared</option></select></label><label class="f">Sale en la tienda en<select class="in" data-ed="cat">${FCATS.filter(([c]) => c !== 'todo').map(([c, n]) => `<option value="${c}" ${(ed.cat || (ed.wall ? 'pared' : 'deco')) === c ? 'selected' : ''}>${n}</option>`).join('')}</select></label>` : ''}
 </div>
 ${HELP[k] ? `<p class="faint" style="margin:0">${HELP[k]}</p>` : ''}
 <div class="ad-up">
@@ -1223,7 +1230,7 @@ ACT.edSave = () => {
   if (kind === 'clothes') Object.assign(item, { slot: ed.slot, dx: +ed.dx || 0, dy: +ed.dy || 0 });
   if (kind === 'pets') Object.assign(item, { desc: ed.desc, say: ed.desc });
   if (kind === 'food') Object.assign(item, { gain: +ed.gain || 20 });
-  if (kind === 'furn') Object.assign(item, { wall: !!ed.wall });
+  if (kind === 'furn') Object.assign(item, { wall: !!ed.wall, cat: ed.cat || (ed.wall ? 'pared' : 'deco') });
   if (ed.how === 'logro') item.ach = ed.ach; if (ed.how === 'temporada') item.season = ed.season;
   const i = list.findIndex(x => x.id === item.id); if (i >= 0) list[i] = item; else list.push(item);
   ed = null; saveCatalog();

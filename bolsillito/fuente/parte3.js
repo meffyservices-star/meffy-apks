@@ -388,7 +388,8 @@ ${sentLetters.map(n => `<div class="card row" style="gap:10px">${img('pg_carta',
 <p class="faint" style="margin:0">Solo se ve su cuarto: nunca sus cuentas ni sus gastos.</p>`;
 }
 A.screens.visitas = () => {
-  if (!online()) return `${sub('visitas')}<div class="card empty">${img('casita', 48)}<p>Las visitas necesitan internet y tu cuenta de Bolsillito. Cuando tengas conexión, aquí verás los cuartos de tus amigas.</p></div>`;
+  const hero = (t, sub2) => `<div class="vs-hero" style="background-image:url(${Pix.banner('pradera')})"><div class="vs-houses">${img('casita', 46)}${img('casita', 58)}${img('casita', 46)}</div><img class="pixel vs-pet" alt="" src="${spr(petSprite(), 4)}"><div class="vs-hero-t"><b>${t}</b><span>${sub2}</span></div></div>`;
+  if (!online()) return `${sub('visitas')}${hero('Tu barrio', 'Visita los cuartos de tus amigas')}<div class="card empty"><p>Las visitas necesitan internet y tu cuenta de Bolsillito. Cuando tengas conexión, aquí verás los cuartos de tus amigas.</p></div>`;
   refreshVisits();
   const friends = S.settings.friends || []; const cur = S.visitCode && V.cache[S.visitCode];
   if (cur) return friendRoomView(cur);
@@ -398,11 +399,12 @@ A.screens.visitas = () => {
   const box = (V.gifts || []).filter(g => g.to_user === Store.uid && !g.opened);
   const unreadL = letters.filter(l => !(S.settings.lettersRead || []).includes(l.id)).length;
   return `${sub('visitas', 'rincon', V.mine ? `<span class="pill sm">${img('heart', 16)} ${V.mine.hearts || 0}</span>` : '')}
+${hero('Tu barrio', friends.length ? (friends.length === 1 ? '1 amiga en tu lista' : friends.length + ' amigas en tu lista') : 'Agrega a tus amigas con su código')}
 <div class="grid2"><button class="card vs-box" data-act="vsOpenBox">${img(box.length ? 'regalo_cerrado' : 'regalo_abierto', 52)}<b>Tu cajita</b><span class="faint">${box.length ? box.length + (box.length === 1 ? ' regalo sin abrir' : ' regalos sin abrir') : 'Vacía por ahora'}</span>${box.length ? '<span class="pc-dot"></span>' : ''}</button>
 <button class="card vs-box" data-act="vsLetters">${img('pg_carta', 52)}<b>Tus cartas</b><span class="faint">${letters.length ? (unreadL ? unreadL + ' sin leer' : letters.length + ' guardadas') : 'Todavía no hay'}</span>${unreadL ? '<span class="pc-dot"></span>' : ''}</button></div>
 <div class="card stack"><b>Tu código para que te agreguen</b><div class="row between"><span class="vs-code">${esc(S.settings.visitCode || '…')}</span><button class="btn sm" data-act="vsCopy">Copiar</button></div><span class="faint">Solo se ve tu cuarto: nunca tus cuentas ni tus gastos.</span></div>
 <div class="k-lbl">TUS AMIGAS</div>
-<div class="list">${friends.map(f => { const r = V.cache[f.code]; return `<div class="li"><span class="ic" style="width:44px;height:44px">${r && r.body && r.body.active && A.petInfo ? `<img class="pixel" alt="" src="${spr(A.petInfo(r.body.active).sprite, 3)}" style="width:40px">` : img('casita', 30)}</span><span class="tx-main"><b>${esc(f.name || f.code)}</b><span>${r ? 'Cambió su cuarto ' + ago(r.updated_at) : V.loading ? 'Cargando…' : 'No encontramos este código'}</span></span><button class="btn sm pink" data-act="vsGo" data-c="${esc(f.code)}" ${r ? '' : 'disabled'}>Visitar</button></div>`; }).join('') || '<div class="card empty">Agrega a tus amigas con su código para visitar sus cuartos.</div>'}</div>
+<div class="list vs-list">${friends.map(f => { const r = V.cache[f.code]; return `<div class="li"><span class="ic" style="width:44px;height:44px">${r && r.body && r.body.active && A.petInfo ? `<img class="pixel" alt="" src="${spr(A.petInfo(r.body.active).sprite, 3)}" style="width:40px">` : img('casita', 30)}</span><span class="tx-main"><b>${esc(f.name || f.code)}</b><span>${r ? 'Cambió su cuarto ' + ago(r.updated_at) : V.loading ? 'Cargando…' : 'No encontramos este código'}</span></span><button class="btn sm pink" data-act="vsGo" data-c="${esc(f.code)}" ${r ? '' : 'disabled'}>Visitar</button></div>`; }).join('') || '<div class="card empty">Agrega a tus amigas con su código para visitar sus cuartos.</div>'}</div>
 <div class="row" style="gap:8px"><input class="in" id="vsAdd" placeholder="Código de tu amiga (BOLSI-1234)" style="text-transform:uppercase"><button class="btn pink" data-act="vsAdd">Agregar</button></div>
 ${helps.length ? `<div class="k-lbl">LO QUE HICIERON POR TI</div><div class="list">${helps.map(e => `<div class="li"><span class="ic">${img({ feed: 'cupcake', water: 'regadera', play: 'paw' }[e.kind], 26)}</span><span class="tx-main"><b>${esc(e.from_name)}</b><span>${{ feed: 'Le dio de comer a tu mascota', water: 'Regó tu jardín', play: 'Vino a jugar con tu mascota' }[e.kind]} · ${ago(e.created_at)}</span></span></div>`).join('')}</div>` : ''}
 ${toMe.length ? `<div class="k-lbl">CORAZONES Y NOTITAS</div><div class="list">${toMe.slice(0, 10).map(n => `<div class="li"><span class="ic">${img(n.kind === 'heart' ? 'heart' : 'ui_nota', 26)}</span><span class="tx-main"><b>${esc(n.from_name || 'Una amiga')}</b><span>${n.kind === 'heart' ? 'Le encantó tu cuarto' : '“' + esc(n.text) + '”'} · ${ago(n.created_at)}</span></span></div>`).join('')}</div>` : ''}
@@ -752,6 +754,8 @@ ACT.wxGps = () => {
     setPlace(p.coords.latitude, p.coords.longitude, city);
   }, () => toast('No me diste permiso de ubicación. Puedes escribir tu ciudad.'), { maximumAge: 3600e3, timeout: 10000 });
 };
+// ---------------- Tiendita con toldo y letrero ----------------
+{ const tScreen = A.screens.tienda; A.screens.tienda = () => { const h = tScreen(); const i = h.indexOf('<div class="ph">'); if (i < 0) return h; let j = h.indexOf('</div>', h.indexOf('</div>', i) + 6) + 6; const pn = A.petInfo ? A.petInfo(A.petActive()).name : 'tu mascota'; return h.slice(0, j) + `<div class="awning" aria-hidden="true"></div><div class="shop-sign">${img('gift', 22)}Tiendita de ${esc(pn)}</div>` + h.slice(j); }; }
 // ---------------- Arranque ----------------
 const st0 = A.start;
 A.start = async () => { await st0(); birthdayGift(); loadWx(); if (online() && S.settings.visitCode) setTimeout(() => { loadInbox().then(() => { A.renderNav(); }).catch(() => {}); }, 2500); };

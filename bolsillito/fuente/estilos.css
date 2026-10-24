@@ -924,3 +924,83 @@ body.jr-spread .jr-spread-bar { display: flex; position: fixed; left: 0; right: 
 .banner .bubble::after { right: -10px; top: auto; bottom: -6px; }
 .menugrid button .ni { width: 46px; height: 46px; border-radius: 0; background: none; }
 .menugrid button .ni img { width: 44px; height: 44px; filter: drop-shadow(0 2px 0 rgba(120,70,60,.12)); }
+/* Sala de cuidar (cuarto decorable detrás de la mascota) */
+.pc-scene.pc-sala { background: #fdf3e6; padding: 10px 10px 12px; min-height: 0; justify-content: flex-start; }
+.pc-room { position: absolute; inset: 0; border-radius: 24px; overflow: hidden; }
+.pc-room .room-frame { padding: 0; border-radius: 0; box-shadow: none; background: none; height: 100%; }
+.pc-room .room-frame::before, .pc-room .room-door { display: none; }
+.pc-room .room-frame > div, .pc-room .room { height: 100%; }
+.pc-sala .pc-say, .pc-sala .pc-stage, .pc-sala .pc-lv { z-index: 4; }
+.pc-sala .pc-stage { margin-top: 28px; }
+.pc-decor { position: absolute; right: 10px; top: 10px; z-index: 5; display: inline-flex; align-items: center; gap: 4px; border: 2.5px solid #8a4d4f; border-radius: 99px; background: #fff; box-shadow: 0 3px 0 #8a4d4f; padding: 3px 10px; font: 600 13px var(--f-display); color: #5a3238; }
+.pc-sala .pc-say { margin-right: 92px; }
+/* ===== Botones de cuidar ===== */
+.pc-act { padding: 10px 4px 8px; gap: 6px; min-height: 92px; position: relative; overflow: hidden; }
+.pc-act::before { content: ""; position: absolute; left: -10px; top: -14px; width: 60px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.45); transform: rotate(-18deg); pointer-events: none; }
+.pc-act img { width: 32px !important; height: 32px !important; box-sizing: content-box; padding: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2.5px #8a4d4f, 0 3px 0 2.5px #8a4d4f; position: relative; }
+.pc-act:nth-child(1) img { background: #f3faff; } .pc-act:nth-child(2) img { background: #faf6ff; } .pc-act:nth-child(3) img { background: #fff6f9; } .pc-act:nth-child(4) img { background: #f6fff2; }
+/* ===== Colección como repisa ===== */
+.col-grid:not(.soon) { padding: 12px 12px 4px; border-radius: 18px; background: #f3dcc4; background-image: linear-gradient(90deg, rgba(138,77,79,.06) 1px, transparent 1px); background-size: 22px 100%; border: 6px solid #b07a5a; box-shadow: inset 0 0 0 3px #c9956f, 0 5px 0 #8a5a3c; row-gap: 14px; }
+.col-grid:not(.soon) .col-pet { border: 0; background: none; box-shadow: none; position: relative; padding: 4px 4px 18px; border-radius: 0; }
+.col-grid:not(.soon) .col-pet::after { content: ""; position: absolute; left: -12px; right: -12px; bottom: 0; height: 10px; background: #c9956f; box-shadow: 0 4px 0 #8a5a3c; border-radius: 2px; }
+.col-grid:not(.soon) .col-pet img { width: 76px; height: 76px; filter: drop-shadow(0 4px 0 rgba(90,50,30,.18)); }
+.col-grid:not(.soon) .col-pet b { background: #fffaf3; border: 2px solid #8a5a3c; border-radius: 8px; padding: 0 10px; font: 600 14px var(--f-display); margin-top: 2px; }
+.col-grid:not(.soon) .col-pet .faint { font-size: 11px; font-weight: 800; }
+.col-grid:not(.soon) .col-pet .tag { position: relative; z-index: 1; margin-bottom: 4px; }
+.col-grid.soon { padding: 10px; border-radius: 16px; background: #efe4d6; border: 4px dashed #c9b29a; }
+.col-grid.soon .col-pet { border: 0; background: none; box-shadow: none; }
+/* ===== Regalo del día ===== */
+.rg-title { font: 600 22px var(--f-display); color: #fff; text-shadow: 0 2px 0 #8a4d9a; background: #b48ae8; padding: 8px 30px 10px; border-radius: 6px; box-shadow: 0 4px 0 #7d5fc4; clip-path: polygon(0 0, 100% 0, 94% 50%, 100% 100%, 0 100%, 6% 50%); letter-spacing: .01em; }
+.rg-hint { display: inline-flex; align-items: center; gap: 6px; border: 2.5px solid #7d5fc4; box-shadow: 0 4px 0 #7d5fc4; font: 600 15px var(--f-display); color: #5a3f8a; animation: brinca 1.8s ease-in-out infinite; }
+.rg-hint::before { content: "✦"; color: #f5c94c; }
+.rg-card { border: 2.5px solid #7d5fc4; }
+.rg-day { border-width: 2.5px; border-radius: 14px; font: 600 13px var(--f-display); }
+/* ===== Crecer con más vida ===== */
+.gr-stage { border: 2.5px solid #8a4d4f; box-shadow: 0 5px 0 #8a4d4f; background: #fffaf3; position: relative; overflow: hidden; }
+.gr-stage::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, rgba(255,214,107,.35) 2px, transparent 2.5px) 0 0/16px 16px; pointer-events: none; }
+.gr-stage.on { background: #ffe6ef; border-color: #c44a72; box-shadow: 0 5px 0 #c44a72, 0 0 0 4px #fff, 0 0 18px 4px rgba(242,126,161,.45); }
+.gr-stage b { font: 600 15px var(--f-display); }
+.gr-path { position: relative; padding-left: 4px; gap: 8px; }
+.gr-path::before { content: ""; position: absolute; left: 17px; top: 14px; bottom: 14px; width: 4px; border-radius: 2px; background: repeating-linear-gradient(#e2d4f5 0 6px, transparent 6px 10px); }
+.gr-step { position: relative; background: var(--glass-strong); border-radius: 14px; padding: 6px 10px 6px 0; }
+.gr-lv { position: relative; width: 30px; height: 30px; border: 2.5px solid #fff; box-shadow: 0 2px 0 #c9b6ee; }
+.gr-step.ok { background: #f6f0ff; }
+.gr-step.ok .gr-lv { background: linear-gradient(#b99af0, #8f6fd6); }
+.gr-hint { border-style: solid; border-width: 2.5px; border-color: #e9b84a; box-shadow: 0 4px 0 #e9b84a; }
+/* ===== Tiendita: estantes, toldo y etiquetas ===== */
+.awning { height: 34px; margin: -4px -4px 0; border-radius: 16px 16px 0 0; background: repeating-linear-gradient(90deg, #f27ea1 0 28px, #fff 28px 56px); box-shadow: inset 0 -4px 0 rgba(0,0,0,.08); position: relative; }
+.awning::after { content: ""; position: absolute; left: 0; right: 0; bottom: -12px; height: 14px; background: radial-gradient(circle at 14px 0, #f27ea1 13px, transparent 13.5px) 0 0/56px 14px repeat-x, radial-gradient(circle at 42px 0, #fff 13px, transparent 13.5px) 0 0/56px 14px repeat-x; filter: drop-shadow(0 3px 0 rgba(138,77,79,.25)); }
+.shop-sign { align-self: center; margin-top: 2px; display: inline-flex; align-items: center; gap: 8px; background: #fff3d6; border: 3px solid #b07a5a; box-shadow: 0 4px 0 #8a5a3c; border-radius: 14px; padding: 6px 18px; font: 600 19px var(--f-display); color: #6b3e2a; position: relative; }
+.shop-sign::before, .shop-sign::after { content: ""; position: absolute; top: -16px; width: 3px; height: 14px; background: #8a5a3c; }
+.shop-sign::before { left: 22px; } .shop-sign::after { right: 22px; }
+.shop-grid { padding: 12px 10px 6px; border-radius: 18px; background: #f3dcc4; background-image: linear-gradient(90deg, rgba(138,77,79,.06) 1px, transparent 1px); background-size: 22px 100%; border: 5px solid #b07a5a; box-shadow: inset 0 0 0 2px #c9956f, 0 5px 0 #8a5a3c; row-gap: 18px; column-gap: 8px; }
+.shop-tile { border: 0; background: none; box-shadow: none; border-radius: 12px; padding: 18px 2px 16px; gap: 4px; font: 600 12.5px var(--f-display); color: #5a3238; }
+.shop-tile::after { content: ""; position: absolute; left: -8px; right: -8px; bottom: 0; height: 9px; background: #c9956f; box-shadow: 0 4px 0 #8a5a3c; border-radius: 2px; }
+.shop-tile img { filter: drop-shadow(0 4px 0 rgba(90,50,30,.18)); transition: transform .15s; }
+.shop-tile:hover img, .shop-tile:active img { transform: translateY(-3px); }
+.shop-tile > span:last-of-type { background: #fffaf3; border-radius: 8px; padding: 1px 6px; box-shadow: 0 1px 0 rgba(138,77,79,.25); line-height: 1.25; }
+.shop-tile em { font: 800 10.5px var(--f-body); }
+.shop-tile.on { background: rgba(255,255,255,.5); box-shadow: inset 0 0 0 2.5px #f27ea1; }
+.shop-tile .lock { top: 2px; right: 2px; border: 2px solid #b07a5a; background: #fff09a !important; color: #6b4d12; border-radius: 6px 10px 10px 6px; padding: 0 6px 0 9px; box-shadow: 0 2px 0 #b07a5a; transform: rotate(6deg); }
+.shop-tile .lock::before { content: ""; position: absolute; left: 3px; top: 50%; width: 4px; height: 4px; margin-top: -2px; border-radius: 50%; background: #b07a5a; }
+/* ===== Visitas: tu barrio ===== */
+.vs-hero { position: relative; height: 170px; border-radius: 24px; overflow: hidden; background-size: cover; background-position: center bottom; image-rendering: pixelated; border: 2.5px solid #8a4d4f; box-shadow: 0 5px 0 #8a4d4f; }
+.vs-houses { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; justify-content: center; align-items: flex-end; gap: 22px; }
+.vs-houses img { filter: drop-shadow(0 4px 0 rgba(70,40,30,.25)); }
+.vs-pet { position: absolute; right: 22px; bottom: 10px; width: 60px; animation: bob 2.4s ease-in-out infinite; }
+.vs-hero-t { position: absolute; left: 12px; top: 12px; background: rgba(255,255,255,.92); border: 2.5px solid #8a4d4f; box-shadow: 0 3px 0 #8a4d4f; border-radius: 14px; padding: 4px 12px 6px; display: flex; flex-direction: column; }
+.vs-hero-t b { font: 600 18px var(--f-display); }
+.vs-hero-t span { font-size: 12px; font-weight: 800; color: var(--ink-soft); }
+.vs-box { border: 2.5px solid #8a4d4f !important; box-shadow: 0 5px 0 #8a4d4f !important; background: #fffaf3 !important; }
+.vs-box b { font: 600 15px var(--f-display); }
+.vs-list .li { background: #fffaf3 !important; border: 2.5px solid #8a4d4f; box-shadow: 0 4px 0 #8a4d4f; border-radius: 18px; }
+.vs-list .li .ic { background: #e3f3df; border-radius: 14px; }
+/* ===== Cuartos y juegos ===== */
+.room-frame { background: #f3dcc4; box-shadow: inset 0 0 0 3px #c9956f, 0 0 0 3px #8a4d4f, 0 6px 0 3px #8a4d4f, 0 16px 24px -12px rgba(90,40,30,.45); border-radius: 16px; }
+.rm-door-art { border: 2.5px solid #8a4d4f; box-shadow: 0 4px 0 #8a4d4f; }
+.rm-door[aria-pressed="true"] .rm-door-art { border-color: #c44a72; box-shadow: 0 4px 0 #c44a72, 0 0 0 3px #fff, 0 0 12px 2px rgba(242,126,161,.5); }
+.rm-door.add .rm-door-art { border: 2.5px dashed #c9956f; box-shadow: none; }
+.gm-card { border: 2.5px solid #8a4d4f !important; box-shadow: 0 6px 0 #8a4d4f !important; border-radius: 24px; position: relative; overflow: hidden; transition: transform .08s, box-shadow .08s; }
+.gm-card:active { transform: translateY(4px); box-shadow: 0 2px 0 #8a4d4f !important; }
+.gm-card::after { content: "Jugar ▸"; position: absolute; right: 12px; bottom: 12px; font: 600 13px var(--f-display); color: #fff; background: #f27ea1; border: 2px solid #8a4d4f; border-radius: 99px; padding: 2px 10px; box-shadow: 0 3px 0 #8a4d4f; }
+.gm-card .tag { margin-right: 70px; }

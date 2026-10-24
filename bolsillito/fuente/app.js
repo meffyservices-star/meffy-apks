@@ -1130,7 +1130,7 @@ ${todayN ? `<div class="faint" style="font-size:12.5px">${todayN} ${todayN === 1
 </div>
 ${goalStories()}
 ${A_rincon()}
-${window.App && App.sheyReady && App.sheyReady() ? `<button class="card row" data-go="shey" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer;background:#f4edff;border-color:#e2d4fb"><img class="pixel" alt="" src="${Pix.sprite('shey', 3)}" style="width:48px;height:48px"><div style="flex:1"><b>Shey te espera</b> ${px('alerta', 16)}<div class="faint">${esc(App.sheyMsg())}</div></div></button>` : ''}
+${window.App && App.sheyReady && App.sheyReady() ? `<button class="card row" data-go="shey" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer;background:#f4edff;border-color:#e2d4fb"><img class="pixel" alt="" src="${Pix.sprite(App.petInfo && App.petActive && App.petActive() ? App.petInfo(App.petActive()).sprite : 'shey', 3)}" style="width:48px;height:48px"><div style="flex:1"><b>${esc(App.petInfo && App.petActive && App.petActive() ? App.petInfo(App.petActive()).name : 'Shey')} te espera</b> ${px('alerta', 16)}<div class="faint">${esc(App.sheyMsg())}</div></div></button>` : ''}
 <section class="stack">
 <div class="ph"><span class="pill sm">Movimientos</span><span class="row" style="gap:8px"><button class="round-btn" data-act="showFilters" aria-label="Buscar y filtrar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4.5 4.5"></path></svg></button><button class="btn sm" data-act="quickadd">Nuevo +</button></span></div>
 ${txListBody({ compact: true })}
@@ -1862,7 +1862,7 @@ const ACH = [
 { id: 'tx200', ic: 'book2', name: 'Archivista', desc: '200 movimientos anotados', ok: s => s.txCount >= 200, prize: 50 },
 { id: 'goal1', ic: 'goal', name: 'Meta cumplida', desc: 'Completa una meta de ahorro', ok: s => s.goalsDone >= 1, prize: 30 },
 { id: 'under1', ic: 'escudo', name: 'Mes en control', desc: 'Termina un mes sin pasarte del presupuesto', ok: s => s.under >= 1, prize: 30 },
-{ id: 'shey3', ic: 'heart', name: 'Fuerza de voluntad', desc: 'Resiste 3 antojos con Shey', ok: () => (A.sheyResisted ? A.sheyResisted() : 0) >= 3, prize: 20 },
+{ id: 'shey3', ic: 'heart', name: 'Fuerza de voluntad', desc: 'Resiste 3 antojos con tu mascota', ok: () => (A.sheyResisted ? A.sheyResisted() : 0) >= 3, prize: 20 },
 { id: 'jr4', ic: 'book', name: 'Journal lindo', desc: 'Decora 4 semanas de tu journal', ok: s => s.jWeeks >= 4, prize: 20 }
 ];
 const RW = () => (A.CFG && A.CFG.rewards) || { day: 2, goalTx: 3, goalDone: 15, journalWeek: 5, monthUnder: 20, antojo: 5, closeDay: 1, pet: 1 };
@@ -1921,7 +1921,7 @@ ${tab === 'como' ? `<div class="card stack">
 <div class="row between"><span>Decorar una semana del journal</span><b>+${RW().journalWeek} ${ST}</b></div>
 <div class="row between"><span>Cumplir una meta</span><b>+${RW().goalDone} ${ST}</b></div>
 <div class="row between"><span>Terminar un mes sin pasarte</span><b>+${RW().monthUnder} ${ST}</b></div>
-<div class="row between"><span>Resistir un antojo con Shey</span><b>+${RW().antojo} ${ST}</b></div>
+<div class="row between"><span>Resistir un antojo con tu mascota</span><b>+${RW().antojo} ${ST}</b></div>
 <div class="row between"><span>Cerrar el día con Ale</span><b>+${RW().closeDay} ${ST}</b></div>
 <div class="row between"><span>Darles cariño (una vez al día)</span><b>+${RW().pet} ${ST}</b></div>
 ${A.isPlus() ? `<div class="row between"><span>Regalo de Meffy+</span><b>+${(A.CFG && A.CFG.plan[S.settings.planType === 'anual' ? 'bonusAnnual' : 'bonusMonthly']) || 0} ${ST}</b></div>` : ''}
@@ -1986,13 +1986,15 @@ const FEELS = {};
 [['feliz', 'Feliz'], ['tranquila', 'Tranquila'], ['emocionada', 'Emocionada'], ['cansada', 'Cansada'], ['aburrida', 'Aburrida'], ['triste', 'Triste'], ['estresada', 'Estresada'], ['ansiosa', 'Ansiosa']]
 .forEach(([k, n]) => { FEELS[k] = { n, get e() { return fi('f_' + k); } }; });
 A.FEELS = FEELS;
-A.PAGES.shey = 'Antojos y emociones';
+A.PAGES.shey = 'Antojos';
 Object.values(A.PACKS).forEach(p => { p.map.shey = p.map.shey || (p === A.PACKS.pixel ? 's:shey' : 'e:🍡'); });
 const list = () => (S.fin.antojos = S.fin.antojos || []);
 const daysLeft = a => Math.ceil((A.parseYmd(a.until) - A.parseYmd(A.today())) / 864e5);
 const ready = () => list().filter(a => a.status === 'esperando' && daysLeft(a) <= 0);
 A.sheyReady = () => ready().length;
 A.sheyResisted = () => list().filter(a => a.status === 'resistido').length;
+const PID = () => (window.App && App.petActive && App.petActive()) || 'shey';
+const PN = () => (window.App && App.petInfo ? App.petInfo(PID()).name : 'Shey');
 function sheyMsg() {
 const r = ready(); const saved = list().filter(a => a.status === 'resistido').reduce((s, a) => s + (+a.price || 0), 0);
 if (r.length) return `¡Ya terminó la espera de “${r[0].name}”! ¿Todavía lo quieres?`;
@@ -2014,23 +2016,23 @@ const saved = all.filter(a => a.status === 'resistido').reduce((s, a) => s + (+a
 const card = a => `<div class="li" style="flex-wrap:wrap"><span class="ic">${a.feel ? FEELS[a.feel].e : A.px('moon', 24)}</span><span class="tx-main"><b>${esc(a.name)}</b><span>${a.why ? esc(a.why) + ' · ' : ''}lo anotaste el ${A.fmtDate(a.created)}</span></span><span class="amt num">${money(a.price)}</span>`;
 return `${A.header('shey', `<span class="pill sm" style="background:#ece0fb;color:#4a3570">${money(saved)} ahorrados</span>`)}
 <div class="rc-scene" style="background-image:url(${Pix.banner('estrellas')});min-height:210px">
-<div class="rc-row"><button class="rc-char" data-shey-tap aria-label="Shey"><span class="rc-fx">${A.px(rd.length ? 'alerta' : 'moon', 26)}</span>${A.wear ? A.wear('shey') : `<img class="pixel" alt="" src="${Pix.sprite('shey', 5)}">`}<span class="pill sm">Shey</span></button></div>
+<div class="rc-row"><button class="rc-char" data-shey-tap aria-label="${esc(PN())}"><span class="rc-fx">${A.px(rd.length ? 'alerta' : 'moon', 26)}</span>${A.wear ? A.wear(PID()) : `<img class="pixel" alt="" src="${Pix.sprite((A.petInfo ? A.petInfo(PID()).sprite : 'shey'), 5)}">`}<span class="pill sm">${esc(PN())}</span></button></div>
 <div class="rc-say">${esc(sheyMsg())}</div>
 </div>
-<button class="btn pink" data-act="antojoNew" style="justify-content:center;padding:12px">Contarle un antojo a Shey</button>
+<button class="btn pink" data-act="antojoNew" style="justify-content:center;padding:12px">Contarle un antojo a ${esc(PN())}</button>
 <div class="seg"><button data-act="sheyTab" data-v="antojos" aria-pressed="${tab === 'antojos'}">Antojos</button><button data-act="sheyTab" data-v="emociones" aria-pressed="${tab === 'emociones'}">Mis emociones</button></div>
 ${tab === 'antojos' ? `
 ${rd.length ? `<section class="stack"><span class="pill sm" style="align-self:flex-start">Listos para decidir</span>${rd.map(a => card(a) + `<div class="row" style="width:100%;margin-top:8px"><button class="btn sm" data-act="antojoYes" data-id="${a.id}" style="flex:1;justify-content:center">Sí, lo compro</button><button class="btn pink sm" data-act="antojoNo" data-id="${a.id}" style="flex:1;justify-content:center">Ya no lo quiero +5 ${A.px('estrellita', 16)}</button></div></div>`).join('')}</section>` : ''}
-<section class="stack"><span class="pill sm" style="align-self:flex-start">Esperando</span>${wait.length ? wait.map(a => card(a) + `<div class="row between" style="width:100%;margin-top:6px"><span class="faint">${daysLeft(a) === 1 ? 'Falta 1 día' : 'Faltan ' + daysLeft(a) + ' días'}</span><button class="btn ghost sm" data-act="antojoDel" data-id="${a.id}">Quitar</button></div></div>`).join('') : '<div class="card empty">No hay antojos esperando. Cuando quieras comprar algo, cuéntaselo primero a Shey.</div>'}</section>
+<section class="stack"><span class="pill sm" style="align-self:flex-start">Esperando</span>${wait.length ? wait.map(a => card(a) + `<div class="row between" style="width:100%;margin-top:6px"><span class="faint">${daysLeft(a) === 1 ? 'Falta 1 día' : 'Faltan ' + daysLeft(a) + ' días'}</span><button class="btn ghost sm" data-act="antojoDel" data-id="${a.id}">Quitar</button></div></div>`).join('') : '<div class="card empty">No hay antojos esperando. Cuando quieras comprar algo, cuéntaselo primero a ${esc(PN())}.</div>'}</section>
 ${done.length ? `<section class="stack"><span class="pill sm" style="align-self:flex-start">Historial</span>${done.slice(0, 20).map(a => `<div class="li ${a.status === 'resistido' ? 'income' : ''}"><span class="ic">${A.px(a.status === 'resistido' ? 'heart' : 'bolsa', 26)}</span><span class="tx-main"><b>${esc(a.name)}</b><span>${a.status === 'resistido' ? 'Resististe' : 'Lo compraste'} · ${A.fmtDate(a.decided || a.created)}</span></span><span class="amt num ${a.status === 'resistido' ? 'pos' : ''}">${money(a.price)}</span></div>`).join('')}</section>` : ''}
-<div class="card"><b>¿Cómo funciona?</b><p class="muted" style="margin:6px 0 0">Anotas lo que se te antojó y eliges cuántos días esperar. Shey lo guarda. Al terminar la espera decides: si ya no lo quieres, ganas 5 estrellitas y Shey suma ese dinero a lo que te ahorraste.</p></div>`
+<div class="card"><b>¿Cómo funciona?</b><p class="muted" style="margin:6px 0 0">Anotas lo que se te antojó y eliges cuántos días esperar. ${esc(PN())} lo guarda. Al terminar la espera decides: si ya no lo quieres, ganas 5 estrellitas y ${esc(PN())} suma ese dinero a lo que te ahorraste.</p></div>`
 : emotions()}`;
 };
 function emotions() {
 const since = ymd(addDays(new Date(), -90));
 const tx = S.tx.filter(t => t.type === 'expense' && t.date >= since && t.feel && !A.isSaving(A.cat(t.cat)));
 const untagged = S.tx.filter(t => t.type === 'expense' && t.date >= since && !t.feel && !t.recurring).length;
-if (!tx.length) return `<div class="card stack"><b>Aún no hay emociones anotadas</b><p class="muted" style="margin:0">Cuando anotes un gasto, toca cómo te sentías (aparece arriba de la calculadora). Con unas cuantas compras, Shey te muestra si gastas distinto según tu ánimo.</p></div>`;
+if (!tx.length) return `<div class="card stack"><b>Aún no hay emociones anotadas</b><p class="muted" style="margin:0">Cuando anotes un gasto, toca cómo te sentías (aparece arriba de la calculadora). Con unas cuantas compras, ${esc(PN())} te muestra si gastas distinto según tu ánimo.</p></div>`;
 const by = {}; tx.forEach(t => { const b = by[t.feel] = by[t.feel] || { n: 0, sum: 0, cats: {} }; b.n++; b.sum += t.amount; b.cats[t.cat] = (b.cats[t.cat] || 0) + t.amount; });
 const rows = Object.entries(by).map(([k, b]) => ({ k, ...b, avg: b.sum / b.n })).sort((a, b) => b.sum - a.sum);
 const mx = Math.max(...rows.map(r => r.sum));
@@ -2038,9 +2040,9 @@ const calm = ['feliz', 'tranquila']; const tough = ['triste', 'estresada', 'ansi
 const avgOf = ks => { const r = rows.filter(x => ks.includes(x.k)); const n = r.reduce((s, x) => s + x.n, 0); return n ? r.reduce((s, x) => s + x.sum, 0) / n : 0; };
 const ac = avgOf(calm), at = avgOf(tough);
 let insight = '';
-if (ac && at) insight = at > ac * 1.15 ? `Cuando estás triste, estresada, ansiosa, aburrida o cansada gastas en promedio ${money(at)} por compra, un ${Math.round((at / ac - 1) * 100)}% más que cuando estás bien (${money(ac)}). Antes de comprar en esos días, cuéntaselo a Shey.` : at < ac * .85 ? `Buenas noticias: tus días difíciles no te hacen gastar más. Compras más cuando estás contenta (${money(ac)} en promedio).` : `Gastas parecido sin importar tu ánimo (${money(ac)} vs. ${money(at)} por compra). ¡Muy equilibrada!`;
+if (ac && at) insight = at > ac * 1.15 ? `Cuando estás triste, estresada, ansiosa, aburrida o cansada gastas en promedio ${money(at)} por compra, un ${Math.round((at / ac - 1) * 100)}% más que cuando estás bien (${money(ac)}). Antes de comprar en esos días, cuéntaselo a ${PN()}.` : at < ac * .85 ? `Buenas noticias: tus días difíciles no te hacen gastar más. Compras más cuando estás contenta (${money(ac)} en promedio).` : `Gastas parecido sin importar tu ánimo (${money(ac)} vs. ${money(at)} por compra). ¡Muy equilibrada!`;
 const top = rows[0]; const topCat = top ? Object.entries(top.cats).sort((a, b) => b[1] - a[1])[0] : null;
-return `${insight ? `<div class="card" style="background:#f4edff;border-color:#e2d4fb"><b>Shey notó algo</b> ${A.px('moon', 18)}<p style="margin:6px 0 0">${esc(insight)}</p></div>` : ''}
+return `${insight ? `<div class="card" style="background:#f4edff;border-color:#e2d4fb"><b>${esc(PN())} notó algo</b> ${A.px('moon', 18)}<p style="margin:6px 0 0">${esc(insight)}</p></div>` : ''}
 <div class="card"><h3>Gasto según cómo te sentías · últimos 90 días</h3>${rows.map(r => `<div class="row" style="padding:5px 0"><span style="width:26px">${FEELS[r.k].e}</span><span style="width:92px;font-weight:700">${FEELS[r.k].n}</span><div class="prog" style="flex:1"><i style="width:${r.sum / mx * 100}%;background:#b79ae8"></i></div><b class="num" style="width:84px;text-align:right">${money(r.sum)}</b></div><div class="faint" style="margin:-4px 0 4px 26px">${r.n} ${r.n === 1 ? 'compra' : 'compras'} · ${money(r.avg)} promedio</div>`).join('')}</div>
 ${topCat && A.cat(topCat[0]) ? `<div class="card"><b>Tu ánimo con más gasto: ${FEELS[top.k].e} ${FEELS[top.k].n}</b><p class="muted" style="margin:6px 0 0">En esos días lo que más compras es ${esc(A.cat(topCat[0]).name)} (${money(topCat[1])}).</p></div>` : ''}
 ${untagged ? `<p class="faint" style="margin:0">${untagged} gastos de estos días no tienen emoción. Puedes agregarla tocando el gasto en Movimientos.</p>` : ''}`;
@@ -2061,24 +2063,24 @@ A.quickAdd(null, { type: 'expense', amount: x.price, note: x.name, feel: x.feel,
 document.addEventListener('click', e => { if (e.target.closest('[data-shey-tap]')) { const s = $('.rc-say'); if (s) s.textContent = sheyMsg(); const c = e.target.closest('.rc-char'); c.classList.remove('boing'); void c.offsetWidth; c.classList.add('boing'); } });
 function newAntojo() {
 const a = { id: uid(), name: '', price: '', wait: 3, feel: null, why: '', cat: null };
-openSheet('Contarle un antojo a Shey', `<div class="stack">
-<div class="row" style="gap:10px"><img class="pixel" alt="" src="${Pix.sprite('shey', 3)}" style="width:48px;height:48px"><span class="muted">Cuéntame qué se te antojó. Lo guardo unos días y después decides con calma.</span></div>
+openSheet('Contarle un antojo a ' + PN(), `<div class="stack">
+<div class="row" style="gap:10px"><img class="pixel" alt="" src="${Pix.sprite((A.petInfo ? A.petInfo(PID()).sprite : 'shey'), 3)}" style="width:48px;height:48px"><span class="muted">Cuéntame qué se te antojó. Lo guardo unos días y después decides con calma.</span></div>
 <label class="f">¿Qué quieres comprar?<input class="in" id="anN" placeholder="Ej. unos tenis, un labial" autofocus></label>
 <div class="formgrid"><label class="f">¿Cuánto cuesta?<input class="in" id="anP" type="number" inputmode="decimal" step="0.01"></label>
 <label class="f">Categoría<select class="in" id="anC"><option value="">Sin categoría</option>${S.fin.categories.filter(c => c.type !== 'income').map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></label></div>
 <div class="f">¿Cuánto esperamos?<div class="seg" style="margin-top:4px"><button type="button" data-w="1" aria-pressed="false">1 día</button><button type="button" data-w="3" aria-pressed="true">3 días</button><button type="button" data-w="7" aria-pressed="false">7 días</button><button type="button" data-w="30" aria-pressed="false">30 días</button></div></div>
 <div class="f">¿Cómo te sientes ahora?${feelChips(null, 'fl')}</div>
 <label class="f">¿Por qué lo quieres? (opcional)<input class="in" id="anW" placeholder="Ej. lo vi en TikTok, lo necesito para el trabajo"></label>
-<button class="btn pink" id="anOk" style="justify-content:center;padding:12px">Guardar con Shey ✦</button></div>`, sh => {
+<button class="btn pink" id="anOk" style="justify-content:center;padding:12px">Guardar con ${esc(PN())} ✦</button></div>`, sh => {
 sh.addEventListener('click', e => {
 const w = e.target.closest('[data-w]'); if (w) { a.wait = +w.dataset.w; $$('[data-w]', sh).forEach(b => b.setAttribute('aria-pressed', b === w)); }
 const f = e.target.closest('[data-fl]'); if (f) { a.feel = a.feel === f.dataset.fl ? null : f.dataset.fl; $$('[data-fl]', sh).forEach(b => b.setAttribute('aria-pressed', b.dataset.fl === a.feel)); }
 });
 $('#anOk', sh).onclick = () => {
 a.name = $('#anN').value.trim(); a.price = +$('#anP').value || 0; a.cat = $('#anC').value || null; a.why = $('#anW').value.trim();
-if (!a.name) return toast('Cuéntale a Shey qué quieres');
+if (!a.name) return toast('Cuéntale a ' + PN() + ' qué quieres');
 a.created = A.today(); a.until = ymd(addDays(new Date(), a.wait)); a.status = 'esperando';
-list().push(a); A.saveFin(); closeSheet(); toast(`Shey lo cuida ${a.wait === 1 ? '1 día' : a.wait + ' días'} ✦`); A.render();
+list().push(a); A.saveFin(); closeSheet(); toast(`${PN()} lo cuida ${a.wait === 1 ? '1 día' : a.wait + ' días'} ✦`); A.render();
 };
 });
 }
@@ -2251,7 +2253,7 @@ return `${A.header('tienda', `<span class="pill sm" style="background:#fff09a;co
 ${aleLocked ? '<button class="btn pink" data-go="plan" style="justify-content:center">Conoce Meffy+</button>' : ''}
 <div class="seg">${Object.entries(SLOTS).map(([k, n]) => `<button data-act="shopSec" data-v="${k}" aria-pressed="${sec === k}">${n}</button>`).join('')}<button data-act="shopSec" data-v="mas" aria-pressed="${sec === 'mas'}">Más cositas</button></div>
 ${sec === 'mas' ? (A.rcExtrasHTML ? A.rcExtrasHTML(bal) : '') : `<div class="shop-grid">${Object.entries(ACC).filter(([, a]) => a.slot === sec && !a.off).map(([id, a]) => tile(id, a)).join('')}</div>`}
-<p class="faint" style="margin:0">Gana estrellitas anotando tus gastos, resistiendo antojos con Shey y cerrando el día con Ale. Las cosas marcadas con Meffy+ vienen incluidas en el plan.</p>`;
+<p class="faint" style="margin:0">Gana estrellitas anotando tus gastos, resistiendo antojos con tu mascota y cerrando el día con Ale. Las cosas marcadas con Meffy+ vienen incluidas en el plan.</p>`;
 };
 const ACT = A.ACTIONS;
 ACT.shopWho = a => { S.shopWho = a.dataset.v; A.render(); };
