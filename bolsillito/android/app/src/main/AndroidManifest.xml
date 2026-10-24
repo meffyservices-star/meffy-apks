@@ -50,6 +50,7 @@
             </intent-filter>
         </activity>
         <activity android:name="com.google.androidbrowserhelper.trusted.FocusActivity" />
+        <activity android:name="com.google.androidbrowserhelper.trusted.NotificationPermissionRequestActivity" />
         <activity android:name="com.google.androidbrowserhelper.trusted.WebViewFallbackActivity" android:configChanges="orientation|screenSize" />
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -1,1 +1,1 @@
-[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"app.vercel.bolsillito.twa","sha256_cert_fingerprints":["B7:DD:2B:57:71:5B:5F:4F:F4:F3:36:3C:FB:7D:BF:6B:9E:0C:FC:FC:16:81:20:4A:DB:3F:5E:65:70:74:94:4A"]}}]
+[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"com.meffy.bolsillito","sha256_cert_fingerprints":["56:6C:5D:56:01:8D:0B:2E:3B:7D:76:70:A0:B6:42:43:D8:74:E7:FA:2D:D9:12:85:F0:07:36:6F:CF:25:67:C2"]}}]
