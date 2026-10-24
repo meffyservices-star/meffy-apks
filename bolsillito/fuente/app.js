@@ -2586,6 +2586,7 @@ ${Object.entries(A.RC.UNLOCKS).map(([k, u]) => row(esc(u.name), num('unlocks.' +
 <div class="setrow"><span>Mostrar tarjeta de novedades</span><span class="toggle"><input type="checkbox" data-cf="news.on" ${D.news.on ? 'checked' : ''}><span></span></span></div>
 <label class="f">Título<input class="in" data-cf="news.title" value="${esc(D.news.title || '')}"></label>
 <label class="f">Texto<textarea class="in" data-cf="news.text">${esc(D.news.text || '')}</textarea></label></details>
+${A.musicAdminHTML ? A.musicAdminHTML(D) : ''}
 <div class="row" style="position:sticky;bottom:calc(86px + env(safe-area-inset-bottom, 0px));z-index:5"><button class="btn" data-act="cfgReset">Restablecer todo</button><button class="btn pink" data-act="cfgSave" style="flex:1;justify-content:center">Guardar cambios</button></div>`;
 };
 let USERS = null, uq = '', loadingUsers = false;
@@ -2640,6 +2641,7 @@ if (t.dataset.cfLines) draft[t.dataset.cfLines] = t.value.split('\n').map(x => x
 if (t.dataset.themeFree) { const set = new Set(draft.freeThemes || []); t.checked ? set.add(t.dataset.themeFree) : set.delete(t.dataset.themeFree); draft.freeThemes = [...set]; }
 });
 };
+A.adminDraft = () => draft;
 A.ACTIONS.cfgSave = async () => {
 const before = JSON.stringify(A.CFG.news);
 if (JSON.stringify(draft.news) !== before) draft.news.id = Date.now().toString(36);

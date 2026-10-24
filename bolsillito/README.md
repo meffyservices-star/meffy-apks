@@ -23,6 +23,7 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
 ## Historial
 
 - **24-oct-2026**
+  - Música para los juegos: en el panel de admin (Música de los juegos) se sube una canción por juego, con volumen y prendido/apagado. Se guarda en Supabase Storage, bucket `music` (solo la admin puede subir).
   - Sonidos en Cuidar (burbujas al bañar, luz al dormir y despertar, mimos, "ñam ñam" al comer), en los minijuegos y en el cuarto.
   - Cada mascota tiene su propia vocecita al tocarla en el cuarto (las nuevas del panel reciben una sacada de su nombre).
   - Corazones nuevos, más bonitos y animados, al mimar y tocar a la mascota.

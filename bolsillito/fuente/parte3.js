@@ -29,6 +29,19 @@ A.screens.juegos = () => {
 ACT.gmPlay = a => a.dataset.g === 'saltar' ? jumpGame() : catchGame('monedas');
 
 const gsfx = n => { if (window.Sfx) window.Sfx.play(n, true); };
+// ---- Musiquita de los juegos (la eliges y le pones volumen en el panel de admin) ----
+A.gameMusic = (() => {
+  let au = null, fade = null;
+  const cfg = g => { const m = ((A.CFG && A.CFG.music) || {})[g]; return m && m.src && m.on !== false ? m : null; };
+  const vol = m => Math.max(0, Math.min(1, (m.vol != null ? m.vol : 60) / 100));
+  const stopNow = () => { clearInterval(fade); fade = null; if (au) { try { au.pause(); } catch (e) { } au.src = ''; au = null; } };
+  return {
+    start(g) { stopNow(); const m = g && cfg(g); if (!m || S.settings.sound === false) return; au = new Audio(m.src); au.loop = true; au.volume = vol(m); au.play().catch(() => {}); },
+    pause() { if (au) au.pause(); },
+    resume() { if (au) au.play().catch(() => {}); },
+    stop() { if (!au) return; const a = au; au = null; clearInterval(fade); fade = setInterval(() => { a.volume = Math.max(0, a.volume - .08); if (a.volume <= .01) { clearInterval(fade); a.pause(); a.src = ''; } }, 60); }
+  };
+})();
 function loadImgs(map) { return Promise.all(Object.entries(map).map(([k, src]) => new Promise(res => { const i = new Image(); i.onload = () => res([k, i]); i.onerror = () => res([k, i]); i.src = src; }))).then(Object.fromEntries); }
 function gameShell(cls) {
   const ov = document.createElement('div'); ov.className = 'game ' + cls; ov.setAttribute('role', 'dialog');
@@ -51,7 +64,7 @@ function endCard(sh, title, lines, again) {
 
 // ---- Saltar hasta las nubes ----
 async function jumpGame() {
-  const sh = gameShell('jump'); let { w: W, h: H } = sh.fit();
+  const sh = gameShell('jump'); let { w: W, h: H } = sh.fit(); const MUS = 'saltar';
   const I = await loadImgs({ pet: spr(petSprite(), 4), p: spr('plataforma', 3), rota: spr('plataforma_rota', 3), nube: spr('plataforma_nube', 3), coin: spr('estrellita', 3), spring: spr('resorte', 3), cloud: spr('nube', 4) });
   const PW = 72, PH = 24, PET = 52;
   let me, plats, coins, cam, coinsGot, maxH, run = true, paused = false, tilt = 0, keyDir = 0, touchDir = 0, last = 0, raf;
@@ -95,7 +108,7 @@ async function jumpGame() {
   }
   function loop(t) { if (!run) return; const dt = Math.min(2.2, last ? (t - last) / 16.67 : 1); last = t; if (!paused) step(dt); draw(); raf = requestAnimationFrame(loop); }
   function over() {
-    run = false; cancelAnimationFrame(raf); const gm = GM(); const rec = maxH > (gm.best.saltar || 0); if (rec) gm.best.saltar = maxH; gsfx(rec ? 'record' : 'over');
+    A.gameMusic.stop(); run = false; cancelAnimationFrame(raf); const gm = GM(); const rec = maxH > (gm.best.saltar || 0); if (rec) gm.best.saltar = maxH; gsfx(rec ? 'record' : 'over');
     const earned = payGame(coinsGot + Math.floor(maxH / 25)); A.petAddXp && A.petAddXp(10, 'game'); A.saveSettings();
     endCard(sh, rec ? '¡NUEVO RÉCORD!' : '¡Buen salto!', `<div class="gm-big">${maxH} m</div><div class="row" style="justify-content:center;gap:6px;font-weight:800">${ST(18)} +${earned} estrellitas</div>${earned < coinsGot + Math.floor(maxH / 25) ? '<div class="faint">Ya llegaste al tope de estrellitas de juegos por hoy.</div>' : ''}<div class="faint">Récord: ${gm.best.saltar || 0} m</div>`, jumpGame);
   }
@@ -105,19 +118,19 @@ async function jumpGame() {
   const td = e => { if (e.target.closest('.gm-hud,.gm-msg')) return; touchDir = e.clientX < W / 2 ? -1 : 1; };
   sh.cv.addEventListener('pointerdown', td); sh.cv.addEventListener('pointermove', e => { if (e.buttons || e.pointerType === 'touch') td(e); }); addEventListener('pointerup', () => touchDir = 0);
   const untilt = tiltControl(v => tilt = Math.abs(v) < .12 ? 0 : v);
-  $('.gm-pause', sh.ov).onclick = () => { paused = !paused; gsfx('tick'); const m = $('.gm-msg', sh.ov); if (paused) { m.hidden = false; m.innerHTML = `<div class="gm-end"><div class="gm-k">PAUSA</div><div class="row" style="gap:8px;margin-top:10px"><button class="btn" data-x="out" style="flex:1;justify-content:center">Salir</button><button class="btn pink" data-x="go" style="flex:1;justify-content:center">Seguir</button></div></div>`; m.onclick = e => { const b = e.target.closest('[data-x]'); if (!b) return; if (b.dataset.x === 'out') sh.close(); else { paused = false; m.hidden = true; } }; } };
-  sh.close = () => { run = false; cancelAnimationFrame(raf); removeEventListener('keydown', kd); removeEventListener('keyup', ku); untilt(); sh.ov.remove(); document.body.classList.remove('gaming'); if (S.route === 'juegos' || S.route === 'rincon') A.render(); };
+  $('.gm-pause', sh.ov).onclick = () => { paused = !paused; gsfx('tick'); paused ? A.gameMusic.pause() : A.gameMusic.resume(); const m = $('.gm-msg', sh.ov); if (paused) { m.hidden = false; m.innerHTML = `<div class="gm-end"><div class="gm-k">PAUSA</div><div class="row" style="gap:8px;margin-top:10px"><button class="btn" data-x="out" style="flex:1;justify-content:center">Salir</button><button class="btn pink" data-x="go" style="flex:1;justify-content:center">Seguir</button></div></div>`; m.onclick = e => { const b = e.target.closest('[data-x]'); if (!b) return; if (b.dataset.x === 'out') sh.close(); else { paused = false; m.hidden = true; A.gameMusic.resume(); } }; } };
+  sh.close = () => { A.gameMusic.stop(); run = false; cancelAnimationFrame(raf); removeEventListener('keydown', kd); removeEventListener('keyup', ku); untilt(); sh.ov.remove(); document.body.classList.remove('gaming'); if (S.route === 'juegos' || S.route === 'rincon') A.render(); };
   addEventListener('resize', () => { const r = sh.fit(); W = r.w; H = r.h; }, { once: true });
   sh.ov.__st = () => ({ me, plats, W, PW, PET, set: d => { keyDir = d; } });
   reset(); const m = $('.gm-msg', sh.ov); m.hidden = false; paused = true;
   m.innerHTML = `<div class="gm-end"><div class="gm-k">SALTAR HASTA LAS NUBES</div><div class="gm-legend"><span>${img('plataforma', 48)}Normal</span><span>${img('plataforma_rota', 48)}Se rompe</span><span>${img('plataforma_nube', 48)}Se esfuma</span></div><div class="faint">Inclina el celular, toca un lado de la pantalla o usa las flechas para moverte. Cada estrellita que atrapes es tuya.</div><button class="btn pink" data-x="go" style="justify-content:center;margin-top:10px;width:100%">¡A saltar!</button></div>`;
-  m.onclick = e => { if (e.target.closest('[data-x]')) { m.hidden = true; paused = false; gsfx('start'); } };
+  m.onclick = e => { if (e.target.closest('[data-x]')) { m.hidden = true; paused = false; gsfx('start'); A.gameMusic.start(MUS); } };
   raf = requestAnimationFrame(loop);
 }
 
 // ---- Atrapar comidita ----
 async function catchGame(mode) {
-  const coins = mode === 'monedas'; const sh = gameShell('catch' + (coins ? ' coins' : '')); let { w: W, h: H } = sh.fit();
+  const coins = mode === 'monedas'; const MUS = coins ? 'monedas' : 'atrapar'; const sh = gameShell('catch' + (coins ? ' coins' : '')); let { w: W, h: H } = sh.fit();
   const ANTOJOS = ['ticket', 'labial', 'helado', 'bolsa', 'unas', 'palomitas', 'cart'];
   const foods = coins ? ['moneda', 'moneda', 'moneda', 'estrellita'] : Object.keys(A.FOODS).filter(k => !A.FOODS[k].off);
   const map = { pet: spr(coins ? 'alcancia' : petSprite(), 4), gota: spr('gota', 3), heart: spr('heart', 3), heartE: spr('heartS', 3) }; foods.forEach(k => map[k] = spr(coins ? k : (A.FOODS[k].sprite || k), 3)); ANTOJOS.forEach(k => map[k] = spr(k, 3));
@@ -152,7 +165,7 @@ async function catchGame(mode) {
   }
   function loop(t) { if (!run) return; const dt = Math.min(2.2, last ? (t - last) / 16.67 : 1); last = t; if (!paused) step(dt); if (run) draw(); raf = requestAnimationFrame(loop); }
   function over() {
-    run = false; cancelAnimationFrame(raf);
+    A.gameMusic.stop(); run = false; cancelAnimationFrame(raf);
     if (coins) { const n = total(); const gm = GM(); const rec = n > (gm.best.monedas || 0); if (rec) gm.best.monedas = n; gsfx(rec ? 'record' : 'over'); const earned = payGame(Math.floor(n / 4)); A.petAddXp && A.petAddXp(10, 'game'); A.saveSettings();
       endCard(sh, lives <= 0 ? '¡Te ganaron los antojos!' : rec ? '¡NUEVO RÉCORD!' : '¡Se acabó el tiempo!', `<div class="gm-big">$${saved().toFixed(2).replace('.', ',')}</div><div class="faint">ahorrados en tu cochinito (de mentiritas)</div><div class="row" style="justify-content:center;gap:6px;font-weight:800">${ST(18)} +${earned} estrellitas</div><div class="faint">Cada antojo que esquivas es plata que se queda contigo.</div>`, () => catchGame('monedas')); return; }
     const pst = A.petState(); Object.entries(caught).forEach(([k, n]) => pst.pantry[k] = (pst.pantry[k] || 0) + n);
@@ -166,11 +179,11 @@ async function catchGame(mode) {
   sh.cv.addEventListener('pointerdown', e => { target = e.clientX; }); sh.cv.addEventListener('pointermove', e => { if (e.buttons || e.pointerType === 'touch') target = e.clientX; });
   sh.cv.addEventListener('pointerup', () => target = null);
   const untilt = tiltControl(v => tilt = Math.abs(v) < .12 ? 0 : v);
-  $('.gm-pause', sh.ov).onclick = () => { paused = !paused; gsfx('tick'); const m = $('.gm-msg', sh.ov); if (paused) { m.hidden = false; m.innerHTML = `<div class="gm-end"><div class="gm-k">PAUSA</div><div class="row" style="gap:8px;margin-top:10px"><button class="btn" data-x="out" style="flex:1;justify-content:center">Salir</button><button class="btn pink" data-x="go" style="flex:1;justify-content:center">Seguir</button></div></div>`; m.onclick = e => { const b = e.target.closest('[data-x]'); if (!b) return; if (b.dataset.x === 'out') sh.close(); else { paused = false; m.hidden = true; } }; } };
-  sh.close = () => { run = false; cancelAnimationFrame(raf); removeEventListener('keydown', kd); removeEventListener('keyup', ku); untilt(); sh.ov.remove(); document.body.classList.remove('gaming'); if (S.route === 'juegos' || S.route === 'rincon') A.render(); };
+  $('.gm-pause', sh.ov).onclick = () => { paused = !paused; gsfx('tick'); paused ? A.gameMusic.pause() : A.gameMusic.resume(); const m = $('.gm-msg', sh.ov); if (paused) { m.hidden = false; m.innerHTML = `<div class="gm-end"><div class="gm-k">PAUSA</div><div class="row" style="gap:8px;margin-top:10px"><button class="btn" data-x="out" style="flex:1;justify-content:center">Salir</button><button class="btn pink" data-x="go" style="flex:1;justify-content:center">Seguir</button></div></div>`; m.onclick = e => { const b = e.target.closest('[data-x]'); if (!b) return; if (b.dataset.x === 'out') sh.close(); else { paused = false; m.hidden = true; A.gameMusic.resume(); } }; } };
+  sh.close = () => { A.gameMusic.stop(); run = false; cancelAnimationFrame(raf); removeEventListener('keydown', kd); removeEventListener('keyup', ku); untilt(); sh.ov.remove(); document.body.classList.remove('gaming'); if (S.route === 'juegos' || S.route === 'rincon') A.render(); };
   reset(); const m = $('.gm-msg', sh.ov); m.hidden = false;
   m.innerHTML = coins ? `<div class="gm-end"><div class="gm-k">AHORRA MONEDAS, NO ANTOJOS</div><div class="gm-legend"><span>${img('moneda', 30)}Atrápalas</span><span>${img('estrellita', 30)}Vale más</span><span>${img('bolsa', 30)}Esquiva los antojos</span></div><div class="faint">Desliza el dedo o inclina el celular para mover tu cochinito. Tienes 45 segundos y 3 vidas.</div><button class="btn pink" data-x="go" style="justify-content:center;margin-top:10px;width:100%">¡Empezar!</button></div>` : `<div class="gm-end"><div class="gm-k">ATRAPAR COMIDITA</div><div class="gm-legend"><span>${img('fresa', 30)}Atrápala</span><span>${img('dona', 30)}A la despensa</span><span>${img('gota', 30)}Esquívala</span></div><div class="faint">Desliza el dedo o inclina el celular para mover a tu mascota. Tienes 45 segundos y 3 vidas.</div><button class="btn pink" data-x="go" style="justify-content:center;margin-top:10px;width:100%">¡Empezar!</button></div>`;
-  m.onclick = e => { if (e.target.closest('[data-x]')) { m.hidden = true; paused = false; gsfx('start'); } };
+  m.onclick = e => { if (e.target.closest('[data-x]')) { m.hidden = true; paused = false; gsfx('start'); A.gameMusic.start(MUS); } };
   raf = requestAnimationFrame(loop);
 }
 
@@ -1002,4 +1015,49 @@ addEventListener('contextmenu', e => { if (!e.target.closest('input, textarea, [
 // ---------------- Arranque ----------------
 const st0 = A.start;
 A.start = async () => { await st0(); applyLook(); A.renderNav(); readShared(); birthdayGift(); loadWx(); if (online() && S.settings.visitCode) setTimeout(() => { loadInbox().then(() => { A.renderNav(); }).catch(() => {}); }, 2500); };
+// ---------------- Panel de admin: musiquita de los juegos ----------------
+{
+  const GAMES = [['saltar', 'Saltar hasta las nubes'], ['monedas', 'Ahorra monedas, no antojos'], ['atrapar', 'Atrapar comidita (despensa)']];
+  let prev = null, prevG = null; const stopPrev = () => { if (prev) { prev.pause(); prev.src = ''; } prev = null; prevG = null; };
+  A.musicAdminHTML = D => {
+    const M = D.music = D.music || {};
+    return `<details class="card" ${S.musOpen ? 'open' : ''} id="musCard"><summary><b>Música de los juegos</b></summary><p class="faint">Sube una canción (mp3, m4a, ogg o wav, hasta 15 MB) para cada juego y ajusta su volumen. Suena en bucle mientras juegan y se apaga si la usuaria quitó los sonidos. Toca <b>Guardar cambios</b> al final para que les suene a todas.</p>
+${GAMES.map(([g, n]) => { const m = M[g] || {}; const v = m.vol != null ? m.vol : 60; return `<div class="card flat stack" style="gap:8px;margin-top:8px"><div class="row between" style="gap:8px"><b>${n}</b>${m.src ? `<span class="toggle"><input type="checkbox" data-mus-on="${g}" ${m.on !== false ? 'checked' : ''}><span></span></span>` : ''}</div>
+${m.src ? `<div class="faint" style="word-break:break-all">${esc(m.name || 'Canción')}</div>
+<div class="row" style="gap:8px"><span class="faint" style="min-width:58px">Volumen</span><input type="range" min="0" max="100" step="1" value="${v}" data-mus-vol="${g}" style="flex:1;accent-color:#e86f97"><b data-mus-vn="${g}" style="min-width:38px;text-align:right">${v}%</b></div>
+<div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="musPlay" data-g="${g}">${prevG === g ? 'Parar' : 'Escuchar'}</button><label class="btn sm" style="cursor:pointer">Cambiar canción<input type="file" accept="audio/*" data-mus-file="${g}" hidden></label><button class="btn sm danger" data-act="musDel" data-g="${g}">Quitar</button></div>`
+  : `<label class="btn pink sm" style="cursor:pointer;align-self:flex-start">Subir canción<input type="file" accept="audio/*" data-mus-file="${g}" hidden></label>`}
+<div class="faint" data-mus-st="${g}"></div></div>`; }).join('')}</details>`;
+  };
+  const D = () => A.adminDraft && A.adminDraft();
+  ACT.musPlay = a => { const g = a.dataset.g, m = (D() || {}).music?.[g]; if (!m || !m.src) return; if (prevG === g) { stopPrev(); A.render(); return; } stopPrev(); prev = new Audio(m.src); prev.volume = (m.vol != null ? m.vol : 60) / 100; prev.loop = true; prev.play().catch(() => toast('No se pudo reproducir')); prevG = g; S.musOpen = true; A.render(); };
+  ACT.musDel = a => { const g = a.dataset.g, d = D(); if (!d) return; if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Segura?'; return; } if (prevG === g) stopPrev(); d.music = d.music || {}; d.music[g] = { src: '', name: '', vol: 60, on: false }; S.musOpen = true; toast('Quitada. Toca Guardar cambios.'); A.render(); };
+  const aa = A.after.admin;
+  A.after.admin = el => {
+    if (aa) aa(el); const card = el.querySelector('#musCard'); if (!card) return;
+    card.addEventListener('toggle', () => { S.musOpen = card.open; if (!card.open) stopPrev(); });
+    card.addEventListener('input', e => {
+      const t = e.target, d = D(); if (!d) return; d.music = d.music || {};
+      if (t.dataset.musVol) { const g = t.dataset.musVol; d.music[g] = Object.assign({}, d.music[g], { vol: +t.value }); const lbl = card.querySelector(`[data-mus-vn="${g}"]`); if (lbl) lbl.textContent = t.value + '%'; if (prev && prevG === g) prev.volume = +t.value / 100; }
+      if (t.dataset.musOn) { const g = t.dataset.musOn; d.music[g] = Object.assign({}, d.music[g], { on: t.checked }); }
+    });
+    card.addEventListener('change', async e => {
+      const t = e.target; if (!t.dataset.musFile || !t.files || !t.files[0]) return; const g = t.dataset.musFile, f = t.files[0], d = D(); if (!d) return;
+      const st = card.querySelector(`[data-mus-st="${g}"]`);
+      if (f.size > 15 * 1024 * 1024) { if (st) st.textContent = 'Es muy pesada (máximo 15 MB).'; return; }
+      if (Store.mode !== 'supa' || !Store.sb) { if (st) st.textContent = 'Necesitas internet e iniciar sesión para subir música.'; return; }
+      if (st) st.textContent = 'Subiendo…';
+      const ext = (f.name.split('.').pop() || 'mp3').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'mp3';
+      const type = f.type || ({ mp3: 'audio/mpeg', m4a: 'audio/mp4', ogg: 'audio/ogg', wav: 'audio/wav' }[ext] || 'audio/mpeg');
+      const path = Store.uid + '/' + g + '-' + Date.now().toString(36) + '.' + ext;
+      const { error } = await Store.sb.storage.from('music').upload(path, f, { contentType: type });
+      if (error) { if (st) st.textContent = 'No se pudo subir: ' + (error.message || 'error'); return; }
+      const src = Store.sb.storage.from('music').getPublicUrl(path).data.publicUrl;
+      if (prevG === g) stopPrev(); d.music = d.music || {}; d.music[g] = { src, name: f.name, vol: (d.music[g] && d.music[g].vol != null) ? d.music[g].vol : 60, on: true };
+      S.musOpen = true; toast('Canción subida. Toca Guardar cambios para que les suene a todas.'); A.render();
+    });
+  };
+  const sv = ACT.cfgSave; if (sv) ACT.cfgSave = (...x) => { stopPrev(); return sv(...x); };
+}
+
 })();
