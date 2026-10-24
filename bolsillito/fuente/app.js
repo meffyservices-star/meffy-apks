@@ -1321,26 +1321,35 @@ const v = nums.pop(); return isFinite(v) ? Math.round(v * 100) / 100 : 0;
 function quickAdd(existing, preset) {
 const t = existing ? { ...existing } : Object.assign({ type: 'expense', cat: null, acct: S.settings.defaultAcct || (S.fin.accounts[0] || {}).id, to: null, date: today(), note: '' }, preset || {});
 let expr = existing ? String(existing.amount) : (preset && preset.amount ? String(preset.amount) : '');
-let manualCat = !!existing;
+let manualCat = !!existing; let pane = 'cat';
 const title = existing ? 'Editar movimiento' : 'Anotar';
 openSheet(title, `<div id="qa"></div>`, sh => {
 const box = $('#qa', sh);
 const draw = () => {
 const cats = S.fin.categories.filter(c => t.type === 'income' ? c.type === 'income' : c.type !== 'income');
 const val = evalExpr(expr);
+const feels = t.type === 'expense' && A_feels();
+if (pane === 'cat' && t.type === 'transfer') pane = 'cuenta';
+if (pane === 'animo' && !feels) pane = 'cat';
+const catName = t.type === 'transfer' ? 'Transferencia' : ((cat(t.cat) || {}).name || 'Categoría');
+const acName = (acct(t.acct) || {}).name || 'Cuenta';
+const dayName = t.date === today() ? 'Hoy' : t.date === ymd(addDays(new Date(), -1)) ? 'Ayer' : fmtDate(t.date);
 box.innerHTML = `
-<div class="stack">
+<div class="qa-wrap">
 <div class="seg qa-tabs"><button data-ty="expense" aria-pressed="${t.type === 'expense'}">Gasto</button><button data-ty="income" aria-pressed="${t.type === 'income'}">Ingreso</button><button data-ty="transfer" aria-pressed="${t.type === 'transfer'}">Transferencia</button></div>
-<div class="qa-amt"><div style="min-width:0"><div class="expr">${/[+\-×÷]/.test(expr.slice(1)) ? esc(expr) : (t.type === 'transfer' ? 'Monto a mover' : 'Monto')}</div><div class="val num ${t.type === 'income' ? 'pos' : ''}">${money(val)}</div></div><span style="font-size:30px">${t.type === 'transfer' ? px('ui_transfer', 36) : iconHTML((cat(t.cat) || {}).icon || 's:moneda', 36)}</span></div>
-<input class="in qa-note" id="qaNote" placeholder="${t.type === 'income' ? 'Ej. sueldo, venta…' : 'Ej. café 3.50, uber, super…'}" value="${esc(t.note)}" autocomplete="off">
-${t.type === 'transfer' ? `<div class="formgrid"><label class="f">Desde<select class="in" id="qaFrom">${S.fin.accounts.map(a => `<option value="${a.id}" ${t.acct === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label><label class="f">Hacia<select class="in" id="qaTo"><option value="">Elige…</option>${S.fin.accounts.map(a => `<option value="${a.id}" ${t.to === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label></div>`
-: `<div class="catgrid qa-cats">${cats.map(c => `<button data-cat="${c.id}" aria-pressed="${t.cat === c.id}"><span class="ci" style="background:${tintOf(c.id)}">${iconHTML(c.icon, 28)}</span><span class="t">${esc(c.name)}</span></button>`).join('')}<button data-act-in="newcat"><span class="ci">＋</span><span class="t">Nueva</span></button></div>`}
-<div class="row" style="flex-wrap:wrap;gap:6px">
-<button class="chip" data-day="0" aria-pressed="${t.date === today()}">Hoy</button><button class="chip" data-day="-1" aria-pressed="${t.date === ymd(addDays(new Date(), -1))}">Ayer</button>
-<input type="date" class="in" id="qaDate" value="${t.date}" style="width:auto;flex:1;min-width:140px;padding:6px 10px">
-${t.type !== 'transfer' ? `<select class="in" id="qaAcct" style="width:auto;flex:1;min-width:140px;padding:6px 10px">${S.fin.accounts.map(a => `<option value="${a.id}" ${t.acct === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select>` : ''}
+<div class="qa-amt"><div style="min-width:0"><div class="expr">${/[+\-×÷]/.test(expr.slice(1)) ? esc(expr) : (t.type === 'transfer' ? 'Monto a mover' : 'Monto')}</div><div class="val num ${t.type === 'income' ? 'pos' : ''}">${money(val)}</div></div><span>${t.type === 'transfer' ? px('ui_transfer', 34) : iconHTML((cat(t.cat) || {}).icon || 's:moneda', 34)}</span></div>
+<input class="in qa-note" id="qaNote" placeholder="${t.type === 'income' ? 'Nota: sueldo, venta…' : 'Nota: café, uber, super…'}" value="${esc(t.note)}" autocomplete="off">
+<div class="qa-panes" role="tablist">
+${t.type !== 'transfer' ? `<button role="tab" data-pane="cat" aria-selected="${pane === 'cat'}"><small>Categoría</small><b>${esc(catName)}</b></button>` : ''}
+<button role="tab" data-pane="cuenta" aria-selected="${pane === 'cuenta'}"><small>${t.type === 'transfer' ? 'Cuentas' : 'Cuenta y día'}</small><b>${t.type === 'transfer' ? esc(acName) + ' → ' + esc((acct(t.to) || {}).name || '¿?') : esc(acName) + ' · ' + esc(dayName)}</b></button>
+${feels ? `<button role="tab" data-pane="animo" aria-selected="${pane === 'animo'}"><small>Ánimo</small><b>${t.feel && feels[t.feel] ? feels[t.feel].e : '—'}</b></button>` : ''}
 </div>
-${t.type === 'expense' && A_feels() ? `<div class="feelrow"><span>¿Cómo te sientes?</span>${Object.entries(A_feels()).map(([k, f]) => `<button type="button" data-feel="${k}" aria-pressed="${t.feel === k}" aria-label="${f.n}" title="${f.n}">${f.e}</button>`).join('')}</div>` : ''}
+<div class="qa-pane">
+${pane === 'cat' ? `<div class="catgrid qa-cats">${cats.map(c => `<button data-cat="${c.id}" aria-pressed="${t.cat === c.id}"><span class="ci" style="background:${tintOf(c.id)}">${iconHTML(c.icon, 28)}</span><span class="t">${esc(c.name)}</span></button>`).join('')}<button data-act-in="newcat"><span class="ci">＋</span><span class="t">Nueva</span></button></div>`
+  : pane === 'cuenta' ? (t.type === 'transfer' ? `<div class="formgrid"><label class="f">Desde<select class="in" id="qaFrom">${S.fin.accounts.map(a => `<option value="${a.id}" ${t.acct === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label><label class="f">Hacia<select class="in" id="qaTo"><option value="">Elige…</option>${S.fin.accounts.map(a => `<option value="${a.id}" ${t.to === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label></div><div class="row" style="gap:6px;margin-top:8px"><button class="chip" data-day="0" aria-pressed="${t.date === today()}">Hoy</button><button class="chip" data-day="-1" aria-pressed="${t.date === ymd(addDays(new Date(), -1))}">Ayer</button><input type="date" class="in" id="qaDate" value="${t.date}" style="flex:1;min-width:0;padding:6px 10px"></div>`
+    : `<div class="qa-accts">${S.fin.accounts.filter(a => !a.archived).map(a => `<button class="chip" data-acpick="${a.id}" aria-pressed="${t.acct === a.id}">${iconHTML(a.icon || 's:monedero', 18)} ${esc(a.name)}</button>`).join('')}</div><div class="row" style="gap:6px;margin-top:8px"><button class="chip" data-day="0" aria-pressed="${t.date === today()}">Hoy</button><button class="chip" data-day="-1" aria-pressed="${t.date === ymd(addDays(new Date(), -1))}">Ayer</button><input type="date" class="in" id="qaDate" value="${t.date}" style="flex:1;min-width:0;padding:6px 10px"></div>`)
+  : `<div class="feelrow qa-feels">${Object.entries(feels).map(([k, f]) => `<button type="button" data-feel="${k}" aria-pressed="${t.feel === k}" aria-label="${f.n}" title="${f.n}">${f.e}<small>${f.n}</small></button>`).join('')}</div>`}
+</div>
 <div class="keypad qa-keys">
 ${['7', '8', '9', '⌫', '4', '5', '6', '+', '1', '2', '3', '−', '.', '0', '×', '÷'].map(k => `<button data-k="${k}" class="${/[⌫+−×÷]/.test(k) ? 'op' : ''}">${k}</button>`).join('')}
 </div>
@@ -1352,14 +1361,16 @@ t.note = note.value;
 if (!manualCat && t.type !== 'transfer') { const g = guessCat(note.value); if (g && g !== t.cat) { t.cat = g; refreshCats(); } }
 if (!expr) { const m = note.value.match(/(\d+(?:[.,]\d{1,2})?)/); if (m) { $('.val', box).textContent = money(parseFloat(m[1].replace(',', '.'))); } }
 };
-const refreshCats = () => { $$('[data-cat]', box).forEach(b => b.setAttribute('aria-pressed', b.dataset.cat === t.cat)); const ic = $('.qa-amt > span', box); if (ic) ic.innerHTML = iconHTML((cat(t.cat) || {}).icon || 's:moneda', 36); };
-$('#qaDate', box).onchange = e => { t.date = e.target.value || today(); draw(); };
+const refreshCats = () => { $$('[data-cat]', box).forEach(b => b.setAttribute('aria-pressed', b.dataset.cat === t.cat)); const ic = $('.qa-amt > span', box); if (ic) ic.innerHTML = iconHTML((cat(t.cat) || {}).icon || 's:moneda', 34); const pb = $('[data-pane="cat"] b', box); if (pb) pb.textContent = (cat(t.cat) || {}).name || 'Categoría'; };
+const qd = $('#qaDate', box); if (qd) qd.onchange = e => { t.date = e.target.value || today(); draw(); };
 const ac = $('#qaAcct', box); if (ac) ac.onchange = e => { t.acct = e.target.value; };
 const fr = $('#qaFrom', box); if (fr) fr.onchange = e => { t.acct = e.target.value; };
 const to = $('#qaTo', box); if (to) to.onchange = e => { t.to = e.target.value; };
 };
 box.addEventListener('click', e => {
 const b = e.target.closest('button'); if (!b) return;
+if (b.dataset.pane) { pane = b.dataset.pane; draw(); return; }
+if (b.dataset.acpick) { t.acct = b.dataset.acpick; draw(); return; }
 if (b.dataset.ty) { t.type = b.dataset.ty; if (t.type === 'income' && cat(t.cat) && cat(t.cat).type !== 'income') t.cat = null; if (t.type === 'expense' && cat(t.cat) && cat(t.cat).type === 'income') t.cat = null; draw(); return; }
 if (b.dataset.cat) { t.cat = b.dataset.cat; manualCat = true; draw(); return; }
 if (b.dataset.feel) { t.feel = t.feel === b.dataset.feel ? null : b.dataset.feel; $$('[data-feel]', box).forEach(x => x.setAttribute('aria-pressed', x.dataset.feel === t.feel)); return; }
@@ -2246,8 +2257,8 @@ return `<button class="shop-tile ${on ? 'on' : ''}" data-act="shopItem" data-id=
 };
 return `${A.header('tienda', `<span class="pill sm" style="background:#fff09a;color:#6b4d12">${A.px('estrellita', 18)} ${bal}</span>`)}
 <div class="seg" style="overflow-x:auto">${Object.entries(ANCH).filter(([k]) => !A.petOwns || A.petOwns(k) || k === who).map(([k, an]) => `<button data-act="shopWho" data-v="${k}" aria-pressed="${who === k}">${an.name}${k === 'ale' && !A.isPlus() ? ' ' + A.px('diamante', 14) : ''}</button>`).join('')}</div>
-<div class="rc-scene" style="background-image:url(${Pix.banner(r.bg || 'cielo')});min-height:220px;align-items:center">
-<div class="rc-row">${wear(who, { cls: 'big' })}</div>
+<div class="rc-scene probador" style="min-height:260px;align-items:center"><span class="pb-cort l" aria-hidden="true"></span><span class="pb-cort r" aria-hidden="true"></span><span class="pb-sign">Probador</span>
+<div class="rc-row"><span class="pb-mirror" aria-hidden="true"></span>${wear(who, { cls: 'big' })}</div>
 <div class="rc-say">${aleLocked ? 'Ale se viste solo con Meffy+. Con Meffy+ además tienes todos los accesorios para todos.' : `Elige qué ponerle a ${ANCH[who].name}. Toca otra vez para quitárselo.`}</div>
 </div>
 ${aleLocked ? '<button class="btn pink" data-go="plan" style="justify-content:center">Conoce Meffy+</button>' : ''}

@@ -388,7 +388,13 @@ ${sentLetters.map(n => `<div class="card row" style="gap:10px">${img('pg_carta',
 <p class="faint" style="margin:0">Solo se ve su cuarto: nunca sus cuentas ni sus gastos.</p>`;
 }
 A.screens.visitas = () => {
-  const hero = (t, sub2) => `<div class="vs-hero" style="background-image:url(${Pix.banner('pradera')})"><div class="vs-houses">${img('casita', 46)}${img('casita', 58)}${img('casita', 46)}</div><img class="pixel vs-pet" alt="" src="${spr(petSprite(), 4)}"><div class="vs-hero-t"><b>${t}</b><span>${sub2}</span></div></div>`;
+  const house = (cls, x, w) => `<span class="vl-house ${cls}" style="left:${x}%;width:${w}px"><img class="pixel" alt="" src="${spr('casita', 6)}"></span>`;
+  const hero = (t, sub2) => `<div class="vs-hero village"><span class="vl-sun"></span><span class="vl-cloud a"></span><span class="vl-cloud b"></span><span class="vl-hill a"></span><span class="vl-hill b"></span>
+${house('h1', 4, 70)}${house('h2', 27, 84)}${house('h3', 53, 70)}${house('h4', 76, 78)}
+<span class="vl-fence"></span><span class="vl-path"></span>
+<img class="pixel vl-tree a" alt="" src="${spr(Pix.has('x_cerezo') ? 'x_cerezo' : 'flower', 3)}"><img class="pixel vl-tree b" alt="" src="${spr(Pix.has('x_cerezo') ? 'x_cerezo' : 'flower', 3)}">
+${Pix.has('x_farol') ? `<img class="pixel vl-lamp" alt="" src="${spr('x_farol', 3)}">` : ''}${Pix.has('x_flores') ? `<img class="pixel vl-fl a" alt="" src="${spr('x_flores', 3)}"><img class="pixel vl-fl b" alt="" src="${spr('x_flores', 3)}">` : ''}
+<img class="pixel vs-pet" alt="" src="${spr(petSprite(), 4)}"><div class="vs-hero-t"><b>${t}</b><span>${sub2}</span></div></div>`;
   if (!online()) return `${sub('visitas')}${hero('Tu barrio', 'Visita los cuartos de tus amigas')}<div class="card empty"><p>Las visitas necesitan internet y tu cuenta de Bolsillito. Cuando tengas conexión, aquí verás los cuartos de tus amigas.</p></div>`;
   refreshVisits();
   const friends = S.settings.friends || []; const cur = S.visitCode && V.cache[S.visitCode];
