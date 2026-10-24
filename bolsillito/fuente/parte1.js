@@ -226,7 +226,7 @@ function netChart(withA) {
   const h = netHistory(withA); const vals = h.map(x => x.v); const max = Math.max(...vals, 0), min = Math.min(...vals, 0); const span = (max - min) || 1;
   const W = 300, H = 96, bw = 34, gap = (W - bw * 6) / 5; const y0 = H - (0 - min) / span * H;
   const diff = vals[5] - vals[4];
-  return `<div class="nw-chart"><svg viewBox="0 -14 ${W} ${H + 30}" role="img" aria-label="Patrimonio de los últimos 6 meses">${h.map((x, i) => { const y = H - (x.v - min) / span * H; const top = Math.min(y, y0), hh = Math.max(2, Math.abs(y0 - y)); const last = i === 5; return `<rect x="${i * (bw + gap)}" y="${top}" width="${bw}" height="${hh}" rx="6" fill="${x.v < 0 ? '#f7a8c0' : last ? 'var(--accent)' : '#ffc4d6'}"/>${S.priv ? '' : `<text x="${i * (bw + gap) + bw / 2}" y="${top - 4}" text-anchor="middle" font-size="10" font-weight="800" fill="#9b6b6b">${Math.abs(x.v) >= 1000 ? (x.v / 1000).toFixed(1).replace('.', ',') + 'k' : Math.round(x.v)}</text>`}<text x="${i * (bw + gap) + bw / 2}" y="${H + 14}" text-anchor="middle" font-size="11" font-weight="800" fill="#9b6b6b">${A.cap(A.MON3[+x.k.slice(5) - 1])}</text>`; }).join('')}</svg>
+  return `<div class="nw-chart"><svg viewBox="0 -14 ${W} ${H + 30}" role="img" aria-label="Patrimonio de los últimos 6 meses">${h.map((x, i) => { const y = H - (x.v - min) / span * H; const top = Math.min(y, y0), hh = Math.max(2, Math.abs(y0 - y)); const last = i === 5; return `<rect x="${i * (bw + gap)}" y="${top}" width="${bw}" height="${hh}" rx="10" fill="${x.v < 0 ? '#f7a8c0' : ['#a9d3f2', '#b9e3b0', '#ffd59a', '#d5c4f5', '#9fdcc9', '#f27ea1'][i]}"/><rect x="${i * (bw + gap) + 5}" y="${top + 4}" width="${bw - 10}" height="${Math.min(5, Math.max(0, hh - 8))}" rx="2.5" fill="#fff" opacity=".45"/>${S.priv ? '' : `<text x="${i * (bw + gap) + bw / 2}" y="${top - 4}" text-anchor="middle" font-size="10" font-weight="800" fill="#9b6b6b">${Math.abs(x.v) >= 1000 ? (x.v / 1000).toFixed(1).replace('.', ',') + 'k' : Math.round(x.v)}</text>`}<text x="${i * (bw + gap) + bw / 2}" y="${H + 14}" text-anchor="middle" font-size="11" font-weight="800" fill="#9b6b6b">${A.cap(A.MON3[+x.k.slice(5) - 1])}</text>`; }).join('')}</svg>
 <div class="faint" style="text-align:center">${diff >= 0 ? 'Este mes subió ' : 'Este mes bajó '}${money(Math.abs(diff))}</div></div>`;
 }
 // ---------------- Billetera ----------------
@@ -406,10 +406,12 @@ A.screens.suscripciones = () => {
   const L = findSubs(); const m = r2(L.reduce((s2, x) => s2 + x.monthly, 0));
   return `${A.subHeader ? A.subHeader('suscripciones', 'more') : A.header('suscripciones')}
 <div class="card stack subs-hero"><h3>Pagas en suscripciones</h3><div class="big num">${money(m)}<span class="faint" style="font-size:15px"> al mes</span></div><div class="faint">Son ${money(r2(m * 12))} al año. ${m > 0 ? '¿Las usas todas?' : ''}</div></div>
-${L.length ? `<div class="list">${L.map(x => `<div class="li"><span class="ic">${iconHTML(x.icon, 30)}</span><span class="tx-main"><b>${esc(x.name)}</b><span>${esc(x.from)} · ${money(r2(x.monthly * 12))} al año</span></span><span class="amt num">${money(x.monthly)}/mes</span><button class="iconbtn" data-act="subIgn" data-k="${esc(x.k)}" aria-label="No es suscripción" style="width:30px;height:30px;box-shadow:none;font-size:15px">×</button></div>`).join('')}</div>` : '<div class="card empty">No encontramos suscripciones. Las buscamos en tus pagos fijos y en gastos que se repiten cada mes, como Netflix, Spotify o el gimnasio.</div>'}
+${L.length ? `<div class="list">${L.map(x => `<div class="li"><button class="ic sub-ic" data-act="subIcon" data-k="${esc(x.k)}" aria-label="Cambiar el ícono de ${esc(x.name)}" style="border:0;cursor:pointer">${iconHTML((S.settings.subIcons || {})[x.k] || x.icon, 30)}<i class="sub-pen"></i></button><span class="tx-main"><b>${esc(x.name)}</b><span>${esc(x.from)} · ${money(r2(x.monthly * 12))} al año</span></span><span class="amt num">${money(x.monthly)}/mes</span><button class="iconbtn" data-act="subIgn" data-k="${esc(x.k)}" aria-label="No es suscripción" style="width:30px;height:30px;box-shadow:none;font-size:15px">×</button></div>`).join('')}</div>` : '<div class="card empty">No encontramos suscripciones. Las buscamos en tus pagos fijos y en gastos que se repiten cada mes, como Netflix, Spotify o el gimnasio.</div>'}
+<p class="faint" style="margin:0">Toca el ícono de cada una para ponerle el suyo (puedes subir el logo).</p>
 <p class="faint" style="margin:0">Las encontramos solitas en tus pagos fijos y en gastos que se repiten cada mes. Si algo no es una suscripción, tócale la ×. Tip: ponle la categoría "Suscripciones" a esos gastos para que salgan siempre.</p>
 ${(S.settings.subsIgnore || []).length ? '<button class="btn sm" data-act="subReset">Volver a mostrar las que quitaste</button>' : ''}`;
 };
+ACT.subIcon = a => { const k = a.dataset.k; A.pickIcon((S.settings.subIcons || {})[k], v => { S.settings.subIcons = Object.assign(S.settings.subIcons || {}, { [k]: v }); A.saveSettings(); A.render(); }, { upload: true, title: 'Ícono de la suscripción' }); };
 ACT.subIgn = a => { S.settings.subsIgnore = (S.settings.subsIgnore || []).concat(a.dataset.k); A.saveSettings(); A.render(); };
 ACT.subReset = () => { S.settings.subsIgnore = []; A.saveSettings(); A.render(); };
 // ---------------- Avisos en el Inicio ----------------
@@ -423,8 +425,21 @@ function alertsHTML() {
 ${cats.map(({ c, pc }) => `<div class="al-row">${iconHTML(c.icon, 28)}<div style="flex:1"><b>${pc >= 100 ? 'Ya te pasaste en ' + esc(c.name) : 'Ya usaste el ' + pc + '% de ' + esc(c.name)}</b><span class="prog" style="margin-top:4px"><i style="width:${Math.min(100, pc)}%;${pc >= 100 ? 'background:#e0577f' : ''}"></i></span><div class="faint">${money(by[c.id] || 0)} de ${money(+c.budget)} este mes</div></div><button class="iconbtn" data-act="alOk" data-k="${c.id}" aria-label="Ya lo vi">×</button></div>`).join('')}</div>`;
 }
 ACT.alOk = a => { const k = ym(today()); const s = S.settings.alertSeen = S.settings.alertSeen || {}; Object.keys(s).forEach(m => { if (m !== k) delete s[m]; }); s[k] = (s[k] || []).concat(a.dataset.k); A.saveSettings(); A.render(); };
+ACT.showFilters = () => { S.showFilters = true; A.render(); };
+ACT.hideFilters = () => { S.showFilters = false; Object.assign(S.filters, { q: '', cat: 'all', acct: 'all', month: 'all' }); A.render(); };
+// ---- Mes: cada sección se pliega tocando su título ----
+const foldSet = () => { try { return new Set(JSON.parse(localStorage.getItem('bolsi_fold') || '[]')); } catch (e) { return new Set(); } };
+const FOLD_ROUTES = ['month', 'year'];
+function markFolds(el) { const F = foldSet(); $$('.card > h3', el).forEach(h => { const c = h.parentElement; if (c.children.length < 2) return; h.classList.add('foldh'); h.setAttribute('role', 'button'); h.tabIndex = 0; const on = F.has(S.route + ':' + h.textContent.trim()); c.classList.toggle('fold', on); h.setAttribute('aria-expanded', !on); }); }
+FOLD_ROUTES.forEach(r => { const prev = A.after[r]; A.after[r] = el => { if (prev) prev(el); markFolds(el); }; });
+document.addEventListener('click', e => {
+  const h = e.target.closest('.foldh'); if (!h || !FOLD_ROUTES.includes(S.route)) return;
+  const c = h.parentElement; const key = S.route + ':' + h.textContent.trim(); const F = foldSet();
+  c.classList.toggle('fold'); if (c.classList.contains('fold')) F.add(key); else F.delete(key); h.setAttribute('aria-expanded', !c.classList.contains('fold'));
+  try { localStorage.setItem('bolsi_fold', JSON.stringify([...F])); } catch (er) { }
+});
 const homeScreen = A.screens.home;
-A.screens.home = () => { const h = homeScreen(); const al = alertsHTML(); if (!al) return h; const i = h.indexOf('<div class="grid2">'); return i >= 0 ? h.slice(0, i) + al + h.slice(i) : al + h; };
+A.screens.home = () => { const h = homeScreen(); const al = alertsHTML(); if (!al) return h; const i = h.indexOf('<!--alertas-->'); return i >= 0 ? h.slice(0, i) + al + h.slice(i) : al + h; };
 // ---------------- Arranque ----------------
 const st0 = A.start;
 A.start = async () => {

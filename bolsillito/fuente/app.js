@@ -1094,18 +1094,21 @@ function exampleNote() {
 if (!S.settings.examples || !S.tx.some(t => t.example)) return '';
 return `<div class="example-note"><span>Estás viendo datos de ejemplo para que veas cómo luce todo.</span><button class="btn sm" data-act="clearExamples">Borrar ejemplos</button></div>`;
 }
+const cents = h => String(h).replace(/,(\d\d)(?!\d)/, '<small>,$1</small>');
+const TINTS = ['#fde3ea', '#ffe8c7', '#e1effb', '#e3f3df', '#efe6fb', '#fff4c2', '#dcf3ec', '#ffe1d6'];
+function tintOf(id) { let h = 0; String(id || '').split('').forEach(c => h = (h * 31 + c.charCodeAt(0)) >>> 0); return TINTS[h % TINTS.length]; }
 function txRow(t) {
 const c = cat(t.cat); const a = acct(t.acct); const to = acct(t.to);
 const cls = (t.type === 'income' || t.type === 'loan_in') ? 'income' : t.type === 'transfer' ? 'transfer' : t.recurring ? 'recurring' : '';
-const amt = (t.type === 'income' || t.type === 'loan_in') ? `<span class="amt pos num">+${money(t.amount)}</span>` : t.type === 'transfer' ? `<span class="amt num">${money(t.amount)}</span>` : `<span class="amt num">−${money(t.amount)}</span>`;
+const amt = (t.type === 'income' || t.type === 'loan_in') ? `<span class="amt pos num">+${cents(money(t.amount))}</span>` : t.type === 'transfer' ? `<span class="amt num">${cents(money(t.amount))}</span>` : `<span class="amt num">−${cents(money(t.amount))}</span>`;
 const sub = t.type === 'transfer' ? `${esc(a ? a.name : '?')} → ${esc(to ? to.name : '?')}` : (t.type === 'loan_in' || t.type === 'loan_out') ? `Préstamo${a ? ' · ' + esc(a.name) : ''}` : `${esc(c ? c.name : 'Sin categoría')}${a ? ' · ' + esc(a.name) : ''}`;
-return `<button class="li ${cls}" data-act="edittx" data-id="${t.id}"><span class="ic">${iconHTML(t.type === 'transfer' ? 's:ui_transfer' : (c ? c.icon : 's:moneda'), 28)}</span><span class="tx-main"><b>${esc(t.note || (c ? c.name : 'Movimiento'))}</b><span>${sub}${t.feel && A_feels() && A_feels()[t.feel] ? ' · ' + A_feels()[t.feel].e : ''}${t.example ? ' · ejemplo' : ''}</span></span>${amt}</button>`;
+return `<button class="li ${cls}" data-act="edittx" data-id="${t.id}"><span class="ic" style="background:${t.type === 'income' || t.type === 'loan_in' ? '#e3f3df' : t.type === 'transfer' ? '#fff4c2' : tintOf(t.cat)}">${iconHTML(t.type === 'transfer' ? 's:ui_transfer' : (c ? c.icon : 's:moneda'), 28)}</span><span class="tx-main"><b>${esc(t.note || (c ? c.name : 'Movimiento'))}</b><span>${sub}${t.feel && A_feels() && A_feels()[t.feel] ? ' · ' + A_feels()[t.feel].e : ''}${t.example ? ' · ejemplo' : ''}</span></span>${amt}</button>`;
 }
 screens.home = () => {
 const st = S.settings; const k = ym(today()); const list = txIn(k);
 const spent = spentOf(list); const budget = budgetExpenses(false);
 const dLeft = daysIn(k) - new Date().getDate() + 1;
-const todaySpent = spentOf(txOnDay(today()));
+const todaySpent = spentOf(txOnDay(today())); const todayIn = incomeOf(txOnDay(today())); const todayN = txOnDay(today()).length;
 const perDay = Math.max(0, (budget - spent + todaySpent) / dLeft);
 const leftToday = perDay - todaySpent;
 const hr = new Date().getHours(); const hi = hr < 12 ? 'Buenos días' : hr < 19 ? 'Buenas tardes' : 'Buenas noches';
@@ -1119,17 +1122,23 @@ ${banner || header('home', privBtn())}
 ${window.App && App.newsCard ? App.newsCard() : ''}
 ${exampleNote()}
 ${window.App && App.aleCard ? App.aleCard() : ''}
-<div class="grid2">
-<div class="card"><h3>Hoy puedes gastar</h3><div class="mid num ${leftToday < 0 ? 'neg' : ''}">${money(leftToday)}</div><div class="faint">de ${money(perDay)} por día · quedan ${dLeft} días</div></div>
-<div class="card"><h3>Este mes</h3><div class="mid num">${money(spent)}</div><div class="prog" style="margin:6px 0 4px"><i class="${spent > budget ? 'over' : ''}" style="width:${Math.min(100, budget ? spent / budget * 100 : 0)}%"></i></div><div class="faint">de ${money(budget)} presupuestado</div></div>
+<!--alertas--><div class="hoy card">
+<div class="hoy-k">Hoy</div>
+<div class="hoy-row"><div><span class="faint">Gastaste</span><div class="big num">${cents(money(todaySpent))}</div></div><span class="hoy-sep"></span><div><span class="faint">Entró</span><div class="big num pos">${cents(money(todayIn))}</div></div></div>
+${todayN ? `<div class="faint" style="font-size:12.5px">${todayN} ${todayN === 1 ? 'movimiento' : 'movimientos'} hoy${budget ? ` · en el mes llevas ${money(spent)} de ${money(budget)}` : ''}</div>` : `<div class="faint" style="font-size:12.5px">Aún no anotas nada hoy${budget ? ` · en el mes llevas ${money(spent)} de ${money(budget)}` : ''}</div>`}
 </div>
+${goalStories()}
 ${A_rincon()}
 ${window.App && App.sheyReady && App.sheyReady() ? `<button class="card row" data-go="shey" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer;background:#f4edff;border-color:#e2d4fb"><img class="pixel" alt="" src="${Pix.sprite('shey', 3)}" style="width:48px;height:48px"><div style="flex:1"><b>Shey te espera</b> ${px('alerta', 16)}<div class="faint">${esc(App.sheyMsg())}</div></div></button>` : ''}
 <section class="stack">
-<div class="ph"><span class="pill sm">Movimientos</span><button class="btn sm" data-act="quickadd">Nuevo +</button></div>
-${txListBody()}
+<div class="ph"><span class="pill sm">Movimientos</span><span class="row" style="gap:8px"><button class="round-btn" data-act="showFilters" aria-label="Buscar y filtrar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4.5 4.5"></path></svg></button><button class="btn sm" data-act="quickadd">Nuevo +</button></span></div>
+${txListBody({ compact: true })}
 </section>`;
 };
+function goalStories() {
+const G = S.fin.goals || []; if (!G.length) return `<div class="gstories"><button class="gstory add" data-act="newgoal"><span class="gring"><span>+</span></span><b>Nueva meta</b></button></div>`;
+return `<div class="gstories">${G.map((g, i) => { const p = g.target ? Math.min(100, Math.round(g.saved / g.target * 100)) : 0; return `<button class="gstory" data-go="goals" aria-label="${esc(g.name)}: ${p}%"><span class="gring" style="--p:${p}%"><span>${iconHTML(g.icon || 's:meta', 34)}</span></span><b>${esc(g.name)}</b><em>${p}%</em></button>`; }).join('')}<button class="gstory add" data-act="newgoal"><span class="gring"><span>+</span></span><b>Nueva</b></button></div>`;
+}
 function A_feels() { return window.App && App.FEELS; }
 function A_rincon() { return window.App && App.rinconCard ? App.rinconCard() : ''; }
 function goalMini(g) { const p = g.target ? Math.min(100, g.saved / g.target * 100) : 0; return `<div class="row"><span style="width:34px;display:grid;place-items:center">${iconHTML(g.icon, 28)}</span><div style="flex:1;min-width:0"><div class="row between"><b>${esc(g.name)}</b><span class="faint num">${money(g.saved)} / ${money(g.target)}</span></div><div class="prog"><i style="width:${p}%"></i></div></div></div>`; }
@@ -1146,12 +1155,18 @@ const g = S.fin.goals[0]; if (g && g.target) tips.push(`Te falta ${money(g.targe
 tips.push('Decora tu journal de hoy ✿'); tips.push('Soy Ale y cuido tu dinerito ✦');
 return tips[Math.floor(Math.random() * tips.length)];
 }
-function txListBody() {
+function dayClosed(d) { try { return (JSON.parse(localStorage.getItem('bolsi_days') || '[]')).includes(d); } catch (e) { return false; } }
+function toggleDay(d) { try { let L = JSON.parse(localStorage.getItem('bolsi_days') || '[]'); L = L.includes(d) ? L.filter(x => x !== d) : L.concat(d).slice(-200); localStorage.setItem('bolsi_days', JSON.stringify(L)); } catch (e) { } }
+document.addEventListener('click', e => { const h = e.target.closest('[data-dayfold]'); if (!h) return; const g = h.closest('.daygrp'); toggleDay(h.dataset.dayfold); g.classList.toggle('closed'); h.setAttribute('aria-expanded', !g.classList.contains('closed')); });
+function txListBody(opts) {
 const f = S.filters; const months = [...new Set(S.tx.map(t => ym(t.date)))].sort().reverse();
 let list = S.tx.filter(t => (f.type === 'all' || t.type === f.type) && (f.cat === 'all' || t.cat === f.cat) && (f.acct === 'all' || t.acct === f.acct || t.to === f.acct) && (f.month === 'all' || ym(t.date) === f.month));
 if (f.q) { const q = f.q.toLowerCase(); list = list.filter(t => (t.note || '').toLowerCase().includes(q) || ((cat(t.cat) || {}).name || '').toLowerCase().includes(q)); }
 const groups = {}; list.forEach(t => (groups[t.date] = groups[t.date] || []).push(t));
 const tot = { in: incomeOf(list), out: spentOf(list, { withSaving: true }) };
+const compact = opts && opts.compact && !S.showFilters && !f.q && f.cat === 'all' && f.acct === 'all' && f.month === 'all';
+const days = Object.keys(groups).length ? Object.entries(groups).map(([d, items]) => { const closed = dayClosed(d); const tot = items.reduce((s, t) => s + (t.type === 'income' ? t.amount : t.type === 'expense' ? -t.amount : 0), 0); return `<div class="daygrp ${closed ? 'closed' : ''}"><button class="dayhead" data-dayfold="${d}" aria-expanded="${!closed}"><span>${fmtDate(d)}<em>${items.length} ${items.length === 1 ? 'movimiento' : 'movimientos'}</em></span><span class="num ${tot > 0 ? 'pos' : ''}"><span>${cents(money(tot, { sign: true }))}</span><i class="chev"></i></span></button><div class="dayitems">${items.map(txRow).join('')}</div></div>`; }).join('') : '<div class="card empty">No hay movimientos con estos filtros.</div>';
+if (compact) return `<div class="tabs-line">${[['all', 'Todos'], ['expense', 'Gastos'], ['income', 'Ingresos'], ['transfer', 'Transf.']].map(([v, n]) => `<button data-f="type" data-v="${v}" aria-pressed="${f.type === v}">${n}</button>`).join('')}</div><div class="list days">${days}</div>`;
 return `<div class="card stack">
 <input class="in" id="fq" placeholder="Buscar por nota o categoría" value="${esc(f.q)}" type="search">
 <div class="seg"><button data-f="type" data-v="all" aria-pressed="${f.type === 'all'}">Todo</button><button data-f="type" data-v="expense" aria-pressed="${f.type === 'expense'}">Gastos</button><button data-f="type" data-v="income" aria-pressed="${f.type === 'income'}">Ingresos</button><button data-f="type" data-v="transfer" aria-pressed="${f.type === 'transfer'}">Transf.</button></div>
@@ -1162,7 +1177,8 @@ return `<div class="card stack">
 </div>
 <div class="row between faint"><span>${list.length} movimientos</span><span class="num"><span class="pos">+${money(tot.in)}</span> · <span class="neg">−${money(tot.out)}</span></span></div>
 </div>
-<div class="list">${Object.keys(groups).length ? Object.entries(groups).map(([d, items]) => `<div class="dayhead"><span>${fmtDate(d)}</span><span class="num">${money(items.reduce((s, t) => s + (t.type === 'income' ? t.amount : t.type === 'expense' ? -t.amount : 0), 0), { sign: true })}</span></div>${items.map(txRow).join('')}`).join('') : '<div class="card empty">No hay movimientos con estos filtros.</div>'}</div>`;
+${opts && opts.compact ? '<button class="btn sm" data-act="hideFilters" style="align-self:flex-start">Cerrar filtros</button>' : ''}
+<div class="list days">${days}</div>`;
 }
 screens.tx = () => `
 ${bannerHTML('tx') || ''}
@@ -1502,7 +1518,7 @@ const MENU = ['rincon', 'logros', 'tienda', 'suscripciones', 'recordatorio', 'ye
 sc.more = () => `
 ${A.header('more')}
 <button class="card row" data-go="data" style="gap:14px;text-align:left;width:100%;color:inherit;font:inherit;cursor:pointer">${avatarHTML('')}<div style="min-width:0"><b class="mid" style="display:block">${esc(S.settings.name || 'Tu perfil')}</b><div class="faint">${A.isPlus() ? '<span class="tag gold">Meffy+</span> ' : ''}${S.settings.photo ? 'Toca para editar tu perfil' : 'Toca para poner tu foto y tu nombre'}</div></div></button>
-<div class="menugrid">${MENU.concat(Store.isOwner ? ['admin'] : []).filter(k => !(S.settings.hidden || []).includes(k) || ['settings', 'appearance', 'plan', 'data', 'admin'].includes(k)).map(k => `<button data-go="${k}"><span class="ni">${iconHTML(A.pageIcon(k), 40)}</span>${esc(A.PAGES[k])}</button>`).join('')}</div>
+${(() => { const vis = MENU.concat(Store.isOwner ? ['admin'] : []).filter(k => !(S.settings.hidden || []).includes(k) || ['settings', 'appearance', 'plan', 'data', 'admin'].includes(k)); const TINT = { rincon: '#e3f3df', logros: '#fff4c2', tienda: '#efe6fb', suscripciones: '#efe6fb', recordatorio: '#e1effb', year: '#fff4c2', goals: '#e1effb', recurring: '#fde3ea', projections: '#e3f3df', rules: '#dcf3ec', settings: '#ffe8c7', appearance: '#dcf3ec', plan: '#fde3ea', data: '#e1effb', admin: '#f3e4dc' }; const G = [['Tu mascota', ['rincon', 'logros', 'tienda']], ['Tu dinero', ['goals', 'suscripciones', 'recurring', 'year', 'projections', 'rules']], ['Ajustes', ['recordatorio', 'settings', 'appearance', 'plan', 'data', 'admin']]]; const used = new Set(G.flatMap(g => g[1])); const extra = vis.filter(k => !used.has(k)); if (extra.length) G[1][1] = G[1][1].concat(extra); return G.map(([t, ks]) => { const L = ks.filter(k => vis.includes(k)); return L.length ? `<div class="ph"><span class="pill sm">${t}</span></div><div class="menugrid">${L.map(k => `<button data-go="${k}"><span class="ni" style="background:${TINT[k] || '#fde3ea'}">${iconHTML(A.pageIcon(k), 36)}</span>${esc(A.PAGES[k])}</button>`).join('')}</div>` : ''; }).join(''); })()}
 `;
 sc.goals = () => `
 ${A.bannerHTML('goals') || ''}
@@ -2523,7 +2539,7 @@ J.tools = tools; const hidden = S.settings.jrHide || [];
 el.innerHTML = `
 <div class="jr-top">
 <div class="ph-left"><span class="pill">Mi journal</span><button class="ph-icon" data-act="pageicon" data-k="journal" aria-label="Cambiar icono">${A.iconHTML(A.pageIcon('journal'), 34)}</button></div>
-<div class="row" style="gap:6px"><button class="navarrow" id="jPrev" aria-label="Semana anterior">‹</button><button class="btn sm" id="jWeek"></button><button class="navarrow" id="jNext" aria-label="Semana siguiente">›</button></div>
+<div class="row" style="gap:6px"><button class="navarrow" id="jSpread" aria-label="Ver las dos páginas completas" title="Ver completo">${pxi('ui_paginas', 20)}</button><button class="navarrow" id="jPrev" aria-label="Semana anterior">‹</button><button class="btn sm" id="jWeek"></button><button class="navarrow" id="jNext" aria-label="Semana siguiente">›</button></div>
 </div>
 <div class="toolbar" role="toolbar" aria-label="Herramientas del diario">
 ${tools.filter(([id]) => !hidden.includes(id)).map(([id, ic, lbl, c]) => `<button class="tb ${c}" data-tool="${id}" aria-label="${lbl}" title="${lbl}" aria-pressed="false">${pxi(ic, 24)}</button>`).join('')}
@@ -2534,7 +2550,12 @@ ${tools.filter(([id]) => !hidden.includes(id)).map(([id, ic, lbl, c]) => `<butto
 <div class="jr-links"><button class="jr-dreams" data-go="tablero">${pxi('pic', 22)}<span>Mis sueños</span><span class="faint">›</span></button><button class="jr-dreams" data-go="jardin">${pxi('girasol', 22)}<span>Mi jardín</span><span class="faint">›</span></button><button class="jr-dreams" data-go="compartidas">${pxi('heart', 22)}<span>Con amigas</span><span class="faint">›</span></button></div>
 <div id="jHint" class="faint" style="text-align:center;min-height:18px"></div>
 <div class="book-wrap" id="bookWrap"></div>
-<div class="jr-dots" id="jDots"></div>`;
+<div class="jr-dots" id="jDots"></div>
+<div class="jr-spread-bar"><span class="jr-spread-t" id="jSpreadT"></span><span class="row" style="gap:6px"><button class="btn sm" id="jSpPrev" aria-label="Páginas anteriores">‹</button><button class="btn sm" id="jSpNext" aria-label="Páginas siguientes">›</button><button class="btn sm pink" id="jSpreadX">Cerrar</button></span></div>`;
+$('#jSpread').onclick = () => { J.spread = true; J.sel = null; J.tool = null; document.body.classList.add('jr-spread'); draw(); };
+$('#jSpreadX').onclick = () => { J.spread = false; document.body.classList.remove('jr-spread'); draw(); };
+$('#jSpPrev').onclick = () => { if (J.page >= 2) { J.page -= 2; draw(); } };
+$('#jSpNext').onclick = () => { if (J.page + 2 < J.doc.pages.length) { J.page += 2; draw(); } };
 if (J.key.startsWith('sh-')) { $('#jPrev').onclick = () => { leave(); J.key = weekKey(new Date()); J.page = 0; render(root); }; $('#jNext').style.visibility = 'hidden'; $('#jWeek').onclick = () => A.go('compartidas'); $('#jPrev').setAttribute('aria-label', 'Volver a mi semana'); }
 else $('#jPrev').onclick = () => { leave(); J.key = weekKey(addDays(weekDates(J.key)[0], -7)); J.page = 0; render(root); };
 $('#jNext').onclick = () => { leave(); J.key = weekKey(addDays(weekDates(J.key)[0], 7)); J.page = 0; render(root); };
@@ -2557,13 +2578,14 @@ setHint(J.tool === 'text' ? 'Toca la página donde quieras escribir.' : J.tool =
 function draw() {
 const wrap = $('#bookWrap'); if (!wrap) return;
 const cs = getComputedStyle(root); const avail = Math.min(root.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), 1030);
-const two = avail >= 780; J.pagesShown = two ? 2 : 1;
-J.scale = two ? Math.min(1.3, (avail - 70) / (PW * 2)) : Math.min(1.35, avail / PW);
+if (J.spread && S.route !== 'journal') { J.spread = false; document.body.classList.remove('jr-spread'); }
+const two = J.spread || avail >= 780; J.pagesShown = two ? 2 : 1;
+J.scale = J.spread ? Math.min((innerWidth - 20) / (PW * 2), (innerHeight - 76) / PH) : two ? Math.min(1.3, (avail - 70) / (PW * 2)) : Math.min(1.35, avail / PW);
 if (two && J.page % 2) J.page -= 1;
 const idx = two ? [J.page, J.page + 1] : [J.page];
 const ds = weekDates(J.key);
 const marks = S.settings.jrMarks || [];
-const side = two ? `<div class="book-side"><button style="background:#f9d9e5" data-jy>${ds[3].getFullYear()}</button><button style="background:#dbe8f7" data-jm>${A.MON3[ds[3].getMonth()]}</button><button style="background:#d6eee3" data-jt>Hoy</button>${marks.slice(0, 5).map(m => `<button style="background:#fbe9b3" data-jk="${m.key}">${esc(m.label)}</button>`).join('')}</div>` : '';
+const side = two && !J.spread ? `<div class="book-side"><button style="background:#f9d9e5" data-jy>${ds[3].getFullYear()}</button><button style="background:#dbe8f7" data-jm>${A.MON3[ds[3].getMonth()]}</button><button style="background:#d6eee3" data-jt>Hoy</button>${marks.slice(0, 5).map(m => `<button style="background:#fbe9b3" data-jk="${m.key}">${esc(m.label)}</button>`).join('')}</div>` : '';
 wrap.innerHTML = `${side}<div class="book ${two ? '' : 'single'} ${J.night ? 'night-paper' : ''}">${idx.map(i => {
 const p = J.doc.pages[i];
 if (!p) return `<div class="pagebox" style="width:${PW * J.scale}px;height:${PH * J.scale}px;display:grid;place-items:center;background:#fbf6ef"><button class="btn" data-addpage style="transform:scale(${Math.max(.8, J.scale)})">＋ Agregar página</button></div>`;
@@ -2571,6 +2593,7 @@ return `<div class="pagebox" style="width:${PW * J.scale}px;height:${PH * J.scal
 }).join('')}</div>`;
 const total = J.doc.pages.length; const step = J.pagesShown;
 $('#jDots').innerHTML = Array.from({ length: Math.ceil(total / step) }, (_, k) => `<button aria-label="Página ${k * step + 1}" aria-current="${Math.floor(J.page / step) === k}" data-jp="${k * step}"></button>`).join('') + `<button aria-label="Agregar página" data-addpage style="width:auto;height:auto;background:none;font-weight:900;color:var(--ink)">＋</button>`;
+const spT = $('#jSpreadT'); if (spT) spT.textContent = `Páginas ${J.page + 1}–${Math.min(J.page + 2, J.doc.pages.length)} de ${J.doc.pages.length} · toma captura o gira el celular`;
 $('#jWeek').textContent = J.key.startsWith('sh-') ? (window.Shared ? Shared.title(J.key) : 'Página compartida') : `Semana ${J.key.split('-W')[1]} · ${ds[0].getDate()} ${A.MON3[ds[0].getMonth()].toLowerCase()} – ${ds[6].getDate()} ${A.MON3[ds[6].getMonth()].toLowerCase()}`;
 $$('.page', wrap).forEach(pg => { bindPage(pg); paintInk(pg); pg.classList.toggle('act', J.pagesShown === 2 && +pg.dataset.pi === actIdx()); });
 $$('[data-jp]').forEach(b => b.onclick = () => { J.page = +b.dataset.jp; J.sel = null; draw(); });
