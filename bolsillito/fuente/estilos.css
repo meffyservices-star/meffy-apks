@@ -1161,3 +1161,46 @@ body.jr-spread .jr-spread-bar { display: flex; position: fixed; left: 0; right: 
 .bd-word { background: #fff7c8; padding: 8px 14px; color: #8a4d4f; text-shadow: none; box-shadow: 0 6px 10px -4px rgba(70,40,20,.45); font-size: 19px; position: relative; }
 .bd-word::before { content: ""; position: absolute; left: 50%; top: -6px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #c8f0dc, #6cc7a8 60%, #2f7a5f); box-shadow: 0 2px 2px rgba(0,0,0,.3); }
 .bd-title { background: #fffaf3; border: 3px solid #b07a5a; box-shadow: 0 4px 0 #8a5a3c; color: #6b3e2a; }
+/* villita: casitas en tonos suaves */
+.vl-house.h2 img { filter: hue-rotate(-28deg) saturate(.8) brightness(1.04) drop-shadow(0 4px 0 rgba(70,40,30,.22)); }
+.vl-house.h3 img { filter: saturate(.75) brightness(1.08) drop-shadow(0 4px 0 rgba(70,40,30,.22)); }
+.vl-house.h4 img { filter: hue-rotate(22deg) saturate(.8) drop-shadow(0 4px 0 rgba(70,40,30,.22)); }
+/* ===== Probador de verdad ===== */
+.rc-scene.probador { background: #fff6f2; background-image: radial-gradient(circle, rgba(242,126,161,.18) 2px, transparent 2.5px), linear-gradient(transparent 76%, #f6e3d6 76%); background-size: 22px 22px, 100% 100%; padding-top: 40px; justify-content: flex-end; }
+.pb-rod { position: absolute; left: 6px; right: 6px; top: 12px; height: 7px; border-radius: 4px; background: linear-gradient(#ffe08a, #d9a83a); box-shadow: 0 2px 0 #b8862a; z-index: 3; }
+.pb-rod::before, .pb-rod::after { content: ""; position: absolute; top: -3px; width: 13px; height: 13px; border-radius: 50%; background: #e9b84a; box-shadow: inset 0 -2px 0 #b8862a; }
+.pb-rod::before { left: -4px; } .pb-rod::after { right: -4px; }
+.pb-cort { top: 16px; bottom: 6px; width: 24%; background: repeating-linear-gradient(90deg, #f7a6c0 0 10px, #fbc3d4 10px 16px, #ef8fae 16px 20px); border-radius: 0 0 20px 20px; clip-path: polygon(0 0, 100% 0, 100% 34%, 46% 54%, 100% 74%, 100% 100%, 0 100%); }
+.pb-cort.r { transform: scaleX(-1); right: 0; left: auto; border-radius: 0 0 20px 20px; }
+.pb-cort.l { border-radius: 0 0 20px 20px; }
+.pb-cort::after { top: 52%; height: 7px; left: 30%; right: 0; border-radius: 4px; }
+.pb-sign { top: 22px; border-color: #f2a4b8; box-shadow: 0 3px 0 #f2a4b8; }
+.pb-sign::before { content: ""; position: absolute; left: 50%; top: -11px; width: 2px; height: 10px; background: #d9a83a; }
+.pb-hook { position: absolute; right: 27%; top: 70px; width: 26px; height: 22px; z-index: 1; border: 3px solid #d9a83a; border-bottom: 0; border-radius: 13px 13px 0 0; }
+.pb-hook::after { content: ""; position: absolute; left: -9px; right: -9px; bottom: -3px; height: 3px; background: #d9a83a; transform: skewX(-20deg); }
+.pb-stool { display: none; }
+.pb-mirror { display: none; }
+.pb-stage { position: relative; z-index: 2; padding-bottom: 8px; }
+.pb-podium { position: absolute; left: 50%; bottom: -6px; width: 170px; height: 34px; margin-left: -85px; border-radius: 50%; background: radial-gradient(ellipse at 50% 35%, #fff 0 45%, #ffd6e2 46% 70%, #f7a6c0 71%); box-shadow: 0 6px 0 #e98aa6; z-index: -1; }
+/* ===== Edición limitada: cambia de color con cada temporada ===== */
+.se-hero { padding: 0; border: 0; border-radius: 28px; background: #fffaf3; box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--se2), 0 18px 30px -16px rgba(60,40,80,.5); gap: 0; color: var(--ink); }
+.se-top { position: relative; padding: 14px 16px 24px; color: #fff; background: radial-gradient(circle, rgba(255,255,255,.35) 1.3px, transparent 1.9px) 0 0/20px 20px, linear-gradient(160deg, var(--se1), var(--se2)); text-align: center; -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 14px) no-repeat, radial-gradient(circle at 50% 0, #000 13.5px, transparent 14px) bottom / 28px 14px repeat-x; mask: linear-gradient(#000 0 0) top / 100% calc(100% - 14px) no-repeat, radial-gradient(circle at 50% 0, #000 13.5px, transparent 14px) bottom / 28px 14px repeat-x; }
+.se-topline { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.se-k { display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,.95); color: var(--se1); font: 700 11px var(--f-display); letter-spacing: .1em; text-transform: uppercase; border-radius: 99px; padding: 3px 10px; }
+.se-days { background: rgba(0,0,0,.18); border-radius: 99px; padding: 3px 10px; font: 800 11.5px var(--f-body); }
+.se-name { font: 600 30px var(--f-display); text-shadow: 0 3px 0 rgba(0,0,0,.18); margin-top: 8px; line-height: 1.05; }
+.se-when { font-size: 12px; font-weight: 700; opacity: .9; }
+.se-looks { padding: 10px 0 6px; gap: 6px; }
+.se-looks::after { width: 230px; margin-left: -115px; height: 24px; bottom: 2px; background: radial-gradient(ellipse, rgba(255,255,255,.55), transparent 70%); }
+.se-body { padding: 4px 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.se-sub { text-align: center; font: 600 14px var(--f-display); color: var(--se1); }
+.se-items { background: none; padding: 0; backdrop-filter: none; -webkit-backdrop-filter: none; gap: 10px; }
+.se-item { border: 0; background: #fff; border-radius: 18px; box-shadow: 0 0 0 2px var(--se3), 0 6px 12px -8px rgba(60,40,80,.4); padding: 10px 4px 8px; }
+.se-item b { color: var(--ink); }
+.se-price { background: var(--se3); color: var(--se1); border: 0; font-weight: 900; }
+.pb-cort { width: 17%; clip-path: none; border-radius: 0 0 26px 26px; bottom: 30%; box-shadow: inset -6px 0 0 rgba(160,40,80,.12); }
+.pb-cort.r { transform: none; box-shadow: inset 6px 0 0 rgba(160,40,80,.12); }
+.pb-cort::after { left: -2px; right: -2px; top: auto; bottom: 18%; height: 8px; background: #ffd36b; border-radius: 4px; }
+.pb-hook { display: none; }
+.probador .petw, .probador .mz { width: 128px !important; }
+.probador .pb-stage { margin-bottom: 4px; }

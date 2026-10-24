@@ -2257,8 +2257,8 @@ return `<button class="shop-tile ${on ? 'on' : ''}" data-act="shopItem" data-id=
 };
 return `${A.header('tienda', `<span class="pill sm" style="background:#fff09a;color:#6b4d12">${A.px('estrellita', 18)} ${bal}</span>`)}
 <div class="seg" style="overflow-x:auto">${Object.entries(ANCH).filter(([k]) => !A.petOwns || A.petOwns(k) || k === who).map(([k, an]) => `<button data-act="shopWho" data-v="${k}" aria-pressed="${who === k}">${an.name}${k === 'ale' && !A.isPlus() ? ' ' + A.px('diamante', 14) : ''}</button>`).join('')}</div>
-<div class="rc-scene probador" style="min-height:260px;align-items:center"><span class="pb-cort l" aria-hidden="true"></span><span class="pb-cort r" aria-hidden="true"></span><span class="pb-sign">Probador</span>
-<div class="rc-row"><span class="pb-mirror" aria-hidden="true"></span>${wear(who, { cls: 'big' })}</div>
+<div class="rc-scene probador" style="min-height:270px;align-items:center"><span class="pb-rod" aria-hidden="true"></span><span class="pb-cort l" aria-hidden="true"></span><span class="pb-cort r" aria-hidden="true"></span><span class="pb-sign">Probador</span><span class="pb-hook" aria-hidden="true"></span><span class="pb-stool" aria-hidden="true"></span>
+<div class="rc-row pb-stage"><span class="pb-podium" aria-hidden="true"></span>${wear(who, { cls: 'big' })}</div>
 <div class="rc-say">${aleLocked ? 'Ale se viste solo con Meffy+. Con Meffy+ además tienes todos los accesorios para todos.' : `Elige qué ponerle a ${ANCH[who].name}. Toca otra vez para quitárselo.`}</div>
 </div>
 ${aleLocked ? '<button class="btn pink" data-go="plan" style="justify-content:center">Conoce Meffy+</button>' : ''}

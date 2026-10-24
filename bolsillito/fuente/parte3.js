@@ -191,9 +191,13 @@ const tiendaScreen = A.screens.tienda;
 A.screens.tienda = () => {
   const html = tiendaScreen(); const ALL = A.allSeasons(); const cur = ALL.filter(s => A.inSeason(s.id) && s.items.length); const next = ALL.filter(s => !A.inSeason(s.id));
   const bd = S.settings.birthday || '';
-  const hero = cur.map(se => `<div class="se-hero"><div class="row between" style="align-items:flex-start"><div><div class="se-k">EDICIÓN LIMITADA</div><div class="se-name">${esc(se.name)}</div></div><span class="tag gold">Quedan ${A.seasonDaysLeft(se)} días</span></div>
-<div class="se-looks">${se.look ? lookArt(se.pet, se.look, 5) : ''}${se.id === 'halloween' ? lookArt('shey', 'bruja', 5) : ''}</div>
-<div class="se-items">${se.items.map(seasonItem).join('')}</div></div>`).join('');
+  const SE_THEME = { halloween: ['#5b4791', '#a27fd6', '#f6b07a', 'Noche de brujas'], navidad: ['#c8475f', '#e98a8f', '#5fa77a'], valentin: ['#e0577f', '#f7a6c0', '#ffd6e2'] };
+  const PALS = [['#e0577f', '#f7a6c0', '#ffd6e2'], ['#5fa7d6', '#a9d3f2', '#e1f1fc'], ['#6cb38a', '#a6dcbc', '#e3f5ea'], ['#e6a23c', '#f5c97c', '#fff1d4'], ['#8a6fd1', '#bfaef0', '#efe9ff'], ['#e07b5f', '#f4b29d', '#ffe6dc']];
+  const theme = se => { if (SE_THEME[se.id]) return SE_THEME[se.id]; let h = 0; String(se.id).split('').forEach(c => h = (h * 31 + c.charCodeAt(0)) >>> 0); return PALS[h % PALS.length]; };
+  const hero = cur.map(se => { const [c1, c2, c3] = theme(se); const days = A.seasonDaysLeft(se); return `<div class="se-hero" style="--se1:${c1};--se2:${c2};--se3:${c3}">
+<div class="se-top"><div class="se-topline"><span class="se-k">${img('estrellita', 14)} Edición limitada</span><span class="se-days">${days === 1 ? 'Último día' : 'Quedan ' + days + ' días'}</span></div><div class="se-name">${esc(se.name)}</div><div class="se-when">${esc(se.when || '')}</div>
+<div class="se-looks">${se.look ? lookArt(se.pet, se.look, 5) : img('gift', 64)}${se.id === 'halloween' ? lookArt('shey', 'bruja', 5) : ''}</div></div>
+<div class="se-body"><div class="se-sub">Solo por esta temporada</div><div class="se-items">${se.items.map(seasonItem).join('')}</div></div></div>`; }).join('');
   const extra = `${hero}<details class="card se-next"><summary><b>Lo que viene</b></summary>${next.map(se => `<div class="row" style="gap:10px;padding:6px 0">${se.look ? `<span style="width:48px;flex:none">${lookArt(se.pet, se.look, 3)}</span>` : `<span style="width:48px;flex:none">${img('gift', 34)}</span>`}<div style="flex:1"><b>${esc(se.name)}</b><div class="faint">${se.items.filter(k => k.startsWith('acc:')).map(k => esc((A.ACC[k.slice(4)] || {}).name || '')).join(' y ')} · ${esc(se.when)}</div></div>${img('candado', 22)}</div>`).join('')}
 <div class="row" style="gap:10px;padding:6px 0"><span style="width:48px;flex:none">${lookArt(activePet(), 'fiesta', 3)}</span><div style="flex:1"><b>Tu cumpleaños</b><div class="faint">Gorrito de fiesta gratis para todas tus mascotas</div></div><input class="in" type="date" id="bdayIn" value="${bd ? new Date().getFullYear() + '-' + bd : ''}" style="max-width:150px" aria-label="Tu cumpleaños"></div></details>`;
   const i = html.indexOf('<div class="seg"'); return i >= 0 ? html.slice(0, i) + extra + html.slice(i) : html + extra;
@@ -390,7 +394,7 @@ ${sentLetters.map(n => `<div class="card row" style="gap:10px">${img('pg_carta',
 A.screens.visitas = () => {
   const house = (cls, x, w) => `<span class="vl-house ${cls}" style="left:${x}%;width:${w}px"><img class="pixel" alt="" src="${spr('casita', 6)}"></span>`;
   const hero = (t, sub2) => `<div class="vs-hero village"><span class="vl-sun"></span><span class="vl-cloud a"></span><span class="vl-cloud b"></span><span class="vl-hill a"></span><span class="vl-hill b"></span>
-${house('h1', 4, 70)}${house('h2', 27, 84)}${house('h3', 53, 70)}${house('h4', 76, 78)}
+${house('h1', 4, 70)}${house('h2', 27, 84)}${house('h3', 53, 72)}${house('h4', 76, 78)}
 <span class="vl-fence"></span><span class="vl-path"></span>
 <img class="pixel vl-tree a" alt="" src="${spr(Pix.has('x_cerezo') ? 'x_cerezo' : 'flower', 3)}"><img class="pixel vl-tree b" alt="" src="${spr(Pix.has('x_cerezo') ? 'x_cerezo' : 'flower', 3)}">
 ${Pix.has('x_farol') ? `<img class="pixel vl-lamp" alt="" src="${spr('x_farol', 3)}">` : ''}${Pix.has('x_flores') ? `<img class="pixel vl-fl a" alt="" src="${spr('x_flores', 3)}"><img class="pixel vl-fl b" alt="" src="${spr('x_flores', 3)}">` : ''}
