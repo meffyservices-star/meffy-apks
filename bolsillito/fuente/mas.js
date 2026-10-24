@@ -177,7 +177,23 @@ Pix.define('i_mantequilla', { w: 16, h: 16, fn(p) { p.r(1, 11, 14, 3, 'w'); p.r(
 A.FOODS.panqueque = A.FOODS.panqueque || { name: 'Pancakes', art: 'unos pancakes', gain: 35, price: 5 };
 A.FOODS.colada = { name: 'Colada morada', art: 'una colada morada', gain: 30, price: 4 };
 A.FOODS.encebollado = { name: 'Encebollado', art: 'un encebollado', gain: 45, price: 6 };
+Pix.define('x_espejo_grande', { w: 30, h: 46, fn(p) {
+  p.e(15, 15, 14, 14, 'Y'); p.r(1, 15, 28, 27, 'Y'); p.e(15, 15, 12.5, 12.5, 'y'); p.r(2.5, 15, 25, 25.5, 'y');
+  p.e(15, 15, 10.5, 10.5, 'l'); p.r(4.5, 15, 21, 23, 'l'); p.r(4.5, 30, 21, 8, 'b');
+  p.line(8, 12, 14, 6, 'w'); p.line(8, 17, 18, 7, 'w'); p.line(9, 26, 19, 16, 'w'); p.px(20, 30, 'w'); p.px(22, 28, 'w');
+  p.r(12, 0, 6, 3, 'P'); p.px(11, 1, 'P'); p.px(18, 1, 'P'); p.px(14, 1, 'p'); p.r(5, 42, 4, 4, 'A'); p.r(21, 42, 4, 4, 'A');
+} });
+Pix.define('x_ropero_abierto', { w: 42, h: 42, fn(p) {
+  p.r(6, 1, 30, 39, 'n'); p.r(6, 1, 30, 2, 'a'); p.r(8, 4, 26, 33, 'N');
+  p.r(8, 7, 26, 1, 'Y');
+  [[10, 'P', 14], [16, 'L', 17], [22, 'y', 12], [28, 'g', 15]].forEach(([x, c, h]) => { p.px(x + 2, 8, 'Y'); p.r(x, 9, 5, h, c); p.r(x, 9, 5, 1, 'w'); });
+  p.r(8, 28, 26, 1, 'a'); p.r(10, 30, 7, 5, 'p'); p.r(10, 30, 7, 1, 'P'); p.r(20, 31, 5, 4, 'R'); p.r(26, 30, 7, 5, 'c'); p.r(26, 32, 7, 1, 'C');
+  p.r(0, 3, 6, 36, 'a'); p.r(1, 5, 4, 32, 'o'); p.px(4, 20, 'Y'); p.r(36, 3, 6, 36, 'a'); p.r(37, 5, 4, 32, 'o'); p.px(37, 20, 'Y');
+  p.r(8, 40, 4, 2, 'A'); p.r(30, 40, 4, 2, 'A');
+} });
 Object.assign(A.FURN, {
+  espejo_grande: { name: 'Espejo grande', w: 30, h: 46, price: 60, x: 8, y: 40, cat: 'mesas' },
+  ropero_abierto: { name: 'Ropero abierto', w: 42, h: 42, price: 70, x: 96, y: 38, cat: 'mesas' },
   cama_flores: { name: 'Cama de flores', w: 32, h: 46, price: 120, x: 6, y: 22, cat: 'camas', bed: true },
   tocador: { name: 'Tocador de flores', w: 34, h: 35, price: 90, x: 40, y: 30, cat: 'mesas' }
 });
