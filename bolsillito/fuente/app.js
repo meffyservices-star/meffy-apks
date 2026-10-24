@@ -915,6 +915,28 @@ const groups = WALLET.map(([n, ts]) => [n, S.fin.accounts.filter(a => ts.include
 return groups.map(([n, list]) => { const tot = list.reduce((s2, a) => s2 + acctBalance(a.id), 0); return `<div class="card"><div class="row between" style="margin-bottom:4px"><h3 style="margin:0">${esc(n)}</h3><b class="num ${tot < 0 ? 'neg' : ''}">${money(tot)}</b></div>${list.map(row).join('')}</div>`; }).join('');
 }
 const isPlus = () => S.settings.plan === 'luna' || S.settings.plan === 'plus';
+// Orden de las categorías (la usuaria decide cuáles salen primero)
+function catOrderList() { const o = (S.settings.catOrder || []).filter(id => S.fin.categories.some(c => c.id === id)); S.fin.categories.forEach(c => { if (!o.includes(c.id)) o.push(c.id); }); return o; }
+function sortCats(list) { const o = catOrderList(); return list.slice().sort((a, b) => o.indexOf(a.id) - o.indexOf(b.id)); }
+function orderCats(type, done) {
+let ty = type || 'expense';
+openSheet('Ordenar categorías', `<div id="coBody"></div>`, sh => {
+const body = $('#coBody', sh);
+const draw = () => { const L = sortCats(S.fin.categories.filter(c => ty === 'income' ? c.type === 'income' : c.type !== 'income'));
+body.innerHTML = `<div class="seg" style="margin-bottom:10px"><button data-ty="expense" aria-pressed="${ty === 'expense'}">Gastos</button><button data-ty="income" aria-pressed="${ty === 'income'}">Ingresos</button></div>
+<p class="faint" style="margin:0 0 8px">Las de arriba salen primero en Anotar. Sube las que más usas.</p>
+<button class="btn" data-auto style="width:100%;justify-content:center;margin-bottom:10px">Poner primero las que más uso</button>
+<div class="list co-list">${L.map((c, i) => `<div class="li"><span class="ic">${iconHTML(c.icon, 28)}</span><span class="tx-main"><b>${esc(c.name)}</b></span><button class="iconbtn" data-mv="${c.id}" data-d="-1" ${i === 0 ? 'disabled' : ''} aria-label="Subir">▲</button><button class="iconbtn" data-mv="${c.id}" data-d="1" ${i === L.length - 1 ? 'disabled' : ''} aria-label="Bajar">▼</button></div>`).join('')}</div>
+<button class="btn pink" data-ok style="width:100%;justify-content:center;margin-top:12px;padding:12px">Listo</button>`; };
+draw();
+body.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
+if (b.dataset.ty) { ty = b.dataset.ty; draw(); return; }
+if (b.dataset.mv) { const L = sortCats(S.fin.categories.filter(c => ty === 'income' ? c.type === 'income' : c.type !== 'income')).map(c => c.id); const i = L.indexOf(b.dataset.mv), j = i + +b.dataset.d; if (j < 0 || j >= L.length) return; [L[i], L[j]] = [L[j], L[i]]; const all = catOrderList(); const pos = all.map((id, k) => L.includes(id) ? k : -1).filter(k => k >= 0); pos.forEach((k, n) => all[k] = L[n]); S.settings.catOrder = all; saveSettings(); draw(); return; }
+if (b.hasAttribute('data-auto')) { const n = {}; S.tx.forEach(x => { if (x.cat) n[x.cat] = (n[x.cat] || 0) + 1; }); const all = catOrderList(); const L = all.filter(id => { const c = cat(id); return c && (ty === 'income' ? c.type === 'income' : c.type !== 'income'); }); const sorted = L.slice().sort((a, b2) => (n[b2] || 0) - (n[a] || 0) || L.indexOf(a) - L.indexOf(b2)); const pos = all.map((id, k) => L.includes(id) ? k : -1).filter(k => k >= 0); pos.forEach((k, m) => all[k] = sorted[m]); S.settings.catOrder = all; saveSettings(); draw(); toast('Listo, las que más usas van primero'); return; }
+if (b.hasAttribute('data-ok')) { closeSheet(); if (done) done(); else render(); }
+});
+});
+}
 function guessCat(note) {
 if (!note) return null; const n = note.toLowerCase().trim();
 for (const r of S.fin.rules) {
@@ -1426,13 +1448,13 @@ const v = nums.pop(); return isFinite(v) ? Math.round(v * 100) / 100 : 0;
 function quickAdd(existing, preset) {
 const t = existing ? { ...existing } : Object.assign({ type: 'expense', cat: null, acct: S.settings.defaultAcct || (S.fin.accounts[0] || {}).id, to: null, date: today(), note: '' }, preset || {});
 let expr = existing ? String(existing.amount) : (preset && preset.amount ? String(preset.amount) : '');
-let manualCat = !!existing; let pane = 'cat'; if (!t.split) t.split = { n: (preset && preset.split) || 1, names: [] };
+let manualCat = !!existing; let pane = 'cat'; if (!t.split || typeof t.split !== 'object') t.split = { n: (typeof t.split === 'number' && t.split) || 1, names: [] };
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition; let rec = null;
 const title = existing ? 'Editar movimiento' : 'Anotar';
 openSheet(title, `<div id="qa"></div>`, sh => {
 const box = $('#qa', sh);
 const draw = () => {
-const cats = S.fin.categories.filter(c => t.type === 'income' ? c.type === 'income' : c.type !== 'income');
+const cats = sortCats(S.fin.categories.filter(c => t.type === 'income' ? c.type === 'income' : c.type !== 'income'));
 const val = evalExpr(expr);
 const feels = t.type === 'expense' && A_feels();
 if (pane === 'cat' && t.type === 'transfer') pane = 'cuenta';
@@ -1456,7 +1478,7 @@ ${t.type === 'expense' && !existing ? `<button role="tab" data-pane="split" aria
 ${feels ? `<button role="tab" data-pane="animo" aria-selected="${pane === 'animo'}"><small>Ánimo</small><b>${t.feel && feels[t.feel] ? feels[t.feel].e : '—'}</b></button>` : ''}
 </div>
 <div class="qa-pane">
-${pane === 'cat' ? `<div class="catgrid qa-cats">${cats.map(c => `<button data-cat="${c.id}" aria-pressed="${t.cat === c.id}"><span class="ci" style="background:${tintOf(c.id)}">${iconHTML(c.icon, 28)}</span><span class="t">${esc(c.name)}</span></button>`).join('')}<button data-act-in="newcat"><span class="ci">＋</span><span class="t">Nueva</span></button></div>`
+${pane === 'cat' ? `<div class="catgrid qa-cats">${cats.map(c => `<button data-cat="${c.id}" aria-pressed="${t.cat === c.id}"><span class="ci" style="background:${tintOf(c.id)}">${iconHTML(c.icon, 28)}</span><span class="t">${esc(c.name)}</span></button>`).join('')}<button data-act-in="newcat"><span class="ci">＋</span><span class="t">Nueva</span></button><button data-act-in="catorder"><span class="ci">${px('list', 28)}</span><span class="t">Ordenar</span></button></div>`
   : pane === 'cuenta' ? (t.type === 'transfer' ? `<div class="formgrid"><label class="f">Desde<select class="in" id="qaFrom">${S.fin.accounts.map(a => `<option value="${a.id}" ${t.acct === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label><label class="f">Hacia<select class="in" id="qaTo"><option value="">Elige…</option>${S.fin.accounts.map(a => `<option value="${a.id}" ${t.to === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label></div><div class="row" style="gap:6px;margin-top:8px"><button class="chip" data-day="0" aria-pressed="${t.date === today()}">Hoy</button><button class="chip" data-day="-1" aria-pressed="${t.date === ymd(addDays(new Date(), -1))}">Ayer</button><input type="date" class="in" id="qaDate" value="${t.date}" style="flex:1;min-width:0;padding:6px 10px"></div>`
     : `<div class="qa-accts">${S.fin.accounts.filter(a => !a.archived).map(a => `<button class="chip" data-acpick="${a.id}" aria-pressed="${t.acct === a.id}">${iconHTML(a.icon || 's:monedero', 18)} ${esc(a.name)}</button>`).join('')}</div><div class="row" style="gap:6px;margin-top:8px"><button class="chip" data-day="0" aria-pressed="${t.date === today()}">Hoy</button><button class="chip" data-day="-1" aria-pressed="${t.date === ymd(addDays(new Date(), -1))}">Ayer</button><input type="date" class="in" id="qaDate" value="${t.date}" style="flex:1;min-width:0;padding:6px 10px"></div>`)
   : pane === 'split' ? splitPane()
@@ -1522,7 +1544,7 @@ else { const lastNum = expr.split(/[+\-×÷]/).pop(); if (lastNum.includes('.') 
 const v = evalExpr(expr); $('.val', box).textContent = money(v); $('.expr', box).textContent = /[+\-×÷]/.test(expr.slice(1)) ? expr.replace(/-/g, '−') : (t.type === 'transfer' ? 'Monto a mover' : 'Monto');
 return;
 }
-if (b.dataset.actIn === 'newcat') { closeSheet(); editCategory(null, t.type === 'income' ? 'income' : 'expense'); return; }
+if (b.dataset.actIn === 'newcat' || b.dataset.actIn === 'catorder') { const keep = { type: t.type, acct: t.acct, to: t.to, date: t.date, note: t.note, feel: t.feel, cat: t.cat, split: t.split.n, amount: evalExpr(expr) || undefined }; closeSheet(); const back = c => quickAdd(null, Object.assign(keep, c && c.id ? { cat: c.id } : {})); if (b.dataset.actIn === 'newcat') editCategory(null, t.type === 'income' ? 'income' : 'expense', back); else orderCats(t.type === 'income' ? 'income' : 'expense', back); return; }
 if (b.hasAttribute('data-del')) {
 if (b.dataset.sure) { deleteTx(existing.id); closeSheet(); toast('Movimiento borrado'); render(); }
 else { b.dataset.sure = '1'; b.textContent = '¿Seguro? Toca otra vez'; }
@@ -1659,12 +1681,12 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) Store
 function applyThemeEarly() { /* CSS defaults already paint the sky */ }
 window.App = {
 start, S, $, $$, esc, uid, pad, ymd, parseYmd, addDays, today, ym, MONTHS, MON3, DOW, dowIdx, cap, monthLabel, addMonths, daysIn, isoWeek, weekStart,
-money, iconHTML, px, pageIcon, parseMoneyText, parseReceipt, privBtn, txListBody, render, renderNav, go, toast, openSheet, closeSheet, pickIcon, pickBanner, plusPitch, bannerHTML, header, txRow, txOnDay, spentOf, incomeOf,
+money, iconHTML, px, pageIcon, parseMoneyText, parseReceipt, catOrderList, sortCats, orderCats, privBtn, txListBody, render, renderNav, go, toast, openSheet, closeSheet, pickIcon, pickBanner, plusPitch, bannerHTML, header, txRow, txOnDay, spentOf, incomeOf,
 cat, acct, group, acctBalance, ACCT_TYPES, WALLET, typeName, walletHTML, netWorth, budgetExpenses, budgetIncome, byCat, txIn, isSaving, isPlus, saveSettings, saveFin, saveTxMonths, applyTheme, nextDate, quickAdd,
 THEMES, FONTS, TXC, PACKS, PAGES, EMOJI, SYMBOLS, screens, after, ACTIONS, goalMini, fmtDate, clearExamples, evalExpr, addTx,
 editCategory: (...a) => App._editCategory(...a)
 };
-function editCategory(id, type) { return App._editCategory(id, type); }
+function editCategory(id, type, done) { return App._editCategory(id, type, done); }
 })();
 ;
 (function () {
@@ -1794,8 +1816,8 @@ sc.settings = () => `${A.header('settings')}
 </div>
 <section class="stack"><div class="ph"><span class="pill sm">Billetera</span><button class="btn sm" data-act="newacct">Agregar +</button></div>
 ${A.walletHTML(a => `<button class="acct" data-act="editacct" data-id="${a.id}" style="width:100%;background:none;border:0;border-bottom:1px dashed var(--glass-line);text-align:left;color:inherit;font:inherit"><span class="ic">${iconHTML(a.icon, 30)}</span><span class="n">${esc(a.name)}<small>${esc(A.typeName(a.type))} · saldo ${money(A.acctBalance(a.id))}</small></span><span class="faint">Editar</span></button>`)}</section>
-<section class="stack"><div class="ph"><span class="pill sm">Categorías y presupuesto</span><button class="btn sm" data-act="newcat">Agregar +</button></div>
-${S.fin.groups.map(g => `<div class="card"><div class="row between" style="margin-bottom:6px"><span class="tag" style="background:${g.color};color:#6b3b3f;font-size:13px">${esc(g.name)}</span><button class="btn ghost sm" data-act="editgroup" data-id="${g.id}">Editar grupo</button></div>${S.fin.categories.filter(c => c.group === g.id).map(c => `<button class="acct" data-act="editcat" data-id="${c.id}" style="width:100%;background:none;border:0;border-bottom:1px dashed var(--glass-line);text-align:left"><span class="ic">${iconHTML(c.icon, 28)}</span><span class="n">${esc(c.name)}<small>${c.type === 'income' ? 'Ingreso esperado' : 'Presupuesto'} ${money(c.budget || 0)} al mes</small></span><span class="faint">Editar</span></button>`).join('') || '<div class="faint">Sin categorías.</div>'}</div>`).join('')}
+<section class="stack"><div class="ph"><span class="pill sm">Categorías y presupuesto</span><span class="row" style="gap:6px"><button class="btn sm" data-act="catorder">Ordenar</button><button class="btn sm" data-act="newcat">Agregar +</button></span></div>
+${S.fin.groups.map(g => `<div class="card"><div class="row between" style="margin-bottom:6px"><span class="tag" style="background:${g.color};color:#6b3b3f;font-size:13px">${esc(g.name)}</span><button class="btn ghost sm" data-act="editgroup" data-id="${g.id}">Editar grupo</button></div>${A.sortCats(S.fin.categories.filter(c => c.group === g.id)).map(c => `<button class="acct" data-act="editcat" data-id="${c.id}" style="width:100%;background:none;border:0;border-bottom:1px dashed var(--glass-line);text-align:left"><span class="ic">${iconHTML(c.icon, 28)}</span><span class="n">${esc(c.name)}<small>${c.type === 'income' ? 'Ingreso esperado' : 'Presupuesto'} ${money(c.budget || 0)} al mes</small></span><span class="faint">Editar</span></button>`).join('') || '<div class="faint">Sin categorías.</div>'}</div>`).join('')}
 <button class="btn" data-act="newgroup" style="align-self:flex-start">Nuevo grupo +</button>
 <div class="card row between"><span>Presupuesto de gastos del mes</span><b class="num">${money(A.budgetExpenses(false))}</b></div></section>`;
 after.settings = el => {
@@ -1827,7 +1849,7 @@ S.fin.accounts = S.fin.accounts.filter(x => x.id !== a.id); A.saveFin(); closeSh
 });
 draw();
 }
-function editCategory(id, type) {
+function editCategory(id, type, done) {
 const c = id ? A.cat(id) : { id: uid(), name: '', icon: 's:ramen', group: (S.fin.groups.find(g => type === 'income' ? g.kind === 'income' : g.kind !== 'income') || S.fin.groups[0]).id, budget: 0, type: type || 'expense' };
 const draw = () => openSheet(id ? 'Editar categoría' : 'Nueva categoría', `<div class="formgrid">
 <label class="f full">Nombre<input class="in" id="cN" value="${esc(c.name)}" placeholder="Ej. Mascotas" autofocus></label>
@@ -1839,7 +1861,7 @@ const draw = () => openSheet(id ? 'Editar categoría' : 'Nueva categoría', `<di
 const read = () => { c.name = $('#cN').value.trim(); c.group = $('#cG').value; c.budget = +$('#cB').value || 0; };
 sh.addEventListener('click', e => { const b = e.target.closest('[data-ct]'); if (!b) return; read(); c.type = b.dataset.ct; draw(); });
 $('#cI', sh).onclick = () => { read(); A.pickIcon(c.icon, v => { c.icon = v; draw(); }); };
-$('#cOk', sh).onclick = () => { read(); if (!c.name) return toast('Ponle un nombre'); if (!S.fin.categories.includes(c)) S.fin.categories.push(c); A.saveFin(); closeSheet(); rerender(); };
+$('#cOk', sh).onclick = () => { read(); if (!c.name) return toast('Ponle un nombre'); if (!S.fin.categories.includes(c)) { S.fin.categories.push(c); const o = A.catOrderList(); S.settings.catOrder = [c.id].concat(o.filter(x => x !== c.id)); A.saveSettings(); toast('Categoría creada. Sale primero en Anotar'); } A.saveFin(); closeSheet(); if (done) done(c); else rerender(); };
 const del = $('#cDel', sh); if (del) del.onclick = () => { if (S.tx.some(t => t.cat === c.id)) return toast('Tiene movimientos: cámbiales la categoría primero.'); S.fin.categories = S.fin.categories.filter(x => x.id !== c.id); A.saveFin(); closeSheet(); rerender(); };
 });
 draw();
@@ -1870,7 +1892,7 @@ const del = $('#xDel', sh); if (del) del.onclick = () => { S.fin.assets = S.fin.
 draw();
 }
 A._editCategory = editCategory; A.editAccount = editAccount; A.editAsset = editAsset;
-ACT.editacct = a => editAccount(a.dataset.id); ACT.newcat = () => editCategory(null, 'expense'); ACT.editcat = a => editCategory(a.dataset.id);
+ACT.editacct = a => editAccount(a.dataset.id); ACT.newcat = () => editCategory(null, 'expense'); ACT.catorder = () => A.orderCats('expense'); ACT.editcat = a => editCategory(a.dataset.id);
 ACT.editgroup = a => editGroup(a.dataset.id); ACT.newgroup = () => editGroup(null);
 const lock = free => (free || A.isPlus()) ? '' : '<span class="lock">Meffy+</span>';
 sc.appearance = () => {
