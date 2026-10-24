@@ -870,3 +870,57 @@ body.jr-spread .jr-spread-bar { display: flex; position: fixed; left: 0; right: 
 .menugrid button { border: 0; background: var(--glass); box-shadow: var(--soft-shadow); border-radius: 20px; font-weight: 800; }
 .menugrid button .ni { width: 52px; height: 52px; border-radius: 16px; }
 .menugrid button .ni img { width: 36px; height: 36px; }
+/* Entra vs. sale compacto */
+.evs { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.evs-ic { width: 40px; height: 40px; border-radius: 14px; background: #fde3ea; display: grid; place-items: center; flex: none; }
+.evs:first-of-type .evs-ic { background: #e3f3df; }
+.evs-b { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.evs-t { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14px; }
+.evs-t .faint { font-size: 12px; }
+.evs-track { position: relative; height: 12px; border-radius: 99px; background: var(--glass-strong); box-shadow: inset 0 0 0 1.5px var(--glass-line); overflow: hidden; }
+.evs-track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; }
+.evs-track i.plan { background: repeating-linear-gradient(-45deg, rgba(155,107,107,.16) 0 4px, transparent 4px 8px); }
+.evs-track i.real { box-shadow: inset 0 -3px 0 rgba(0,0,0,.08); }
+.evs-pc { width: 42px; text-align: right; font: 600 15px var(--f-display); }
+.evs-foot { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding: 8px 12px; border-radius: 14px; background: var(--glass-strong); font-size: 13px; }
+/* calendario bonito */
+.calendar { gap: 5px; }
+.calendar .dow { padding: 4px 0; border-radius: 99px; background: var(--glass-strong); font-size: 11px; }
+.calendar .dow.we { background: #fde3ea; color: #c2456e; }
+.calendar .d { border: 0 !important; border-radius: 14px; min-height: 52px; padding: 5px 2px 4px; align-items: center; background: var(--glass-strong); box-shadow: 0 1px 0 var(--glass-line); text-align: center; cursor: pointer; color: inherit; position: relative; }
+.calendar .d b { font: 600 13px var(--f-display); width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; }
+.calendar .d.we { background: #fff5f8; }
+.calendar .d.lv1 { background: #fff0f4; } .calendar .d.lv2 { background: #ffe1ea; } .calendar .d.lv3 { background: #ffcfdd; } .calendar .d.lv4 { background: #ffbdd0; }
+.calendar .d.today b { background: var(--accent); color: #fff; box-shadow: 0 2px 0 rgba(0,0,0,.12); }
+.calendar .d.fut { opacity: .45; box-shadow: none; background: transparent; }
+.calendar .d em { font-size: 10px; line-height: 1.2; }
+.calendar .d.out { background: transparent; box-shadow: none; }
+/* Hoy con vida */
+.hoy { position: relative; overflow: hidden; background: linear-gradient(135deg, #fff6f9 0%, #fffaf3 55%, #f3fbf4 100%); }
+.hoy::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, rgba(242,126,161,.14) 1.6px, transparent 2.2px) 0 0/18px 18px; pointer-events: none; }
+.hoy > * { position: relative; }
+.hoy-deco { position: absolute !important; right: 10px; top: 8px; display: flex; gap: 6px; align-items: center; opacity: .55; transform: rotate(-6deg); }
+.hoy-deco img:nth-child(2) { transform: translateY(8px) rotate(12deg); }
+.hoy-deco img:nth-child(4) { transform: translateY(-4px); }
+.hoy-k span { font: 700 13px var(--f-body); color: var(--ink-soft); margin-left: 6px; }
+.hoy-row { gap: 10px; }
+.hoy-box { flex: 1; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 18px; background: rgba(255,255,255,.75); box-shadow: 0 1px 0 var(--glass-line); min-width: 0; }
+.hoy-box.out .hoy-ic { background: #fde3ea; } .hoy-box.in .hoy-ic { background: #e3f3df; }
+.hoy-ic { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; flex: none; }
+.hoy .big { font-size: 24px; }
+.hoy-sep { display: none; }
+/* Banners nuevos y globito */
+.banner { border: 0; border-radius: 26px; aspect-ratio: 120 / 50; box-shadow: 0 0 0 4px #fff, 0 0 0 6px var(--glass-line), 0 14px 26px -14px rgba(120,60,70,.5); margin: 6px 4px 4px; }
+.banner::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 55%; background: linear-gradient(transparent, rgba(80,40,50,.38)); pointer-events: none; }
+.banner > * { z-index: 1; }
+.banner img.bg { position: absolute; inset: 0; z-index: 0; }
+.banner .greet { z-index: 2; left: 16px; bottom: 14px; font-size: 25px; font-weight: 600; text-shadow: 0 2px 0 rgba(80,40,50,.55), 0 0 12px rgba(80,40,50,.35); line-height: 1.1; }
+.banner .greet small { display: inline-block; margin-top: 6px; font: 800 12px var(--f-body); text-shadow: none; background: rgba(255,255,255,.88); color: var(--ink); padding: 3px 10px; border-radius: 99px; }
+.banner .iconbtn { z-index: 3; background: rgba(255,255,255,.82); border: 0; box-shadow: 0 4px 10px -4px rgba(80,40,50,.4); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.mascot { z-index: 3; filter: drop-shadow(0 4px 0 rgba(80,40,50,.18)); }
+.bubble { z-index: 3; border: 0; border-radius: 18px; padding: 8px 12px; background: rgba(255,255,255,.95); color: var(--ink); box-shadow: 0 6px 16px -6px rgba(80,40,50,.45); font-size: 12.5px; line-height: 1.3; bottom: 64px; right: 92px; }
+.bubble::after { border: 0; right: -12px; bottom: -4px; width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.95); box-shadow: 9px 8px 0 -2px rgba(255,255,255,.95); }
+.banner .bubble { top: 12px; bottom: auto; right: 96px; max-width: 160px; }
+.banner .bubble::after { right: -10px; top: auto; bottom: -6px; }
+.menugrid button .ni { width: 46px; height: 46px; border-radius: 0; background: none; }
+.menugrid button .ni img { width: 44px; height: 44px; filter: drop-shadow(0 2px 0 rgba(120,70,60,.12)); }

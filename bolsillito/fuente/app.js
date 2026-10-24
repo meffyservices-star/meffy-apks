@@ -1123,8 +1123,9 @@ ${window.App && App.newsCard ? App.newsCard() : ''}
 ${exampleNote()}
 ${window.App && App.aleCard ? App.aleCard() : ''}
 <!--alertas--><div class="hoy card">
-<div class="hoy-k">Hoy</div>
-<div class="hoy-row"><div><span class="faint">Gastaste</span><div class="big num">${cents(money(todaySpent))}</div></div><span class="hoy-sep"></span><div><span class="faint">Entró</span><div class="big num pos">${cents(money(todayIn))}</div></div></div>
+<span class="hoy-deco" aria-hidden="true">${px('estrellita', 22)}${px('heart', 18)}${px('moneda', 20)}${px('star', 14)}</span>
+<div class="hoy-k">Hoy <span>${cap(new Date().toLocaleDateString('es-EC', { weekday: 'long' }))}</span></div>
+<div class="hoy-row"><div class="hoy-box out"><span class="hoy-ic">${px('bolsa', 26)}</span><div><span class="faint">Gastaste</span><div class="big num">${cents(money(todaySpent))}</div></div></div><div class="hoy-box in"><span class="hoy-ic">${px('alcancia', 26)}</span><div><span class="faint">Entró</span><div class="big num pos">${cents(money(todayIn))}</div></div></div></div>
 ${todayN ? `<div class="faint" style="font-size:12.5px">${todayN} ${todayN === 1 ? 'movimiento' : 'movimientos'} hoy${budget ? ` · en el mes llevas ${money(spent)} de ${money(budget)}` : ''}</div>` : `<div class="faint" style="font-size:12.5px">Aún no anotas nada hoy${budget ? ` · en el mes llevas ${money(spent)} de ${money(budget)}` : ''}</div>`}
 </div>
 ${goalStories()}
@@ -1217,11 +1218,9 @@ ${bannerHTML('month') || ''}
 <div class="ph"><div class="ph-left"><button class="navarrow" data-act="mPrev" aria-label="Mes anterior">‹</button><span class="pill">${cap(monthLabel(k))}</span><button class="navarrow" data-act="mNext" aria-label="Mes siguiente">›</button></div><button class="ph-icon" data-act="pageicon" data-k="month" aria-label="Cambiar icono">${iconHTML(pageIcon('month'), 34)}</button></div>
 <div class="seg"><button data-act="mSave" data-v="0" aria-pressed="${!incl}">Sin ahorro/inversión</button><button data-act="mSave" data-v="1" aria-pressed="${incl}">Con ahorro/inversión</button></div>
 <div class="card"><h3>Entra vs. sale</h3>
-<div class="grid2">
-<div><div class="faint" style="text-align:center;font-weight:800">PLANEADO</div><div class="bars">${barPair(expIn, expOut)}</div><div class="faint" style="text-align:center">Sale/entra: ${expIn ? Math.round(expOut / expIn * 1000) / 10 + '%' : '—'}</div></div>
-<div><div class="faint" style="text-align:center;font-weight:800">REAL</div><div class="bars">${barPair(inn, out)}</div><div class="faint" style="text-align:center">Sale/entra: ${inn ? Math.round(out / inn * 1000) / 10 + '%' : '—'}</div></div>
-</div>
-<p class="faint" style="margin:8px 0 0">El real va desde el día 1 hasta hoy; el planeado es el mes completo.</p>
+${evsRow('Entra', 'alcancia', inn, expIn, '#7cc29a')}${evsRow('Sale', 'bolsa', out, expOut, '#f27ea1')}
+<div class="evs-foot"><span>Sale de lo que entra: <b>${inn ? Math.round(out / inn * 100) + '%' : '—'}</b></span><span class="faint">planeado ${expIn ? Math.round(expOut / expIn * 100) + '%' : '—'}</span></div>
+<p class="faint" style="margin:6px 0 0;font-size:12px">Lo real va del día 1 hasta hoy; lo planeado es el mes completo.</p>
 </div>
 <div class="card"><h3>Calendario de gastos</h3>${monthCalendar(k, list)}</div>
 <div class="card"><h3>Gasto por semana</h3>${wk.map(w => `<div class="row" style="padding:5px 0"><span class="faint" style="width:92px;font-weight:800">${mon} ${w.a}–${w.b}</span><div class="prog" style="flex:1"><i style="width:${w.v / wMax * 100}%"></i></div><b class="num" style="width:90px;text-align:right">${money(w.v)}</b></div>`).join('')}<div class="faint" style="margin-top:6px">Total: ${money(out)} · Promedio semanal: ${money(out / weeks.length)}</div></div>
@@ -1229,18 +1228,23 @@ ${bannerHTML('month') || ''}
 <div class="card"><h3>Gasto acumulado vs. ritmo del presupuesto</h3>${cumulative(k, list, expOut, incl)}</div>
 <div class="card" style="overflow-x:auto"><h3>Planeado vs. real por categoría</h3><table class="bk"><thead><tr><th></th><th>PLAN</th><th>REAL</th><th>%</th></tr></thead><tbody>${rows}</tbody></table><p class="faint">Cambia los montos planeados en Más → Cuentas y categorías.</p></div>`;
 };
+function evsRow(name, ic, real, plan, col) {
+const m = Math.max(1, real, plan); const pc = plan ? Math.round(real / plan * 100) : 0;
+return `<div class="evs"><span class="evs-ic">${px(Pix.has(ic) ? ic : 'moneda', 26)}</span><div class="evs-b"><div class="evs-t"><b>${name}</b><span class="num"><b>${money(real)}</b> <span class="faint">de ${money(plan)}</span></span></div><div class="evs-track"><i class="plan" style="width:${plan / m * 100}%"></i><i class="real" style="width:${real / m * 100}%;background:${col}"></i></div></div><span class="evs-pc" style="color:${col}">${plan ? pc + '%' : ''}</span></div>`;
+}
 function barPair(a, b) {
 const m = Math.max(1, a, b);
 return `<div class="b"><span class="num">${money(a, { short: true })}</span><i style="height:${a / m * 100}%;background:#ffb8d6"></i><span class="faint">Entra</span></div><div class="b"><span class="num">${money(b, { short: true })}</span><i style="height:${b / m * 100}%;background:#8fcbed"></i><span class="faint">Sale</span></div>`;
 }
 function monthCalendar(k, list) {
 const first = parseYmd(k + '-01'); const off = dowIdx(first); const n = daysIn(k); const td = today();
-let h = DOW.map(d => `<div class="dow">${d}</div>`).join('');
+let h = DOW.map((d, i) => `<div class="dow ${i >= 5 ? 'we' : ''}">${d}</div>`).join('');
+const maxO = Math.max(1, ...Array.from({ length: n }, (_, j) => spentOf(list.filter(t => t.date === k + '-' + pad(j + 1)), { withSaving: true })));
 for (let i = 0; i < off; i++) h += '<div class="d out"></div>';
 for (let d = 1; d <= n; d++) {
 const ds = k + '-' + pad(d); const dl = list.filter(t => t.date === ds);
-const o = spentOf(dl, { withSaving: true }), i = incomeOf(dl);
-h += `<button class="d ${ds === td ? 'today' : ''}" data-act="dayDetail" data-d="${ds}" style="border:${ds === td ? '' : '0'};text-align:left;cursor:pointer;color:inherit"><b>${d}</b>${o ? `<em>−${Math.round(o)}</em>` : ''}${i ? `<em class="i">+${Math.round(i)}</em>` : ''}</button>`;
+const o = spentOf(dl, { withSaving: true }), i = incomeOf(dl); const lvl = o ? Math.min(4, 1 + Math.floor(o / maxO * 3.99)) : 0; const dw = (off + d - 1) % 7;
+h += `<button class="d ${ds === td ? 'today' : ''} ${ds > td ? 'fut' : ''} ${dw >= 5 ? 'we' : ''} lv${lvl}" data-act="dayDetail" data-d="${ds}" aria-label="${d}${o ? ', gastaste ' + Math.round(o) : ''}"><b>${d}</b>${o ? `<em>−${Math.round(o)}</em>` : ''}${i ? `<em class="i">+${Math.round(i)}</em>` : ''}</button>`;
 }
 return `<div class="calendar">${h}</div>`;
 }
@@ -1518,7 +1522,7 @@ const MENU = ['rincon', 'logros', 'tienda', 'suscripciones', 'recordatorio', 'ye
 sc.more = () => `
 ${A.header('more')}
 <button class="card row" data-go="data" style="gap:14px;text-align:left;width:100%;color:inherit;font:inherit;cursor:pointer">${avatarHTML('')}<div style="min-width:0"><b class="mid" style="display:block">${esc(S.settings.name || 'Tu perfil')}</b><div class="faint">${A.isPlus() ? '<span class="tag gold">Meffy+</span> ' : ''}${S.settings.photo ? 'Toca para editar tu perfil' : 'Toca para poner tu foto y tu nombre'}</div></div></button>
-${(() => { const vis = MENU.concat(Store.isOwner ? ['admin'] : []).filter(k => !(S.settings.hidden || []).includes(k) || ['settings', 'appearance', 'plan', 'data', 'admin'].includes(k)); const TINT = { rincon: '#e3f3df', logros: '#fff4c2', tienda: '#efe6fb', suscripciones: '#efe6fb', recordatorio: '#e1effb', year: '#fff4c2', goals: '#e1effb', recurring: '#fde3ea', projections: '#e3f3df', rules: '#dcf3ec', settings: '#ffe8c7', appearance: '#dcf3ec', plan: '#fde3ea', data: '#e1effb', admin: '#f3e4dc' }; const G = [['Tu mascota', ['rincon', 'logros', 'tienda']], ['Tu dinero', ['goals', 'suscripciones', 'recurring', 'year', 'projections', 'rules']], ['Ajustes', ['recordatorio', 'settings', 'appearance', 'plan', 'data', 'admin']]]; const used = new Set(G.flatMap(g => g[1])); const extra = vis.filter(k => !used.has(k)); if (extra.length) G[1][1] = G[1][1].concat(extra); return G.map(([t, ks]) => { const L = ks.filter(k => vis.includes(k)); return L.length ? `<div class="ph"><span class="pill sm">${t}</span></div><div class="menugrid">${L.map(k => `<button data-go="${k}"><span class="ni" style="background:${TINT[k] || '#fde3ea'}">${iconHTML(A.pageIcon(k), 36)}</span>${esc(A.PAGES[k])}</button>`).join('')}</div>` : ''; }).join(''); })()}
+<div class="menugrid">${MENU.concat(Store.isOwner ? ['admin'] : []).filter(k => !(S.settings.hidden || []).includes(k) || ['settings', 'appearance', 'plan', 'data', 'admin'].includes(k)).map(k => `<button data-go="${k}"><span class="ni">${iconHTML(A.pageIcon(k), 40)}</span>${esc(A.PAGES[k])}</button>`).join('')}</div>
 `;
 sc.goals = () => `
 ${A.bannerHTML('goals') || ''}

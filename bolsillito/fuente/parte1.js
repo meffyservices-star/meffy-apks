@@ -223,10 +223,21 @@ function netHistory(withA) {
   return out;
 }
 function netChart(withA) {
-  const h = netHistory(withA); const vals = h.map(x => x.v); const max = Math.max(...vals, 0), min = Math.min(...vals, 0); const span = (max - min) || 1;
-  const W = 300, H = 96, bw = 34, gap = (W - bw * 6) / 5; const y0 = H - (0 - min) / span * H;
-  const diff = vals[5] - vals[4];
-  return `<div class="nw-chart"><svg viewBox="0 -14 ${W} ${H + 30}" role="img" aria-label="Patrimonio de los últimos 6 meses">${h.map((x, i) => { const y = H - (x.v - min) / span * H; const top = Math.min(y, y0), hh = Math.max(2, Math.abs(y0 - y)); const last = i === 5; return `<rect x="${i * (bw + gap)}" y="${top}" width="${bw}" height="${hh}" rx="10" fill="${x.v < 0 ? '#f7a8c0' : ['#a9d3f2', '#b9e3b0', '#ffd59a', '#d5c4f5', '#9fdcc9', '#f27ea1'][i]}"/><rect x="${i * (bw + gap) + 5}" y="${top + 4}" width="${bw - 10}" height="${Math.min(5, Math.max(0, hh - 8))}" rx="2.5" fill="#fff" opacity=".45"/>${S.priv ? '' : `<text x="${i * (bw + gap) + bw / 2}" y="${top - 4}" text-anchor="middle" font-size="10" font-weight="800" fill="#9b6b6b">${Math.abs(x.v) >= 1000 ? (x.v / 1000).toFixed(1).replace('.', ',') + 'k' : Math.round(x.v)}</text>`}<text x="${i * (bw + gap) + bw / 2}" y="${H + 14}" text-anchor="middle" font-size="11" font-weight="800" fill="#9b6b6b">${A.cap(A.MON3[+x.k.slice(5) - 1])}</text>`; }).join('')}</svg>
+  // línea suave con puntitos de colores (en vez de barras)
+  const h = netHistory(withA); const vals = h.map(x => x.v); const max = Math.max(...vals), min = Math.min(...vals);
+  const span = (max - min) || Math.max(1, Math.abs(max) * .2); const lo = min - span * .25, hi = max + span * .35;
+  const W = 300, H = 110, X0 = 18, X1 = W - 18;
+  const pt = (v, i) => [X0 + i * (X1 - X0) / 5, 14 + (1 - (v - lo) / (hi - lo)) * (H - 14)];
+  const P = vals.map(pt); let d = `M${P[0][0]},${P[0][1]}`;
+  for (let i = 1; i < P.length; i++) { const [x0, y0] = P[i - 1], [x1, y1] = P[i]; const cx = (x0 + x1) / 2; d += ` C${cx},${y0} ${cx},${y1} ${x1},${y1}`; }
+  const COL = ['#a9d3f2', '#9fdcc9', '#b9e3b0', '#ffd59a', '#d5c4f5', '#f27ea1'];
+  const diff = vals[5] - vals[4]; const fmt = v => Math.abs(v) >= 1000 ? (v / 1000).toFixed(1).replace('.', ',') + 'k' : Math.round(v);
+  return `<div class="nw-chart"><svg viewBox="0 0 ${W} ${H + 28}" role="img" aria-label="Lo que tienes en los últimos 6 meses">
+<defs><linearGradient id="nwg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7a8c0" stop-opacity=".45"/><stop offset="1" stop-color="#f7a8c0" stop-opacity="0"/></linearGradient></defs>
+<path d="${d} L${P[5][0]},${H + 6} L${P[0][0]},${H + 6} Z" fill="url(#nwg)"/>
+<path d="${d}" fill="none" stroke="#ef8fae" stroke-width="3.5" stroke-linecap="round"/>
+${P.map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="${i === 5 ? 7 : 5.5}" fill="${COL[i]}" stroke="#fff" stroke-width="3"/>${S.priv ? '' : `<text x="${x}" y="${y - 12}" text-anchor="middle" font-size="10" font-weight="900" fill="${i === 5 ? '#c2456e' : '#9b6b6b'}">${fmt(vals[i])}</text>`}<text x="${x}" y="${H + 24}" text-anchor="middle" font-size="11" font-weight="800" fill="${i === 5 ? '#c2456e' : '#9b6b6b'}">${A.cap(A.MON3[+h[i].k.slice(5) - 1])}</text>`).join('')}
+</svg>
 <div class="faint" style="text-align:center">${diff >= 0 ? 'Este mes subió ' : 'Este mes bajó '}${money(Math.abs(diff))}</div></div>`;
 }
 // ---------------- Billetera ----------------
