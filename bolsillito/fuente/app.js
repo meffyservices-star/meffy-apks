@@ -867,7 +867,7 @@ function saveTxMonth(k) { Store.put('tx-' + k, { items: S.tx.filter(t => ym(t.da
 function saveTxMonths(keys) { [...new Set(keys)].forEach(saveTxMonth); }
 const saveSettings = () => Store.put('settings', S.settings);
 const saveFin = () => Store.put('fin', S.fin);
-function addTx(t) { t.id = t.id || uid(); t.ts = t.ts || Date.now().toString(36); S.tx.unshift(t); S.tx.sort((a, b) => b.date.localeCompare(a.date)); saveTxMonth(ym(t.date)); }
+function addTx(t) { t.id = t.id || uid(); t.ts = t.ts || Date.now().toString(36); S.tx.unshift(t); S.tx.sort((a, b) => b.date.localeCompare(a.date)); saveTxMonth(ym(t.date));  if (window.Sfx) Sfx.play('blup'); }
 function updateTx(id, patch) {
 const t = S.tx.find(x => x.id === id); if (!t) return; const oldK = ym(t.date);
 Object.assign(t, patch); delete t.example; S.tx.sort((a, b) => b.date.localeCompare(a.date)); saveTxMonths([oldK, ym(t.date)]);

@@ -745,3 +745,23 @@ body.gaming { overflow: hidden; }
 .ad-room img { position: absolute; image-rendering: pixelated; }
 .ad-room .ad-room-wall { left: 0; top: 0; width: 100%; }
 .ad-room .ad-room-floor { left: 0; top: 25.76%; width: 100%; }
+.ad-frames { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ad-vars { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin-top: 4px; }
+.ad-var { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 2px solid #f3dfe4; background: #fff; border-radius: 10px; padding: 6px 2px; font: inherit; font-size: 11px; font-weight: 800; color: inherit; cursor: pointer; }
+.ad-var img { width: 36px; height: 36px; object-fit: contain; image-rendering: pixelated; }
+/* clima real en la ventana */
+.rm-wx { position: absolute; overflow: hidden; pointer-events: none; border-radius: 2px; }
+.rm-wx.nubes, .rm-wx.niebla { background: rgba(220,226,236,.35); }
+.rm-wx.niebla::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(255,255,255,.55) 0 3px, transparent 3px 9px); animation: wxfog 6s linear infinite; }
+.rm-wx.nubes::before { content: ""; position: absolute; left: -60%; top: 12%; width: 70%; height: 34%; border-radius: 99px; background: rgba(255,255,255,.85); box-shadow: 30px 8px 0 -2px rgba(255,255,255,.8); animation: wxcloud 9s linear infinite; }
+.rm-wx.lluvia, .rm-wx.tormenta { background: rgba(120,140,170,.28); }
+.rm-wx.lluvia::before, .rm-wx.tormenta::before { content: ""; position: absolute; inset: -40px 0 0; background: repeating-linear-gradient(105deg, transparent 0 7px, rgba(200,225,255,.95) 7px 8.5px, transparent 8.5px 15px); background-size: 15px 18px; animation: wxrain .45s linear infinite; }
+.rm-wx.tormenta::after { content: ""; position: absolute; inset: 0; background: #fff; opacity: 0; animation: wxflash 5s infinite; }
+.rm-wx.nieve { background: rgba(200,210,230,.25); }
+.rm-wx.nieve::before { content: ""; position: absolute; inset: -40px 0 0; background: radial-gradient(circle, #fff 1.3px, transparent 1.8px) 0 0/11px 11px, radial-gradient(circle, #fff 1px, transparent 1.5px) 5px 6px/13px 13px; animation: wxsnow 3s linear infinite; }
+@keyframes wxrain { to { transform: translateY(18px); } }
+@keyframes wxsnow { to { transform: translateY(40px); } }
+@keyframes wxcloud { to { transform: translateX(260%); } }
+@keyframes wxfog { to { transform: translateY(9px); } }
+@keyframes wxflash { 0%, 90%, 94%, 100% { opacity: 0; } 92% { opacity: .8; } }
+@media (prefers-reduced-motion: reduce) { .rm-wx::before, .rm-wx::after { animation: none; } }

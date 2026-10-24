@@ -108,8 +108,16 @@ const SEAS_ACC = {
   bufanda_verde: { slot: 'neck', name: 'Bufanda verde', price: 25, season: 'navidad', map: ['GGGGGGGGGGGG', 'GwGwGwGwGwGw', '......GG....', '......Gw....'] },
   corona_corazon: { slot: 'head', name: 'Corona de corazones', price: 35, season: 'valentin', map: ['P...P...P', 'PP.PPP.PP', 'PPPPPPPPP', 'RRRRRRRRR'] }
 };
+
+// ---- Animación de 2 cuadros: los dibujos con "cuadro 2" se alternan solos ----
+A.ANIM = A.ANIM || {};
+(() => {
+  const PAIR = new Map(); const orig = Pix.sprite;
+  Pix.sprite = (n, sc) => { const u = orig(n, sc); const b = A.ANIM[n]; if (b && !PAIR.has(u)) { const u2 = orig(b, sc); if (u2) { PAIR.set(u, u2); PAIR.set(u2, u); } } return u; };
+  setInterval(() => { if (document.hidden || !PAIR.size) return; for (const im of document.images) { const o = PAIR.get(im.src); if (o) im.src = o; } }, 550);
+})();
 function addAcc(id, a, raw) {
-  if (raw) { a.w = raw.dw || 14; a.h = raw.dh || a.w * raw.h / raw.w; A.ACC[id] = a; Pix.define('acc_' + id, { raw: raw.map, pal: raw.pal }); return; }
+  if (raw) { a.w = raw.dw || 14; a.h = raw.dh || a.w * raw.h / raw.w; A.ACC[id] = a; Pix.define('acc_' + id, { raw: raw.map, pal: raw.pal }); if (raw.map2) { Pix.define('acc_' + id + '__2', { raw: raw.map2, pal: raw.pal }); A.ANIM['acc_' + id] = 'acc_' + id + '__2'; } return; }
   a.w = a.map[0].length + 2; a.h = a.map.length + 2; A.ACC[id] = a; Pix.define('acc_' + id, { w: a.w, h: a.h, fn(p) { p.map(1, 1, a.map); } }); }
 Object.entries(SEAS_ACC).forEach(([id, a]) => addAcc(id, a));
 A.RC.BGS.noche = { price: 25, season: 'halloween' };
@@ -145,7 +153,8 @@ A.seasonDaysLeft = daysLeft;
 // ---- cosas que agrega la administradora (se guardan en la configuración de la app) ----
 const catalog = () => { const c = (A.CFG && A.CFG.catalog) || {}; return { pets: c.pets || [], furn: c.furn || [], clothes: c.clothes || [], food: c.food || [], icons: c.icons || [], stickers: c.stickers || [], walls: c.walls || [], floors: c.floors || [], seasons: c.seasons || [] }; };
 const defMap = (name, w, h, map) => Pix.define(name, { w, h, fn(p) { p.map(0, 0, map); } });
-const defX = (name, x, w, h) => x.pal ? Pix.define(name, { raw: x.map, pal: x.pal }) : defMap(name, w, h, x.map);
+const defX = (name, x, w, h) => { if (x.pal) { Pix.define(name, { raw: x.map, pal: x.pal }); if (x.map2) { Pix.define(name + '__2', { raw: x.map2, pal: x.pal }); A.ANIM[name] = name + '__2'; } } else defMap(name, w, h, x.map); };
+const notYet = x => x.from && x.from > A.today();
 let customKeys = { pets: [], furn: [], clothes: [], food: [], icons: [], walls: [], floors: [] };
 function registerCatalog() {
   customKeys.furn.forEach(k => delete FURN[k]); customKeys.food.forEach(k => delete FOODS[k]); customKeys.clothes.forEach(k => delete A.ACC[k]);
@@ -153,15 +162,15 @@ function registerCatalog() {
   customKeys.walls.forEach(k => delete WALLS[k]); customKeys.floors.forEach(k => delete FLOORS[k]);
   customKeys = { pets: [], furn: [], clothes: [], food: [], icons: [], walls: [], floors: [] };
   const c = catalog();
-  c.pets.forEach(x => { const k = 'cp_' + x.id; defX(k, x, x.w || 20, x.h || 20); customKeys.pets.push(k); if (!x.off) A.ANCH[k] = { hx: x.pal ? 10 : (x.w || 20) / 2, hy: x.hy || 5, fy: x.fy || 10, ny: x.ny || 15, sprite: k, name: x.name }; });
-  c.furn.forEach(x => { const k = 'cf_' + x.id; defX(k, x, x.w, x.h); customKeys.furn.push(k); const fw = x.dw || x.w, fh = x.dh || x.h; FURN[k] = { name: x.name, w: fw, h: fh, price: x.how === 'free' ? 0 : +x.price || 0, how: x.how, ach: x.ach, season: x.season, sprite: k, x: Math.max(0, 72 - fw / 2), y: x.wall ? 4 : 70, cat: x.wall ? 'pared' : 'deco', wall: !!x.wall, off: x.off, custom: true }; });
-  c.food.forEach(x => { const k = 'cfo_' + x.id; defX(k, x, x.w || 16, x.h || 16); customKeys.food.push(k); FOODS[k] = { name: x.name, art: x.name, gain: +x.gain || 20, price: +x.price || 3, sprite: k, off: x.off, custom: true }; });
-  c.clothes.forEach(x => { const k = 'cc_' + x.id; customKeys.clothes.push(k); addAcc(k, { slot: x.slot || 'head', name: x.name, price: x.how === 'free' ? 0 : +x.price || 10, season: x.how === 'temporada' ? x.season : null, ach: x.how === 'logro' ? x.ach : null, raro: x.how === 'raro', map: x.map.map(r => r), off: x.off, offAdmin: x.off, custom: true, dx: +x.dx || 0, dy: +x.dy || 0 }, x.pal ? x : null); if (x.dw && !x.pal) { const a = A.ACC[k]; const r0 = a.h / a.w; a.w = x.dw; a.h = x.dw * r0; } });
-  c.icons.forEach(x => { if (x.off) return; const k = 'ci_' + x.id; defX(k, x, x.w || 16, x.h || 16); customKeys.icons.push(k); });
-  c.stickers.forEach(x => { if (x.off) return; defX('cs_' + x.id, x, x.w, x.h); });
+  c.pets.forEach(x => { const k = 'cp_' + x.id; defX(k, x, x.w || 20, x.h || 20); customKeys.pets.push(k); if (!x.off && !notYet(x)) A.ANCH[k] = { hx: x.pal ? 10 : (x.w || 20) / 2, hy: x.hy || 5, fy: x.fy || 10, ny: x.ny || 15, sprite: k, name: x.name }; });
+  c.furn.forEach(x => { const k = 'cf_' + x.id; defX(k, x, x.w, x.h); customKeys.furn.push(k); const fw = x.dw || x.w, fh = x.dh || x.h; if (notYet(x)) return; FURN[k] = { name: x.name, w: fw, h: fh, price: x.how === 'free' ? 0 : +x.price || 0, how: x.how, ach: x.ach, season: x.season, sprite: k, x: Math.max(0, 72 - fw / 2), y: x.wall ? 4 : 70, cat: x.wall ? 'pared' : 'deco', wall: !!x.wall, off: x.off, custom: true }; });
+  c.food.forEach(x => { const k = 'cfo_' + x.id; defX(k, x, x.w || 16, x.h || 16); customKeys.food.push(k); if (notYet(x)) return; FOODS[k] = { name: x.name, art: x.name, gain: +x.gain || 20, price: +x.price || 3, sprite: k, off: x.off, custom: true }; });
+  c.clothes.forEach(x => { const k = 'cc_' + x.id; customKeys.clothes.push(k); if (notYet(x)) return; addAcc(k, { slot: x.slot || 'head', name: x.name, price: x.how === 'free' ? 0 : +x.price || 10, season: x.how === 'temporada' ? x.season : null, ach: x.how === 'logro' ? x.ach : null, raro: x.how === 'raro', map: x.map.map(r => r), off: x.off, offAdmin: x.off, custom: true, dx: +x.dx || 0, dy: +x.dy || 0 }, x.pal ? x : null); if (x.dw && !x.pal) { const a = A.ACC[k]; const r0 = a.h / a.w; a.w = x.dw; a.h = x.dw * r0; } });
+  c.icons.forEach(x => { if (x.off || notYet(x)) return; const k = 'ci_' + x.id; defX(k, x, x.w || 16, x.h || 16); customKeys.icons.push(k); });
+  c.stickers.forEach(x => { if (x.off || notYet(x)) return; defX('cs_' + x.id, x, x.w, x.h); });
   const tileDef = (name, x, W, H) => { const t = x.pal ? x : null; if (!t) return; Pix.define(name, { raw: tiledRaw(x.map, W, H), pal: x.pal }); };
-  c.walls.forEach(x => { const k = 'cw_' + x.id; tileDef('x_pared_' + k, x, 144, 34); customKeys.walls.push(k); if (!x.off) WALLS[k] = [x.name, x.how === 'stars' ? +x.price || 0 : 0]; });
-  c.floors.forEach(x => { const k = 'cl_' + x.id; tileDef('x_piso_' + k, x, 144, 98); customKeys.floors.push(k); if (!x.off) FLOORS[k] = [x.name, x.how === 'stars' ? +x.price || 0 : 0]; });
+  c.walls.forEach(x => { const k = 'cw_' + x.id; tileDef('x_pared_' + k, x, 144, 34); customKeys.walls.push(k); if (!x.off && !notYet(x)) WALLS[k] = [x.name, x.how === 'stars' ? +x.price || 0 : 0]; });
+  c.floors.forEach(x => { const k = 'cl_' + x.id; tileDef('x_piso_' + k, x, 144, 98); customKeys.floors.push(k); if (!x.off && !notYet(x)) FLOORS[k] = [x.name, x.how === 'stars' ? +x.price || 0 : 0]; });
   seasonGate();
 }
 function seasonGate() {
@@ -176,7 +185,7 @@ const achOk = id => { const a = (A.RC.ACH || []).find(x => x.id === id); return 
 
 function allPets() {
   const out = {}; Object.entries(BASE_PETS).forEach(([k, v]) => out[k] = v);
-  catalog().pets.forEach(x => { if (!x.off) out['cp_' + x.id] = { name: x.name, sprite: 'cp_' + x.id, desc: x.desc || '', say: x.say || x.desc || '¡Hola!', how: x.how || 'stars', price: +x.price || 0, ach: x.ach, season: x.season, custom: true }; });
+  catalog().pets.forEach(x => { if (!x.off && !(x.from && x.from > A.today())) out['cp_' + x.id] = { name: x.name, sprite: 'cp_' + x.id, desc: x.desc || '', say: x.say || x.desc || '¡Hola!', how: x.how || 'stars', price: +x.price || 0, ach: x.ach, season: x.season, custom: true }; });
   return out;
 }
 A.allPets = allPets;
@@ -594,6 +603,7 @@ function roomHTML(rmIn, opts) {
     const sp = night && ['ventana', 'ventana_lila', 'ventana_redonda'].includes(it.k) ? 'x_' + it.k + '_noche' : furnSprite(it.k);
     let extra = '';
     if (f.photo && photos.length) { const src = photos[ph++ % photos.length]; extra = `<span class="rm-photo" style="left:${pct(it.x + 2, RW)};top:${pct(it.y + 2, RH)};width:${pct(12, RW)};height:${pct(10, RH)};z-index:${zOf(it, f) + 1};background-image:url('${esc(src)}')"></span>`; }
+    const wx = A.weather && A.weather(); if (wx && /ventana/.test(it.k) && f.wall && wx.kind !== 'sol') extra += `<span class="rm-wx ${wx.kind}" style="left:${pct(it.x + f.w * .16, RW)};top:${pct(it.y + f.h * .14, RH)};width:${pct(f.w * .68, RW)};height:${pct(f.h * .6, RH)};z-index:${zOf(it, f) + 1}"></span>`;
     const glow = night && f.glow ? `<span class="rm-glow" style="left:${pct(it.x + f.glow[0] - f.glow[2], RW)};top:${pct(it.y + f.glow[1] - f.glow[2], RH)};width:${pct(f.glow[2] * 2, RW)}"></span>` : '';
     return `<img class="pixel rm-it ${opts.sel === it.u ? 'sel' : ''}" alt="${esc(f.name)}" data-u="${it.u}" draggable="false" src="${Pix.sprite(sp, 3)}" style="left:${pct(it.x, RW)};top:${pct(it.y, RH)};width:${pct(f.w, RW)};z-index:${zOf(it, f)};${it.fl ? 'transform:scaleX(-1);' : ''}">${extra}${glow}`;
   }).join('');
@@ -621,7 +631,7 @@ A.screens.cuarto = () => {
   return `${sub('cuarto', 'rincon', starsPill())}
 <div class="rm-rooms">${Object.keys(r.rooms).map(k => { const ro = ROOMS[k] || {}; return `<button class="rm-door" data-act="rmRoom" data-k="${k}" aria-pressed="${r.cur === k}"><span class="rm-door-art" style="background-image:url(${Pix.sprite('x_piso_' + (ro.floor || 'madera'), 1)})"><img class="pixel" alt="" src="${Pix.sprite('x_' + (ro.icon || 'cama'), 2)}"></span><span class="rm-door-t">${esc(ro.short || ro.name || k)}</span></button>`; }).join('')}${Object.keys(r.rooms).length < Object.keys(ROOMS).length ? `<button class="rm-door add" data-act="rmTab" data-v="cuartos"><span class="rm-door-art"><b>+</b></span><span class="rm-door-t">Más</span></button>` : ''}</div>
 ${roomHTML(rm, { edit, sel: S.roomSel, inner: `<button class="btn sm rm-editbtn" data-act="rmEdit">${edit ? 'Listo' : 'Mover cosas'}</button>${edit && S.roomSel ? '<span class="rm-tools"><button class="btn sm" data-act="rmFlip">Voltear</button><button class="btn sm danger" data-act="rmRemove">Guardar</button></span>' : ''}` })}
-${edit ? '<p class="faint" style="margin:0;text-align:center">Arrastra los muebles. Toca uno para voltearlo o guardarlo.</p>' : `<p class="faint" style="margin:0;text-align:center">${{ dia: 'Es de día', tarde: 'Está atardeciendo', noche: 'Es de noche: tus mascotas se van a dormir' }[dayPart()]}</p>`}
+${edit ? '<p class="faint" style="margin:0;text-align:center">Arrastra los muebles. Toca uno para voltearlo o guardarlo.</p>' : `<p class="faint" style="margin:0;text-align:center">${{ dia: 'Es de día', tarde: 'Está atardeciendo', noche: 'Es de noche: tus mascotas se van a dormir' }[dayPart()]}${A.weather && A.weather() ? ` · afuera ${{ sol: 'está despejado', nubes: 'está nublado', niebla: 'hay neblina', lluvia: 'llueve', nieve: 'nieva', tormenta: 'hay tormenta' }[A.weather().kind] || ''}, ${A.weather().temp}°` : ''}</p>`}
 <div class="seg"><button data-act="rmTab" data-v="muebles" aria-pressed="${tab === 'muebles'}">Muebles</button><button data-act="rmTab" data-v="paredes" aria-pressed="${tab === 'paredes'}">Pared y piso</button><button data-act="rmTab" data-v="cuartos" aria-pressed="${tab === 'cuartos'}">Cuartos</button><button data-go="tienda">Ropa</button></div>
 ${tab === 'muebles' ? `<div class="chips">${FCATS.map(([k, n]) => `<button class="chip" data-act="rmCat" data-v="${k}" aria-pressed="${fc === k}">${n}</button>`).join('')}</div><div class="shop-grid">${keys.map(tile).join('')}</div>`
   : tab === 'paredes' ? `<div class="k-lbl">PARED</div><div class="shop-grid">${Object.entries(WALLS).map(([k, [n, pr]]) => sty('wall', k, n, pr)).join('')}</div><div class="k-lbl">PISO</div><div class="shop-grid">${Object.entries(FLOORS).map(([k, [n, pr]]) => sty('floor', k, n, pr)).join('')}</div>`
@@ -775,7 +785,7 @@ A.screens.admincat = () => {
   if (!ed || ed.kind !== kind) newDraft(kind);
   return `${sub('admincat', 'admin', '<span class="tag gold">Solo tú</span>')}
 <div class="ad-kinds">${Object.entries(KINDS).map(([k, [n]]) => `<button data-act="catKind" data-v="${k}" aria-pressed="${k === kind}">${n}</button>`).join('')}</div>
-${list.length ? `<div class="card"><h3>${KIND_PL[kind]} que ya agregaste</h3><div class="ad-list">${list.map(x => `<button class="ad-item ${x.off ? 'off' : ''} ${ed.id === x.id ? 'on' : ''}" data-act="catEdit" data-id="${x.id}"><span class="ad-item-art ${kind === 'walls' || kind === 'floors' ? 'tile' : ''}"><img class="pixel" alt="" src="${Pix.sprite(sprOf(kind, x.id), 2)}"></span><b>${esc(x.name)}</b><span>${x.off ? 'Oculto' : esc(howLabel(x, kind))}</span></button>`).join('')}</div></div>` : ''}
+${list.length ? `<div class="card"><h3>${KIND_PL[kind]} que ya agregaste</h3><div class="ad-list">${list.map(x => `<button class="ad-item ${x.off ? 'off' : ''} ${ed.id === x.id ? 'on' : ''}" data-act="catEdit" data-id="${x.id}"><span class="ad-item-art ${kind === 'walls' || kind === 'floors' ? 'tile' : ''}"><img class="pixel" alt="" src="${Pix.sprite(sprOf(kind, x.id), 2)}"></span><b>${esc(x.name)}</b><span>${x.off ? 'Oculto' : x.from && x.from > A.today() ? 'Sale el ' + x.from.slice(8) + '/' + x.from.slice(5, 7) : esc(howLabel(x, kind))}${x.col ? ' · ' + esc(x.col) : ''}${x.map2 ? ' · se mueve' : ''}</span></button>`).join('')}</div></div>` : ''}
 <div class="card stack" id="catForm">${formHTML()}</div>
 <details class="card stack" ${S.seasOpen ? 'open' : ''}><summary><b>Temporadas</b> <span class="faint">(Noche de brujas, Navidad, San Valentín y las tuyas)</span></summary>
 <div class="list" style="margin:8px 0">${allSeasons().map(se => `<div class="li"><span class="tx-main"><b>${esc(se.name)}</b><span>${esc(se.when)}${inSeason(se.id) ? ' · <b>activa ahora</b>' : ''} · ${se.items.length} cosas</span></span>${se.custom ? `<button class="btn sm danger" data-act="seDel" data-id="${se.id}">Borrar</button>` : ''}</div>`).join('')}</div>
@@ -804,7 +814,7 @@ ${k === 'pets' ? `<label class="f">Cómo es<input class="in" data-ed="desc" valu
 </div>
 ${HELP[k] ? `<p class="faint" style="margin:0">${HELP[k]}</p>` : ''}
 <div class="ad-up">
-<label class="btn sm pink">Subir dibujo pixel<input type="file" accept="image/*" id="edFile" hidden></label>
+<label class="btn sm pink">Subir dibujo pixel<input type="file" accept="image/*" id="edFile" multiple hidden></label>
 <label class="btn sm">Foto a pixel<input type="file" accept="image/*" id="edPhoto" hidden></label>
 ${ed.mode === 'pixel' && edImg ? `<button class="btn sm" data-act="edDetail" data-v="-1">Menos detalle</button><button class="btn sm" data-act="edDetail" data-v="1">Más detalle</button>` : ''}
 </div>
@@ -814,13 +824,19 @@ ${photo && edImg ? `<div class="ad-photo">
 <div class="chips"><label class="chip"><input type="checkbox" data-ph="bg" ${ed.ph.bg ? 'checked' : ''}> Quitar fondo</label><label class="chip"><input type="checkbox" data-ph="border" ${ed.ph.border ? 'checked' : ''}> Borde de sticker</label><label class="chip"><input type="checkbox" data-ph="line" ${ed.ph.line ? 'checked' : ''}> Contorno</label></div>
 </div>` : ''}
 <div class="ad-tools">
-${[['pen', 'Lápiz'], ['fill', 'Balde'], ['pick', 'Gotero']].map(([t, n]) => `<button class="chip" data-tool="${t}" aria-pressed="${ed.tool === t}">${n}</button>`).join('')}
-<button class="chip" data-edop="flip">Voltear</button><button class="chip" data-edop="undo">Deshacer</button><button class="chip" data-edop="clear">Borrar todo</button>
+${[['pen', 'Lápiz'], ['fill', 'Balde'], ['pick', 'Gotero'], ['line', 'Línea'], ['rect', 'Cuadro'], ['oval', 'Círculo']].map(([t, n]) => `<button class="chip" data-tool="${t}" aria-pressed="${ed.tool === t}">${n}</button>`).join('')}
+<button class="chip" data-edop="mirror" aria-pressed="${!!ed.mirror}">Espejo</button>
 </div>
+<div class="ad-tools">
+<button class="chip" data-edop="outline">Contorno</button><button class="chip" data-edop="shade">Sombrita</button><button class="chip" data-edop="flip">Voltear</button><button class="chip" data-edop="undo">Deshacer</button><button class="chip" data-edop="clear">Borrar todo</button>
+</div>
+<div class="ad-frames"><span class="faint">Animación:</span><button class="chip" data-frame="1" aria-pressed="${!ed.f2}">Cuadro 1</button><button class="chip" data-frame="2" aria-pressed="${!!ed.f2}">Cuadro 2${ed.map2 ? ' ✓' : ''}</button>${ed.map2 ? '<button class="chip" data-edop="noanim">Quitar animación</button>' : '<span class="faint" style="font-size:12px">Dibuja un cuadro 2 y se mueve solo (brillo, parpadeo, burbujas).</span>'}</div>
 <div class="ed-wrap"><canvas id="edCanvas" class="ed-canvas" style="aspect-ratio:${ed.w}/${ed.h}"></canvas><div class="ed-side"><img class="pixel" id="edPrev" alt="Vista previa" src="" style="max-width:96px;max-height:96px"><span class="faint">${ed.w} × ${ed.h}</span></div></div>
 <div class="ed-pal">${ed.pal.map((h, i) => `<button class="ed-sw ${ed.color === i.toString(36) ? 'on' : ''}" data-sw="${i.toString(36)}" style="background:${h}" aria-label="Color ${i + 1}"></button>`).join('')}<button class="ed-sw erase ${ed.color === '.' ? 'on' : ''}" data-sw="." aria-label="Borrador">×</button><label class="ed-sw add" aria-label="Agregar color">+<input type="color" id="edAddCol" value="#f27ea1"></label></div>
 <details class="ad-size"><summary>Cambiar cuadrícula (${ed.w} × ${ed.h})</summary><div class="row" style="gap:6px;margin-top:8px"><input class="in" data-ed="w" type="number" min="3" max="${maxW}" value="${ed.w}" style="width:80px"> × <input class="in" data-ed="h" type="number" min="3" max="${maxH}" value="${ed.h}" style="width:80px"></div></details>
+<div class="f">Variantes de color<div class="ad-vars">${VARS.map(([n, hue]) => `<button class="ad-var" data-var="${n}"><img class="pixel" alt="" src="${varPreview(hue)}"><span>${n}</span></button>`).join('')}</div><span class="faint" style="font-size:12px">Toca una y se crea una copia en ese color, lista para guardar.</span></div>
 ${k === 'clothes' ? tryOnHTML() : ''}${k === 'furn' || tile ? roomPreviewHTML() : ''}
+<div class="formgrid"><label class="f">Colección (opcional)<input class="in" data-ed="col" value="${esc(ed.col || '')}" placeholder="Ej. Otoño cozy" list="adCols"><datalist id="adCols">${[...new Set(Object.values(catalog()).flat().map(x => x && x.col).filter(Boolean))].map(c => `<option value="${esc(c)}">`).join('')}</datalist></label><label class="f">Sale el día (opcional)<input class="in" data-ed="from" type="date" value="${ed.from || ''}"></label></div>
 ${k === 'stickers' || k === 'icons' ? '' : `<div class="f">¿Cómo se consigue?<div class="chips">${(tile ? [['stars', 'Con estrellitas'], ['free', 'Gratis']] : [['stars', 'Con estrellitas'], ['logro', 'Logro'], ['temporada', 'Temporada'], ['raro', 'Regalo raro'], ...(k === 'food' ? [] : [['free', 'Gratis']])]).map(([v, n]) => `<button class="chip" data-edhow="${v}" aria-pressed="${ed.how === v}">${n}</button>`).join('')}</div></div>
 <div class="formgrid">
 ${ed.how === 'stars' || k === 'food' ? `<label class="f">Precio en estrellitas<input class="in" data-ed="price" type="number" min="0" value="${ed.price}"></label>` : ''}
@@ -877,7 +893,47 @@ function edPaintCanvas() {
 }
 function resizeMap(w, h) { ed.map = Array.from({ length: h }, (_, y) => Array.from({ length: w }, (_, x) => (ed.map[y] && ed.map[y][x]) || '.').join('')); ed.w = w; ed.h = h; }
 const snap = () => { ed.hist.push(ed.map.slice()); if (ed.hist.length > 40) ed.hist.shift(); };
-function setPx(x, y, c) { const row = ed.map[y]; if (row[x] === c) return false; ed.map[y] = row.slice(0, x) + c + row.slice(x + 1); return true; }
+function set1(x, y, c) { if (x < 0 || y < 0 || x >= ed.w || y >= ed.h) return false; const row = ed.map[y]; if (row[x] === c) return false; ed.map[y] = row.slice(0, x) + c + row.slice(x + 1); return true; }
+function setPx(x, y, c) { const a = set1(x, y, c); const b = ed.mirror ? set1(ed.w - 1 - x, y, c) : false; return a || b; }
+function shape(t, x0, y0, x1, y1, c) {
+  if (t === 'line') { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) || 1; for (let i = 0; i <= n; i++) setPx(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), c); return; }
+  const ax = Math.min(x0, x1), bx = Math.max(x0, x1), ay = Math.min(y0, y1), by = Math.max(y0, y1);
+  if (t === 'rect') { for (let x = ax; x <= bx; x++) { setPx(x, ay, c); setPx(x, by, c); } for (let y = ay; y <= by; y++) { setPx(ax, y, c); setPx(bx, y, c); } return; }
+  const cx = (ax + bx) / 2, cy = (ay + by) / 2, rx = (bx - ax) / 2 + .5, ry = (by - ay) / 2 + .5;
+  for (let y = ay; y <= by; y++) for (let x = ax; x <= bx; x++) { const d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2; if (d <= 1 && d > Math.pow(Math.max(0, 1 - 1.4 / Math.min(rx, ry)), 2)) setPx(x, y, c); }
+}
+// colores: rgb <-> hsl para variantes, sombritas y contornos
+const h2r = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const r2h = c => '#' + c.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+function r2hsl([r, g, b]) { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let h = 0, s = 0; const l = (mx + mn) / 2; if (mx !== mn) { const d = mx - mn; s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; } return [h, s, l]; }
+function hsl2r([h, s, l]) { const f = n => { const k = (n + h / 30) % 12, a = s * Math.min(l, 1 - l); return 255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))); }; return [f(0), f(8), f(4)]; }
+const VARS = [['Rosa', 340], ['Durazno', 22], ['Dorado', 45], ['Menta', 150], ['Cielo', 200], ['Lila', 268]];
+function recolor(pal, map, hue) {
+  // tono principal del dibujo (ponderado por cuántos cuadritos tiene cada color)
+  const cnt = {}; map.join('').replace(/\./g, '').split('').forEach(ch => cnt[ch] = (cnt[ch] || 0) + 1);
+  let sx = 0, sy = 0; Object.entries(cnt).forEach(([ch, n]) => { const [h, s, l] = r2hsl(h2r(pal[parseInt(ch, 36)])); if (s > .25 && l > .2 && l < .92) { sx += Math.cos(h * Math.PI / 180) * n * s; sy += Math.sin(h * Math.PI / 180) * n * s; } });
+  const main = Math.atan2(sy, sx) * 180 / Math.PI; const shift = hue - main;
+  return pal.map(c => { const [h, s, l] = r2hsl(h2r(c)); if (s < .2 || l < .2 || l > .94) return c; return r2h(hsl2r([(h + shift + 360) % 360, s, l])); });
+}
+function varPreview(hue) { if (!ed.map.some(r => /[^.]/.test(r))) return Pix.sprite('heart', 2); Pix.define('__var' + hue, { raw: ed.map, pal: recolor(ed.pal, ed.map, hue).join(',') }); return Pix.sprite('__var' + hue, Math.max(1, Math.ceil(40 / Math.max(ed.w, ed.h)))); }
+function palIdx(hex) { let i = ed.pal.indexOf(hex); if (i >= 0) return i.toString(36); if (ed.pal.length >= 36) { const used = new Set(ed.map.join('') + (ed.map2 || []).join('')); i = ed.pal.findIndex((_, k) => !used.has(k.toString(36))); if (i < 0) { let bd = 1e9; const t = h2r(hex); ed.pal.forEach((c, k) => { const q = h2r(c); const d = (q[0] - t[0]) ** 2 + (q[1] - t[1]) ** 2 + (q[2] - t[2]) ** 2; if (d < bd) { bd = d; i = k; } }); return i.toString(36); } ed.pal[i] = hex; return i.toString(36); } ed.pal.push(hex); return (ed.pal.length - 1).toString(36); }
+function autoOutline() {
+  const cnt = {}; ed.map.join('').replace(/\./g, '').split('').forEach(ch => cnt[ch] = (cnt[ch] || 0) + 1);
+  let dark = null, dl = 1; Object.keys(cnt).forEach(ch => { const l = r2hsl(h2r(ed.pal[parseInt(ch, 36)]))[2]; if (l < dl) { dl = l; dark = ch; } });
+  const c = dl < .35 ? dark : palIdx('#7a4a52'); const add = [];
+  for (let y = 0; y < ed.h; y++) for (let x = 0; x < ed.w; x++) if (ed.map[y][x] === '.' && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => ed.map[y + b] && ed.map[y + b][x + a] && ed.map[y + b][x + a] !== '.')) add.push([x, y]);
+  add.forEach(([x, y]) => set1(x, y, c));
+}
+function autoShade() {
+  // sombrita abajo y a la derecha de cada forma (como en los juegos pixel)
+  const out = ed.map.slice(); const memo = {};
+  const lum = ch => r2hsl(h2r(ed.pal[parseInt(ch, 36)]))[2];
+  const edge = (x, y) => { const q = ed.map[y] && ed.map[y][x]; return !q || q === '.' || lum(q) < .3; };
+  const darker = ch => { if (memo[ch]) return memo[ch]; const [h, s, l] = r2hsl(h2r(ed.pal[parseInt(ch, 36)])); return memo[ch] = palIdx(r2h(hsl2r([(h + 350) % 360, Math.min(1, s * 1.05), Math.max(0, l * .8)]))); };
+  for (let y = 0; y < ed.h; y++) for (let x = 0; x < ed.w; x++) { const ch = ed.map[y][x]; if (ch === '.' || lum(ch) < .3) continue; if (edge(x, y + 1) || edge(x + 1, y)) out[y] = out[y].slice(0, x) + darker(ch) + out[y].slice(x + 1); }
+  ed.map = out;
+}
+
 function bucket(x, y, c) {
   const from = ed.map[y][x]; if (from === c) return; const st = [[x, y]];
   while (st.length) { const [i, j] = st.pop(); if (i < 0 || j < 0 || i >= ed.w || j >= ed.h || ed.map[j][i] !== from) continue; setPx(i, j, c); st.push([i + 1, j], [i - 1, j], [i, j + 1], [i, j - 1]); }
@@ -890,11 +946,17 @@ A.after.admincat = el => {
   cv.addEventListener('pointerdown', e => {
     e.preventDefault(); const [x, y] = cellAt(e); if (x < 0 || y < 0 || x >= ed.w || y >= ed.h) return;
     if (ed.tool === 'pick') { const ch = ed.map[y][x]; ed.color = ch; ed.tool = 'pen'; A.render(); return; }
-    snap(); if (ed.tool === 'fill') { bucket(x, y, ed.color); edPaintCanvas(); return; }
-    down = true; try { cv.setPointerCapture(e.pointerId); } catch (er) { } paint(e);
+    snap(); if (ed.tool === 'fill') { bucket(x, y, ed.color); if (ed.mirror) bucket(ed.w - 1 - x, y, ed.color); edPaintCanvas(); return; }
+    down = true; try { cv.setPointerCapture(e.pointerId); } catch (er) { }
+    if (['line', 'rect', 'oval'].includes(ed.tool)) { down = { x, y, base: ed.map.slice() }; return; }
+    paint(e);
   });
-  cv.addEventListener('pointermove', e => { if (down) paint(e); });
-  cv.addEventListener('pointerup', () => { down = false; }); cv.addEventListener('pointercancel', () => { down = false; });
+  cv.addEventListener('pointermove', e => {
+    if (!down) return;
+    if (down.base) { const [x, y] = cellAt(e); ed.map = down.base.slice(); shape(ed.tool, down.x, down.y, Math.max(0, Math.min(ed.w - 1, x)), Math.max(0, Math.min(ed.h - 1, y)), ed.color); edPaintCanvas(); return; }
+    paint(e);
+  });
+  cv.addEventListener('pointerup', e => { if (down && down.base) { const [x, y] = cellAt(e); ed.map = down.base.slice(); shape(ed.tool, down.x, down.y, Math.max(0, Math.min(ed.w - 1, x)), Math.max(0, Math.min(ed.h - 1, y)), ed.color); edPaintCanvas(); } down = false; }); cv.addEventListener('pointercancel', () => { down = false; });
   // arrastrar la prenda sobre la mascota
   const stage = $('#tryStage', el);
   if (stage) {
@@ -912,7 +974,15 @@ A.after.admincat = el => {
       if (o === 'flip') { snap(); ed.map = ed.map.map(r => [...r].reverse().join('')); edPaintCanvas(); }
       if (o === 'undo') { const m = ed.hist.pop(); if (m) { ed.map = m; ed.h = m.length; ed.w = m[0].length; edPaintCanvas(); } else toast('No hay nada que deshacer'); }
       if (o === 'clear') { snap(); ed.map = blankMap(ed.w, ed.h); edPaintCanvas(); }
+      if (o === 'mirror') { ed.mirror = !ed.mirror; op.setAttribute('aria-pressed', ed.mirror); toast(ed.mirror ? 'Espejo: lo que dibujes se copia al otro lado' : 'Espejo apagado'); }
+      if (o === 'outline') { snap(); autoOutline(); A.render(); }
+      if (o === 'shade') { snap(); autoShade(); A.render(); }
+      if (o === 'noanim') { if (ed.f2) { ed.map2 = ed.map; ed.map = ed.map1; } ed.map2 = null; ed.map1 = null; ed.f2 = false; A.render(); }
     }
+    const fr = e.target.closest('[data-frame]');
+    if (fr) { const two = fr.dataset.frame === '2'; if (two !== !!ed.f2) { if (two) { ed.map1 = ed.map; ed.map = ed.map2 || ed.map.slice(); ed.map2 = ed.map; } else { ed.map2 = ed.map; ed.map = ed.map1; } ed.f2 = two; ed.hist = []; A.render(); } }
+    const vr = e.target.closest('[data-var]');
+    if (vr) { const hue = VARS.find(v => v[0] === vr.dataset.var)[1]; const base = ed.f2 ? ed.map1 : ed.map; const m2 = ed.f2 ? ed.map : ed.map2; const pal = recolor(ed.pal, base, hue); Object.assign(ed, { id: null, name: (ed.name || 'Nueva').replace(/ \((Rosa|Durazno|Dorado|Menta|Cielo|Lila)\)$/, '') + ' (' + vr.dataset.var + ')', pal, off: false }); ed.map = base; ed.map2 = m2 || null; ed.f2 = false; ed.map1 = null; A.render(); toast('Copia en ' + vr.dataset.var.toLowerCase() + ' lista. Revísala y toca Guardar.'); }
     const mv = e.target.closest('[data-mv]'); if (mv) { if (mv.dataset.mv === 'center') { ed.dx = 0; ed.dy = 0; } else { const [a, b] = mv.dataset.mv.split(',').map(Number); ed.dx = (+ed.dx || 0) + a; ed.dy = (+ed.dy || 0) + b; } drawTryOn(); }
     const tp = e.target.closest('[data-try]'); if (tp) { ed.tryPet = tp.dataset.try; $$('[data-try]', el).forEach(b => b.setAttribute('aria-pressed', b === tp)); drawTryOn(); }
     const hw = e.target.closest('[data-edhow]'); if (hw) { ed.how = hw.dataset.edhow; A.render(); }
@@ -920,7 +990,8 @@ A.after.admincat = el => {
   el.addEventListener('change', e => {
     const t = e.target;
     if (t.dataset.ed) { const k = t.dataset.ed; if (k === 'w' || k === 'h') { const mw = ed.kind === 'walls' || ed.kind === 'floors' ? 48 : 96, mh = ed.kind === 'walls' ? 34 : mw; snap(); resizeMap(Math.max(3, Math.min(mw, +$('[data-ed="w"]', el).value || ed.w)), Math.max(3, Math.min(mh, +$('[data-ed="h"]', el).value || ed.h))); A.render(); return; } ed[k] = k === 'wall' ? !!t.value : t.type === 'number' || t.type === 'range' ? +t.value : t.value; if (k === 'slot' || k === 'wall') edPaintCanvas(); }
-    if (t.id === 'edFile' && t.files[0]) importImage(t.files[0], 'pixel');
+    if (t.id === 'edFile' && t.files.length > 1) importMany([...t.files]);
+    else if (t.id === 'edFile' && t.files[0]) importImage(t.files[0], 'pixel');
     if (t.id === 'edPhoto' && t.files[0]) importImage(t.files[0], 'photo');
     if (t.dataset.ph) { ed.ph[t.dataset.ph] = t.type === 'checkbox' ? t.checked : +t.value; runPhoto(); }
     if (t.id === 'edAddCol') addColor(t.value);
@@ -1095,6 +1166,23 @@ async function importImage(file, mode) {
   const r = A.pixFit(edImg, MAXN[ed.kind] || 64); applyPix(r);
   if (r) toast(`Lista: ${r.w} × ${r.h} cuadritos, ${r.pal.split(',').length} colores.`);
 }
+async function importMany(files) {
+  const kind = ed.kind; A.CFG.catalog = A.CFG.catalog || {}; const list = A.CFG.catalog[kind] = A.CFG.catalog[kind] || []; let n = 0;
+  toast(`Convirtiendo ${files.length} imágenes…`);
+  for (const f of files.slice(0, 40)) {
+    try {
+      const img = await A.readPixels(f); const r = A.pixFit(img, MAXN[kind] || 64); if (!r) continue;
+      const name = f.name.replace(/\.[a-z0-9]+$/i, '').replace(/[-_]+/g, ' ').trim().slice(0, 30) || 'Nuevo';
+      const item = { id: uid(), name: name[0].toUpperCase() + name.slice(1), how: kind === 'stickers' || kind === 'icons' ? 'free' : ed.how, price: +ed.price || 0, w: r.w, h: r.h, map: r.raw, pal: r.pal, off: false };
+      if (kind === 'furn') { item.dw = Math.max(8, Math.round(r.w * 36 / Math.max(r.w, r.h))); item.dh = item.dw * r.h / r.w; item.wall = false; }
+      if (kind === 'clothes') { item.dw = 14; item.dh = 14 * r.h / r.w; item.slot = ed.slot || 'head'; item.dx = 0; item.dy = 0; }
+      if (kind === 'food') item.gain = 20; if (kind === 'pets') { item.desc = ''; item.say = ''; }
+      if ((ed.col || '').trim()) item.col = ed.col.trim(); if (ed.from) item.from = ed.from;
+      list.push(item); n++;
+    } catch (e) { }
+  }
+  ed = null; await saveCatalog(); toast(`Listo: agregué ${n} ${n === 1 ? 'cosa' : 'cosas'}. Toca cada una si quieres retocarla.`);
+}
 ACT.edDetail = a => { if (!edImg || !ed.cell) return; const r = A.pixFit(edImg, MAXN[ed.kind] || 64, ed.cell * (+a.dataset.v > 0 ? 0.85 : 1.18)); if (r && +a.dataset.v > 0 && Math.max(r.w, r.h) >= (MAXN[ed.kind] || 64) * .98 && r.cell >= ed.cell * .99) return toast('Ya está con el máximo detalle'); applyPix(r, true); };
 async function saveCatalog() {
   A.CFG.catalog = Object.assign({ pets: [], furn: [], clothes: [], food: [] }, A.CFG.catalog || {});
@@ -1125,9 +1213,12 @@ ACT.edSave = () => {
   if (!ed.name.trim()) return toast('Ponle un nombre');
   if (!ed.map.some(r => /[^.]/.test(r))) return toast('Dibuja algo o sube una imagen');
   const kind = ed.kind; A.CFG.catalog = A.CFG.catalog || {}; const list = A.CFG.catalog[kind] = A.CFG.catalog[kind] || [];
-  const cp = compact(ed.map, ed.pal);
+  if (ed.f2) { ed.map2 = ed.map; ed.map = ed.map1; ed.f2 = false; }
+  const m2 = ed.map2 && ed.map2.length === ed.map.length && ed.map2.some((r, i) => r !== ed.map[i]) ? ed.map2 : null;
+  const cp = compact(m2 ? ed.map.concat(m2) : ed.map, ed.pal); const mapA = cp.map.slice(0, ed.h), mapB = m2 ? cp.map.slice(ed.h) : null;
   const free = kind === 'stickers' || kind === 'icons';
-  const item = { id: ed.id || uid(), name: ed.name.trim(), how: free ? 'free' : ed.how, price: +ed.price || 0, w: ed.w, h: ed.h, map: cp.map, pal: cp.pal, off: !!ed.off };
+  const item = { id: ed.id || uid(), name: ed.name.trim(), how: free ? 'free' : ed.how, price: +ed.price || 0, w: ed.w, h: ed.h, map: mapA, pal: cp.pal, off: !!ed.off };
+  if (mapB) item.map2 = mapB; if ((ed.col || '').trim()) item.col = ed.col.trim(); if (ed.from) item.from = ed.from;
   if (kind === 'furn' || kind === 'clothes') { item.dw = Math.max(3, +ed.dw || 14); item.dh = Math.max(2, Math.round(item.dw * ed.h / ed.w * 10) / 10); }
   if (kind === 'clothes') Object.assign(item, { slot: ed.slot, dx: +ed.dx || 0, dy: +ed.dy || 0 });
   if (kind === 'pets') Object.assign(item, { desc: ed.desc, say: ed.desc });

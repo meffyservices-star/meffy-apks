@@ -646,8 +646,12 @@ ${!online() ? '<div class="card empty">El recordatorio necesita internet y tu cu
 <label class="f">¿A qué hora?<select class="in" id="rmH">${Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === r.hour ? 'selected' : ''}>${hourTxt(h)}</option>`).join('')}</select></label>
 ${perm === 'denied' ? '<p class="faint" style="margin:0;color:#c44a72">Bloqueaste las notificaciones para Bolsillito. Actívalas en los ajustes de tu navegador o celular.</p>' : ''}
 <button class="btn" data-act="rmTest" style="justify-content:center">Mandarme uno de prueba</button></div>`}
+${!standalone() && !isIOS() ? `<div class="card stack" style="background:#fff7d6"><b>¿El aviso dice el link de la página?</b><div class="faint">Pasa cuando abres Bolsillito desde el navegador o con un acceso directo. Instálala como app y los avisos dirán solo "Bolsillito", como las demás apps.</div>${A.installEvt ? '<button class="btn pink" data-act="installApp" style="justify-content:center">Instalar Bolsillito</button>' : '<div class="faint">En Chrome toca el menú ⋮ y luego <b>"Instalar app"</b> (no "Agregar a pantalla de inicio"). Si ya tenías un acceso directo, bórralo primero.</div>'}</div>` : ''}
 <p class="faint" style="margin:0">Puedes apagarlo cuando quieras. Las notificaciones solo dicen que anotes: nunca muestran tus cifras.</p>`;
 };
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); A.installEvt = e; if (S.route === 'recordatorio') A.render(); });
+addEventListener('appinstalled', () => { A.installEvt = null; toast('¡Listo! Bolsillito ya está instalada como app.'); });
+ACT.installApp = async () => { const e = A.installEvt; if (!e) return; e.prompt(); try { await e.userChoice; } catch (er) { } A.installEvt = null; A.render(); };
 async function rmSave(on, hour) {
   const r = RM(); r.hour = hour; A.saveSettings();
   if (!on) { r.on = false; A.saveSettings(); if (r.endpoint && online()) await Store.sb.from('push_subs').update({ enabled: false }).eq('endpoint', r.endpoint); toast('Recordatorio apagado'); return; }
@@ -661,11 +665,94 @@ async function rmSave(on, hour) {
   A.render();
 }
 A.after.recordatorio = el => { const on = $('#rmOn', el), h = $('#rmH', el); if (on) on.onchange = () => rmSave(on.checked, +h.value); if (h) h.onchange = () => { if (RM().on) rmSave(true, +h.value); else { RM().hour = +h.value; A.saveSettings(); } }; };
-ACT.rmTest = async () => { if (Notification.permission !== 'granted' && (await Notification.requestPermission()) !== 'granted') return toast('Necesito permiso para mandarte notificaciones'); const reg = await navigator.serviceWorker.ready; reg.showNotification('Bolsillito', { body: `¿Anotamos lo de hoy? ${A.petInfo ? A.petInfo(activePet()).name : 'Tu mascota'} te está esperando.`, icon: '/icon-192.png', tag: 'bolsillito-prueba' }); };
+ACT.rmTest = async () => { if (Notification.permission !== 'granted' && (await Notification.requestPermission()) !== 'granted') return toast('Necesito permiso para mandarte notificaciones'); const reg = await navigator.serviceWorker.ready; reg.showNotification('Bolsillito', { badge: '/badge.png', body: `¿Anotamos lo de hoy? ${A.petInfo ? A.petInfo(activePet()).name : 'Tu mascota'} te está esperando.`, icon: '/icon-192.png', tag: 'bolsillito-prueba' }); };
 // avisa al servidor que hoy ya anotaste (así no te manda el recordatorio)
 const render2 = A.render;
 A.render = (...x) => { const r = S.settings.reminder; const d = today(); if (r && r.on && r.endpoint && r.logged !== d && online() && S.tx.some(t => t.date === d && !t.example && !t.recurring)) { r.logged = d; Store.sb.from('push_subs').update({ last_log: d }).eq('endpoint', r.endpoint).then(() => {}, () => {}); } return render2(...x); };
+// ---------------- Sonidos suaves (hechos con el navegador, sin archivos) ----------------
+const Sfx = (() => {
+  let ctx = null, lastTap = 0;
+  addEventListener('pointerdown', () => { lastTap = Date.now(); if (ctx && ctx.state === 'suspended') ctx.resume(); }, { capture: true, passive: true });
+  const on = () => S.settings.sound !== false;
+  const tone = (f, t0, dur, type, vol, f2) => {
+    const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type || 'sine'; o.frequency.setValueAtTime(f, ctx.currentTime + t0);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, ctx.currentTime + t0 + dur);
+    g.gain.setValueAtTime(0.0001, ctx.currentTime + t0); g.gain.exponentialRampToValueAtTime(vol || .06, ctx.currentTime + t0 + .015); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t0 + dur);
+    o.connect(g).connect(ctx.destination); o.start(ctx.currentTime + t0); o.stop(ctx.currentTime + t0 + dur + .02);
+  };
+  const SOUNDS = {
+    blup: () => tone(420, 0, .14, 'sine', .07, 760),                       // al anotar
+    coin: () => { tone(988, 0, .09, 'triangle', .05); tone(1319, .07, .18, 'triangle', .05); },   // estrellitas
+    pop: () => tone(520, 0, .08, 'triangle', .05, 340),                     // tocar o darle de comer
+    yum: () => { tone(600, 0, .07, 'sine', .05, 700); tone(700, .09, .08, 'sine', .05, 820); },
+    gift: () => [784, 988, 1175, 1568].forEach((f, i) => tone(f, i * .07, .16, 'triangle', .045)), // regalo
+    save: () => { tone(660, 0, .1, 'sine', .05); tone(880, .08, .16, 'sine', .05); }
+  };
+  return {
+    play(n, force) {
+      if (!on() || !SOUNDS[n]) return; if (!force && Date.now() - lastTap > 2500) return; // solo cuando tú hiciste algo
+      try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); SOUNDS[n](); } catch (e) { }
+    }
+  };
+})();
+window.Sfx = Sfx; A.sfx = n => Sfx.play(n);
+// enganchar los sonidos a lo que ya existe
+{ const g = A.giveStars; A.giveStars = n => { g(n); if (n > 0) Sfx.play('coin'); }; }
+for (const [k, n] of [['pcFeed', 'yum'], ['rgOpen', 'gift'], ['pcPet', 'pop'], ['vsHeart', 'pop'], ['rmStyle', 'pop'], ['rmFurn', 'pop'], ['jrSave', 'save']]) { const f = ACT[k]; if (f) ACT[k] = (...x) => { Sfx.play(n); return f(...x); }; }
+
+// ---------------- Clima real en la ventana del cuarto ----------------
+const WXC = c => c == null ? null : c <= 1 ? 'sol' : c <= 3 ? 'nubes' : c <= 48 ? 'niebla' : c <= 67 || (c >= 80 && c <= 82) ? 'lluvia' : c <= 77 || c === 85 || c === 86 ? 'nieve' : c >= 95 ? 'tormenta' : 'nubes';
+const WXT = { sol: 'está despejado', nubes: 'está nublado', niebla: 'hay neblina', lluvia: 'está lloviendo', nieve: 'está nevando', tormenta: 'hay tormenta' };
+let WX = null; try { WX = JSON.parse(localStorage.getItem('bolsi_wx') || 'null'); } catch (e) { }
+A.weather = () => { const w = S.settings.wx; if (!w || !w.on || !WX || Date.now() - WX.t > 3 * 3600e3) return null; return WX; };
+async function loadWx(force) {
+  const w = S.settings.wx; if (!w || !w.on || w.lat == null || !navigator.onLine) return;
+  if (!force && WX && Date.now() - WX.t < 30 * 60e3 && WX.lat === w.lat) return;
+  try {
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${w.lat}&longitude=${w.lon}&current=temperature_2m,weather_code,is_day&timezone=auto`);
+    const j = await r.json(); const c = j.current || {};
+    WX = { t: Date.now(), lat: w.lat, kind: WXC(c.weather_code), temp: Math.round(c.temperature_2m), day: !!c.is_day };
+    try { localStorage.setItem('bolsi_wx', JSON.stringify(WX)); } catch (e) { }
+    if (['rincon', 'cuarto', 'appearance'].includes(S.route)) A.render();
+  } catch (e) { }
+}
+A.loadWx = loadWx;
+setInterval(() => loadWx(), 30 * 60e3);
+const apScreen = A.screens.appearance;
+A.screens.appearance = () => {
+  const w = S.settings.wx || {}; const now = A.weather();
+  return apScreen() + `<div class="card stack" id="wxCard"><h3 style="margin:0">Sonidos y clima</h3>
+<div class="setrow"><span><b>Sonidos suaves</b><br><span class="faint">Un "blup" al anotar, campanita con las estrellitas, ñam al comer.</span></span><span class="toggle"><input type="checkbox" id="sfxOn" ${S.settings.sound !== false ? 'checked' : ''}><span></span></span></div>
+<div class="setrow"><span><b>Clima real en el cuarto</b><br><span class="faint">Si llueve donde estás, también llueve en la ventana del cuarto.</span></span><span class="toggle"><input type="checkbox" id="wxOn" ${w.on ? 'checked' : ''}><span></span></span></div>
+${w.on ? `<div class="faint">${w.city ? 'Clima de <b>' + esc(w.city) + '</b>' : 'Aún no elegiste tu ciudad.'}${now ? ` · ahora ${WXT[now.kind] || ''}, ${now.temp}°` : ''}</div>
+<div class="row" style="gap:6px;flex-wrap:wrap"><input class="in" id="wxCity" placeholder="Escribe tu ciudad (ej. Quito)" style="flex:1 1 160px" value=""><button class="btn sm" data-act="wxCity">Buscar</button><button class="btn sm" data-act="wxGps">Usar mi ubicación</button></div>
+<div id="wxRes" class="stack" style="gap:4px"></div>
+<p class="faint" style="margin:0;font-size:12px">Solo se guarda tu ciudad (sin la dirección exacta) para preguntar el clima.</p>` : ''}</div>`;
+};
+const apAfter = A.after.appearance;
+A.after.appearance = el => {
+  if (apAfter) apAfter(el); const c = $('#wxCard', el); if (!c) return;
+  $('#sfxOn', c).onchange = e => { S.settings.sound = e.target.checked; A.saveSettings(); if (e.target.checked) Sfx.play('coin', true); };
+  $('#wxOn', c).onchange = e => { S.settings.wx = Object.assign(S.settings.wx || {}, { on: e.target.checked }); A.saveSettings(); loadWx(true); A.render(); };
+};
+const setPlace = (lat, lon, city) => { S.settings.wx = Object.assign(S.settings.wx || {}, { on: true, lat: Math.round(lat * 10) / 10, lon: Math.round(lon * 10) / 10, city }); A.saveSettings(); WX = null; loadWx(true).then(() => A.render()); toast('Listo: clima de ' + city); };
+ACT.wxCity = async () => {
+  const q = ($('#wxCity').value || '').trim(); if (!q) return toast('Escribe tu ciudad');
+  try {
+    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&language=es`); const j = await r.json();
+    const L = j.results || []; const box = $('#wxRes'); if (!L.length) { box.innerHTML = '<span class="faint">No encontré esa ciudad.</span>'; return; }
+    box.innerHTML = L.map((x, i) => `<button class="btn sm" data-wxi="${i}" style="justify-content:flex-start">${esc(x.name)}${x.admin1 ? ', ' + esc(x.admin1) : ''} · ${esc(x.country || '')}</button>`).join('');
+    box.onclick = e => { const b = e.target.closest('[data-wxi]'); if (!b) return; const x = L[+b.dataset.wxi]; setPlace(x.latitude, x.longitude, x.name); };
+  } catch (e) { toast('No pude buscar. Revisa tu internet.'); }
+};
+ACT.wxGps = () => {
+  if (!navigator.geolocation) return toast('Tu celular no deja usar la ubicación aquí');
+  navigator.geolocation.getCurrentPosition(async p => {
+    let city = 'tu zona';
+    setPlace(p.coords.latitude, p.coords.longitude, city);
+  }, () => toast('No me diste permiso de ubicación. Puedes escribir tu ciudad.'), { maximumAge: 3600e3, timeout: 10000 });
+};
 // ---------------- Arranque ----------------
 const st0 = A.start;
-A.start = async () => { await st0(); birthdayGift(); if (online() && S.settings.visitCode) setTimeout(() => { loadInbox().then(() => { A.renderNav(); }).catch(() => {}); }, 2500); };
+A.start = async () => { await st0(); birthdayGift(); loadWx(); if (online() && S.settings.visitCode) setTimeout(() => { loadInbox().then(() => { A.renderNav(); }).catch(() => {}); }, 2500); };
 })();
