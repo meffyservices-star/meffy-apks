@@ -51,6 +51,9 @@ menta: { k: '#3f7a55', P: '#6fcf9f', p: '#c8f0dc', R: '#3fae7c', l: '#e0f7ec', L
 noche: { k: '#2f2a5a', P: '#b48cf0', p: '#ddccff', R: '#9b6be0', l: '#d6dcff', L: '#8fa4f0', V: '#6b7fd6', b: '#d6dcff', B: '#8fa4f0', y: '#ffe27a', Y: '#f5c94c', g: '#c6e8ff', G: '#7fb6e8', D: '#5a8fd0', n: '#8a7ab8', N: '#5f528f', c: '#f3f0ff', C: '#e3ddff', w: '#fffdf0', a: '#ffe27a', A: '#f5c94c' },
 chocolate: { k: '#4a2c22', P: '#d0906e', p: '#f2d0bc', R: '#b0503a', l: '#f7e6d2', L: '#dcb08a', V: '#b98660', b: '#f7e6d2', B: '#dcb08a', y: '#ffeec2', Y: '#e6b062', g: '#e3d6a8', G: '#a08a4e', D: '#7a6838', c: '#fff4e6', C: '#f0dcc2', n: '#8a5a3c', N: '#5e3a26' }
 };
+// tono de los packs de color para los íconos dibujados a mano
+const RAW_TINT = { fresa: ['#7a2448', '#f2789f', '#fff2f6'], menta: ['#2f5e44', '#6fcf9f', '#f0fbf4'], noche: ['#26224f', '#8f7ae6', '#f1eeff'], chocolate: ['#3e2419', '#b98660', '#fbf1e6'] };
+function tintRaw(c, [d, m, l]) { const h = x => [1, 3, 5].map(i => parseInt(x.slice(i, i + 2), 16)); const [r, g, b] = h(c); const L = (r * .3 + g * .59 + b * .11) / 255; const mixc = (a, bb, t) => { const A = h(a), B = h(bb); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); }; return L < .55 ? mixc(d, m, L / .55) : mixc(m, l, (L - .55) / .45); }
 function toURL(grid, scale, over, style) {
 const H = grid.length, W = grid[0].length, s = scale || 1;
 const cv = document.createElement('canvas'); cv.width = W * s; cv.height = H * s;
@@ -228,7 +231,7 @@ const [base, variant] = name.split('~');
 const d = DEFS[base]; if (!d) return '';
 let url;
 if (d.raw) { // ícono dibujado a mano con sus propios colores y contorno
-const pal = d.pal.split(','); const grid = d.raw.map(r => [...r].map(ch => ch === '.' ? null : pal[parseInt(ch, 36)]));
+let pal = d.pal.split(','); if (variant && RAW_TINT[variant]) pal = pal.map(c => tintRaw(c, RAW_TINT[variant])); const grid = d.raw.map(r => [...r].map(ch => ch === '.' ? null : pal[parseInt(ch, 36)]));
 url = toURL(grid, scale || 1, null, null);
 } else {
 const W = d.w || 16, H = d.h || 16, fn = d.fn || d;
@@ -919,8 +922,74 @@ const t = (r.text || '').toLowerCase(); if (!t) continue;
 if ((r.match === 'contiene' && n.includes(t)) || (r.match === 'igual' && n === t) || (r.match === 'empieza' && n.startsWith(t))) return r.cat;
 }
 const hit = S.fin.categories.find(c => n.includes(c.name.toLowerCase()));
-return hit ? hit.id : null;
+if (hit) return hit.id;
+for (const [id, re] of Object.entries(CAT_KW)) if (S.fin.categories.some(c => c.id === id) && new RegExp('(^|[^a-záéíóúñü])(' + re + ')([^a-záéíóúñü]|$)', 'i').test(n)) return id;
+return null;
 }
+const CAT_KW = { comida: 'helado|postre|snack|golosinas|almuerzo|almorc[eé]|cena|cen[eé]|desayuno|pizza|sushi|hamburguesa|restaurante|kfc|pollo|encebollado|comida|ceviche|hornado|papas', super: 'super|súper|supermercado|supermaxi|mercado|t[ií]a|aki|frutas|v[ií]veres|despensa|mi comisariato', transporte: 'uber|taxi|bus|buseta|pasaje|didi|metro|gasolina|indriver|parqueo|peaje|cabify', cafe: 'caf[eé]|cafecito|starbucks|sweet and coffee|capuchino|frapp[eé]', salud: 'farmacia|fybeca|medicina|doctor|m[eé]dico|pastillas|cita m[eé]dica|dentista|consulta', celular: 'recarga|celular|plan del celular|claro|movistar|cnt', internet: 'internet|wifi|netlife', servicios: 'luz|agua|gas|planilla', compras: 'ropa|zapatos|zapatillas|shein|amazon|temu|compras|vestido|blusa|cartera', belleza: 'u[nñ]as|peluquer[ií]a|maquillaje|cejas|pesta[nñ]as|skincare|corte de pelo|tinte', salidas: 'cine|bar|fiesta|concierto|salida|discoteca|karaoke|boliche|entradas', subs: 'netflix|spotify|disney|hbo|youtube|prime video|icloud|suscripci[oó]n|chatgpt', regalos: 'regalo|regal[eé]|cumplea[nñ]os', arriendo: 'arriendo|alquiler|renta', sueldo: 'sueldo|salario|quincena|me pagaron', extra: 'venta|vend[ií]|freelance|propina|extra', ahorro: 'ahorro|ahorr[eé]' };
+// ---- Entender un texto hablado o copiado: "gasté 3,50 en café con tarjeta", "Consumo por USD 12,50 en SUPERMAXI" ----
+const NUMW = { cero: 0, un: 1, uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11, doce: 12, trece: 13, catorce: 14, quince: 15, dieciseis: 16, 'dieciséis': 16, diecisiete: 17, dieciocho: 18, diecinueve: 19, veinte: 20, veintiun: 21, veintiuno: 21, veintidos: 22, 'veintidós': 22, veintitres: 23, 'veintitrés': 23, veinticuatro: 24, veinticinco: 25, veintiseis: 26, 'veintiséis': 26, veintisiete: 27, veintiocho: 28, veintinueve: 29, treinta: 30, cuarenta: 40, cincuenta: 50, sesenta: 60, setenta: 70, ochenta: 80, noventa: 90, cien: 100, ciento: 100, doscientos: 200, trescientos: 300, cuatrocientos: 400, quinientos: 500, seiscientos: 600, setecientos: 700, ochocientos: 800, novecientos: 900, mil: 1000 };
+function wordsToDigits(txt) {
+const tk = txt.split(/(\s+)/); const out = []; let run = null, cur = 0, tot = 0;
+const flush = () => { if (run) { out.push(String(tot + cur)); run = null; cur = 0; tot = 0; } };
+for (let i = 0; i < tk.length; i++) {
+const w = tk[i]; const lw = w.toLowerCase().replace(/[.,;:!?]$/, '');
+if (/^\s+$/.test(w)) { if (!run) out.push(w); continue; }
+if (lw in NUMW && !((lw === 'un' || lw === 'una') && !run && !/^(d[oó]lar|d[oó]lares|mil|millón)/i.test(tk[i + 2] || ''))) { const v = NUMW[lw]; if (v === 1000) { tot += (cur || 1) * 1000; cur = 0; } else cur += v; run = true; if (/[.,;:!?]$/.test(w)) { flush(); out.push(w.slice(-1)); } continue; }
+if (lw === 'y' && run && /^\s+$/.test(tk[i + 1] || '') && ((tk[i + 2] || '').toLowerCase() in NUMW)) continue;
+if (run) { flush(); out.push(' '); }
+out.push(w);
+}
+flush(); return out.join('').replace(/ {2,}/g, ' ');
+}
+function parseMoneyText(raw, opt) {
+opt = opt || {};
+let tx = ' ' + wordsToDigits(String(raw || '').replace(/\s+/g, ' ')) + ' ';
+const lo = tx.toLowerCase(); const r = { type: null, amount: 0, acct: null, date: null, note: '', split: 0, cat: null };
+// monto
+let m, used = '';
+const cur = '(?:\\$|usd|us\\$|dólares|dolares)';
+if ((m = tx.match(new RegExp(cur + '\\s*(\\d{1,3}(?:[.,]\\d{3})*(?:[.,]\\d{1,2})|\\d+(?:[.,]\\d{1,2})?)', 'i')))) { used = m[0]; r.amount = toNum(m[1]); }
+else if ((m = tx.match(/(\d+)\s*(?:d[oó]lares?\s*)?con\s*(\d{1,2})(?:\s*centavos)?/i))) { used = m[0]; r.amount = +m[1] + +m[2].padEnd(2, '0') / 100; }
+else if ((m = tx.match(/(\d+)\s*(?:d[oó]lares?\s*)?y\s*medio/i))) { used = m[0]; r.amount = +m[1] + .5; }
+else if ((m = tx.match(/(\d+(?:[.,]\d{1,2})?)\s*(?:d[oó]lares?|usd|\$)/i))) { used = m[0]; r.amount = toNum(m[1]); }
+else if ((m = tx.match(/(\d+)\s*centavos/i))) { used = m[0]; r.amount = +m[1] / 100; }
+else if ((m = tx.match(/(\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?|\d+[.,]\d{1,2})(?![\d\/])/))) { used = m[0]; r.amount = toNum(m[1]); }
+else if ((m = tx.match(/medio d[oó]lar/i))) { used = m[0]; r.amount = .5; }
+else if ((m = tx.match(/(?:^|\s)(\d{1,5})(?=\s|$)/)) && !/\d{1,2}\/\d{1,2}/.test(m[0])) { used = m[0]; r.amount = +m[1]; }
+// dividir: "entre 4", "dividido entre 3 personas"
+if ((m = tx.match(/(?:dividid[oa]s?\s+)?entre\s+(\d{1,2})(?:\s+(?:personas|amigas|amigos))?/i))) { r.split = +m[1]; tx = tx.replace(m[0], ' '); }
+if (used) tx = tx.replace(used, ' ');
+// tipo
+if (/(me pagaron|recib[ií]|cobr[eé]|gan[eé]|me depositaron|me (?:entr[oó]|lleg[oó])|me transfirieron|me enviaron|te (?:transfiri[oó]|envi[oó])|recibiste|acreditad|dep[oó]sito recibido|ingreso|sueldo|quincena|vend[ií])/i.test(lo)) r.type = 'income';
+else if (/(gast[eé]|pagu[eé]|compr[eé]|consumo|compra|pago|d[eé]bito|me cobraron|transferencia (?:exitosa|enviada)|retiro)/i.test(lo)) r.type = 'expense';
+// cuenta
+const accs = S.fin.accounts.filter(a => !a.archived);
+const byName = accs.find(a => a.name && lo.includes(a.name.toLowerCase())) || accs.find(a => a.name && a.name.split(/\s+/).some(w => w.length > 4 && !/cuenta|ahorros?|tarjeta|cr[eé]dito|corriente/i.test(w) && lo.includes(w.toLowerCase())));
+if (byName) r.acct = byName.id;
+else if (/efectivo|en cash/.test(lo)) r.acct = (accs.find(a => a.type === 'efectivo') || {}).id || null;
+else if (/tarjeta|cr[eé]dito|\*{2,}\d{3,4}/.test(lo)) r.acct = (accs.find(a => a.type === 'tarjeta') || {}).id || null;
+else if (/transferencia|banco|d[eé]bito|cuenta/.test(lo)) r.acct = (accs.find(a => /ahorro|corriente|banco/.test(a.type || '')) || {}).id || null;
+// fecha
+if (/antier|anteayer/.test(lo)) r.date = ymd(addDays(new Date(), -2));
+else if (/\bayer\b/.test(lo)) r.date = ymd(addDays(new Date(), -1));
+else if ((m = lo.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/))) { const y = m[3] ? (m[3].length === 2 ? '20' + m[3] : m[3]) : String(new Date().getFullYear()); const d = `${y}-${String(m[2]).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`; if (!isNaN(new Date(d)) && d <= today()) r.date = d; }
+// nota: lo que queda, sin palabras de relleno
+let note = '';
+const en = tx.match(/\ben\s+(?!efectivo|tarjeta|la cuenta|mi cuenta)([a-záéíóúñü0-9][^,.;]{1,40})/i);
+if (opt.shared && (m = tx.match(/(?:transfiri[oó]|envi[oó]|\ben|\ba|\bde)\s+([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ0-9&.'-]+(?: [A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ0-9&.'-]+){0,3})/))) note = m[1].replace(/ (EL|LA|DE)$/, '');
+else if (en) note = en[1];
+else note = tx;
+note = (' ' + note + ' ').replace(/(?<=[^a-záéíóúñü])(me|yo|te|hoy|ayer|antier|anteayer|gast[eé]|pagu[eé]|compr[eé]|cobraron|pagaron|recib[ií]|recibida|cobr[eé]|gan[eé]|transfiri[oó]|envi[oó]|transferencia|consumo|tarjeta(?: de cr[eé]dito)?|efectivo|cuenta|d[oó]lares?|d[oó]lar|centavos|usd|por|un|una|unos|unas|el|la|los|las|de|del|en|con|para|mi|tu)(?=[^a-záéíóúñü])/gi, ' ').replace(/(?<=[^a-záéíóúñü])(?:con|en|de)(?=[^a-záéíóúñü])/gi, ' ').replace(/[$*]/g, ' ').replace(/\s+/g, ' ').trim();
+if (byName) note = note.replace(new RegExp(byName.name, 'i'), '').trim();
+note = note.replace(/^[,.\-\s]+|[,.\-\s]+$/g, '');
+if (note.length > 40) note = note.slice(0, 40).trim();
+r.note = note ? (opt.shared && /^[A-ZÁÉÍÓÚÑ0-9 &.'-]+$/.test(note) ? note.split(' ').map(w => w.length <= 3 ? w : w.charAt(0) + w.slice(1).toLowerCase()).join(' ') : note.charAt(0).toUpperCase() + note.slice(1).toLowerCase()) : '';
+r.cat = guessCat(r.note) || guessCat(lo);
+r.amount = Math.round(r.amount * 100) / 100;
+return r;
+}
+function toNum(x) { x = String(x); if (/^\d{1,3}([.,]\d{3})+$/.test(x)) return +x.replace(/[.,]/g, ''); if (/[.,]\d{3}[.,]\d{1,2}$/.test(x)) x = x.replace(/[.,](?=\d{3}[.,])/g, ''); return parseFloat(x.replace(',', '.')) || 0; }
 function px(name, size, style) { return `<img class="pixel ico" alt="" src="${Pix.sprite(name, 3)}" style="width:${size || 20}px;height:${size || 20}px;vertical-align:-${Math.round((size || 20) * .2)}px;${style || ''}">`; }
 function iconHTML(v, size) {
 size = size || 28;
@@ -1321,7 +1390,8 @@ const v = nums.pop(); return isFinite(v) ? Math.round(v * 100) / 100 : 0;
 function quickAdd(existing, preset) {
 const t = existing ? { ...existing } : Object.assign({ type: 'expense', cat: null, acct: S.settings.defaultAcct || (S.fin.accounts[0] || {}).id, to: null, date: today(), note: '' }, preset || {});
 let expr = existing ? String(existing.amount) : (preset && preset.amount ? String(preset.amount) : '');
-let manualCat = !!existing; let pane = 'cat';
+let manualCat = !!existing; let pane = 'cat'; if (!t.split) t.split = { n: (preset && preset.split) || 1, names: [] };
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition; let rec = null;
 const title = existing ? 'Editar movimiento' : 'Anotar';
 openSheet(title, `<div id="qa"></div>`, sh => {
 const box = $('#qa', sh);
@@ -1331,23 +1401,29 @@ const val = evalExpr(expr);
 const feels = t.type === 'expense' && A_feels();
 if (pane === 'cat' && t.type === 'transfer') pane = 'cuenta';
 if (pane === 'animo' && !feels) pane = 'cat';
+if (pane === 'split' && (t.type !== 'expense' || existing)) pane = 'cat';
+const splitPane = () => { const n = t.split.n, v = evalExpr(expr) || 0, share = Math.round(v / n * 100) / 100; return `<div class="qa-split"><div class="row between" style="gap:10px"><span>¿Entre cuántas personas?<small class="faint" style="display:block">Contándote a ti</small></span><span class="stepper"><button data-spn="-1" aria-label="Menos">−</button><b class="num">${n}</b><button data-spn="1" aria-label="Más">+</button></span></div>
+${n > 1 ? `<div class="qa-spnames">${Array.from({ length: n - 1 }, (_, i) => `<input class="in" data-spname="${i}" placeholder="¿Quién? (persona ${i + 2})" value="${esc(t.split.names[i] || '')}" autocomplete="off">`).join('')}</div>
+<div class="qa-sptot">${v ? `A cada una le toca <b>${money(share)}</b>. Tú gastas <b>${money(Math.round((v - share * (n - 1)) * 100) / 100)}</b> y te deben <b>${money(share * (n - 1))}</b>, lo verás en Me deben.` : 'Escribe el monto y te digo cuánto le toca a cada una.'}</div>` : '<div class="faint">Si pagaste por varias personas, súbele aquí y te anoto lo que te debe cada una.</div>'}</div>`; };
 const catName = t.type === 'transfer' ? 'Transferencia' : ((cat(t.cat) || {}).name || 'Categoría');
 const acName = (acct(t.acct) || {}).name || 'Cuenta';
 const dayName = t.date === today() ? 'Hoy' : t.date === ymd(addDays(new Date(), -1)) ? 'Ayer' : fmtDate(t.date);
 box.innerHTML = `
 <div class="qa-wrap">
 <div class="seg qa-tabs"><button data-ty="expense" aria-pressed="${t.type === 'expense'}">Gasto</button><button data-ty="income" aria-pressed="${t.type === 'income'}">Ingreso</button><button data-ty="transfer" aria-pressed="${t.type === 'transfer'}">Transferencia</button></div>
-<div class="qa-amt"><div style="min-width:0"><div class="expr">${/[+\-×÷]/.test(expr.slice(1)) ? esc(expr) : (t.type === 'transfer' ? 'Monto a mover' : 'Monto')}</div><div class="val num ${t.type === 'income' ? 'pos' : ''}">${money(val)}</div></div><span>${t.type === 'transfer' ? px('ui_transfer', 34) : iconHTML((cat(t.cat) || {}).icon || 's:moneda', 34)}</span></div>
+<div class="qa-amt"><div style="min-width:0"><div class="expr">${/[+\-×÷]/.test(expr.slice(1)) ? esc(expr) : (t.type === 'transfer' ? 'Monto a mover' : 'Monto')}</div><div class="val num ${t.type === 'income' ? 'pos' : ''}">${money(val)}</div></div><span>${t.type === 'transfer' ? px('ui_transfer', 34) : iconHTML((cat(t.cat) || {}).icon || 's:moneda', 34)}</span>${!existing ? `<button class="qa-mic qa-shot" data-shot aria-label="Anotar desde una captura" title="Sube la captura de una transferencia o recibo">${px('pic', 28)}<small>Captura</small></button><input type="file" accept="image/*" id="qaShot" hidden>` : ''}${SR && !existing ? `<button class="qa-mic" data-mic aria-label="Anotar con la voz" title="Dime qué gastaste">${px('mic', 30)}<small>Voz</small></button>` : ''}</div>
 <input class="in qa-note" id="qaNote" placeholder="${t.type === 'income' ? 'Nota: sueldo, venta…' : 'Nota: café, uber, super…'}" value="${esc(t.note)}" autocomplete="off">
 <div class="qa-panes" role="tablist">
 ${t.type !== 'transfer' ? `<button role="tab" data-pane="cat" aria-selected="${pane === 'cat'}"><small>Categoría</small><b>${esc(catName)}</b></button>` : ''}
 <button role="tab" data-pane="cuenta" aria-selected="${pane === 'cuenta'}"><small>${t.type === 'transfer' ? 'Cuentas' : 'Cuenta y día'}</small><b>${t.type === 'transfer' ? esc(acName) + ' → ' + esc((acct(t.to) || {}).name || '¿?') : esc(acName) + ' · ' + esc(dayName)}</b></button>
+${t.type === 'expense' && !existing ? `<button role="tab" data-pane="split" aria-selected="${pane === 'split'}"><small>Dividir</small><b>${t.split.n > 1 ? 'Entre ' + t.split.n : 'Solo yo'}</b></button>` : ''}
 ${feels ? `<button role="tab" data-pane="animo" aria-selected="${pane === 'animo'}"><small>Ánimo</small><b>${t.feel && feels[t.feel] ? feels[t.feel].e : '—'}</b></button>` : ''}
 </div>
 <div class="qa-pane">
 ${pane === 'cat' ? `<div class="catgrid qa-cats">${cats.map(c => `<button data-cat="${c.id}" aria-pressed="${t.cat === c.id}"><span class="ci" style="background:${tintOf(c.id)}">${iconHTML(c.icon, 28)}</span><span class="t">${esc(c.name)}</span></button>`).join('')}<button data-act-in="newcat"><span class="ci">＋</span><span class="t">Nueva</span></button></div>`
   : pane === 'cuenta' ? (t.type === 'transfer' ? `<div class="formgrid"><label class="f">Desde<select class="in" id="qaFrom">${S.fin.accounts.map(a => `<option value="${a.id}" ${t.acct === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label><label class="f">Hacia<select class="in" id="qaTo"><option value="">Elige…</option>${S.fin.accounts.map(a => `<option value="${a.id}" ${t.to === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label></div><div class="row" style="gap:6px;margin-top:8px"><button class="chip" data-day="0" aria-pressed="${t.date === today()}">Hoy</button><button class="chip" data-day="-1" aria-pressed="${t.date === ymd(addDays(new Date(), -1))}">Ayer</button><input type="date" class="in" id="qaDate" value="${t.date}" style="flex:1;min-width:0;padding:6px 10px"></div>`
     : `<div class="qa-accts">${S.fin.accounts.filter(a => !a.archived).map(a => `<button class="chip" data-acpick="${a.id}" aria-pressed="${t.acct === a.id}">${iconHTML(a.icon || 's:monedero', 18)} ${esc(a.name)}</button>`).join('')}</div><div class="row" style="gap:6px;margin-top:8px"><button class="chip" data-day="0" aria-pressed="${t.date === today()}">Hoy</button><button class="chip" data-day="-1" aria-pressed="${t.date === ymd(addDays(new Date(), -1))}">Ayer</button><input type="date" class="in" id="qaDate" value="${t.date}" style="flex:1;min-width:0;padding:6px 10px"></div>`)
+  : pane === 'split' ? splitPane()
   : `<div class="feelrow qa-feels">${Object.entries(feels).map(([k, f]) => `<button type="button" data-feel="${k}" aria-pressed="${t.feel === k}" aria-label="${f.n}" title="${f.n}">${f.e}<small>${f.n}</small></button>`).join('')}</div>`}
 </div>
 <div class="keypad qa-keys">
@@ -1362,14 +1438,40 @@ if (!manualCat && t.type !== 'transfer') { const g = guessCat(note.value); if (g
 if (!expr) { const m = note.value.match(/(\d+(?:[.,]\d{1,2})?)/); if (m) { $('.val', box).textContent = money(parseFloat(m[1].replace(',', '.'))); } }
 };
 const refreshCats = () => { $$('[data-cat]', box).forEach(b => b.setAttribute('aria-pressed', b.dataset.cat === t.cat)); const ic = $('.qa-amt > span', box); if (ic) ic.innerHTML = iconHTML((cat(t.cat) || {}).icon || 's:moneda', 34); const pb = $('[data-pane="cat"] b', box); if (pb) pb.textContent = (cat(t.cat) || {}).name || 'Categoría'; };
+const qs = $('#qaShot', box); if (qs) qs.onchange = async () => { const file = qs.files && qs.files[0]; if (!file) return; const ex = $('.expr', box); if (ex) ex.textContent = 'Leyendo tu captura…'; try { const txt = await window.App.ocrImage(file); const r = parseMoneyText(txt, { shared: true }); if (!r.amount && !r.note) { toast('No encontré un monto en la imagen'); draw(); return; } applyParsed(r); toast('Leí tu captura. Revisa y toca Guardar'); } catch (er) { toast(navigator.onLine ? 'No pude leer la imagen' : 'Para leer capturas necesitas internet'); draw(); } };
+$$('[data-spname]', box).forEach(i => i.oninput = () => { t.split.names[+i.dataset.spname] = i.value; });
 const qd = $('#qaDate', box); if (qd) qd.onchange = e => { t.date = e.target.value || today(); draw(); };
 const ac = $('#qaAcct', box); if (ac) ac.onchange = e => { t.acct = e.target.value; };
 const fr = $('#qaFrom', box); if (fr) fr.onchange = e => { t.acct = e.target.value; };
 const to = $('#qaTo', box); if (to) to.onchange = e => { t.to = e.target.value; };
 };
+const listen = () => {
+if (rec) { try { rec.stop(); } catch (er) {} return; }
+rec = new SR(); rec.lang = 'es-EC'; rec.interimResults = true; rec.maxAlternatives = 1;
+let said = '';
+const mic = $('[data-mic]', box); if (mic) mic.classList.add('on'); const ex = $('.expr', box); if (ex) ex.textContent = 'Te escucho… di algo como "gasté 3,50 en café"';
+rec.onresult = ev => { said = Array.from(ev.results).map(x => x[0].transcript).join(' '); const e2 = $('.expr', box); if (e2) e2.textContent = '“' + said + '”'; };
+rec.onerror = ev => { if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') toast('Dale permiso al micrófono para anotar con la voz'); else if (ev.error === 'network') toast('Para la voz necesitas internet'); else if (ev.error !== 'no-speech' && ev.error !== 'aborted') toast('No te escuché bien, intenta otra vez'); };
+rec.onend = () => { rec = null; const m2 = $('[data-mic]', box); if (m2) m2.classList.remove('on'); if (!said.trim()) { draw(); return; } applyParsed(parseMoneyText(said)); toast('Escuché: “' + said.trim() + '”. Revisa y toca Guardar'); };
+try { rec.start(); } catch (er) { rec = null; toast('No se pudo usar el micrófono'); }
+};
+const applyParsed = r => {
+if (r.type) t.type = r.type;
+if (r.amount) expr = String(r.amount);
+if (r.acct) t.acct = r.acct;
+if (r.date) t.date = r.date;
+if (r.note) t.note = r.note;
+if (r.split > 1 && t.type === 'expense') { t.split.n = Math.min(20, r.split); pane = 'split'; }
+const c = r.cat && cat(r.cat); if (c && (t.type === 'income') === (c.type === 'income')) { t.cat = r.cat; manualCat = false; }
+else if (t.cat && cat(t.cat) && (t.type === 'income') !== (cat(t.cat).type === 'income')) t.cat = null;
+draw();
+};
 box.addEventListener('click', e => {
 const b = e.target.closest('button'); if (!b) return;
 if (b.dataset.pane) { pane = b.dataset.pane; draw(); return; }
+if (b.dataset.spn) { t.split.n = Math.max(1, Math.min(20, t.split.n + +b.dataset.spn)); draw(); return; }
+if (b.hasAttribute('data-mic')) { listen(); return; }
+if (b.hasAttribute('data-shot')) { const f = $('#qaShot', box); if (f) f.click(); return; }
 if (b.dataset.acpick) { t.acct = b.dataset.acpick; draw(); return; }
 if (b.dataset.ty) { t.type = b.dataset.ty; if (t.type === 'income' && cat(t.cat) && cat(t.cat).type !== 'income') t.cat = null; if (t.type === 'expense' && cat(t.cat) && cat(t.cat).type === 'income') t.cat = null; draw(); return; }
 if (b.dataset.cat) { t.cat = b.dataset.cat; manualCat = true; draw(); return; }
@@ -1398,6 +1500,12 @@ if (t.type === 'transfer') { if (!t.to || t.to === t.acct) return toast('Elige u
 else if (!t.cat) { t.cat = guessCat(t.note) || (S.fin.categories.find(c => (t.type === 'income') === (c.type === 'income')) || {}).id; }
 const rec = { type: t.type, amount, cat: t.cat, acct: t.acct, to: t.type === 'transfer' ? t.to : undefined, date: t.date, feel: t.type === 'expense' ? (t.feel || undefined) : undefined, note: (t.note || '').replace(/\s*\d+(?:[.,]\d{1,2})?\s*$/, '').trim() || t.note };
 if (existing) { updateTx(existing.id, rec); toast('Cambios guardados'); }
+else if (t.type === 'expense' && t.split.n > 1) {
+const n = t.split.n, share = Math.round(amount / n * 100) / 100, mine = Math.round((amount - share * (n - 1)) * 100) / 100;
+rec.amount = mine; addTx(rec); S.fin.loans = S.fin.loans || [];
+for (let i = 0; i < n - 1; i++) { const who = (t.split.names[i] || '').trim() || 'Persona ' + (i + 2); const l = { id: uid(), dir: 'in', who, amount: share, paid: 0, note: rec.note || ((cat(rec.cat) || {}).name || ''), date: rec.date, acct: rec.acct || null, pays: [] }; if (rec.acct) addTx({ type: 'loan_out', amount: share, acct: rec.acct, date: rec.date, note: 'Préstamo a ' + who, loan: l.id }); S.fin.loans.push(l); }
+saveFin(); toast(`Anotado ✦ Te deben ${money(share * (n - 1))} entre ${n - 1} ${n - 1 === 1 ? 'persona' : 'personas'}`);
+}
 else { addTx(rec); toast(t.type === 'income' ? '¡Ingreso anotado! ✦' : 'Anotado ✦'); }
 closeSheet(); render();
 }
@@ -1515,7 +1623,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) Store
 function applyThemeEarly() { /* CSS defaults already paint the sky */ }
 window.App = {
 start, S, $, $$, esc, uid, pad, ymd, parseYmd, addDays, today, ym, MONTHS, MON3, DOW, dowIdx, cap, monthLabel, addMonths, daysIn, isoWeek, weekStart,
-money, iconHTML, px, pageIcon, privBtn, txListBody, render, renderNav, go, toast, openSheet, closeSheet, pickIcon, pickBanner, plusPitch, bannerHTML, header, txRow, txOnDay, spentOf, incomeOf,
+money, iconHTML, px, pageIcon, parseMoneyText, privBtn, txListBody, render, renderNav, go, toast, openSheet, closeSheet, pickIcon, pickBanner, plusPitch, bannerHTML, header, txRow, txOnDay, spentOf, incomeOf,
 cat, acct, group, acctBalance, ACCT_TYPES, WALLET, typeName, walletHTML, netWorth, budgetExpenses, budgetIncome, byCat, txIn, isSaving, isPlus, saveSettings, saveFin, saveTxMonths, applyTheme, nextDate, quickAdd,
 THEMES, FONTS, TXC, PACKS, PAGES, EMOJI, SYMBOLS, screens, after, ACTIONS, goalMini, fmtDate, clearExamples, evalExpr, addTx,
 editCategory: (...a) => App._editCategory(...a)

@@ -856,7 +856,32 @@ ACT.lkAny = () => openSheet('¿Qué dibujito quieres cambiar?', `<div class="sta
 }; }
 { const adm = A.screens.admin; A.screens.admin = () => { const h = adm(); if (!Store.isOwner) return h; const btn = `<button class="card row" data-go="adminlook" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer">${cimg('m_inicio', 40)}${cimg('ramen', 32)}<div style="flex:1"><b>Personalizar la app</b><div class="faint">Cambia iconos, nombres de secciones y prende o apaga secciones para todas</div></div><span class="faint">›</span></button>`; const i = h.indexOf('<details'); return i > 0 ? h.slice(0, i) + btn + h.slice(i) : h + btn; }; }
 
+// ---------------- Leer capturas y lo que comparten a Bolsillito ----------------
+let tessP = null;
+const loadTess = () => tessP || (tessP = new Promise((ok, no) => { if (window.Tesseract) return ok(); const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'; sc.onload = () => ok(); sc.onerror = () => { tessP = null; no(new Error('sin red')); }; document.head.appendChild(sc); }));
+A.ocrImage = async file => {
+  await loadTess();
+  // achica la imagen para leer más rápido
+  const bmp = await createImageBitmap(file); const sc = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+  const cv = document.createElement('canvas'); cv.width = Math.round(bmp.width * sc); cv.height = Math.round(bmp.height * sc); cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
+  const w = await Tesseract.createWorker('spa'); try { const { data } = await w.recognize(cv); return data.text || ''; } finally { w.terminate(); }
+};
+async function readShared() {
+  if (!/[?&]compartido=1/.test(location.search)) return;
+  try { history.replaceState(null, '', '/'); } catch (e) {}
+  let d = {}, img = null;
+  try { const c = await caches.open('bolsi-compartido'); const r = await c.match('/__compartido.json'); if (r) d = await r.json(); const ri = await c.match('/__compartido.img'); if (ri) img = await ri.blob(); await caches.delete('bolsi-compartido'); } catch (e) {}
+  let text = [d.title, d.text].filter(Boolean).join(' ').trim();
+  if (img) { toast('Leyendo tu captura…'); try { text = (text + ' ' + await A.ocrImage(img)).trim(); } catch (e) { toast(navigator.onLine ? 'No pude leer la imagen. Completa los datos tú.' : 'Para leer capturas necesitas internet'); } }
+  if (!text) { A.quickAdd(null, {}); return; }
+  const r = A.parseMoneyText(text, { shared: true });
+  const preset = { type: r.type || 'expense', note: r.note || '', date: r.date || today() };
+  if (r.amount) preset.amount = r.amount; if (r.acct) preset.acct = r.acct;
+  const c = r.cat && A.cat(r.cat); if (c && (preset.type === 'income') === (c.type === 'income')) preset.cat = r.cat;
+  A.quickAdd(null, preset); setTimeout(() => toast(r.amount ? 'Revisa lo que entendí y toca Guardar' : 'No encontré el monto, escríbelo tú'), 300);
+}
+
 // ---------------- Arranque ----------------
 const st0 = A.start;
-A.start = async () => { await st0(); applyLook(); A.renderNav(); birthdayGift(); loadWx(); if (online() && S.settings.visitCode) setTimeout(() => { loadInbox().then(() => { A.renderNav(); }).catch(() => {}); }, 2500); };
+A.start = async () => { await st0(); applyLook(); A.renderNav(); readShared(); birthdayGift(); loadWx(); if (online() && S.settings.visitCode) setTimeout(() => { loadInbox().then(() => { A.renderNav(); }).catch(() => {}); }, 2500); };
 })();

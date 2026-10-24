@@ -1,9 +1,21 @@
-const C = 'bolsillito-v24';
+const C = 'bolsillito-v25';
 const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
 const CORE = ['/', '/offline.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', CDN].concat([0, 1, 2, 3, 4, 5].map(i => '/p' + i + '.bin?v=1'));
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
-self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
+self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C && k !== 'bolsi-compartido').map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
+  // Compartir a Bolsillito: guarda lo compartido (texto o captura) y abre la app para anotarlo
+  if (e.request.method === 'POST' && new URL(e.request.url).pathname === '/compartir') {
+    e.respondWith((async () => {
+      try {
+        const f = await e.request.formData(); const c = await caches.open('bolsi-compartido');
+        await c.put('/__compartido.json', new Response(JSON.stringify({ title: f.get('title') || '', text: f.get('text') || '', url: f.get('url') || '' }), { headers: { 'content-type': 'application/json' } }));
+        const img = f.get('img'); if (img && img.size) await c.put('/__compartido.img', new Response(img, { headers: { 'content-type': img.type || 'image/png' } })); else await c.delete('/__compartido.img');
+      } catch (er) {}
+      return Response.redirect('/?compartido=1', 303);
+    })());
+    return;
+  }
   if (e.request.method !== 'GET') return;
   const u = new URL(e.request.url);
   if (/^(cdn\.jsdelivr\.net|fonts\.googleapis\.com|fonts\.gstatic\.com)$/.test(u.hostname)) {
