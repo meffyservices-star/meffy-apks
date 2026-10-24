@@ -1204,3 +1204,19 @@ body.jr-spread .jr-spread-bar { display: flex; position: fixed; left: 0; right: 
 .pb-hook { display: none; }
 .probador .petw, .probador .mz { width: 128px !important; }
 .probador .pb-stage { margin-bottom: 4px; }
+/* probador: espejo de un lado, ropero del otro */
+.pb-rod, .pb-cort, .pb-hook { display: none !important; }
+.rc-scene.probador { padding-top: 34px; background-image: linear-gradient(90deg, rgba(242,126,161,.08) 50%, transparent 50%), linear-gradient(transparent 70%, #f3dcc4 70%, #ecd0b4 100%); background-size: 24px 100%, 100% 100%; }
+.pb-sign { top: 8px; }
+.pb-sign::before { display: none; }
+.pb-mirror2 { position: absolute; left: 6%; bottom: 20%; width: 15%; max-width: 64px; z-index: 1; filter: drop-shadow(0 5px 0 rgba(90,50,30,.18)); }
+.pb-ward { position: absolute; right: 4%; bottom: 20%; width: 27%; max-width: 116px; z-index: 1; filter: drop-shadow(0 5px 0 rgba(90,50,30,.18)); }
+.pb-rack { position: absolute; left: 22%; bottom: 22%; width: 11%; max-width: 46px; z-index: 0; opacity: .95; }
+.pb-rug { position: absolute; left: 50%; bottom: 13%; width: 46%; max-width: 190px; transform: translateX(-50%); z-index: 0; opacity: .9; }
+.pb-podium { display: none; }
+.probador .petw, .probador .mz { width: 120px !important; }
+.probador .pb-stage { z-index: 2; margin-bottom: 8px; }
+.pb-rug, .pb-rack { display: none !important; }
+.rc-scene.probador { min-height: 300px !important; }
+.probador .pb-stage { margin-bottom: 14px; }
+.probador .pb-stage::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 110px; height: 14px; margin-left: -55px; border-radius: 50%; background: rgba(90,50,30,.14); z-index: -1; }
