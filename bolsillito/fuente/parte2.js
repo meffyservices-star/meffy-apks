@@ -152,7 +152,7 @@ function daysLeft(se) {
 A.seasonDaysLeft = daysLeft;
 
 // ---- cosas que agrega la administradora (se guardan en la configuración de la app) ----
-const catalog = () => { const c = (A.CFG && A.CFG.catalog) || {}; return { pets: c.pets || [], furn: c.furn || [], clothes: c.clothes || [], food: c.food || [], icons: c.icons || [], stickers: c.stickers || [], walls: c.walls || [], floors: c.floors || [], seasons: c.seasons || [] }; };
+const catalog = () => { const c = (A.CFG && A.CFG.catalog) || {}; return { pets: c.pets || [], furn: c.furn || [], clothes: c.clothes || [], food: c.food || [], icons: c.icons || [], stickers: c.stickers || [], walls: c.walls || [], floors: c.floors || [], seasons: c.seasons || [], chars: c.chars || [] }; };
 const defMap = (name, w, h, map) => Pix.define(name, { w, h, fn(p) { p.map(0, 0, map); } });
 const defX = (name, x, w, h) => { if (x.pal) { Pix.define(name, { raw: x.map, pal: x.pal }); if (x.map2) { Pix.define(name + '__2', { raw: x.map2, pal: x.pal }); A.ANIM[name] = name + '__2'; } } else defMap(name, w, h, x.map); };
 const notYet = x => x.from && x.from > A.today();
@@ -169,6 +169,7 @@ function registerCatalog() {
   c.clothes.forEach(x => { const k = 'cc_' + x.id; customKeys.clothes.push(k); if (notYet(x)) return; addAcc(k, { slot: x.slot || 'head', name: x.name, price: x.how === 'free' ? 0 : +x.price || 10, season: x.how === 'temporada' ? x.season : null, ach: x.how === 'logro' ? x.ach : null, raro: x.how === 'raro', map: x.map.map(r => r), off: x.off, offAdmin: x.off, custom: true, dx: +x.dx || 0, dy: +x.dy || 0 }, x.pal ? x : null); if (x.dw && !x.pal) { const a = A.ACC[k]; const r0 = a.h / a.w; a.w = x.dw; a.h = x.dw * r0; } });
   c.icons.forEach(x => { if (x.off || notYet(x)) return; const k = 'ci_' + x.id; defX(k, x, x.w || 16, x.h || 16); customKeys.icons.push(k); });
   c.stickers.forEach(x => { if (x.off || notYet(x)) return; defX('cs_' + x.id, x, x.w, x.h); });
+  c.chars.forEach(x => defX('cg_' + x.id, x, x.w || 20, x.h || 20));
   const tileDef = (name, x, W, H) => { const t = x.pal ? x : null; if (!t) return; Pix.define(name, { raw: tiledRaw(x.map, W, H), pal: x.pal }); };
   c.walls.forEach(x => { const k = 'cw_' + x.id; tileDef('x_pared_' + k, x, 144, 34); customKeys.walls.push(k); if (!x.off && !notYet(x)) WALLS[k] = [x.name, x.how === 'stars' ? +x.price || 0 : 0]; });
   c.floors.forEach(x => { const k = 'cl_' + x.id; tileDef('x_piso_' + k, x, 144, 98); customKeys.floors.push(k); if (!x.off && !notYet(x)) FLOORS[k] = [x.name, x.how === 'stars' ? +x.price || 0 : 0]; });
@@ -777,10 +778,10 @@ ACT.rgDone = () => {
 };
 
 // ---------------- Admin: crear mascotas, muebles, ropa, comida, paredes, pisos, stickers e íconos ----------------
-const KINDS = { pets: ['Mascota', 20, 20], furn: ['Mueble', 24, 24], clothes: ['Ropa', 12, 8], food: ['Comida', 16, 16], walls: ['Pared', 16, 16], floors: ['Piso', 16, 16], stickers: ['Sticker', 24, 24], icons: ['Ícono', 16, 16] };
-const KIND_NEW = { pets: 'Nueva mascota', furn: 'Nuevo mueble', clothes: 'Nueva ropa', food: 'Nueva comida', walls: 'Nueva pared', floors: 'Nuevo piso', stickers: 'Nuevo sticker', icons: 'Nuevo ícono' };
-const KIND_PL = { pets: 'Mascotas', furn: 'Muebles', clothes: 'Ropa', food: 'Comidas', walls: 'Paredes', floors: 'Pisos', stickers: 'Stickers', icons: 'Íconos' };
-const KIND_SPR = { pets: 'cp_', furn: 'cf_', clothes: 'acc_cc_', food: 'cfo_', walls: 'x_pared_cw_', floors: 'x_piso_cl_', stickers: 'cs_', icons: 'ci_' };
+const KINDS = { pets: ['Mascota', 20, 20], furn: ['Mueble', 24, 24], clothes: ['Ropa', 12, 8], food: ['Comida', 16, 16], walls: ['Pared', 16, 16], floors: ['Piso', 16, 16], stickers: ['Sticker', 24, 24], icons: ['Ícono', 16, 16], chars: ['Personaje', 20, 20] };
+const KIND_NEW = { pets: 'Nueva mascota', furn: 'Nuevo mueble', clothes: 'Nueva ropa', food: 'Nueva comida', walls: 'Nueva pared', floors: 'Nuevo piso', stickers: 'Nuevo sticker', icons: 'Nuevo ícono', chars: 'Nuevo personaje del juego' };
+const KIND_PL = { pets: 'Mascotas', furn: 'Muebles', clothes: 'Ropa', food: 'Comidas', walls: 'Paredes', floors: 'Pisos', stickers: 'Stickers', icons: 'Íconos', chars: 'Personajes de Cruzar la calle' };
+const KIND_SPR = { pets: 'cp_', furn: 'cf_', clothes: 'acc_cc_', food: 'cfo_', walls: 'x_pared_cw_', floors: 'x_piso_cl_', stickers: 'cs_', icons: 'ci_', chars: 'cg_' };
 const PALK = Object.keys(Pix.PAL);
 const BASE_PAL = PALK.map(k => Pix.PAL[k]);
 function blankMap(w, h) { return Array.from({ length: h }, () => '.'.repeat(w)); }
@@ -792,7 +793,7 @@ function toPalMode(e) { // los dibujos viejos (con letras de colores) pasan a co
 }
 function newDraft(kind, item) {
   const [, w, h] = KINDS[kind];
-  ed = Object.assign({ kind, id: null, name: '', desc: '', how: kind === 'walls' || kind === 'floors' ? 'stars' : 'stars', price: kind === 'pets' ? 100 : kind === 'food' ? 3 : 20, gain: 20, slot: 'head', season: 'halloween', ach: 's7', wall: false, w, h, map: blankMap(w, h), dx: 0, dy: 0 }, item ? JSON.parse(JSON.stringify(item)) : {}, { kind });
+  ed = Object.assign({ kind, id: null, name: '', desc: '', how: kind === 'chars' ? 'gacha' : 'stars', rare: 1, price: kind === 'chars' ? 60 : kind === 'pets' ? 100 : kind === 'food' ? 3 : 20, gain: 20, slot: 'head', season: 'halloween', ach: 's7', wall: false, w, h, map: blankMap(w, h), dx: 0, dy: 0 }, item ? JSON.parse(JSON.stringify(item)) : {}, { kind });
   if (item) ed.id = item.id;
   if (typeof ed.pal === 'string') ed.pal = ed.pal.split(',');
   toPalMode(ed);
@@ -818,15 +819,16 @@ ${list.length ? `<div class="card"><h3>${KIND_PL[kind]} que ya agregaste</h3><di
 <button class="btn" data-act="seAdd" style="justify-content:center">Agregar temporada</button>
 <p class="faint" style="margin:0">Se repite cada año en esas fechas. Luego, al agregar ropa o muebles, elige "Temporada" y escoge esta.</p></details>`;
 };
-function howLabel(x, kind) { if (kind === 'stickers' || kind === 'icons') return 'Gratis'; return x.how === 'stars' ? `${x.price} estrellitas` : x.how === 'logro' ? 'Por logro' : x.how === 'temporada' ? 'De temporada' : x.how === 'raro' ? 'Regalo raro' : 'Gratis'; }
-const PH = { pets: 'Ej. Mochi de coco', furn: 'Ej. Lámpara de luna', clothes: 'Ej. Gorrito de lana', food: 'Ej. Flan', walls: 'Ej. Rayitas rosadas', floors: 'Ej. Baldosa de corazones', stickers: 'Ej. Gatito feliz', icons: 'Ej. Mi banco' };
+function howLabel(x, kind) { if (kind === 'stickers' || kind === 'icons') return 'Gratis'; return x.how === 'gacha' ? 'Máquina gacha · ' + (['', 'Común', 'Raro', 'Súper raro'][+x.rare || 1]) : x.how === 'stars' ? `${x.price} estrellitas` : x.how === 'logro' ? 'Por logro' : x.how === 'temporada' ? 'De temporada' : x.how === 'raro' ? 'Regalo raro' : 'Gratis'; }
+const PH = { pets: 'Ej. Mochi de coco', furn: 'Ej. Lámpara de luna', clothes: 'Ej. Gorrito de lana', food: 'Ej. Flan', walls: 'Ej. Rayitas rosadas', floors: 'Ej. Baldosa de corazones', stickers: 'Ej. Gatito feliz', icons: 'Ej. Mi banco', chars: 'Ej. Pandy' };
 const HELP = {
   walls: 'Dibuja o sube un cuadrito que se repite a lo ancho de toda la pared (la pared mide 34 de alto).',
   floors: 'Dibuja o sube una baldosa: se repite en todo el piso, como azulejos.',
   stickers: 'Los stickers les aparecen gratis a todas en el journal. Con "Foto a pixel" puedes convertir cualquier foto o dibujo, con borde blanco de sticker.',
   icons: 'Los íconos son gratis: les aparecen a todas al elegir el ícono de una cuenta, tarjeta o categoría.',
   clothes: 'Muévela y cámbiale el tamaño sobre la mascota hasta que quede en su lugar.',
-  furn: 'Mira el tamaño junto a la camita y ajústalo.'
+  furn: 'Mira el tamaño junto a la camita y ajústalo.',
+  chars: 'Personajes para el juego Cruzar la calle. Sube un dibujo pixel (de frente, con fondo transparente). Pueden salir en la máquina gacha, venderse con estrellitas o darse gratis desde el inicio.'
 };
 function formHTML() {
   const k = ed.kind; const tile = k === 'walls' || k === 'floors';
@@ -862,8 +864,9 @@ ${[['pen', 'Lápiz'], ['fill', 'Balde'], ['pick', 'Gotero'], ['line', 'Línea'],
 <div class="f">Variantes de color<div class="ad-vars">${VARS.map(([n, hue]) => `<button class="ad-var" data-var="${n}"><img class="pixel" alt="" src="${varPreview(hue)}"><span>${n}</span></button>`).join('')}</div><span class="faint" style="font-size:12px">Toca una y se crea una copia en ese color, lista para guardar.</span></div>
 ${k === 'clothes' ? tryOnHTML() : ''}${k === 'furn' || tile ? roomPreviewHTML() : ''}
 <div class="formgrid"><label class="f">Colección (opcional)<input class="in" data-ed="col" value="${esc(ed.col || '')}" placeholder="Ej. Otoño cozy" list="adCols"><datalist id="adCols">${[...new Set(Object.values(catalog()).flat().map(x => x && x.col).filter(Boolean))].map(c => `<option value="${esc(c)}">`).join('')}</datalist></label><label class="f">Sale el día (opcional)<input class="in" data-ed="from" type="date" value="${ed.from || ''}"></label></div>
-${k === 'stickers' || k === 'icons' ? '' : `<div class="f">¿Cómo se consigue?<div class="chips">${(tile ? [['stars', 'Con estrellitas'], ['free', 'Gratis']] : [['stars', 'Con estrellitas'], ['logro', 'Logro'], ['temporada', 'Temporada'], ['raro', 'Regalo raro'], ...(k === 'food' ? [] : [['free', 'Gratis']])]).map(([v, n]) => `<button class="chip" data-edhow="${v}" aria-pressed="${ed.how === v}">${n}</button>`).join('')}</div></div>
+${k === 'stickers' || k === 'icons' ? '' : `<div class="f">¿Cómo se consigue?<div class="chips">${(k === 'chars' ? [['gacha', 'Máquina gacha'], ['stars', 'Con estrellitas'], ['free', 'Gratis desde el inicio']] : tile ? [['stars', 'Con estrellitas'], ['free', 'Gratis']] : [['stars', 'Con estrellitas'], ['logro', 'Logro'], ['temporada', 'Temporada'], ['raro', 'Regalo raro'], ...(k === 'food' ? [] : [['free', 'Gratis']])]).map(([v, n]) => `<button class="chip" data-edhow="${v}" aria-pressed="${ed.how === v}">${n}</button>`).join('')}</div></div>
 <div class="formgrid">
+${k === 'chars' && ed.how === 'gacha' ? `<label class="f">Qué tan difícil de sacar<select class="in" data-ed="rare">${[[1, 'Común'], [2, 'Raro'], [3, 'Súper raro']].map(([v, n]) => `<option value="${v}" ${+ed.rare === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>` : ''}
 ${ed.how === 'stars' || k === 'food' ? `<label class="f">Precio en estrellitas<input class="in" data-ed="price" type="number" min="0" value="${ed.price}"></label>` : ''}
 ${ed.how === 'logro' ? `<label class="f">Qué logro<select class="in" data-ed="ach">${A.RC.ACH.map(a => `<option value="${a.id}" ${ed.ach === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label>` : ''}
 ${ed.how === 'temporada' ? `<label class="f">Qué temporada<select class="in" data-ed="season">${allSeasons().map(s => `<option value="${s.id}" ${ed.season === s.id ? 'selected' : ''}>${esc(s.name)} (${esc(s.when)})</option>`).join('')}</select></label>` : ''}
@@ -1135,7 +1138,7 @@ A.pixFit = (img, maxN, cell) => {
 };
 // Dibuja el resultado en un PNG nítido (cada cuadrito del mismo tamaño).
 A.pixPNG = (r, maxPx) => { const s = Math.max(1, Math.floor((maxPx || 160) / Math.max(r.w, r.h))); const pal = r.pal.split(','); const cv = document.createElement('canvas'); cv.width = r.w * s; cv.height = r.h * s; const g = cv.getContext('2d'); r.raw.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '.') return; g.fillStyle = pal[parseInt(ch, 36)]; g.fillRect(x * s, y * s, s, s); })); return cv; };
-const MAXN = { pets: 64, furn: 96, clothes: 48, food: 48, icons: 48, stickers: 64, walls: 34, floors: 48 };
+const MAXN = { chars: 48, pets: 64, furn: 96, clothes: 48, food: 48, icons: 48, stickers: 64, walls: 34, floors: 48 };
 // Foto (o dibujo normal) a pixel: se achica a pocos cuadritos, se reducen los colores y, si quieres, se le pone borde de sticker.
 function photoToPixel(img, o) {
   const { d, W, H } = img;
@@ -1201,7 +1204,7 @@ async function importMany(files) {
       const item = { id: uid(), name: name[0].toUpperCase() + name.slice(1), how: kind === 'stickers' || kind === 'icons' ? 'free' : ed.how, price: +ed.price || 0, w: r.w, h: r.h, map: r.raw, pal: r.pal, off: false };
       if (kind === 'furn') { item.dw = Math.max(8, Math.round(r.w * 36 / Math.max(r.w, r.h))); item.dh = item.dw * r.h / r.w; item.wall = false; }
       if (kind === 'clothes') { item.dw = 14; item.dh = 14 * r.h / r.w; item.slot = ed.slot || 'head'; item.dx = 0; item.dy = 0; }
-      if (kind === 'food') item.gain = 20; if (kind === 'pets') { item.desc = ''; item.say = ''; }
+      if (kind === 'food') item.gain = 20; if (kind === 'chars') item.rare = +ed.rare || 1; if (kind === 'pets') { item.desc = ''; item.say = ''; }
       if ((ed.col || '').trim()) item.col = ed.col.trim(); if (ed.from) item.from = ed.from;
       list.push(item); n++;
     } catch (e) { }
@@ -1248,6 +1251,7 @@ ACT.edSave = () => {
   if (kind === 'clothes') Object.assign(item, { slot: ed.slot, dx: +ed.dx || 0, dy: +ed.dy || 0 });
   if (kind === 'pets') Object.assign(item, { desc: ed.desc, say: ed.desc });
   if (kind === 'food') Object.assign(item, { gain: +ed.gain || 20 });
+  if (kind === 'chars') item.rare = +ed.rare || 1;
   if (kind === 'furn') Object.assign(item, { wall: !!ed.wall, cat: ed.cat || (ed.wall ? 'pared' : 'deco') });
   if (ed.how === 'logro') item.ach = ed.ach; if (ed.how === 'temporada') item.season = ed.season;
   const i = list.findIndex(x => x.id === item.id); if (i >= 0) list[i] = item; else list.push(item);
@@ -1257,7 +1261,7 @@ ACT.edOff = () => { const list = A.CFG.catalog[ed.kind]; const it = list.find(x 
 ACT.edDel = a => { if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Segura? Toca otra vez'; return; } A.CFG.catalog[ed.kind] = A.CFG.catalog[ed.kind].filter(x => x.id !== ed.id); ed = null; saveCatalog(); };
 // botón en el panel de admin
 const adminScreen = A.screens.admin;
-A.screens.admin = () => { const h = adminScreen(); if (!Store.isOwner) return h; const btn = `<button class="card row" data-go="admincat" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer"><img class="pixel" alt="" src="${spr('maca', 3)}" style="width:44px"><img class="pixel" alt="" src="${Pix.sprite('x_lampara', 2)}" style="height:44px;margin-left:-6px"><div style="flex:1"><b>Agregar mascotas, muebles, ropa y comida</b><div class="faint">Dibújalas o sube una imagen pixel</div></div><span class="faint">›</span></button>`; const i = h.indexOf('<details'); return i > 0 ? h.slice(0, i) + btn + h.slice(i) : h + btn; };
+A.screens.admin = () => { const h = adminScreen(); if (!Store.isOwner) return h; const btn = `<button class="card row" data-go="admincat" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer"><img class="pixel" alt="" src="${spr('maca', 3)}" style="width:44px"><img class="pixel" alt="" src="${Pix.sprite('x_lampara', 2)}" style="height:44px;margin-left:-6px"><div style="flex:1"><b>Agregar mascotas, muebles, ropa, comida y personajes</b><div class="faint">Dibújalas o sube una imagen pixel</div></div><span class="faint">›</span></button>`; const i = h.indexOf('<details'); return i > 0 ? h.slice(0, i) + btn + h.slice(i) : h + btn; };
 // que guardar los demás ajustes del admin no borre lo que agregaste
 const saveCfg = Store.saveConfig.bind(Store);
 Store.saveConfig = cfg => { if (latestCatalog && cfg) cfg.catalog = JSON.parse(JSON.stringify(latestCatalog)); return saveCfg(cfg); };

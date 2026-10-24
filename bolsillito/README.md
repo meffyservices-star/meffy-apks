@@ -23,6 +23,11 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
 ## Historial
 
 - **24-oct-2026**
+  - Juego nuevo **Cruzar la calle** (estilo Crossy Road), en `fuente/calle.js`: calles con carros, ríos con troncos y nenúfares, vías de tren con aviso, y 5 escenarios que cambian cada 34 pasos (Pradera, Ciudad pastel, Playa, Bosque nevado, Dulcelandia). Lo que se atrapa son estrellitas para la tienda. Si te quedas quieta, la nubecita te alcanza.
+  - Personajes del juego: Pandy de inicio, selector dentro del juego y máquina gacha (30 estrellitas; los repetidos devuelven 10). Trae 6 personajes pixel propios (Pollito, Ranita, Gatito, Pingüino, Conejita, Unicornio) y la admin agrega más en el panel → Agregar cosas nuevas → **Personaje** (máquina gacha con rareza, con estrellitas o gratis).
+  - La música de "Atrapar comidita (despensa)" en el panel se reemplazó por la de Cruzar la calle.
+  - Tarjetas de la sección Juegos más delgadas: portada, nombre en una línea, récord en insignia y botón Jugar pixelado.
+  - Vercel ahora publica desde la carpeta `bolsillito/publicado` (rootDirectory del proyecto); antes una subida desde git publicó la carpeta equivocada y salía "page doesn't exist".
   - Juego de saltar: siempre hay una plataforma alcanzable. Las que se rompen ahora son trampas extra (no reemplazan a la plataforma que te deja seguir) y el hueco máximo entre plataformas útiles quedó por debajo de lo que sube un salto.
   - Música para los juegos: en el panel de admin (Música de los juegos) se sube una canción por juego, con volumen y prendido/apagado. Se guarda en Supabase Storage, bucket `music` (solo la admin puede subir).
   - Sonidos en Cuidar (burbujas al bañar, luz al dormir y despertar, mimos, "ñam ñam" al comer), en los minijuegos y en el cuarto.

@@ -21,10 +21,16 @@ A.payGame = n => payGame(n);
 function payGame(n) { const g = GM(); const ok = Math.max(0, Math.min(n, GAME_CAP - g.stars)); g.stars += ok; if (ok) A.giveStars(ok); return ok; }
 A.screens.juegos = () => {
   const g = GM();
+  const card = (id, cls, art, name, desc, rec) => `<button class="gm-row ${cls}" data-act="gmPlay" data-g="${id}"><span class="gm-cover">${art}</span><span class="gm-info"><b>${name}</b><span>${desc}</span><span class="gm-rec">${img('trofeo', 14)}${rec}</span></span><span class="gm-play"><i></i>Jugar</span></button>`;
+  const artSaltar = `<div class="gm-art"><img class="pixel" alt="" src="${spr('plataforma_nube', 3)}" style="width:40px;position:absolute;left:2px;top:48px"><img class="pixel" alt="" src="${spr('plataforma', 3)}" style="width:40px;position:absolute;right:2px;top:26px"><img class="pixel gm-bounce" alt="" src="${spr(petSprite(), 4)}" style="width:36px;position:absolute;left:18px;top:6px"></div>`;
+  const artMonedas = `<div class="gm-art">${['moneda', 'ticket', 'moneda'].map((f, i) => `<img class="pixel gm-fall" alt="" src="${spr(f, 3)}" style="width:20px;position:absolute;left:${6 + i * 22}px;top:${2 + (i % 2) * 14}px;animation-delay:-${i * .5}s">`).join('')}<img class="pixel" alt="" src="${spr('alcancia', 4)}" style="width:44px;position:absolute;left:18px;bottom:4px"></div>`;
   return `${sub('juegos', 'rincon', starsPill())}
-<button class="card gm-card sky" data-act="gmPlay" data-g="saltar"><div class="gm-art"><img class="pixel" alt="" src="${spr('plataforma_nube', 3)}" style="width:66px;position:absolute;left:4px;top:56px"><img class="pixel" alt="" src="${spr('plataforma', 3)}" style="width:66px;position:absolute;right:2px;top:20px"><img class="pixel gm-bounce" alt="" src="${spr(petSprite(), 4)}" style="width:54px;position:absolute;left:32px;top:6px"></div><div style="flex:1"><b class="mid" style="font-family:var(--f-display)">Saltar hasta las nubes</b><div class="faint">Atrapa estrellitas mientras subes. Cuidado: unas plataformas se rompen y las nubes se esfuman.</div><div class="tag gold" style="margin-top:6px">Tu récord · ${g.best.saltar || 0} m</div></div></button>
-<button class="card gm-card coins" data-act="gmPlay" data-g="monedas"><div class="gm-art">${['moneda', 'ticket', 'moneda'].map((f, i) => `<img class="pixel gm-fall" alt="" src="${spr(f, 3)}" style="width:28px;position:absolute;left:${10 + i * 26}px;top:${4 + (i % 2) * 18}px;animation-delay:-${i * .5}s">`).join('')}<img class="pixel" alt="" src="${spr('alcancia', 4)}" style="width:56px;position:absolute;left:24px;bottom:2px"></div><div style="flex:1"><b class="mid" style="font-family:var(--f-display)">Ahorra monedas, no antojos</b><div class="faint">Atrapa las monedas con tu cochinito y esquiva los antojos que te hacen gastar.</div><div class="tag gold" style="margin-top:6px">Tu récord · ${g.best.monedas || 0} monedas</div></div></button>
-<div class="card row" style="gap:10px">${img('estrellita', 28)}<div style="flex:1"><b>Hoy llevas ${g.stars} de ${GAME_CAP} estrellitas de juegos</b><div class="faint">Cada partida también le da +10 puntos a ${esc(A.petInfo ? A.petInfo(activePet()).name : 'tu mascota')} para crecer.</div></div></div>`;
+<div class="gm-list">
+${A.calleCardArt ? card('calle', 'road', A.calleCardArt(), 'Cruzar la calle', 'Salta entre carros, ríos y trenes.', `${g.best.calle || 0} pasos`) : ''}
+${card('saltar', 'sky', artSaltar, 'Saltar hasta las nubes', 'Sube atrapando estrellitas.', `${g.best.saltar || 0} m`)}
+${card('monedas', 'coins', artMonedas, 'Ahorra monedas, no antojos', 'Atrapa monedas, esquiva antojos.', `${g.best.monedas || 0} monedas`)}
+</div>
+<div class="gm-today">${img('estrellita', 22)}<div style="flex:1"><b>Hoy: ${g.stars} de ${GAME_CAP} estrellitas</b><div class="gm-bar"><i style="width:${Math.min(100, g.stars / GAME_CAP * 100)}%"></i></div><span class="faint">Cada partida le da +10 puntos a ${esc(A.petInfo ? A.petInfo(activePet()).name : 'tu mascota')}.</span></div></div>`;
 };
 ACT.gmPlay = a => a.dataset.g === 'saltar' ? jumpGame() : catchGame('monedas');
 
@@ -201,6 +207,8 @@ async function catchGame(mode) {
   m.onclick = e => { if (e.target.closest('[data-x]')) { m.hidden = true; paused = false; gsfx('start'); A.gameMusic.start(MUS); } };
   raf = requestAnimationFrame(loop);
 }
+// herramientas compartidas con los juegos de otros archivos (Cruzar la calle)
+A.gameKit = { gameShell, loadImgs, endCard, GM, payGame, gsfx: n => gsfx(n), ST, spr, img, starsPill, bal, activePet, petSprite, GAME_CAP };
 
 // ================= Ropa de temporada (en la Tiendita) =================
 function lookArt(pet, accId, sc) {
@@ -1032,7 +1040,7 @@ const st0 = A.start;
 A.start = async () => { await st0(); applyLook(); A.renderNav(); readShared(); birthdayGift(); loadWx(); if (online() && S.settings.visitCode) setTimeout(() => { loadInbox().then(() => { A.renderNav(); }).catch(() => {}); }, 2500); };
 // ---------------- Panel de admin: musiquita de los juegos ----------------
 {
-  const GAMES = [['saltar', 'Saltar hasta las nubes'], ['monedas', 'Ahorra monedas, no antojos'], ['atrapar', 'Atrapar comidita (despensa)']];
+  const GAMES = [['saltar', 'Saltar hasta las nubes'], ['monedas', 'Ahorra monedas, no antojos'], ['calle', 'Cruzar la calle']];
   let prev = null, prevG = null; const stopPrev = () => { if (prev) { prev.pause(); prev.src = ''; } prev = null; prevG = null; };
   A.musicAdminHTML = D => {
     const M = D.music = D.music || {};
