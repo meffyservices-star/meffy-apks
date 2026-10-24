@@ -22,6 +22,13 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
 
 ## Historial
 
+- **24-oct-2026**
+  - Sonidos en Cuidar (burbujas al bañar, luz al dormir y despertar, mimos, "ñam ñam" al comer), en los minijuegos y en el cuarto.
+  - Cada mascota tiene su propia vocecita al tocarla en el cuarto (las nuevas del panel reciben una sacada de su nombre).
+  - Corazones nuevos, más bonitos y animados, al mimar y tocar a la mascota.
+  - La mascota bebé ya no se encoge al terminar un mimo.
+  - El fondo de Cuidar es aparte de la Sala: se decora solo desde Cuidar (botón Decorar) y la Sala solo desde Cuarto. Los muebles quedan detrás de los textos.
+
 - **22-oct-2026**
   - Ahora abre sin internet aunque el celular diga que está conectado.
   - Ya no pide iniciar sesión cuando falla la red.

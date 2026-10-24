@@ -1263,3 +1263,27 @@ img { -webkit-user-drag: none; user-drag: none; }
 /* categorías en orden de lectura: fila por fila, con scroll hacia abajo */
 .qa-wrap .qa-cats { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: none; grid-auto-columns: auto; overflow-x: hidden; overflow-y: auto; scroll-snap-type: y proximity; }
 .co-list .co-ed { font-size: 16px; }
+
+/* ===== Corazones bonitos (capa encima de todo, sin bloquear toques) ===== */
+.ph-layer { position: fixed; inset: 0; pointer-events: none; z-index: 9999; overflow: hidden; }
+.ph-layer img { position: absolute; height: auto; image-rendering: pixelated; will-change: transform, opacity; filter: drop-shadow(0 2px 0 rgba(160, 60, 90, .18)); }
+/* ===== Mascotas del cuarto: se pueden tocar ===== */
+.room:not(.editing) .rm-pet[data-pk] { pointer-events: auto; cursor: pointer; }
+.room .rm-pet.tap { animation: rmHop .5s ease-out; }
+@keyframes rmHop { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(-22%) rotate(-4deg); } 65% { transform: translateY(-8%) rotate(3deg); } }
+/* ===== Fondo de Cuidar: los muebles quedan detrás de los textos y botones ===== */
+.pc-room { z-index: 0; }
+.pc-deco .rm-rooms, .pc-deco .seg button[data-v="cuartos"], .pc-deco > p.faint:last-child { display: none; }
+.pc-deco .rm-editbtn { display: none; }
+.pc-deco-bar { gap: 10px; align-items: center; background: #fff7d6; }
+/* ===== Mascota bebé: ya no se encoge al terminar un mimo ===== */
+.mz { --s: 1; }
+.petw.st-bebe .mz { --s: .74; transform: scale(var(--s)); transform-origin: 50% 100%; }
+.pc-pet .petw.st-bebe .mz { --s: 1; }
+@keyframes bob { 0%, 100% { transform: translateY(0) scale(var(--s, 1)); } 50% { transform: translateY(-3px) scale(var(--s, 1)); } }
+@keyframes respira { 0%, 100% { transform: translateY(0) scale(var(--s, 1)); } 50% { transform: translateY(1.5px) scale(var(--s, 1)); } }
+@keyframes boing { 0%, 100% { transform: translateY(0) scale(var(--s, 1)); } 40% { transform: translateY(-6px) scale(var(--s, 1)); } }
+@keyframes apapacho { 0%, 100% { transform: translateY(0) rotate(0) scale(var(--s, 1)); } 30% { transform: translateY(-5px) rotate(-4deg) scale(var(--s, 1)); } 65% { transform: translateY(-3px) rotate(4deg) scale(var(--s, 1)); } }
+@keyframes saltito { 0%, 100% { transform: translateY(0) scale(var(--s, 1)); } 50% { transform: translateY(-3px) scale(var(--s, 1)); } }
+@keyframes elFlota { 0%, 100% { transform: translateY(0) scale(var(--s, 1)); } 50% { transform: translateY(-4px) scale(var(--s, 1)); } }
+@keyframes sacude { 0%, 100% { transform: rotate(0) scale(var(--s, 1)); } 25% { transform: rotate(-4deg) scale(var(--s, 1)); } 75% { transform: rotate(4deg) scale(var(--s, 1)); } }

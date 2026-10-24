@@ -306,10 +306,11 @@ A.screens.rincon = () => {
   const tabs = `<div class="seg pc-tabs"><button data-act="pcTab" data-v="cuidar" aria-pressed="${tab === 'cuidar'}">Cuidar</button><button data-act="pcTab" data-v="cuarto" aria-pressed="${tab === 'cuarto'}">Cuarto</button><button data-act="pcTab" data-v="jugar" aria-pressed="${tab === 'jugar'}">Jugar</button></div>`;
   if (tab === 'cuarto') return `${A.header('rincon', starsPill())}${tabs}${stripHead(A.screens.cuarto())}`;
   if (tab === 'jugar') return `${A.header('rincon', starsPill())}${tabs}${stripHead(A.screens.juegos())}`;
+  if (S.pcDeco && room().cur === 'cuidar') return `${A.header('rincon', starsPill())}${tabs}<div class="card row pc-deco-bar"><span style="flex:1"><b>Decorando el fondo de Cuidar</b><br><span class="faint">Solo se ve aquí en Cuidar. La Sala del cuarto no cambia.</span></span><button class="btn pink" data-act="pcDecoDone">Listo</button></div><div class="pc-deco">${stripHead(A.screens.cuarto())}</div>`;
   const id = p.active, c = care(id), lv = level(id);
   checkLevelUp(); moneyMood();
   return `${A.header('rincon', starsPill())}${tabs}
-<div class="pc-scene pc-sala ${c.sleep ? 'dormida' : ''}" id="pcScene"><div class="pc-room">${roomHTML(room().rooms.sala, { pets: [], id: 'salaRoom' })}</div><button class="pc-decor" data-act="pcDecor">${img('x_marco', 18)} Decorar</button>
+<div class="pc-scene pc-sala ${c.sleep ? 'dormida' : ''}" id="pcScene"><div class="pc-room">${roomHTML(room().rooms.cuidar, { pets: [], id: 'salaRoom' })}</div><button class="pc-decor" data-act="pcDecor">${img('x_marco', 18)} Decorar</button>
 <div class="pc-say" id="pcSay">${esc(moodMsg(id, c))}</div>
 <div class="pc-stage" id="pcStage"><button class="pc-pet" id="pcPet" data-act="pcLove" aria-label="Mimar a ${esc(info(id).name)}">${petArt(id, 6, c.sleep ? 'sleepy' : '')}</button>${c.sleep ? `<img class="pixel pc-zz" alt="" src="${spr('zzz', 3)}">` : ''}</div>
 <button class="pc-lv" data-go="crecer">${esc(info(id).name)} · nivel ${lv.L}</button>
@@ -325,9 +326,11 @@ ${fridgeHTML()}
 <section class="stack"><div class="ph"><span class="pill sm">Más cositas</span><button class="btn sm" data-go="coleccion">Cambiar de mascota</button></div>
 <div class="pc-places">${PLACES().map(([go, ic, n, dot]) => `<button class="pc-place" data-go="${go}">${dot ? '<span class="pc-dot"></span>' : ''}<img class="pixel" alt="" src="${spr(ic, 3)}">${n}</button>`).join('')}</div></section>`;
 };
-ACT.pcDecor = () => { room().cur = 'sala'; S.pcTab = 'cuarto'; S.roomTab = 'muebles'; A.saveSettings(); A.render(); window.scrollTo(0, 0); };
-ACT.pcTab = a => { S.pcTab = a.dataset.v; S.roomEdit = false; A.render(); window.scrollTo(0, 0); };
-A.after.rincon = el => { if (S.pcTab === 'cuarto' && A.after.cuarto) A.after.cuarto(el); };
+const decoOff = () => { if (!S.pcDeco) return; const r = room(); S.pcDeco = false; S.roomEdit = false; S.roomSel = null; r.cur = r.prevCur2 && r.rooms[r.prevCur2] && r.prevCur2 !== 'cuidar' ? r.prevCur2 : 'cuarto'; A.saveSettings(); };
+ACT.pcDecor = () => { S.pcTab = 'cuidar'; S.pcDeco = true; const r = room(); if (r.cur !== 'cuidar') r.prevCur2 = r.cur; r.cur = 'cuidar'; S.roomTab = 'muebles'; S.roomSel = null; S.roomEdit = true; A.saveSettings(); A.render(); window.scrollTo(0, 0); };
+ACT.pcDecoDone = () => { decoOff(); A.render(); window.scrollTo(0, 0); };
+ACT.pcTab = a => { decoOff(); S.pcTab = a.dataset.v; S.roomEdit = false; A.render(); window.scrollTo(0, 0); };
+A.after.rincon = el => { if ((S.pcTab === 'cuarto' || S.pcDeco) && A.after.cuarto) A.after.cuarto(el); };
 // tu mascota se conecta con tu plata: si no anotas se pone triste; si cumples tu presupuesto de la semana, gana un premio
 function daysSinceTx() { const real = S.tx.filter(t => !t.example && !t.recurring && !t.inst); if (!real.length) return 0; const last = real.reduce((m, t) => t.date > m ? t.date : m, ''); return Math.max(0, Math.round((A.parseYmd(today()) - A.parseYmd(last)) / 864e5)); }
 A.petDaysSinceTx = daysSinceTx;
@@ -364,7 +367,7 @@ function fx(kind, src) {
   const add = (s, cls, style) => { const i = document.createElement('img'); i.className = 'pixel pc-fx ' + cls; i.alt = ''; i.src = s; i.setAttribute('style', style); st.appendChild(i); setTimeout(() => i.remove(), 2200); };
   if (kind === 'eat') add(src, 'fx-food', '');
   if (kind === 'bath') [[20, 70, 0, 22], [55, 90, .15, 16], [90, 60, .3, 26], [110, 95, .1, 14], [35, 40, .45, 18], [75, 30, .55, 24], [100, 20, .7, 16], [10, 100, .8, 20], [60, 110, .9, 18]].forEach(([x, y, d, w]) => add(spr('x_burbuja', 3), 'fx-bub', `left:calc(50% - 80px + ${x * 1.2}px);top:${y}px;width:${w * 1.6}px;animation-delay:${d}s`));
-  if (kind === 'love') [[30, 30, 0, 28, 'heart'], [80, 20, .2, 22, 'heartS'], [55, 0, .4, 30, 'heart'], [105, 40, .55, 20, 'heartY'], [15, 55, .7, 18, 'heartB']].forEach(([x, y, d, w, n]) => add(spr(n, 3), 'fx-heart', `left:calc(50% - 70px + ${x}px);top:${y}px;width:${w}px;animation-delay:${d}s`));
+  if (kind === 'love') { if (A.prettyHearts) A.prettyHearts(pet, { n: 7, y: .25 }); }
   setTimeout(() => pet.classList.remove('fx-' + kind), 1600);
 }
 ACT.pcFeed = a => {
@@ -530,6 +533,12 @@ function room() {
     r.rooms.sala = { wall: 'menta', floor: 'madera', items: D.map(([k, x, y]) => ({ u: uid(), k, x, y })) };
     D.forEach(([k]) => { if (!r.owned.includes(k)) r.owned.push(k); const pl = Object.values(r.rooms).reduce((n, rm) => n + rm.items.filter(i => i.k === k).length, 0); r.inv[k] = Math.max(r.inv[k] != null ? r.inv[k] : (r.owned.includes(k) ? 1 : 0), pl); });
   }
+  if (!r.rooms.cuidar) { // el fondo de Cuidar: aparte de la Sala, solo se decora y se ve desde Cuidar
+    const D = [['banderines', 50, 1], ['marco', 18, 8], ['ventana', 104, 6], ['sofa_lila', 4, 38], ['lampara', 38, 34], ['planta_grande', 120, 34], ['alfombra_corazon', 59, 92], ['tetera', 126, 76]].filter(([k]) => FURN[k]);
+    r.rooms.cuidar = { wall: 'menta', floor: 'madera', items: D.map(([k, x, y]) => ({ u: uid(), k, x, y })) };
+    D.forEach(([k]) => { if (!r.owned.includes(k)) r.owned.push(k); const pl = Object.values(r.rooms).reduce((n, rm) => n + rm.items.filter(i => i.k === k).length, 0); r.inv[k] = Math.max(r.inv[k] || 0, pl); });
+  }
+  if (r.cur === 'cuidar' && !(S.pcDeco && S.route === 'rincon' && (S.pcTab || 'cuidar') === 'cuidar')) { r.cur = r.prevCur2 && r.rooms[r.prevCur2] && r.prevCur2 !== 'cuidar' ? r.prevCur2 : 'cuarto'; S.pcDeco = false; S.roomEdit = false; }
   r.cur = r.rooms[r.cur] ? r.cur : 'cuarto';
   r.owned = r.owned.map(k => k === 'wall:piedra' ? 'floor:madera' : k);
   return r;
@@ -614,7 +623,7 @@ function roomHTML(rmIn, opts) {
     const glow = night && f.glow ? `<span class="rm-glow" style="left:${pct(it.x + f.glow[0] - f.glow[2], RW)};top:${pct(it.y + f.glow[1] - f.glow[2], RH)};width:${pct(f.glow[2] * 2, RW)}"></span>` : '';
     return `<img class="pixel rm-it ${opts.sel === it.u ? 'sel' : ''}" alt="${esc(f.name)}" data-u="${it.u}" draggable="false" src="${Pix.sprite(sp, 3)}" style="left:${pct(it.x, RW)};top:${pct(it.y, RH)};width:${pct(f.w, RW)};z-index:${zOf(it, f)};${it.fl ? 'transform:scaleX(-1);' : ''}">${extra}${glow}`;
   }).join('');
-  const petHtml = spots.map((s, i) => `<span class="rm-pet ${s.sleep ? 'sleep' : ''} ${list[i].guest ? 'guest' : ''}" aria-label="${esc(info(s.k).name)}" style="left:${pct(s.x, RW)};top:${pct(s.y, RH)};z-index:${10 + Math.round(s.z)};animation-delay:-${i * .6}s">${dressed(s.k, list[i].eq, 4)}</span>`
+  const petHtml = spots.map((s, i) => `<span class="rm-pet ${s.sleep ? 'sleep' : ''} ${list[i].guest ? 'guest' : ''}" data-pk="${esc(s.k)}" aria-label="${esc(info(s.k).name)}" style="left:${pct(s.x, RW)};top:${pct(s.y, RH)};z-index:${10 + Math.round(s.z)};animation-delay:-${i * .6}s">${dressed(s.k, list[i].eq, 4)}</span>`
     + (s.sleep ? `<img class="pixel rm-zz" alt="" src="${spr('zzz', 2)}" style="left:${pct(s.x + 16, RW)};top:${pct(s.y - 8, RH)}">` : '')
     + (s.notes ? `<img class="pixel rm-note" alt="" src="${spr('music', 2)}" style="left:${pct(s.x + 18, RW)};top:${pct(s.y - 10, RH)}"><img class="pixel rm-note b" alt="" src="${spr('music', 2)}" style="left:${pct(s.x - 4, RW)};top:${pct(s.y - 6, RH)}">` : '')
     + (s.eat ? `<img class="pixel rm-food" alt="" src="${spr(['cupcake', 'dona', 'fresa', 'galleta'][i % 4], 2)}" style="left:${pct(s.eat.x, RW)};top:${pct(s.eat.y, RH)};z-index:${10 + Math.round(s.z) + 1}">` : '')).join('');
@@ -637,8 +646,8 @@ A.screens.cuarto = () => {
   const keys = Object.keys(FURN).filter(k => fc === 'todo' || FURN[k].cat === fc || (fc === 'deco' && FURN[k].custom && !FURN[k].wall) || (fc === 'pared' && FURN[k].custom && FURN[k].wall));
   const probBar = r.cur === '__probador' ? `<div class="card stack" style="background:#fff7d6"><b>Estás decorando el probador de la Tiendita</b><span class="faint">Solo tú lo ves aquí. Pon, mueve o quita cosas, y cambia pared y piso. Al guardar, les aparece a todas.</span><div class="row" style="gap:8px"><button class="btn" data-act="probExit" style="flex:1;justify-content:center">Salir sin guardar</button><button class="btn pink" data-act="probSave" style="flex:1;justify-content:center">Guardar para todas</button></div></div>` : '';
   return `${sub('cuarto', 'rincon', starsPill())}${probBar}
-<div class="rm-rooms">${Object.keys(r.rooms).map(k => { const ro = ROOMS[k] || {}; return `<button class="rm-door" data-act="rmRoom" data-k="${k}" aria-pressed="${r.cur === k}"><span class="rm-door-art" style="background-image:url(${Pix.sprite('x_piso_' + (ro.floor || 'madera'), 1)})"><img class="pixel" alt="" src="${Pix.sprite('x_' + (ro.icon || 'cama'), 2)}"></span><span class="rm-door-t">${esc(k === '__probador' ? 'Probador' : (ro.short || ro.name || k))}</span></button>`; }).join('')}${Object.keys(r.rooms).length < Object.keys(ROOMS).length ? `<button class="rm-door add" data-act="rmTab" data-v="cuartos"><span class="rm-door-art"><b>+</b></span><span class="rm-door-t">Más</span></button>` : ''}</div>
-${roomHTML(rm, { edit, sel: S.roomSel, inner: `<button class="btn sm rm-editbtn" data-act="rmEdit">${edit ? 'Listo' : 'Mover cosas'}</button>${edit && S.roomSel ? '<span class="rm-tools"><button class="btn sm" data-act="rmFlip">Voltear</button><button class="btn sm danger" data-act="rmRemove">Guardar</button></span>' : ''}` })}
+<div class="rm-rooms">${Object.keys(r.rooms).filter(k => k !== 'cuidar').map(k => { const ro = ROOMS[k] || {}; return `<button class="rm-door" data-act="rmRoom" data-k="${k}" aria-pressed="${r.cur === k}"><span class="rm-door-art" style="background-image:url(${Pix.sprite('x_piso_' + (ro.floor || 'madera'), 1)})"><img class="pixel" alt="" src="${Pix.sprite('x_' + (ro.icon || 'cama'), 2)}"></span><span class="rm-door-t">${esc(k === '__probador' ? 'Probador' : (ro.short || ro.name || k))}</span></button>`; }).join('')}${Object.keys(r.rooms).length < Object.keys(ROOMS).length ? `<button class="rm-door add" data-act="rmTab" data-v="cuartos"><span class="rm-door-art"><b>+</b></span><span class="rm-door-t">Más</span></button>` : ''}</div>
+${roomHTML(rm, { edit, sel: S.roomSel, pets: r.cur === 'cuidar' ? [] : undefined, inner: `<button class="btn sm rm-editbtn" data-act="rmEdit">${edit ? 'Listo' : 'Mover cosas'}</button>${edit && S.roomSel ? '<span class="rm-tools"><button class="btn sm" data-act="rmFlip">Voltear</button><button class="btn sm danger" data-act="rmRemove">Guardar</button></span>' : ''}` })}
 ${edit ? '<p class="faint" style="margin:0;text-align:center">Arrastra los muebles. Toca uno para voltearlo o guardarlo.</p>' : `<p class="faint" style="margin:0;text-align:center">${{ dia: 'Es de día', tarde: 'Está atardeciendo', noche: 'Es de noche: tus mascotas se van a dormir' }[dayPart()]}${A.weather && A.weather() ? ` · afuera ${{ sol: 'está despejado', nubes: 'está nublado', niebla: 'hay neblina', lluvia: 'llueve', nieve: 'nieva', tormenta: 'hay tormenta' }[A.weather().kind] || ''}, ${A.weather().temp}°` : ''}</p>`}
 <div class="seg"><button data-act="rmTab" data-v="muebles" aria-pressed="${tab === 'muebles'}">Muebles</button><button data-act="rmTab" data-v="paredes" aria-pressed="${tab === 'paredes'}">Pared y piso</button><button data-act="rmTab" data-v="cuartos" aria-pressed="${tab === 'cuartos'}">Cuartos</button><button data-go="tienda">Ropa</button></div>
 ${tab === 'muebles' ? `<div class="chips">${FCATS.map(([k, n]) => `<button class="chip" data-act="rmCat" data-v="${k}" aria-pressed="${fc === k}">${n}</button>`).join('')}</div><div class="shop-grid">${keys.map(tile).join('')}</div>`

@@ -2145,6 +2145,7 @@ if (say) { say.textContent = NAMES[id] + ': ' + m.msg; say.dataset.last = id; }
 c.classList.remove('boing'); void c.offsetWidth; c.classList.add('boing'); hearts(c);
 });
 function hearts(target) {
+if (A.prettyHearts) return A.prettyHearts(target);
 const sc = $('.rc-scene'); if (!sc) return;
 const kinds = ['heartS', 'heart', 'heartB', 'sparkle', 'heartY', 'heartS'];
 const n = target ? 4 : 10; const box = sc.getBoundingClientRect(); const t = target ? target.getBoundingClientRect() : null;

@@ -28,6 +28,7 @@ A.screens.juegos = () => {
 };
 ACT.gmPlay = a => a.dataset.g === 'saltar' ? jumpGame() : catchGame('monedas');
 
+const gsfx = n => { if (window.Sfx) window.Sfx.play(n, true); };
 function loadImgs(map) { return Promise.all(Object.entries(map).map(([k, src]) => new Promise(res => { const i = new Image(); i.onload = () => res([k, i]); i.onerror = () => res([k, i]); i.src = src; }))).then(Object.fromEntries); }
 function gameShell(cls) {
   const ov = document.createElement('div'); ov.className = 'game ' + cls; ov.setAttribute('role', 'dialog');
@@ -70,13 +71,13 @@ async function jumpGame() {
     if (me.vy > 0) for (const p of plats) {
       if (p.gone) continue; const feet = me.y + PET - 4;
       if (feet >= p.y && feet <= p.y + PH * .6 + me.vy * dt && me.x + PET * .75 > p.x && me.x + PET * .25 < p.x + PW) {
-        if (p.t === 'rota') { p.gone = true; continue; }
-        me.vy = p.spring ? -19 : -12; me.y = p.y - PET + 4;
-        if (p.t === 'nube') { p.gone = true; p.fade = 1; }
+        if (p.t === 'rota') { p.gone = true; gsfx('crack'); continue; }
+        me.vy = p.spring ? -19 : -12; me.y = p.y - PET + 4; gsfx(p.spring ? 'boing' : 'jump');
+        if (p.t === 'nube') { p.gone = true; p.fade = 1; gsfx('poof'); }
         break;
       }
     }
-    coins.forEach(c => { if (!c.got && Math.abs(c.x + 12 - (me.x + PET / 2)) < 30 && Math.abs(c.y + 12 - (me.y + PET / 2)) < 32) { c.got = true; coinsGot++; } });
+    coins.forEach(c => { if (!c.got && Math.abs(c.x + 12 - (me.x + PET / 2)) < 30 && Math.abs(c.y + 12 - (me.y + PET / 2)) < 32) { c.got = true; coinsGot++; gsfx('coin'); } });
     if (me.y < H * .42) { const d = H * .42 - me.y; me.y += d; cam += d; plats.forEach(p => p.y += d); coins.forEach(c => c.y += d); }
     maxH = Math.max(maxH, Math.floor(cam / 10));
     plats = plats.filter(p => p.y < H + 40 && !(p.fade && p.fade <= 0)); coins = coins.filter(c => c.y < H + 40 && !c.got);
@@ -94,7 +95,7 @@ async function jumpGame() {
   }
   function loop(t) { if (!run) return; const dt = Math.min(2.2, last ? (t - last) / 16.67 : 1); last = t; if (!paused) step(dt); draw(); raf = requestAnimationFrame(loop); }
   function over() {
-    run = false; cancelAnimationFrame(raf); const gm = GM(); const rec = maxH > (gm.best.saltar || 0); if (rec) gm.best.saltar = maxH;
+    run = false; cancelAnimationFrame(raf); const gm = GM(); const rec = maxH > (gm.best.saltar || 0); if (rec) gm.best.saltar = maxH; gsfx(rec ? 'record' : 'over');
     const earned = payGame(coinsGot + Math.floor(maxH / 25)); A.petAddXp && A.petAddXp(10, 'game'); A.saveSettings();
     endCard(sh, rec ? '¡NUEVO RÉCORD!' : '¡Buen salto!', `<div class="gm-big">${maxH} m</div><div class="row" style="justify-content:center;gap:6px;font-weight:800">${ST(18)} +${earned} estrellitas</div>${earned < coinsGot + Math.floor(maxH / 25) ? '<div class="faint">Ya llegaste al tope de estrellitas de juegos por hoy.</div>' : ''}<div class="faint">Récord: ${gm.best.saltar || 0} m</div>`, jumpGame);
   }
@@ -104,13 +105,13 @@ async function jumpGame() {
   const td = e => { if (e.target.closest('.gm-hud,.gm-msg')) return; touchDir = e.clientX < W / 2 ? -1 : 1; };
   sh.cv.addEventListener('pointerdown', td); sh.cv.addEventListener('pointermove', e => { if (e.buttons || e.pointerType === 'touch') td(e); }); addEventListener('pointerup', () => touchDir = 0);
   const untilt = tiltControl(v => tilt = Math.abs(v) < .12 ? 0 : v);
-  $('.gm-pause', sh.ov).onclick = () => { paused = !paused; const m = $('.gm-msg', sh.ov); if (paused) { m.hidden = false; m.innerHTML = `<div class="gm-end"><div class="gm-k">PAUSA</div><div class="row" style="gap:8px;margin-top:10px"><button class="btn" data-x="out" style="flex:1;justify-content:center">Salir</button><button class="btn pink" data-x="go" style="flex:1;justify-content:center">Seguir</button></div></div>`; m.onclick = e => { const b = e.target.closest('[data-x]'); if (!b) return; if (b.dataset.x === 'out') sh.close(); else { paused = false; m.hidden = true; } }; } };
+  $('.gm-pause', sh.ov).onclick = () => { paused = !paused; gsfx('tick'); const m = $('.gm-msg', sh.ov); if (paused) { m.hidden = false; m.innerHTML = `<div class="gm-end"><div class="gm-k">PAUSA</div><div class="row" style="gap:8px;margin-top:10px"><button class="btn" data-x="out" style="flex:1;justify-content:center">Salir</button><button class="btn pink" data-x="go" style="flex:1;justify-content:center">Seguir</button></div></div>`; m.onclick = e => { const b = e.target.closest('[data-x]'); if (!b) return; if (b.dataset.x === 'out') sh.close(); else { paused = false; m.hidden = true; } }; } };
   sh.close = () => { run = false; cancelAnimationFrame(raf); removeEventListener('keydown', kd); removeEventListener('keyup', ku); untilt(); sh.ov.remove(); document.body.classList.remove('gaming'); if (S.route === 'juegos' || S.route === 'rincon') A.render(); };
   addEventListener('resize', () => { const r = sh.fit(); W = r.w; H = r.h; }, { once: true });
   sh.ov.__st = () => ({ me, plats, W, PW, PET, set: d => { keyDir = d; } });
   reset(); const m = $('.gm-msg', sh.ov); m.hidden = false; paused = true;
   m.innerHTML = `<div class="gm-end"><div class="gm-k">SALTAR HASTA LAS NUBES</div><div class="gm-legend"><span>${img('plataforma', 48)}Normal</span><span>${img('plataforma_rota', 48)}Se rompe</span><span>${img('plataforma_nube', 48)}Se esfuma</span></div><div class="faint">Inclina el celular, toca un lado de la pantalla o usa las flechas para moverte. Cada estrellita que atrapes es tuya.</div><button class="btn pink" data-x="go" style="justify-content:center;margin-top:10px;width:100%">¡A saltar!</button></div>`;
-  m.onclick = e => { if (e.target.closest('[data-x]')) { m.hidden = true; paused = false; } };
+  m.onclick = e => { if (e.target.closest('[data-x]')) { m.hidden = true; paused = false; gsfx('start'); } };
   raf = requestAnimationFrame(loop);
 }
 
@@ -126,7 +127,7 @@ async function catchGame(mode) {
   const total = () => Object.values(caught).reduce((s, n) => s + n, 0);
   const saved = () => (caught.moneda || 0) * .5 + (caught.estrellita || 0);
   function step(dt) {
-    time -= dt / 60; if (time <= 0) return over();
+    const ps = Math.ceil(time); time -= dt / 60; if (time <= 0) return over(); if (time <= 5 && Math.ceil(time) < ps) gsfx('tick');
     const sp = 1 + (45 - time) / 30;
     spawn -= dt; if (spawn <= 0) { spawn = Math.max(14, 42 - (45 - time)) ; const bad = Math.random() < .22 + (45 - time) / 200; items.push({ k: bad ? (coins ? ANTOJOS[Math.floor(Math.random() * ANTOJOS.length)] : 'gota') : foods[Math.floor(Math.random() * foods.length)], bad, x: 10 + Math.random() * (W - 50), y: -40, v: (2 + Math.random() * 1.6) * sp, r: Math.random() * 6 }); }
     const dir = keyDir || tilt; if (dir) px += dir * 7 * dt; if (target != null) px += (target - PET / 2 - px) * Math.min(1, .35 * dt);
@@ -135,8 +136,8 @@ async function catchGame(mode) {
     items.forEach(it => { it.y += it.v * dt; it.r += .05 * dt;
       if (!it.done && it.y + 30 > py + 8 && it.y < py + PET * .6 && it.x + 30 > px + 6 && it.x < px + PET - 6) {
         it.done = true;
-        if (it.bad) { lives--; pop.push({ x: px + PET / 2, y: py, t: 30, txt: '-1', bad: true }); if (navigator.vibrate) navigator.vibrate(60); if (lives <= 0) return over(); }
-        else { caught[it.k] = (caught[it.k] || 0) + 1; pop.push({ x: px + PET / 2, y: py, t: 30, txt: coins ? (it.k === 'estrellita' ? '+$1' : '+$0,50') : '+1' }); }
+        if (it.bad) { lives--; gsfx('bonk'); pop.push({ x: px + PET / 2, y: py, t: 30, txt: '-1', bad: true }); if (navigator.vibrate) navigator.vibrate(60); if (lives <= 0) return over(); }
+        else { caught[it.k] = (caught[it.k] || 0) + 1; gsfx(it.k === 'estrellita' ? 'coin' : 'catch'); pop.push({ x: px + PET / 2, y: py, t: 30, txt: coins ? (it.k === 'estrellita' ? '+$1' : '+$0,50') : '+1' }); }
       } });
     items = items.filter(it => !it.done && it.y < H + 40); pop.forEach(p => p.t -= dt); pop = pop.filter(p => p.t > 0);
   }
@@ -152,10 +153,10 @@ async function catchGame(mode) {
   function loop(t) { if (!run) return; const dt = Math.min(2.2, last ? (t - last) / 16.67 : 1); last = t; if (!paused) step(dt); if (run) draw(); raf = requestAnimationFrame(loop); }
   function over() {
     run = false; cancelAnimationFrame(raf);
-    if (coins) { const n = total(); const gm = GM(); const rec = n > (gm.best.monedas || 0); if (rec) gm.best.monedas = n; const earned = payGame(Math.floor(n / 4)); A.petAddXp && A.petAddXp(10, 'game'); A.saveSettings();
+    if (coins) { const n = total(); const gm = GM(); const rec = n > (gm.best.monedas || 0); if (rec) gm.best.monedas = n; gsfx(rec ? 'record' : 'over'); const earned = payGame(Math.floor(n / 4)); A.petAddXp && A.petAddXp(10, 'game'); A.saveSettings();
       endCard(sh, lives <= 0 ? '¡Te ganaron los antojos!' : rec ? '¡NUEVO RÉCORD!' : '¡Se acabó el tiempo!', `<div class="gm-big">$${saved().toFixed(2).replace('.', ',')}</div><div class="faint">ahorrados en tu cochinito (de mentiritas)</div><div class="row" style="justify-content:center;gap:6px;font-weight:800">${ST(18)} +${earned} estrellitas</div><div class="faint">Cada antojo que esquivas es plata que se queda contigo.</div>`, () => catchGame('monedas')); return; }
     const pst = A.petState(); Object.entries(caught).forEach(([k, n]) => pst.pantry[k] = (pst.pantry[k] || 0) + n);
-    const n = total(); const gm = GM(); const rec = n > (gm.best.atrapar || 0); if (rec) gm.best.atrapar = n;
+    const n = total(); const gm = GM(); const rec = n > (gm.best.atrapar || 0); if (rec) gm.best.atrapar = n; gsfx(rec ? 'record' : 'over');
     const earned = payGame(Math.floor(n / 3)); A.petAddXp && A.petAddXp(10, 'game'); A.saveSettings();
     endCard(sh, lives <= 0 ? '¡Te mojaste!' : rec ? '¡NUEVO RÉCORD!' : '¡Se acabó el tiempo!', `<div class="gm-big">${n} cositas</div><div class="gm-loot">${Object.entries(caught).map(([k, c]) => `<span>${img(k in A.FOODS && A.FOODS[k].sprite ? A.FOODS[k].sprite : k, 26)}×${c}</span>`).join('') || '<span class="faint">Nada esta vez</span>'}</div><div class="faint">Todo se guardó en la despensa.</div><div class="row" style="justify-content:center;gap:6px;font-weight:800">${ST(18)} +${earned} estrellitas</div>`, catchGame);
   }
@@ -165,11 +166,11 @@ async function catchGame(mode) {
   sh.cv.addEventListener('pointerdown', e => { target = e.clientX; }); sh.cv.addEventListener('pointermove', e => { if (e.buttons || e.pointerType === 'touch') target = e.clientX; });
   sh.cv.addEventListener('pointerup', () => target = null);
   const untilt = tiltControl(v => tilt = Math.abs(v) < .12 ? 0 : v);
-  $('.gm-pause', sh.ov).onclick = () => { paused = !paused; const m = $('.gm-msg', sh.ov); if (paused) { m.hidden = false; m.innerHTML = `<div class="gm-end"><div class="gm-k">PAUSA</div><div class="row" style="gap:8px;margin-top:10px"><button class="btn" data-x="out" style="flex:1;justify-content:center">Salir</button><button class="btn pink" data-x="go" style="flex:1;justify-content:center">Seguir</button></div></div>`; m.onclick = e => { const b = e.target.closest('[data-x]'); if (!b) return; if (b.dataset.x === 'out') sh.close(); else { paused = false; m.hidden = true; } }; } };
+  $('.gm-pause', sh.ov).onclick = () => { paused = !paused; gsfx('tick'); const m = $('.gm-msg', sh.ov); if (paused) { m.hidden = false; m.innerHTML = `<div class="gm-end"><div class="gm-k">PAUSA</div><div class="row" style="gap:8px;margin-top:10px"><button class="btn" data-x="out" style="flex:1;justify-content:center">Salir</button><button class="btn pink" data-x="go" style="flex:1;justify-content:center">Seguir</button></div></div>`; m.onclick = e => { const b = e.target.closest('[data-x]'); if (!b) return; if (b.dataset.x === 'out') sh.close(); else { paused = false; m.hidden = true; } }; } };
   sh.close = () => { run = false; cancelAnimationFrame(raf); removeEventListener('keydown', kd); removeEventListener('keyup', ku); untilt(); sh.ov.remove(); document.body.classList.remove('gaming'); if (S.route === 'juegos' || S.route === 'rincon') A.render(); };
   reset(); const m = $('.gm-msg', sh.ov); m.hidden = false;
   m.innerHTML = coins ? `<div class="gm-end"><div class="gm-k">AHORRA MONEDAS, NO ANTOJOS</div><div class="gm-legend"><span>${img('moneda', 30)}Atrápalas</span><span>${img('estrellita', 30)}Vale más</span><span>${img('bolsa', 30)}Esquiva los antojos</span></div><div class="faint">Desliza el dedo o inclina el celular para mover tu cochinito. Tienes 45 segundos y 3 vidas.</div><button class="btn pink" data-x="go" style="justify-content:center;margin-top:10px;width:100%">¡Empezar!</button></div>` : `<div class="gm-end"><div class="gm-k">ATRAPAR COMIDITA</div><div class="gm-legend"><span>${img('fresa', 30)}Atrápala</span><span>${img('dona', 30)}A la despensa</span><span>${img('gota', 30)}Esquívala</span></div><div class="faint">Desliza el dedo o inclina el celular para mover a tu mascota. Tienes 45 segundos y 3 vidas.</div><button class="btn pink" data-x="go" style="justify-content:center;margin-top:10px;width:100%">¡Empezar!</button></div>`;
-  m.onclick = e => { if (e.target.closest('[data-x]')) { m.hidden = true; paused = false; } };
+  m.onclick = e => { if (e.target.closest('[data-x]')) { m.hidden = true; paused = false; gsfx('start'); } };
   raf = requestAnimationFrame(loop);
 }
 
@@ -321,7 +322,7 @@ function roomBody() {
   const garden = ((S.settings.garden || {}).habits || []).slice(0, 6).map(h => ({ name: h.name.slice(0, 20), plant: habitInfo(h).plant }));
   const photos = ((S.settings.board || {}).items || []).map(x => x.img).filter(x => x && /^https?:/.test(x)).slice(0, 6);
   const eqAll = (S.settings.rincon || {}).equip || {}; const equip = {}; p.room.concat(p.active ? [p.active] : []).forEach(k => { if (eqAll[k]) equip[k] = eqAll[k]; });
-  return { rooms: r.rooms, cur: r.cur, pets: p.room, equip, active: p.active || null, owned: p.owned, lv, logros, garden, photos, care: c ? { h: Math.round(c.h), f: Math.round(c.f), l: Math.round(c.l), sleep: !!c.sleep } : null };
+  return { rooms: Object.fromEntries(Object.entries(r.rooms).filter(([k]) => k !== 'cuidar' && k !== '__probador')), cur: r.cur === 'cuidar' ? 'cuarto' : r.cur, pets: p.room, equip, active: p.active || null, owned: p.owned, lv, logros, garden, photos, care: c ? { h: Math.round(c.h), f: Math.round(c.f), l: Math.round(c.l), sleep: !!c.sleep } : null };
 }
 async function publishRoom() {
   if (!online()) return null;
@@ -374,7 +375,7 @@ function friendRoomView(cur) {
   const signs = V.signs[cur.user_id]; if (!signs) loadSigns(cur.user_id).then(() => { if (S.route === 'visitas') A.render(); });
   const need = care && !care.sleep && (care.h < 50 || care.f < 50);
   return `<div class="ph"><div class="ph-left"><button class="navarrow" data-act="vsBack" aria-label="Volver">‹</button><span class="pill">Cuarto de ${esc(cur.name)}</span></div><span class="pill sm">${img('heart', 16)} ${cur.hearts || 0}</span></div>
-${Object.keys(rooms).length > 1 ? `<div class="chips">${Object.keys(rooms).map(k => `<button class="chip" data-act="vsRoom" data-k="${k}" aria-pressed="${k === rk}">${esc({ cuarto: 'Su cuarto', cocina: 'Cocina', juegos: 'Cuarto de juegos', jardin: 'Jardín' }[k] || k)}</button>`).join('')}</div>` : ''}
+${Object.keys(rooms).length > 1 ? `<div class="chips">${Object.keys(rooms).map(k => `<button class="chip" data-act="vsRoom" data-k="${k}" aria-pressed="${k === rk}">${esc({ cuarto: 'Su cuarto', sala: 'Sala', cocina: 'Cocina', juegos: 'Cuarto de juegos', jardin: 'Jardín' }[k] || k)}</button>`).join('')}</div>` : ''}
 ${A.roomHTML(rooms[rk], { pets: guestPets, id: 'friendRoom', photos: b.photos || [], guest: mine })}
 <p class="faint" style="margin:-4px 0 0;text-align:center">${mine ? esc(A.petInfo(mine).name) + ' vino contigo de visita' : ''}</p>
 ${care ? `<div class="card row vs-pet" style="gap:10px"><img class="pixel" alt="" src="${spr(A.petInfo(b.active).sprite, 3)}" style="width:44px"><div style="flex:1"><b>${esc(pname)}</b><div class="faint">${care.sleep ? 'Está durmiendo' : care.h < 40 ? 'Tiene hambre' : care.f < 40 ? 'Está un poco triste' : 'Está feliz'}</div></div><button class="btn sm ${need ? 'pink' : ''}" data-act="vsFeed" ${did(cur, 'feed') || care.sleep ? 'disabled' : ''}>${img('cupcake', 16)} ${did(cur, 'feed') ? 'Ya le diste' : 'Darle de comer'}</button></div>` : ''}
@@ -689,34 +690,143 @@ const render2 = A.render;
 A.render = (...x) => { const r = S.settings.reminder; const d = today(); if (r && r.on && r.endpoint && r.logged !== d && online() && S.tx.some(t => t.date === d && !t.example && !t.recurring)) { r.logged = d; Store.sb.from('push_subs').update({ last_log: d }).eq('endpoint', r.endpoint).then(() => {}, () => {}); } return render2(...x); };
 // ---------------- Sonidos suaves (hechos con el navegador, sin archivos) ----------------
 const Sfx = (() => {
-  let ctx = null, lastTap = 0;
-  addEventListener('pointerdown', () => { lastTap = Date.now(); if (ctx && ctx.state === 'suspended') ctx.resume(); }, { capture: true, passive: true });
+  let ctx = null, lastTap = 0, noiseBuf = null;
   const on = () => S.settings.sound !== false;
+  const mk = () => { if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); } if (ctx.state === 'suspended') ctx.resume(); return ctx; };
+  // se "despierta" el audio con el primer toque (Android no deja sonar sin un toque antes)
+  addEventListener('pointerdown', () => { lastTap = Date.now(); if (on()) { try { mk(); } catch (e) { } } }, { capture: true, passive: true });
   const tone = (f, t0, dur, type, vol, f2) => {
     const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type || 'sine'; o.frequency.setValueAtTime(f, ctx.currentTime + t0);
     if (f2) o.frequency.exponentialRampToValueAtTime(f2, ctx.currentTime + t0 + dur);
     g.gain.setValueAtTime(0.0001, ctx.currentTime + t0); g.gain.exponentialRampToValueAtTime(vol || .06, ctx.currentTime + t0 + .015); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t0 + dur);
     o.connect(g).connect(ctx.destination); o.start(ctx.currentTime + t0); o.stop(ctx.currentTime + t0 + dur + .02);
   };
+  // ruidito (para mordiscos, chasquidos y crujidos)
+  const noise = (t0, dur, vol, freq, q) => {
+    if (!noiseBuf) { noiseBuf = ctx.createBuffer(1, ctx.sampleRate * .5, ctx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+    const src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); src.buffer = noiseBuf; f.type = 'bandpass'; f.frequency.value = freq || 1200; f.Q.value = q || 1.2;
+    const t = ctx.currentTime + t0; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || .08, t + .008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f).connect(g).connect(ctx.destination); src.start(t); src.stop(t + dur + .02);
+  };
   const SOUNDS = {
     blup: () => tone(420, 0, .14, 'sine', .07, 760),                       // al anotar
     coin: () => { tone(988, 0, .09, 'triangle', .05); tone(1319, .07, .18, 'triangle', .05); },   // estrellitas
-    pop: () => tone(520, 0, .08, 'triangle', .05, 340),                     // tocar o darle de comer
+    pop: () => tone(520, 0, .08, 'triangle', .05, 340),                     // tocar algo
     yum: () => { tone(600, 0, .07, 'sine', .05, 700); tone(700, .09, .08, 'sine', .05, 820); },
     gift: () => [784, 988, 1175, 1568].forEach((f, i) => tone(f, i * .07, .16, 'triangle', .045)), // regalo
-    save: () => { tone(660, 0, .1, 'sine', .05); tone(880, .08, .16, 'sine', .05); }
+    save: () => { tone(660, 0, .1, 'sine', .05); tone(880, .08, .16, 'sine', .05); },
+    tick: () => tone(1500, 0, .035, 'square', .018),                          // cambiar de pestaña
+    // --- cuidado de la mascota ---
+    nom: () => { [0, .2, .4].forEach((t, i) => { noise(t, .07, .11, 900 - i * 120, 2.5); tone(260 - i * 20, t, .06, 'triangle', .03, 180); }); tone(660, .62, .09, 'sine', .045, 780); tone(880, .72, .14, 'sine', .045, 990); }, // ñam ñam ñam + "mmm"
+    bubbles: () => { for (let i = 0; i < 9; i++) { const f = 500 + Math.random() * 700; tone(f, i * .09 + Math.random() * .04, .09, 'sine', .04, f * 1.9); } },  // burbujitas
+    lightOff: () => { noise(0, .03, .12, 3000, 3); tone(520, .03, .3, 'sine', .04, 260); },      // clic y se apaga
+    lightOn: () => { noise(0, .03, .12, 3000, 3); tone(330, .03, .25, 'sine', .04, 700); tone(990, .2, .12, 'triangle', .03); },
+    love: () => { tone(740, 0, .12, 'sine', .05, 990); tone(990, .1, .18, 'sine', .045, 1320); tone(1760, .24, .12, 'triangle', .02); }, // mimo
+    sleepy: () => { tone(392, 0, .3, 'sine', .03, 349); tone(330, .25, .4, 'sine', .025, 294); },  // está dormida
+    nope: () => { tone(330, 0, .09, 'triangle', .04); tone(262, .1, .14, 'triangle', .04); },
+    dress: () => { noise(0, .12, .05, 4000, .8); tone(1047, .05, .1, 'triangle', .035); tone(1319, .12, .14, 'triangle', .035); }, // ropita
+    buy: () => { tone(1319, 0, .08, 'square', .025); tone(1760, .08, .25, 'square', .025); noise(.02, .1, .04, 6000, 1); },       // compra
+    adopt: () => [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, i * .08, .2, 'triangle', .04)),
+    place: () => { tone(220, 0, .07, 'triangle', .06, 160); noise(0, .05, .05, 700, 1.5); },   // poner un mueble
+    swoosh: () => noise(0, .22, .05, 1800, .6),
+    water: () => { for (let i = 0; i < 5; i++) tone(900 + Math.random() * 500, i * .07, .07, 'sine', .035, 1800 + Math.random() * 400); },
+    // --- minijuegos ---
+    start: () => [523, 659, 784].forEach((f, i) => tone(f, i * .09, .14, 'square', .025)),
+    jump: () => tone(330, 0, .12, 'square', .022, 660),
+    boing: () => tone(180, 0, .35, 'triangle', .06, 900),
+    crack: () => { noise(0, .12, .1, 900, 1); tone(200, 0, .12, 'square', .02, 90); },
+    poof: () => noise(0, .2, .05, 2500, .7),
+    catch: () => tone(880, 0, .07, 'triangle', .045, 1175),
+    bonk: () => { tone(200, 0, .18, 'square', .035, 110); },
+    record: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .1, .16, 'square', .025)); tone(1319, .42, .4, 'square', .025); },
+    over: () => [659, 523, 440, 349].forEach((f, i) => tone(f, i * .12, .18, 'triangle', .04))
   };
+  // la vocecita de cada mascota (las nuevas que agregues desde el panel tienen una propia, sacada de su nombre)
+  const VOICES = {
+    gochi: () => { tone(523, 0, .28, 'sine', .05, 466); tone(392, .2, .35, 'sine', .04, 349); },                          // "muuu" tranquila
+    yaki: () => [880, 988, 1175].forEach((f, i) => tone(f, i * .07, .09, 'triangle', .045, f * 1.1)),                      // pío pío pío con energía
+    shey: () => { tone(620, 0, .18, 'sine', .05, 990); tone(990, .16, .14, 'sine', .035, 1175); },                         // "miii?"
+    ale: () => { tone(300, 0, .14, 'sine', .06, 520); tone(340, .16, .16, 'sine', .055, 600); },                           // bloop bloop de flan
+    maca: () => { tone(1047, 0, .1, 'triangle', .045, 1568); tone(1319, .11, .18, 'triangle', .04, 1175); },               // "kya!" coqueta
+    dony: () => { tone(392, 0, .1, 'square', .025, 523); tone(523, .1, .1, 'square', .025, 784); tone(784, .2, .12, 'square', .022); }, // brinquito
+    gela: () => { for (let i = 0; i < 6; i++) tone(i % 2 ? 700 : 600, i * .045, .06, 'sine', .045); },                     // tembleque
+    cupi: () => [784, 988, 1319].forEach((f, i) => tone(f, i * .08, .14, 'triangle', .04))                                // fanfarita
+  };
+  const hashVoice = id => { let h = 0; for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; const base = 440 + (h % 9) * 70, up = 1.15 + (h >> 4) % 5 * .1, n = 2 + (h >> 8) % 2, type = ['sine', 'triangle', 'square'][(h >> 10) % 3]; return () => { for (let i = 0; i < n; i++) tone(base * (1 + i * .12), i * .09, .12, type, type === 'square' ? .022 : .045, base * up * (1 + i * .12)); }; };
   return {
     play(n, force) {
       if (!on() || !SOUNDS[n]) return; if (!force && Date.now() - lastTap > 2500) return; // solo cuando tú hiciste algo
-      try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); SOUNDS[n](); } catch (e) { }
+      try { mk(); SOUNDS[n](); } catch (e) { }
+    },
+    voice(id, asleep) {
+      if (!on()) return;
+      try { mk(); if (asleep) return SOUNDS.sleepy(); const pet = A.allPets && A.allPets()[id]; const key = VOICES[id] ? id : pet && VOICES[pet.sprite] ? pet.sprite : null; (key ? VOICES[key] : hashVoice(id))(); } catch (e) { }
     }
   };
 })();
 window.Sfx = Sfx; A.sfx = n => Sfx.play(n);
 // enganchar los sonidos a lo que ya existe
 { const g = A.giveStars; A.giveStars = n => { g(n); if (n > 0) Sfx.play('coin'); }; }
-for (const [k, n] of [['pcFeed', 'yum'], ['rgOpen', 'gift'], ['pcPet', 'pop'], ['vsHeart', 'pop'], ['rmStyle', 'pop'], ['rmFurn', 'pop'], ['jrSave', 'save']]) { const f = ACT[k]; if (f) ACT[k] = (...x) => { Sfx.play(n); return f(...x); }; }
+// sonidos de cada cosa que haces (se enganchan sin tocar las funciones originales)
+const sleeping = () => !!document.querySelector('#pcPet .petw.sleepy');
+const hook = (k, fn) => { const f = ACT[k]; if (f) ACT[k] = (...x) => { const after = fn(...x); const r = f(...x); if (typeof after === 'function') try { after(...x); } catch (e) { } return r; }; };
+const simple = (k, n) => hook(k, () => { Sfx.play(n); });
+// comer: "ñam ñam" solo si de verdad comió (si no queda o está llena, un "nop")
+hook('pcFeed', a => { const p = A.petState && A.petState(); const k = a && a.dataset.k; const before = p && p.pantry ? p.pantry[k] || 0 : 0; return () => { const now = p && p.pantry ? p.pantry[k] || 0 : 0; if (now < before) setTimeout(() => Sfx.play('nom', true), 350); else Sfx.play(sleeping() ? 'sleepy' : 'nope'); }; });
+hook('pcBath', () => { Sfx.play(sleeping() ? 'sleepy' : 'bubbles'); });
+hook('pcLove', () => { Sfx.play(sleeping() ? 'sleepy' : 'love'); });
+hook('pcSleep', () => { const was = sleeping(); Sfx.play(was ? 'lightOn' : 'lightOff'); });
+// compras que piden confirmar: primer toque "tic", el segundo suena a compra
+for (const [k, n] of [['rcBuy', 'buy'], ['rmBuyRoom', 'buy'], ['elAdopt', 'adopt']]) hook(k, a => { const sure = a && a.dataset && a.dataset.sure; return () => Sfx.play(sure || !(a && a.dataset && a.dataset.sure) ? n : 'tick'); });
+for (const [k, n] of [['rgOpen', 'gift'], ['vsHeart', 'love'], ['vsFeed', 'nom'], ['vsWater', 'water'], ['gdWater', 'water'], ['rmStyle', 'pop'], ['rmFurn', 'place'], ['rmRemove', 'swoosh'], ['rmFlip', 'tick'], ['shopItem', 'dress'], ['colPet', 'pop'], ['elPick', 'adopt'], ['jrSave', 'save'], ['gmPlay', 'pop'],
+  ['pcTab', 'tick'], ['rmTab', 'tick'], ['rmCat', 'tick'], ['rmRoom', 'tick'], ['rcTab', 'tick'], ['lkTab', 'tick'], ['pcDecor', 'tick'], ['pcShop', 'tick'], ['pcClose', 'tick']]) simple(k, n);
+
+// ---------------- Corazones bonitos (pixel, en tonos rosados) ----------------
+Pix.define('corazon_rosa', { raw: ['.000...000.', '01220.01110', '01232111110', '01221111140', '01111111140', '.011111140.', '..01111440.', '...011440..', '....0140...', '.....0.....'], pal: '#c2577a,#f78fb3,#ffc6da,#ffffff,#e46f97' });
+Pix.define('corazon_claro', { raw: ['.000...000.', '01220.01110', '01232111110', '01221111140', '01111111140', '.011111140.', '..01111440.', '...011440..', '....0140...', '.....0.....'], pal: '#d9739a,#ffb8cf,#ffe0ea,#ffffff,#f59bba' });
+Pix.define('corazon_mini', { raw: ['.00.00.', '0230110', '0211140', '.01140.', '..040..', '...0...'], pal: '#c2577a,#f78fb3,#ffc6da,#ffffff,#e46f97' });
+Pix.define('brillito', { raw: ['..0..', '.010.', '01110', '.010.', '..0..'], pal: '#ff9cc0,#ffffff' });
+A.prettyHearts = (target, opts) => {
+  opts = opts || {}; if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  let layer = document.querySelector('.ph-layer'); if (!layer) { layer = document.createElement('div'); layer.className = 'ph-layer'; document.body.appendChild(layer); }
+  const r = target && target.getBoundingClientRect ? target.getBoundingClientRect() : { left: innerWidth / 2 - 40, top: innerHeight / 2 - 40, width: 80, height: 80 };
+  const ox = r.left + r.width / 2, oy = r.top + r.height * (opts.y != null ? opts.y : .3);
+  const n = opts.n || 7, spread = opts.spread || 1;
+  const add = (src, size, delay, path, dur) => {
+    const im = document.createElement('img'); im.className = 'pixel'; im.alt = ''; im.src = src; im.style.width = size + 'px'; im.style.left = (ox - size / 2) + 'px'; im.style.top = (oy - size / 2) + 'px'; im.style.opacity = 0;
+    layer.appendChild(im); const an = im.animate(path, { duration: dur, delay, easing: 'cubic-bezier(.22,.8,.3,1)', fill: 'both' }); an.onfinish = () => im.remove(); setTimeout(() => im.remove(), dur + delay + 300);
+  };
+  for (let i = 0; i < n; i++) {
+    const ang = (-75 + 150 * (n === 1 ? .5 : i / (n - 1)) + (Math.random() * 16 - 8)) * Math.PI / 180;
+    const dist = (34 + Math.random() * 26) * spread, bx = Math.sin(ang) * dist, by = -Math.cos(ang) * dist * .7;
+    const rise = (70 + Math.random() * 50) * spread, sway = (Math.random() < .5 ? -1 : 1) * (8 + Math.random() * 10), rot = Math.random() * 24 - 12;
+    const kind = i % 3 === 2 ? 'corazon_claro' : i % 4 === 3 ? 'corazon_mini' : 'corazon_rosa';
+    const size = kind === 'corazon_mini' ? 18 + Math.random() * 6 : 26 + Math.random() * 12;
+    add(Pix.sprite(kind, 3), size, i * 55, [
+      { transform: `translate(0,0) scale(.2) rotate(${rot}deg)`, opacity: 0 },
+      { transform: `translate(${bx * .8}px,${by * .8}px) scale(1.25) rotate(${-rot}deg)`, opacity: 1, offset: .18 },
+      { transform: `translate(${bx}px,${by}px) scale(1) rotate(${rot * .5}deg)`, opacity: 1, offset: .3 },
+      { transform: `translate(${bx + sway}px,${by - rise * .45}px) scale(1) rotate(${-rot * .5}deg)`, opacity: 1, offset: .6 },
+      { transform: `translate(${bx - sway * .6}px,${by - rise}px) scale(.85) rotate(${rot}deg)`, opacity: 0 }
+    ], 1500 + Math.random() * 300);
+  }
+  for (let i = 0; i < (opts.sparks != null ? opts.sparks : 4); i++) {
+    const sx = (Math.random() * 120 - 60) * spread, sy = -(Math.random() * 80 + 10) * spread, sz = 12 + Math.random() * 8;
+    add(Pix.sprite('brillito', 3), sz, 120 + i * 140, [
+      { transform: `translate(${sx}px,${sy}px) scale(0) rotate(0deg)`, opacity: 0 },
+      { transform: `translate(${sx}px,${sy}px) scale(1.2) rotate(45deg)`, opacity: 1, offset: .4 },
+      { transform: `translate(${sx}px,${sy - 8}px) scale(0) rotate(90deg)`, opacity: 0 }
+    ], 700);
+  }
+};
+A.pixelHearts = t => A.prettyHearts(t);
+// tocar a las mascotitas en el cuarto (y en el cuarto de tus amigas): brinquito, corazones y su vocecita
+document.addEventListener('click', e => {
+  const pt = e.target.closest('.rm-pet[data-pk]'); if (!pt || pt.closest('.room.editing')) return;
+  const asleep = pt.classList.contains('sleep'); Sfx.voice(pt.dataset.pk, asleep);
+  pt.classList.remove('tap'); void pt.offsetWidth; pt.classList.add('tap'); setTimeout(() => pt.classList.remove('tap'), 600);
+  if (!asleep) A.prettyHearts(pt, { n: 4, spread: .7, sparks: 2, y: .1 });
+});
 
 // ---------------- Clima real en la ventana del cuarto ----------------
 const WXC = c => c == null ? null : c <= 1 ? 'sol' : c <= 3 ? 'nubes' : c <= 48 ? 'niebla' : c <= 67 || (c >= 80 && c <= 82) ? 'lluvia' : c <= 77 || c === 85 || c === 86 ? 'nieve' : c >= 95 ? 'tormenta' : 'nubes';
