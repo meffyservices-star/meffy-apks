@@ -1004,3 +1004,52 @@ body.jr-spread .jr-spread-bar { display: flex; position: fixed; left: 0; right: 
 .gm-card:active { transform: translateY(4px); box-shadow: 0 2px 0 #8a4d4f !important; }
 .gm-card::after { content: "Jugar ▸"; position: absolute; right: 12px; bottom: 12px; font: 600 13px var(--f-display); color: #fff; background: #f27ea1; border: 2px solid #8a4d4f; border-radius: 99px; padding: 2px 10px; box-shadow: 0 3px 0 #8a4d4f; }
 .gm-card .tag { margin-right: 70px; }
+/* ===== Más: íconos en cuadritos de color ===== */
+.menugrid.tinted button .ni { width: 54px; height: 54px; border-radius: 18px; }
+.menugrid.tinted button .ni img { width: 36px; height: 36px; filter: none; }
+/* ===== Anotar con el diseño nuevo ===== */
+.qa-tabs { background: none; border-radius: 0; padding: 0 4px; gap: 18px; border-bottom: 2px solid var(--glass-line); justify-content: center; }
+.qa-tabs button { flex: none; border-radius: 0; background: none !important; color: var(--ink-soft) !important; padding: 8px 0 10px; margin-bottom: -2px; border-bottom: 3px solid transparent; font-size: 15px; min-height: 44px; }
+.qa-tabs button[aria-pressed="true"] { color: var(--ink) !important; border-color: var(--accent); }
+.qa-amt { flex-direction: row-reverse; justify-content: center; align-items: center; gap: 14px; border: 0; background: none; padding: 6px 0; }
+.qa-amt > div { text-align: center; }
+.qa-amt .val { font-family: var(--f-display); font-weight: 600; font-size: 46px; letter-spacing: 0; line-height: 1.05; }
+.qa-amt > span { width: 56px; height: 56px; border-radius: 18px; background: var(--glass-strong); box-shadow: var(--soft-shadow); display: grid; place-items: center; }
+.qa-cats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 6px; max-height: 236px; }
+.qa-cats button { font: 800 12px var(--f-body); color: var(--ink); gap: 5px; }
+.qa-cats button .ci { width: 56px; height: 56px; border-radius: 18px; border: 0; box-shadow: 0 1px 0 rgba(120,70,60,.12); transition: transform .12s; }
+.qa-cats button .ci img { width: 34px; height: 34px; }
+.qa-cats button[aria-pressed="true"] .ci { box-shadow: 0 0 0 3px var(--accent), 0 4px 10px -4px rgba(242,126,161,.6); transform: translateY(-2px); background: inherit; }
+.qa-note { border-radius: 16px; border: 0; background: var(--glass-strong); box-shadow: 0 1px 0 var(--glass-line); min-height: 48px; font-weight: 800; }
+#qa .chip { border-radius: 99px; }
+.qa-keys { gap: 8px; }
+.qa-keys button { border-radius: 16px; background: var(--glass-strong); box-shadow: 0 1px 0 var(--glass-line), 0 6px 12px -10px rgba(120,70,60,.45); font: 600 22px var(--f-display); min-height: 52px; padding: 0; }
+.qa-keys button.op { background: #fde3ea; color: #c2456e; }
+.qa-save { border-radius: 18px !important; min-height: 56px; font: 600 18px var(--f-display) !important; box-shadow: 0 4px 0 #d4628a !important; }
+/* ===== Calendario de pared ===== */
+.calbook { position: relative; margin-top: 12px; border-radius: 18px; background: #fff; box-shadow: 0 1px 0 var(--glass-line), 0 12px 24px -14px rgba(120,60,70,.45); }
+.calbook-rings { position: absolute; left: 0; right: 0; top: -10px; display: flex; justify-content: space-around; padding: 0 30px; z-index: 2; pointer-events: none; }
+.calbook-rings i { width: 10px; height: 22px; border-radius: 6px; background: linear-gradient(90deg, #8a6a62, #c9b2a8 45%, #8a6a62); box-shadow: 0 2px 0 rgba(0,0,0,.15); }
+.calbook-top { background: #f27ea1; color: #fff; border-radius: 18px 18px 0 0; padding: 18px 12px 10px; text-align: center; font: 600 19px var(--f-display); text-shadow: 0 2px 0 rgba(160,40,80,.35); background-image: radial-gradient(circle, rgba(255,255,255,.25) 1.5px, transparent 2px); background-size: 14px 14px; }
+.calbook-top::before { content: ""; position: absolute; left: 0; right: 0; top: 6px; height: 0; }
+.calbook .calendar { gap: 0; padding: 0 0 6px; }
+.calbook .calendar .dow { border-radius: 0; background: #fde3ea; color: #c2456e; padding: 6px 0; font-weight: 900; border-bottom: 2px solid #f8c6d5; }
+.calbook .calendar .dow.we { background: #fbd3df; }
+.calbook .calendar .d { border-radius: 0 !important; background: #fff; box-shadow: none; border-right: 1px solid #f6e6ea !important; border-bottom: 1px solid #f6e6ea !important; min-height: 54px; align-items: flex-start; padding: 4px 5px; text-align: left; }
+.calbook .calendar .d:nth-child(7n) { border-right: 0 !important; }
+.calbook .calendar .d.we { background: #fff7fa; }
+.calbook .calendar .d b { width: 22px; height: 22px; font-size: 12.5px; }
+.calbook .calendar .d.lv1 em, .calbook .calendar .d.lv2 em, .calbook .calendar .d.lv3 em, .calbook .calendar .d.lv4 em { background: #fde3ea; border-radius: 6px; padding: 0 3px; }
+.calbook .calendar .d.lv3, .calbook .calendar .d.lv4 { background: #fff0f4; }
+.calbook .calendar .d.fut { opacity: 1; color: #d9c6c0; background: #fff; }
+.calbook .calendar .d.out { background: #fbf7f4; }
+/* ===== Banners: nuevo look (postal de borde ondulado, ancho completo) ===== */
+.screen > .banner:first-child { margin: -12px -16px 0; border-radius: 0; box-shadow: none; aspect-ratio: auto; height: 210px; -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 16px) no-repeat, radial-gradient(circle at 50% 0, #000 15.5px, transparent 16px) bottom / 32px 16px repeat-x; mask: linear-gradient(#000 0 0) top / 100% calc(100% - 16px) no-repeat, radial-gradient(circle at 50% 0, #000 15.5px, transparent 16px) bottom / 32px 16px repeat-x; }
+.banner::after { display: none; }
+.banner .greet { left: 16px; bottom: 30px; color: var(--ink); text-shadow: none; background: rgba(255,255,255,.93); padding: 8px 16px 9px; border-radius: 20px 20px 20px 6px; box-shadow: 0 8px 18px -8px rgba(80,40,50,.45); font-size: 21px; }
+.banner .greet small { display: block; background: none; padding: 0; margin-top: 2px; color: var(--ink-soft); font-size: 12.5px; }
+.screen > .banner:first-child .mascot { bottom: 24px; width: 84px; height: 84px; }
+.screen > .banner:first-child .iconbtn { top: 20px; }
+.screen > .banner:first-child .edit { right: 14px; }
+.screen > .banner:first-child .priv.onbanner { right: 62px; }
+.banner .bubble { top: 22px; }

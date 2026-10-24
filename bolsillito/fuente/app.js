@@ -1246,7 +1246,7 @@ const ds = k + '-' + pad(d); const dl = list.filter(t => t.date === ds);
 const o = spentOf(dl, { withSaving: true }), i = incomeOf(dl); const lvl = o ? Math.min(4, 1 + Math.floor(o / maxO * 3.99)) : 0; const dw = (off + d - 1) % 7;
 h += `<button class="d ${ds === td ? 'today' : ''} ${ds > td ? 'fut' : ''} ${dw >= 5 ? 'we' : ''} lv${lvl}" data-act="dayDetail" data-d="${ds}" aria-label="${d}${o ? ', gastaste ' + Math.round(o) : ''}"><b>${d}</b>${o ? `<em>−${Math.round(o)}</em>` : ''}${i ? `<em class="i">+${Math.round(i)}</em>` : ''}</button>`;
 }
-return `<div class="calendar">${h}</div>`;
+return `<div class="calbook"><span class="calbook-rings" aria-hidden="true"><i></i><i></i><i></i><i></i></span><div class="calbook-top">${cap(monthLabel(k))}</div><div class="calendar">${h}</div></div>`;
 }
 const DONUT = ['#f27ea1', '#8fcbed', '#ffd65c', '#9ccb62', '#ffb3cb', '#f4a88b', '#5fb0dc', '#e8c4a0', '#c6e59a', '#d9b3c8'];
 function donut(parts) {
@@ -1330,21 +1330,21 @@ const cats = S.fin.categories.filter(c => t.type === 'income' ? c.type === 'inco
 const val = evalExpr(expr);
 box.innerHTML = `
 <div class="stack">
-<div class="seg"><button data-ty="expense" aria-pressed="${t.type === 'expense'}">Gasto</button><button data-ty="income" aria-pressed="${t.type === 'income'}">Ingreso</button><button data-ty="transfer" aria-pressed="${t.type === 'transfer'}">Transferencia</button></div>
+<div class="seg qa-tabs"><button data-ty="expense" aria-pressed="${t.type === 'expense'}">Gasto</button><button data-ty="income" aria-pressed="${t.type === 'income'}">Ingreso</button><button data-ty="transfer" aria-pressed="${t.type === 'transfer'}">Transferencia</button></div>
 <div class="qa-amt"><div style="min-width:0"><div class="expr">${/[+\-×÷]/.test(expr.slice(1)) ? esc(expr) : (t.type === 'transfer' ? 'Monto a mover' : 'Monto')}</div><div class="val num ${t.type === 'income' ? 'pos' : ''}">${money(val)}</div></div><span style="font-size:30px">${t.type === 'transfer' ? px('ui_transfer', 36) : iconHTML((cat(t.cat) || {}).icon || 's:moneda', 36)}</span></div>
-<input class="in" id="qaNote" placeholder="${t.type === 'income' ? 'Ej. sueldo, venta…' : 'Ej. café 3.50, uber, super…'}" value="${esc(t.note)}" autocomplete="off">
+<input class="in qa-note" id="qaNote" placeholder="${t.type === 'income' ? 'Ej. sueldo, venta…' : 'Ej. café 3.50, uber, super…'}" value="${esc(t.note)}" autocomplete="off">
 ${t.type === 'transfer' ? `<div class="formgrid"><label class="f">Desde<select class="in" id="qaFrom">${S.fin.accounts.map(a => `<option value="${a.id}" ${t.acct === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label><label class="f">Hacia<select class="in" id="qaTo"><option value="">Elige…</option>${S.fin.accounts.map(a => `<option value="${a.id}" ${t.to === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label></div>`
-: `<div class="catgrid">${cats.map(c => `<button data-cat="${c.id}" aria-pressed="${t.cat === c.id}"><span class="ci">${iconHTML(c.icon, 28)}</span><span class="t">${esc(c.name)}</span></button>`).join('')}<button data-act-in="newcat"><span class="ci">＋</span><span class="t">Nueva</span></button></div>`}
+: `<div class="catgrid qa-cats">${cats.map(c => `<button data-cat="${c.id}" aria-pressed="${t.cat === c.id}"><span class="ci" style="background:${tintOf(c.id)}">${iconHTML(c.icon, 28)}</span><span class="t">${esc(c.name)}</span></button>`).join('')}<button data-act-in="newcat"><span class="ci">＋</span><span class="t">Nueva</span></button></div>`}
 <div class="row" style="flex-wrap:wrap;gap:6px">
 <button class="chip" data-day="0" aria-pressed="${t.date === today()}">Hoy</button><button class="chip" data-day="-1" aria-pressed="${t.date === ymd(addDays(new Date(), -1))}">Ayer</button>
 <input type="date" class="in" id="qaDate" value="${t.date}" style="width:auto;flex:1;min-width:140px;padding:6px 10px">
 ${t.type !== 'transfer' ? `<select class="in" id="qaAcct" style="width:auto;flex:1;min-width:140px;padding:6px 10px">${S.fin.accounts.map(a => `<option value="${a.id}" ${t.acct === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select>` : ''}
 </div>
 ${t.type === 'expense' && A_feels() ? `<div class="feelrow"><span>¿Cómo te sientes?</span>${Object.entries(A_feels()).map(([k, f]) => `<button type="button" data-feel="${k}" aria-pressed="${t.feel === k}" aria-label="${f.n}" title="${f.n}">${f.e}</button>`).join('')}</div>` : ''}
-<div class="keypad">
+<div class="keypad qa-keys">
 ${['7', '8', '9', '⌫', '4', '5', '6', '+', '1', '2', '3', '−', '.', '0', '×', '÷'].map(k => `<button data-k="${k}" class="${/[⌫+−×÷]/.test(k) ? 'op' : ''}">${k}</button>`).join('')}
 </div>
-<div class="row">${existing ? '<button class="btn danger" data-del>Borrar</button>' : ''}<button class="btn pink" style="flex:1;justify-content:center;padding:13px" data-save>${existing ? 'Guardar cambios' : 'Guardar'} ✦</button></div>
+<div class="row">${existing ? '<button class="btn danger" data-del>Borrar</button>' : ''}<button class="btn pink qa-save" style="flex:1;justify-content:center;padding:13px" data-save>${existing ? 'Guardar cambios' : 'Guardar'} ✦</button></div>
 </div>`;
 const note = $('#qaNote', box);
 note.oninput = () => {
@@ -1522,7 +1522,7 @@ const MENU = ['rincon', 'logros', 'tienda', 'suscripciones', 'recordatorio', 'ye
 sc.more = () => `
 ${A.header('more')}
 <button class="card row" data-go="data" style="gap:14px;text-align:left;width:100%;color:inherit;font:inherit;cursor:pointer">${avatarHTML('')}<div style="min-width:0"><b class="mid" style="display:block">${esc(S.settings.name || 'Tu perfil')}</b><div class="faint">${A.isPlus() ? '<span class="tag gold">Meffy+</span> ' : ''}${S.settings.photo ? 'Toca para editar tu perfil' : 'Toca para poner tu foto y tu nombre'}</div></div></button>
-<div class="menugrid">${MENU.concat(Store.isOwner ? ['admin'] : []).filter(k => !(S.settings.hidden || []).includes(k) || ['settings', 'appearance', 'plan', 'data', 'admin'].includes(k)).map(k => `<button data-go="${k}"><span class="ni">${iconHTML(A.pageIcon(k), 40)}</span>${esc(A.PAGES[k])}</button>`).join('')}</div>
+${(() => { const vis = MENU.concat(Store.isOwner ? ['admin'] : []).filter(k => !(S.settings.hidden || []).includes(k) || ['settings', 'appearance', 'plan', 'data', 'admin'].includes(k)); const TINT = { rincon: '#e3f3df', logros: '#fff4c2', tienda: '#efe6fb', suscripciones: '#efe6fb', recordatorio: '#e1effb', year: '#fff4c2', goals: '#e1effb', recurring: '#fde3ea', projections: '#e3f3df', rules: '#dcf3ec', settings: '#ffe8c7', appearance: '#dcf3ec', plan: '#fde3ea', data: '#e1effb', admin: '#f3e4dc' }; const G = [['Tu mascota', ['rincon', 'logros', 'tienda']], ['Tu dinero', ['goals', 'suscripciones', 'recurring', 'year', 'projections', 'rules']], ['Ajustes', ['recordatorio', 'settings', 'appearance', 'plan', 'data', 'admin']]]; const used = new Set(G.flatMap(g => g[1])); const extra = vis.filter(k => !used.has(k)); if (extra.length) G[1][1] = G[1][1].concat(extra); return G.map(([t, ks]) => { const L = ks.filter(k => vis.includes(k)); return L.length ? `<div class="ph"><span class="pill sm">${t}</span></div><div class="menugrid tinted">${L.map(k => `<button data-go="${k}"><span class="ni" style="background:${TINT[k] || '#fde3ea'}">${iconHTML(A.pageIcon(k), 36)}</span>${esc(A.PAGES[k])}</button>`).join('')}</div>` : ''; }).join(''); })()}
 `;
 sc.goals = () => `
 ${A.bannerHTML('goals') || ''}
