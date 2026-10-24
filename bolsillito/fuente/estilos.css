@@ -1253,6 +1253,3 @@ body.jr-spread .jr-spread-bar { display: flex; position: fixed; left: 0; right: 
 .qa-sptot { order: -1; }
 .qa-split > .row { order: -2; }
 .qa-mic.qa-shot { right: auto; left: 0; }
-
-/* Banners: que lleguen de borde a borde (el max-width:100% dejaba una franja a la derecha) */
-.screen > .banner:first-child { max-width: none; width: auto; align-self: stretch; }
