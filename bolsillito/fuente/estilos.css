@@ -1262,3 +1262,4 @@ img { -webkit-user-drag: none; user-drag: none; }
 .co-list .iconbtn:disabled { opacity: .3; }
 /* categorías en orden de lectura: fila por fila, con scroll hacia abajo */
 .qa-wrap .qa-cats { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: none; grid-auto-columns: auto; overflow-x: hidden; overflow-y: auto; scroll-snap-type: y proximity; }
+.co-list .co-ed { font-size: 16px; }

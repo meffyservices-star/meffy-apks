@@ -920,17 +920,18 @@ function catOrderList() { const o = (S.settings.catOrder || []).filter(id => S.f
 function sortCats(list) { const o = catOrderList(); return list.slice().sort((a, b) => o.indexOf(a.id) - o.indexOf(b.id)); }
 function orderCats(type, done) {
 let ty = type || 'expense';
-openSheet('Ordenar categorías', `<div id="coBody"></div>`, sh => {
+openSheet('Tus categorías', `<div id="coBody"></div>`, sh => {
 const body = $('#coBody', sh);
 const draw = () => { const L = sortCats(S.fin.categories.filter(c => ty === 'income' ? c.type === 'income' : c.type !== 'income'));
 body.innerHTML = `<div class="seg" style="margin-bottom:10px"><button data-ty="expense" aria-pressed="${ty === 'expense'}">Gastos</button><button data-ty="income" aria-pressed="${ty === 'income'}">Ingresos</button></div>
-<p class="faint" style="margin:0 0 8px">Las de arriba salen primero en Anotar. Sube las que más usas.</p>
+<p class="faint" style="margin:0 0 8px">Las de arriba salen primero en Anotar. Usa las flechas para ordenarlas y el lápiz para cambiarles el nombre, el icono o borrarlas.</p>
 <button class="btn" data-auto style="width:100%;justify-content:center;margin-bottom:10px">Poner primero las que más uso</button>
-<div class="list co-list">${L.map((c, i) => `<div class="li"><span class="ic">${iconHTML(c.icon, 28)}</span><span class="tx-main"><b>${esc(c.name)}</b></span><button class="iconbtn" data-mv="${c.id}" data-d="-1" ${i === 0 ? 'disabled' : ''} aria-label="Subir">▲</button><button class="iconbtn" data-mv="${c.id}" data-d="1" ${i === L.length - 1 ? 'disabled' : ''} aria-label="Bajar">▼</button></div>`).join('')}</div>
+<div class="list co-list">${L.map((c, i) => `<div class="li"><span class="ic">${iconHTML(c.icon, 28)}</span><span class="tx-main"><b>${esc(c.name)}</b></span><button class="iconbtn co-ed" data-ed="${c.id}" aria-label="Editar o borrar">✎</button><button class="iconbtn" data-mv="${c.id}" data-d="-1" ${i === 0 ? 'disabled' : ''} aria-label="Subir">▲</button><button class="iconbtn" data-mv="${c.id}" data-d="1" ${i === L.length - 1 ? 'disabled' : ''} aria-label="Bajar">▼</button></div>`).join('')}</div>
 <button class="btn pink" data-ok style="width:100%;justify-content:center;margin-top:12px;padding:12px">Listo</button>`; };
 draw();
 body.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
 if (b.dataset.ty) { ty = b.dataset.ty; draw(); return; }
+if (b.dataset.ed) { closeSheet(); editCategory(b.dataset.ed, null, () => orderCats(ty, done)); return; }
 if (b.dataset.mv) { const L = sortCats(S.fin.categories.filter(c => ty === 'income' ? c.type === 'income' : c.type !== 'income')).map(c => c.id); const i = L.indexOf(b.dataset.mv), j = i + +b.dataset.d; if (j < 0 || j >= L.length) return; [L[i], L[j]] = [L[j], L[i]]; const all = catOrderList(); const pos = all.map((id, k) => L.includes(id) ? k : -1).filter(k => k >= 0); pos.forEach((k, n) => all[k] = L[n]); S.settings.catOrder = all; saveSettings(); draw(); return; }
 if (b.hasAttribute('data-auto')) { const n = {}; S.tx.forEach(x => { if (x.cat) n[x.cat] = (n[x.cat] || 0) + 1; }); const all = catOrderList(); const L = all.filter(id => { const c = cat(id); return c && (ty === 'income' ? c.type === 'income' : c.type !== 'income'); }); const sorted = L.slice().sort((a, b2) => (n[b2] || 0) - (n[a] || 0) || L.indexOf(a) - L.indexOf(b2)); const pos = all.map((id, k) => L.includes(id) ? k : -1).filter(k => k >= 0); pos.forEach((k, m) => all[k] = sorted[m]); S.settings.catOrder = all; saveSettings(); draw(); toast('Listo, las que más usas van primero'); return; }
 if (b.hasAttribute('data-ok')) { closeSheet(); if (done) done(); else render(); }
@@ -1478,7 +1479,7 @@ ${t.type === 'expense' && !existing ? `<button role="tab" data-pane="split" aria
 ${feels ? `<button role="tab" data-pane="animo" aria-selected="${pane === 'animo'}"><small>Ánimo</small><b>${t.feel && feels[t.feel] ? feels[t.feel].e : '—'}</b></button>` : ''}
 </div>
 <div class="qa-pane">
-${pane === 'cat' ? `<div class="catgrid qa-cats">${cats.map(c => `<button data-cat="${c.id}" aria-pressed="${t.cat === c.id}"><span class="ci" style="background:${tintOf(c.id)}">${iconHTML(c.icon, 28)}</span><span class="t">${esc(c.name)}</span></button>`).join('')}<button data-act-in="newcat"><span class="ci">＋</span><span class="t">Nueva</span></button><button data-act-in="catorder"><span class="ci">${px('list', 28)}</span><span class="t">Ordenar</span></button></div>`
+${pane === 'cat' ? `<div class="catgrid qa-cats">${cats.map(c => `<button data-cat="${c.id}" aria-pressed="${t.cat === c.id}"><span class="ci" style="background:${tintOf(c.id)}">${iconHTML(c.icon, 28)}</span><span class="t">${esc(c.name)}</span></button>`).join('')}<button data-act-in="newcat"><span class="ci">＋</span><span class="t">Nueva</span></button><button data-act-in="catorder"><span class="ci">${px('list', 28)}</span><span class="t">Editar</span></button></div>`
   : pane === 'cuenta' ? (t.type === 'transfer' ? `<div class="formgrid"><label class="f">Desde<select class="in" id="qaFrom">${S.fin.accounts.map(a => `<option value="${a.id}" ${t.acct === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label><label class="f">Hacia<select class="in" id="qaTo"><option value="">Elige…</option>${S.fin.accounts.map(a => `<option value="${a.id}" ${t.to === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label></div><div class="row" style="gap:6px;margin-top:8px"><button class="chip" data-day="0" aria-pressed="${t.date === today()}">Hoy</button><button class="chip" data-day="-1" aria-pressed="${t.date === ymd(addDays(new Date(), -1))}">Ayer</button><input type="date" class="in" id="qaDate" value="${t.date}" style="flex:1;min-width:0;padding:6px 10px"></div>`
     : `<div class="qa-accts">${S.fin.accounts.filter(a => !a.archived).map(a => `<button class="chip" data-acpick="${a.id}" aria-pressed="${t.acct === a.id}">${iconHTML(a.icon || 's:monedero', 18)} ${esc(a.name)}</button>`).join('')}</div><div class="row" style="gap:6px;margin-top:8px"><button class="chip" data-day="0" aria-pressed="${t.date === today()}">Hoy</button><button class="chip" data-day="-1" aria-pressed="${t.date === ymd(addDays(new Date(), -1))}">Ayer</button><input type="date" class="in" id="qaDate" value="${t.date}" style="flex:1;min-width:0;padding:6px 10px"></div>`)
   : pane === 'split' ? splitPane()
@@ -1862,7 +1863,15 @@ const read = () => { c.name = $('#cN').value.trim(); c.group = $('#cG').value; c
 sh.addEventListener('click', e => { const b = e.target.closest('[data-ct]'); if (!b) return; read(); c.type = b.dataset.ct; draw(); });
 $('#cI', sh).onclick = () => { read(); A.pickIcon(c.icon, v => { c.icon = v; draw(); }); };
 $('#cOk', sh).onclick = () => { read(); if (!c.name) return toast('Ponle un nombre'); if (!S.fin.categories.includes(c)) { S.fin.categories.push(c); const o = A.catOrderList(); S.settings.catOrder = [c.id].concat(o.filter(x => x !== c.id)); A.saveSettings(); toast('Categoría creada. Sale primero en Anotar'); } A.saveFin(); closeSheet(); if (done) done(c); else rerender(); };
-const del = $('#cDel', sh); if (del) del.onclick = () => { if (S.tx.some(t => t.cat === c.id)) return toast('Tiene movimientos: cámbiales la categoría primero.'); S.fin.categories = S.fin.categories.filter(x => x.id !== c.id); A.saveFin(); closeSheet(); rerender(); };
+const del = $('#cDel', sh); if (del) del.onclick = () => {
+const used = S.tx.filter(t => t.cat === c.id); const others = S.fin.categories.filter(x => x.id !== c.id && (x.type === 'income') === (c.type === 'income'));
+const kill = to => { if (to) { used.forEach(t => t.cat = to); A.saveTxMonths(used.map(t => A.ym(t.date))); } S.fin.categories = S.fin.categories.filter(x => x.id !== c.id); S.settings.catOrder = (S.settings.catOrder || []).filter(x => x !== c.id); A.saveSettings(); A.saveFin(); closeSheet(); toast('Categoría borrada'); if (done) done(null); else rerender(); };
+if (!used.length) { if (!del.dataset.s) { del.dataset.s = 1; del.textContent = '¿Segura? Toca otra vez'; return; } return kill(null); }
+if (!others.length) return toast('Necesitas otra categoría para pasarle sus movimientos');
+const box = document.createElement('div'); box.className = 'full card flat stack'; box.style.background = '#fff7d6';
+box.innerHTML = `<b>Tiene ${used.length} ${used.length === 1 ? 'movimiento' : 'movimientos'}</b><span class="faint">¿A qué categoría los paso antes de borrarla?</span><select class="in" id="cTo">${A.sortCats(others).map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select><button class="btn danger" id="cKill" style="justify-content:center">Pasarlos y borrar</button>`;
+del.closest('.row').before(box); del.remove(); box.querySelector('#cKill').onclick = () => kill(box.querySelector('#cTo').value);
+};
 });
 draw();
 }
