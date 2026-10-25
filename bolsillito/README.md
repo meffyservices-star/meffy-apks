@@ -24,6 +24,7 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
 ## Historial
 
 - **25-oct-2026**
+  - Tablero de sueños: se quitaron las frases "Este es mi año" y "Me lo merezco" (también para quien ya las tenía) y la estrellita, el brillo y el corazón de adorno. Ahora solo muestra las fotos y lo que pone la usuaria.
   - **Recordatorios** nuevos (Más → Recordatorios, en `fuente/recordatorios.js`): pago de tarjeta, suscripciones, servicios, cobrar, cumples, salud y "otra cosita". Cada uno con hora, monto y notita opcionales, repetición (una vez, diario, semanal, mensual, anual) y aviso el mismo día, 1, 3 o 7 días antes. Sugiere avisos para las tarjetas con día de pago y las suscripciones que encuentra.
   - Los recordatorios llegan como **notificación** del celular (con el tono de notificaciones del teléfono, vibran y se quedan hasta tocarlas); al tocarla se abre Recordatorios. Con la app abierta sale además un aviso chiquito. Sin sonidos propios ni cuadro grande de alarma (a pedido de la dueña); el relojito queda solo de decoración junto a la mascota.
   - Al abrir la app, si el celular tiene permiso de avisos, se vuelve a registrar como activo en `push_subs` (antes, apagar el aviso diario en la versión vieja dejaba el celular sin avisos). pg_cron revisa cada minuto.
