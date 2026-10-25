@@ -1,4 +1,4 @@
-const C = 'bolsillito-v31';
+const C = 'bolsillito-v32';
 const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
 const CORE = ['/', '/offline.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', CDN].concat([0, 1, 2, 3, 4, 5].map(i => '/p' + i + '.bin?v=1'));
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
@@ -22,6 +22,10 @@ self.addEventListener('fetch', e => {
     e.respondWith(caches.match(e.request).then(m => m || fetch(e.request).then(r => { if (r.ok || r.type === 'opaque') { const cp = r.clone(); caches.open(C).then(c => c.put(e.request, cp)); } return r; })));
     return;
   }
+  if (/\/storage\/v1\/object\/public\/music\/[^/]+\/alarmas\//.test(u.pathname)) {
+    e.respondWith(caches.open(C).then(c => c.match(u.href).then(m => m || fetch(u.href, { mode: 'cors' }).then(r => { if (r.ok) c.put(u.href, r.clone()); return r; }).catch(() => fetch(e.request)))));
+    return;
+  }
   if (u.origin !== location.origin) return;
   if (/^\/(descargar|\.well-known\/)/.test(u.pathname)) return;
   // Internet primero, pero si tarda más de 3 s (o no hay) se abre lo guardado en el celular.
@@ -36,12 +40,25 @@ self.addEventListener('fetch', e => {
     return r || cached;
   })());
 });
-// Recordatorio para anotar (notificaciones)
+// Avisos: el diario para anotar y los recordatorios (pago de tarjeta, suscripciones, cositas…)
 self.addEventListener('push', e => {
   let d = {}; try { d = e.data ? e.data.json() : {}; } catch (er) { d = { body: e.data ? e.data.text() : '' }; }
-  e.waitUntil(self.registration.showNotification(d.title || 'Bolsillito', { body: d.body || '¿Anotamos lo de hoy?', icon: '/icon-192.png', badge: '/badge.png', tag: 'bolsillito-recordatorio', data: { url: d.url || '/' } }));
+  const rem = d.rem || null;
+  const opts = rem
+    ? { body: d.body || '', icon: '/icon-192.png', badge: '/badge.png', tag: d.tag || ('rem-' + rem.id), renotify: true, requireInteraction: true, vibrate: [400, 200, 400, 200, 600], data: { url: d.url || '/', rem } }
+    : { body: d.body || '¿Anotamos lo de hoy?', icon: '/icon-192.png', badge: '/badge.png', tag: 'bolsillito-recordatorio', data: { url: d.url || '/' } };
+  e.waitUntil((async () => {
+    await self.registration.showNotification(d.title || 'Bolsillito', opts);
+    // si la app está abierta y a la vista, que suene la alarma ahí mismo
+    if (rem) { const ws = await self.clients.matchAll({ type: 'window', includeUncontrolled: true }); ws.filter(w => w.visibilityState === 'visible').forEach(w => w.postMessage({ type: 'bolsi-alarma', rem })); }
+  })());
 });
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(ws => { const w = ws.find(c => 'focus' in c); return w ? w.focus() : self.clients.openWindow((e.notification.data && e.notification.data.url) || '/'); }));
+  const data = e.notification.data || {}; const url = data.url || '/';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(ws => {
+    const w = ws.find(c => 'focus' in c);
+    if (w) { if (data.rem) w.postMessage({ type: 'bolsi-alarma', rem: data.rem }); return w.focus(); }
+    return self.clients.openWindow(url);
+  }));
 });

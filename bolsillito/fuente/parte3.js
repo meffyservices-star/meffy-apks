@@ -677,53 +677,6 @@ A.sendTplTo = async (code, tpl) => {
   const { error } = await Store.sb.from('gifts').insert({ to_user: r.user_id, from_user: Store.uid, from_name: myName(), kind: 'tpl', item: tpl.name.slice(0, 60), qty: 1, payload: { name: tpl.name, page: tpl.page } });
   toast(error ? 'No se pudo mandar' : `¡Plantilla enviada a ${r.name}!`);
 };
-// ================= Recordatorio para anotar =================
-const VAPID = 'BJZS49m-TRZOYs2Ansy5qpS72ybEIoIuvTQYbO28jCCe8McNclVj2j6KI2Jkp0qetmzJuC4N8tsDi9zzV7X35n4';
-A.PAGES.recordatorio = 'Recordatorio'; pageIcon('recordatorio', 'alerta');
-const RM = () => (S.settings.reminder = S.settings.reminder || { on: false, hour: 20 });
-const canPush = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-const isAndroid = () => /android/i.test(navigator.userAgent);
-try { if (/^android-app:\/\/com\.meffy\.bolsillito/.test(document.referrer)) localStorage.setItem('bolsi_twa', '1'); } catch (e) {}
-const isApp = () => { try { return localStorage.getItem('bolsi_twa') === '1'; } catch (e) { return false; } };
-A.isApp = isApp;
-const appCard = () => isAndroid() && !isApp() ? `<div class="card row app-dl" style="gap:12px;background:#fff7d6">${img('phone', 40)}<div style="flex:1"><b>Bolsillito ya es una app</b><div class="faint">Descárgala para Android: se abre sin barra del navegador y los avisos llegan como de app.</div></div><a class="btn pink sm" href="/descargar" style="text-decoration:none">Descargar</a></div>` : '';
-A.appCard = appCard;
-const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent); const standalone = () => window.matchMedia && matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-const b64u = s => { const p = '='.repeat((4 - s.length % 4) % 4); const r = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...r].map(c => c.charCodeAt(0))); };
-const tz = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Guayaquil'; } catch (e) { return 'America/Guayaquil'; } };
-const hourTxt = h => (h % 12 || 12) + (h < 12 ? ' de la mañana' : h < 19 ? ' de la tarde' : ' de la noche');
-A.screens.recordatorio = () => {
-  const r = RM(); const perm = canPush() ? Notification.permission : 'no';
-  return `${sub('recordatorio', 'more')}
-<div class="card row" style="gap:12px">${img(petSprite(), 56)}<div style="flex:1"><b>Te aviso para anotar</b><div class="faint">Todos los días a la hora que elijas, ${esc(A.petInfo ? A.petInfo(activePet()).name : 'tu mascota')} te recuerda anotar tus gastos. Si ese día ya anotaste, no te molesta.</div></div></div>
-${!online() ? '<div class="card empty">El recordatorio necesita internet y tu cuenta de Bolsillito.</div>' : !canPush() ? `<div class="card empty">${isIOS() && !standalone() ? 'En iPhone primero agrega Bolsillito a tu pantalla de inicio (botón Compartir → "Agregar a inicio") y ábrela desde ahí.' : 'Este navegador no permite notificaciones. Prueba con Chrome o instalando la app.'}</div>`
-  : `<div class="card stack"><div class="setrow"><span><b>Recordatorio diario</b></span><span class="toggle"><input type="checkbox" id="rmOn" ${r.on ? 'checked' : ''}><span></span></span></div>
-<label class="f">¿A qué hora?<select class="in" id="rmH">${Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === r.hour ? 'selected' : ''}>${hourTxt(h)}</option>`).join('')}</select></label>
-${perm === 'denied' ? '<p class="faint" style="margin:0;color:#c44a72">Bloqueaste las notificaciones para Bolsillito. Actívalas en los ajustes de tu navegador o celular.</p>' : ''}
-<button class="btn" data-act="rmTest" style="justify-content:center">Mandarme uno de prueba</button></div>`}
-${appCard()}${!standalone() && !isIOS() && !isAndroid() ? `<div class="card stack" style="background:#fff7d6"><b>¿El aviso dice el link de la página?</b><div class="faint">Pasa cuando abres Bolsillito desde el navegador o con un acceso directo. Instálala como app y los avisos dirán solo "Bolsillito", como las demás apps.</div>${A.installEvt ? '<button class="btn pink" data-act="installApp" style="justify-content:center">Instalar Bolsillito</button>' : '<div class="faint">En Chrome toca el menú ⋮ y luego <b>"Instalar app"</b> (no "Agregar a pantalla de inicio"). Si ya tenías un acceso directo, bórralo primero.</div>'}</div>` : ''}
-<p class="faint" style="margin:0">Puedes apagarlo cuando quieras. Las notificaciones solo dicen que anotes: nunca muestran tus cifras.</p>`;
-};
-addEventListener('beforeinstallprompt', e => { e.preventDefault(); A.installEvt = e; if (S.route === 'recordatorio') A.render(); });
-addEventListener('appinstalled', () => { A.installEvt = null; toast('¡Listo! Bolsillito ya está instalada como app.'); });
-ACT.installApp = async () => { const e = A.installEvt; if (!e) return; e.prompt(); try { await e.userChoice; } catch (er) { } A.installEvt = null; A.render(); };
-async function rmSave(on, hour) {
-  const r = RM(); r.hour = hour; A.saveSettings();
-  if (!on) { r.on = false; A.saveSettings(); if (r.endpoint && online()) await Store.sb.from('push_subs').update({ enabled: false }).eq('endpoint', r.endpoint); toast('Recordatorio apagado'); return; }
-  const p = await Notification.requestPermission(); if (p !== 'granted') { toast('Necesito permiso para mandarte notificaciones'); r.on = false; A.saveSettings(); A.render(); return; }
-  try {
-    const reg = await navigator.serviceWorker.ready; let subn = await reg.pushManager.getSubscription(); if (!subn) subn = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(VAPID) });
-    const j = subn.toJSON(); const pet = A.petInfo ? A.petInfo(activePet()).name : '';
-    const { error } = await Store.sb.from('push_subs').upsert({ endpoint: j.endpoint, user_id: Store.uid, p256dh: j.keys.p256dh, auth: j.keys.auth, hour, tz: tz(), pet, enabled: true }, { onConflict: 'endpoint' });
-    if (error) throw error; r.on = true; r.endpoint = j.endpoint; A.saveSettings(); toast(`¡Listo! Te aviso todos los días a las ${hourTxt(hour)}`);
-  } catch (e) { console.warn(e); r.on = false; A.saveSettings(); toast('No se pudo activar el recordatorio en este celular'); }
-  A.render();
-}
-A.after.recordatorio = el => { const on = $('#rmOn', el), h = $('#rmH', el); if (on) on.onchange = () => rmSave(on.checked, +h.value); if (h) h.onchange = () => { if (RM().on) rmSave(true, +h.value); else { RM().hour = +h.value; A.saveSettings(); } }; };
-ACT.rmTest = async () => { if (Notification.permission !== 'granted' && (await Notification.requestPermission()) !== 'granted') return toast('Necesito permiso para mandarte notificaciones'); const reg = await navigator.serviceWorker.ready; reg.showNotification('Bolsillito', { badge: '/badge.png', body: `¿Anotamos lo de hoy? ${A.petInfo ? A.petInfo(activePet()).name : 'Tu mascota'} te está esperando.`, icon: '/icon-192.png', tag: 'bolsillito-prueba' }); };
-// avisa al servidor que hoy ya anotaste (así no te manda el recordatorio)
-const render2 = A.render;
-A.render = (...x) => { const r = S.settings.reminder; const d = today(); if (r && r.on && r.endpoint && r.logged !== d && online() && S.tx.some(t => t.date === d && !t.example && !t.recurring)) { r.logged = d; Store.sb.from('push_subs').update({ last_log: d }).eq('endpoint', r.endpoint).then(() => {}, () => {}); } return render2(...x); };
 // ---------------- Sonidos suaves (hechos con el navegador, sin archivos) ----------------
 const Sfx = (() => {
   let ctx = null, lastTap = 0, noiseBuf = null;
