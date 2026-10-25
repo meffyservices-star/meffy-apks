@@ -230,7 +230,10 @@ if (cache[key]) return cache[key];
 const [base, variant] = name.split('~');
 const d = DEFS[base]; if (!d) return '';
 let url;
-if (d.raw) { // ícono dibujado a mano con sus propios colores y contorno
+if (d.art) { // imagen original (personajes): se muestra tal cual, con el tamaño de un dibujo de 20x20
+const png = variant && RAW_TINT[variant] ? artTint(d, variant) : d.art; if (!png) return sprite(base, scale);
+const z = 20 * (scale || 1); url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="' + z + '" height="' + z + '" viewBox="0 0 360 360"><image href="' + png + '" width="360" height="360"/></svg>');
+} else if (d.raw) { // ícono dibujado a mano con sus propios colores y contorno
 let pal = d.pal.split(','); if (variant && RAW_TINT[variant]) pal = pal.map(c => tintRaw(c, RAW_TINT[variant])); const grid = d.raw.map(r => [...r].map(ch => ch === '.' ? null : pal[parseInt(ch, 36)]));
 url = toURL(grid, d.fit ? Math.max(1, Math.round((scale || 1) * d.fit / grid[0].length)) : (scale || 1), null, null);
 } else {
@@ -238,6 +241,16 @@ const W = d.w || 16, H = d.h || 16, fn = d.fn || d;
 url = toURL(paint(W, H, fn), scale || 1, VARIANTS[variant], d.flat ? null : (PETS.test(base) ? PET_STYLE : ICON_STYLE));
 }
 cache[key] = url; return url;
+}
+// colores especiales (fresa, menta…) para las imágenes originales: se tiñen una vez cargadas
+function artTint(d, v) {
+d.tints = d.tints || {}; if (d.tints[v]) return d.tints[v];
+if (!d.im) { d.im = new Image(); d.im.onload = () => { Object.keys(cache).forEach(k => { if (DEFS[k.split(/[@~]/)[0]] === d) delete cache[k]; }); }; d.im.src = d.art; }
+if (!d.im.complete || !d.im.naturalWidth) return null;
+const cv = document.createElement('canvas'); cv.width = cv.height = 360; const ctx = cv.getContext('2d'); ctx.drawImage(d.im, 0, 0, 360, 360);
+const id = ctx.getImageData(0, 0, 360, 360), px = id.data, memo = {};
+for (let i = 0; i < px.length; i += 4) { if (!px[i + 3]) continue; const key = px[i] << 16 | px[i + 1] << 8 | px[i + 2]; let c = memo[key]; if (!c) { const t = tintRaw('#' + key.toString(16).padStart(6, '0'), RAW_TINT[v]); c = memo[key] = [1, 3, 5].map(j => parseInt(t.slice(j, j + 2), 16)); } px[i] = c[0]; px[i + 1] = c[1]; px[i + 2] = c[2]; }
+ctx.putImageData(id, 0, 0); return (d.tints[v] = cv.toDataURL());
 }
 function rnd(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 function bands(ctx, W, H, cols, rand) {
