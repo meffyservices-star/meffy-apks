@@ -23,6 +23,8 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
 ## Historial
 
 - **24-oct-2026**
+  - Personajes nuevos en toda la app: Ale (pudín), Gochi, Shey, Yaki (rollito de canela) y el chanchito de ahorro (también en el juego de atrapar monedas). Están en `fuente/personajes.js`, dibujados con más detalle (32 a 46 cuadritos) y con `fit: 20` para que salgan del mismo tamaño que antes. La ropa se reacomodó a los dibujos nuevos.
+  - Ícono nuevo de la app con la nueva Ale (web y Android). El ícono del APK cambia cuando se vuelve a generar el APK.
   - Editor pixel del panel (mascotas, muebles, ropa, etc.): botón **Pantalla grande** junto al dibujo. Abre solo el cuadro de dibujo ocupando toda la pantalla, con las herramientas en una fila arriba, la vista previa en pequeño y los colores abajo. Se acerca con dos dedos (pellizco), con los botones − / + o la rueda del mouse; se mueve con dos dedos o con la herramienta Mover. "Ver todo" vuelve al tamaño completo y "Listo" regresa al formulario.
   - Los textos de la mascota de Inicio ahora usan el nombre y el dibujito de la mascota que tenga cada usuaria (Ale, Pandy o la que elija): el consejo "Soy … y cuido tu dinerito", el cierre del día (título, tarjeta, frase de la noche y aviso) y los textos de recompensas. En el panel, las **Frases de la noche** aceptan `{nombre}` (y "Ale" también se cambia solo).
   - Cruzar la calle tiene sonido de ambiente propio por escenario (pajaritos, tráfico y bocinas, olas y gaviotas, viento y campanitas, cajita musical) y sonidos cercanos: el carro que pasa a tu lado, el río y el tren. Va bajito y se apaga si la usuaria quitó los sonidos.

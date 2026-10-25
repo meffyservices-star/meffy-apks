@@ -232,7 +232,7 @@ const d = DEFS[base]; if (!d) return '';
 let url;
 if (d.raw) { // ícono dibujado a mano con sus propios colores y contorno
 let pal = d.pal.split(','); if (variant && RAW_TINT[variant]) pal = pal.map(c => tintRaw(c, RAW_TINT[variant])); const grid = d.raw.map(r => [...r].map(ch => ch === '.' ? null : pal[parseInt(ch, 36)]));
-url = toURL(grid, scale || 1, null, null);
+url = toURL(grid, d.fit ? Math.max(1, Math.round((scale || 1) * d.fit / grid[0].length)) : (scale || 1), null, null);
 } else {
 const W = d.w || 16, H = d.h || 16, fn = d.fn || d;
 url = toURL(paint(W, H, fn), scale || 1, VARIANTS[variant], d.flat ? null : (PETS.test(base) ? PET_STYLE : ICON_STYLE));
