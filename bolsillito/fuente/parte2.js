@@ -858,8 +858,8 @@ ${[['pen', 'Lápiz'], ['fill', 'Balde'], ['pick', 'Gotero'], ['line', 'Línea'],
 <button class="chip" data-edop="outline">Contorno</button><button class="chip" data-edop="shade">Sombrita</button><button class="chip" data-edop="flip">Voltear</button><button class="chip" data-edop="undo">Deshacer</button><button class="chip" data-edop="clear">Borrar todo</button>
 </div>
 <div class="ad-frames"><span class="faint">Animación:</span><button class="chip" data-frame="1" aria-pressed="${!ed.f2}">Cuadro 1</button><button class="chip" data-frame="2" aria-pressed="${!!ed.f2}">Cuadro 2${ed.map2 ? ' ✓' : ''}</button>${ed.map2 ? '<button class="chip" data-edop="noanim">Quitar animación</button>' : '<span class="faint" style="font-size:12px">Dibuja un cuadro 2 y se mueve solo (brillo, parpadeo, burbujas).</span>'}</div>
-<div class="ed-wrap"><canvas id="edCanvas" class="ed-canvas" style="aspect-ratio:${ed.w}/${ed.h}"></canvas><div class="ed-side"><img class="pixel" id="edPrev" alt="Vista previa" src="" style="max-width:96px;max-height:96px"><span class="faint">${ed.w} × ${ed.h}</span></div></div>
-<div class="ed-pal">${ed.pal.map((h, i) => `<button class="ed-sw ${ed.color === i.toString(36) ? 'on' : ''}" data-sw="${i.toString(36)}" style="background:${h}" aria-label="Color ${i + 1}"></button>`).join('')}<button class="ed-sw erase ${ed.color === '.' ? 'on' : ''}" data-sw="." aria-label="Borrador">×</button><label class="ed-sw add" aria-label="Agregar color">+<input type="color" id="edAddCol" value="#f27ea1"></label></div>
+${ed.full ? fullEdHTML() : `<div class="ed-wrap"><canvas id="edCanvas" class="ed-canvas" style="aspect-ratio:${ed.w}/${ed.h}"></canvas><div class="ed-side"><img class="pixel" id="edPrev" alt="Vista previa" src="" style="max-width:96px;max-height:96px"><span class="faint">${ed.w} × ${ed.h}</span><button class="btn sm pink" data-edop="full" style="margin-top:6px">Pantalla grande</button></div></div>
+${palHTML()}`}
 <details class="ad-size"><summary>Cambiar cuadrícula (${ed.w} × ${ed.h})</summary><div class="row" style="gap:6px;margin-top:8px"><input class="in" data-ed="w" type="number" min="3" max="${maxW}" value="${ed.w}" style="width:80px"> × <input class="in" data-ed="h" type="number" min="3" max="${maxH}" value="${ed.h}" style="width:80px"></div></details>
 <div class="f">Variantes de color<div class="ad-vars">${VARS.map(([n, hue]) => `<button class="ad-var" data-var="${n}"><img class="pixel" alt="" src="${varPreview(hue)}"><span>${n}</span></button>`).join('')}</div><span class="faint" style="font-size:12px">Toca una y se crea una copia en ese color, lista para guardar.</span></div>
 ${k === 'clothes' ? tryOnHTML() : ''}${k === 'furn' || tile ? roomPreviewHTML() : ''}
@@ -873,6 +873,33 @@ ${ed.how === 'temporada' ? `<label class="f">Qué temporada<select class="in" da
 </div>`}
 <div class="row" style="gap:8px;flex-wrap:wrap">${ed.id ? `<button class="btn" data-act="edOff">${ed.off ? 'Mostrar otra vez' : 'Ocultar'}</button><button class="btn danger" data-act="edDel">Borrar</button><button class="btn" data-act="edNew">Nueva</button>` : ''}<button class="btn pink" data-act="edSave" style="flex:1;justify-content:center">Guardar y publicar</button></div>
 <p class="faint" style="margin:0">Lo que guardes aquí les aparece a todas tus usuarias.</p>`;
+}
+function palHTML() { return `<div class="ed-pal">${ed.pal.map((h, i) => `<button class="ed-sw ${ed.color === i.toString(36) ? 'on' : ''}" data-sw="${i.toString(36)}" style="background:${h}" aria-label="Color ${i + 1}"></button>`).join('')}<button class="ed-sw erase ${ed.color === '.' ? 'on' : ''}" data-sw="." aria-label="Borrador">×</button><label class="ed-sw add" aria-label="Agregar color">+<input type="color" id="edAddCol" value="#f27ea1"></label></div>`; }
+// ---- Pantalla grande: solo el dibujo, con las herramientas justas y zoom con dos dedos ----
+function fullEdHTML() {
+  const z = ed.zoom || 1;
+  return `<div class="ed-full" id="edFull">
+<div class="ed-full-top">
+<img class="pixel ed-full-mini" id="edPrev" alt="Vista previa" src="">
+<div class="ed-full-tools">${[['pen', 'Lápiz'], ['fill', 'Balde'], ['pick', 'Gotero'], ['line', 'Línea'], ['rect', 'Cuadro'], ['oval', 'Círculo'], ['pan', 'Mover']].map(([t, n]) => `<button class="chip" data-tool="${t}" aria-pressed="${ed.tool === t}">${n}</button>`).join('')}<button class="chip" data-edop="mirror" aria-pressed="${!!ed.mirror}">Espejo</button><button class="chip" data-edop="undo">Deshacer</button></div>
+<button class="btn sm pink ed-full-x" data-edop="full">Listo</button>
+</div>
+<div class="ed-full-stage" id="edStage"><div class="ed-full-pan" id="edPan"><canvas id="edCanvas" class="ed-canvas big"></canvas></div>
+<div class="ed-full-zoom"><button class="btn sm" data-zoom="-1" aria-label="Alejar">−</button><b id="edZv">${Math.round(z * 100)}%</b><button class="btn sm" data-zoom="1" aria-label="Acercar">+</button><button class="btn sm" data-zoom="0">Ver todo</button></div></div>
+${palHTML()}
+</div>`;
+}
+function edApplyView() {
+  const p = $('#edPan'); if (!p) return; const z = ed.zoom || 1;
+  p.style.transform = `translate(-50%,-50%) translate(${ed.panX || 0}px,${ed.panY || 0}px) scale(${z})`;
+  const v = $('#edZv'); if (v) v.textContent = Math.round(z * 100) + '%';
+}
+function edZoomTo(z, mx, my) { // mx,my: punto fijo, medido desde el centro del cuadro de dibujo
+  const st = $('#edStage'); if (!st) return; const old = ed.zoom || 1; z = Math.max(1, Math.min(10, z));
+  mx = mx || 0; my = my || 0; ed.panX = mx - (mx - (ed.panX || 0)) * z / old; ed.panY = my - (my - (ed.panY || 0)) * z / old; ed.zoom = z;
+  if (z === 1) { ed.panX = 0; ed.panY = 0; }
+  const cv = $('#edCanvas'); if (cv) { const lx = cv.offsetWidth * z / 2, ly = cv.offsetHeight * z / 2; ed.panX = Math.max(-lx, Math.min(lx, ed.panX)); ed.panY = Math.max(-ly, Math.min(ly, ed.panY)); }
+  edApplyView();
 }
 // ---- Probador de ropa: la mascota con la prenda encima, para moverla y cambiarle el tamaño ----
 function accBox(an, a, slot) {
@@ -909,9 +936,15 @@ function drawRoomPreview() {
   box.innerHTML = `<img class="pixel ad-room-wall" alt="" src="${wall}"><img class="pixel ad-room-floor" alt="" src="${floor}"><img class="pixel" alt="" src="${Pix.sprite('x_cama', 3)}" style="left:${8 / 144 * 100}%;top:${30 / 132 * 100}%;width:${26 / 144 * 100}%">${item}`;
 }
 function edPaintCanvas() {
-  const cv = $('#edCanvas'); if (!cv) return; const cell = Math.max(3, Math.floor(Math.min(300, cv.parentElement.clientWidth - 110) / Math.max(ed.w, ed.h * .8)));
+  const cv = $('#edCanvas'); if (!cv) return; let cell;
+  const st = ed.full && $('#edStage');
+  if (st) { // ocupa todo el espacio libre; se dibuja más fino para que se vea nítido al hacer zoom
+    const css = Math.max(2, Math.min((st.clientWidth - 16) / ed.w, (st.clientHeight - 16) / ed.h));
+    cv.style.width = ed.w * css + 'px'; cv.style.height = ed.h * css + 'px';
+    cell = Math.max(3, Math.ceil(css * Math.min(2, window.devicePixelRatio || 1)));
+  } else cell = Math.max(3, Math.floor(Math.min(300, cv.parentElement.clientWidth - 110) / Math.max(ed.w, ed.h * .8)));
   const colOf = ch => ed.pal[parseInt(ch, 36)];
-  cv.width = ed.w * cell; cv.height = ed.h * cell; const g = cv.getContext('2d');
+  if (cv.width !== ed.w * cell || cv.height !== ed.h * cell) { cv.width = ed.w * cell; cv.height = ed.h * cell; } const g = cv.getContext('2d');
   for (let y = 0; y < ed.h; y++) for (let x = 0; x < ed.w; x++) { g.fillStyle = (x + y) % 2 ? '#f6efe6' : '#fffaf2'; g.fillRect(x * cell, y * cell, cell, cell); const ch = ed.map[y][x]; if (ch !== '.') { g.fillStyle = colOf(ch) || '#000'; g.fillRect(x * cell, y * cell, cell, cell); } }
   if (cell >= 5) { g.strokeStyle = 'rgba(138,77,79,.12)'; for (let x = 0; x <= ed.w; x++) { g.beginPath(); g.moveTo(x * cell + .5, 0); g.lineTo(x * cell + .5, cv.height); g.stroke(); } for (let y = 0; y <= ed.h; y++) { g.beginPath(); g.moveTo(0, y * cell + .5); g.lineTo(cv.width, y * cell + .5); g.stroke(); } }
   cv._cell = cell;
@@ -967,12 +1000,47 @@ function bucket(x, y, c) {
   while (st.length) { const [i, j] = st.pop(); if (i < 0 || j < 0 || i >= ed.w || j >= ed.h || ed.map[j][i] !== from) continue; setPx(i, j, c); st.push([i + 1, j], [i - 1, j], [i, j + 1], [i, j - 1]); }
 }
 A.after.admincat = el => {
-  const form = $('#catForm', el); if (!form || !$('#edCanvas', el)) return; edPaintCanvas(); el = form;
-  const cv = $('#edCanvas', el); let down = false;
+  $$('body > .ed-full').forEach(n => n.remove()); document.body.classList.remove('ed-full-on');
+  const form = $('#catForm', el); if (!form || !$('#edCanvas', el)) return; el = form;
+  const full = $('#edFull', el);
+  if (full) { // la pantalla grande va directo en el body para quedar encima de todo (barra de abajo incluida)
+    document.body.appendChild(full); document.body.classList.add('ed-full-on');
+    const watch = setInterval(() => { if (!document.contains(form) || !document.contains(full)) { full.remove(); if (!$('body > .ed-full')) document.body.classList.remove('ed-full-on'); clearInterval(watch); } }, 400);
+  }
+  edPaintCanvas(); edApplyView();
+  const cv = $('#edCanvas'); let down = false;
+  if (full) {
+    const stage = $('#edStage', full); const pts = new Map(); let gest = null;
+    cv._many = () => pts.size > 1;
+    const center = () => { const r = stage.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+    const startGest = () => {
+      const [a, b] = [...pts.values()]; const [cx, cy] = center();
+      if (b) gest = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, z: ed.zoom || 1, mx: (a.x + b.x) / 2 - cx, my: (a.y + b.y) / 2 - cy, px: ed.panX || 0, py: ed.panY || 0 };
+      else gest = { d: 0, z: ed.zoom || 1, mx: a.x - cx, my: a.y - cy, px: ed.panX || 0, py: ed.panY || 0 };
+    };
+    stage.addEventListener('pointerdown', e => {
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pts.size === 2) { // segundo dedo: era un gesto, no un trazo
+        if (down) { const m = ed.hist.pop(); if (m) ed.map = m; down = false; edPaintCanvas(); }
+        startGest();
+      } else if (pts.size === 1 && (ed.tool === 'pan' || !e.target.closest('#edCanvas'))) startGest();
+    }, true);
+    stage.addEventListener('pointermove', e => {
+      if (!pts.has(e.pointerId)) return; pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (!gest) return;
+      const [a, b] = [...pts.values()]; const [cx, cy] = center();
+      if (b && gest.d) { const mx = (a.x + b.x) / 2 - cx, my = (a.y + b.y) / 2 - cy; ed.zoom = gest.z; ed.panX = gest.px + (mx - gest.mx); ed.panY = gest.py + (my - gest.my); edZoomTo(gest.z * Math.hypot(a.x - b.x, a.y - b.y) / gest.d, mx, my); }
+      else if (!b && !gest.d) { ed.panX = gest.px + (a.x - cx - gest.mx); ed.panY = gest.py + (a.y - cy - gest.my); edZoomTo(ed.zoom || 1); }
+    }, true);
+    const up = e => { pts.delete(e.pointerId); if (pts.size === 1 && gest && gest.d) startGest(); else if (!pts.size) gest = null; };
+    stage.addEventListener('pointerup', up, true); stage.addEventListener('pointercancel', up, true);
+    stage.addEventListener('wheel', e => { e.preventDefault(); const [cx, cy] = center(); edZoomTo((ed.zoom || 1) * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX - cx, e.clientY - cy); }, { passive: false });
+    full.addEventListener('click', e => { const zb = e.target.closest('[data-zoom]'); if (!zb) return; const v = +zb.dataset.zoom; if (!v) { ed.zoom = 1; ed.panX = 0; ed.panY = 0; edApplyView(); } else edZoomTo((ed.zoom || 1) * (v > 0 ? 1.5 : 1 / 1.5)); });
+    let rt; window.addEventListener('resize', function rs() { if (!document.contains(full)) return window.removeEventListener('resize', rs); clearTimeout(rt); rt = setTimeout(() => { edPaintCanvas(); edZoomTo(ed.zoom || 1); }, 120); });
+  }
   const cellAt = e => { const rc = cv.getBoundingClientRect(); return [Math.floor((e.clientX - rc.left) / rc.width * ed.w), Math.floor((e.clientY - rc.top) / rc.height * ed.h)]; };
   const paint = e => { const [x, y] = cellAt(e); if (x < 0 || y < 0 || x >= ed.w || y >= ed.h) return; if (setPx(x, y, ed.color)) edPaintCanvas(); };
   cv.addEventListener('pointerdown', e => {
-    e.preventDefault(); const [x, y] = cellAt(e); if (x < 0 || y < 0 || x >= ed.w || y >= ed.h) return;
+    e.preventDefault(); if (ed.tool === 'pan' || cv._many && cv._many()) return; const [x, y] = cellAt(e); if (x < 0 || y < 0 || x >= ed.w || y >= ed.h) return;
     if (ed.tool === 'pick') { const ch = ed.map[y][x]; ed.color = ch; ed.tool = 'pen'; A.render(); return; }
     snap(); if (ed.tool === 'fill') { bucket(x, y, ed.color); if (ed.mirror) bucket(ed.w - 1 - x, y, ed.color); edPaintCanvas(); return; }
     down = true; try { cv.setPointerCapture(e.pointerId); } catch (er) { }
@@ -993,16 +1061,17 @@ A.after.admincat = el => {
     stage.addEventListener('pointermove', e => { if (!drag) return; const k = 20 / drag.w; ed.dx = Math.round((drag.dx + (e.clientX - drag.x) * k) * 2) / 2; ed.dy = Math.round((drag.dy + (e.clientY - drag.y) * k) * 2) / 2; drawTryOn(); });
     const end = () => { drag = null; }; stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
   }
-  el.addEventListener('click', e => {
-    const sw = e.target.closest('[data-sw]'); if (sw) { ed.color = sw.dataset.sw; if (ed.tool === 'pick') ed.tool = 'pen'; $$('.ed-sw', el).forEach(b => b.classList.toggle('on', b === sw)); }
-    const tl = e.target.closest('[data-tool]'); if (tl) { ed.tool = tl.dataset.tool; $$('[data-tool]', el).forEach(b => b.setAttribute('aria-pressed', b === tl)); }
+  const onClick = e => {
+    const sw = e.target.closest('[data-sw]'); if (sw) { ed.color = sw.dataset.sw; if (ed.tool === 'pick') ed.tool = 'pen'; $$('.ed-sw').forEach(b => b.classList.toggle('on', b === sw)); }
+    const tl = e.target.closest('[data-tool]'); if (tl) { ed.tool = tl.dataset.tool; $$('[data-tool]').forEach(b => b.setAttribute('aria-pressed', b.dataset.tool === ed.tool)); }
     const op = e.target.closest('[data-edop]');
     if (op) {
       const o = op.dataset.edop;
+      if (o === 'full') { ed.full = !ed.full; if (!ed.full) { if (ed.tool === 'pan') ed.tool = 'pen'; const n = $('body > .ed-full'); if (n) n.remove(); document.body.classList.remove('ed-full-on'); } A.render(); if (!ed.full) { const c = $('#edCanvas'); if (c) c.scrollIntoView({ block: 'center' }); } return; }
       if (o === 'flip') { snap(); ed.map = ed.map.map(r => [...r].reverse().join('')); edPaintCanvas(); }
       if (o === 'undo') { const m = ed.hist.pop(); if (m) { ed.map = m; ed.h = m.length; ed.w = m[0].length; edPaintCanvas(); } else toast('No hay nada que deshacer'); }
       if (o === 'clear') { snap(); ed.map = blankMap(ed.w, ed.h); edPaintCanvas(); }
-      if (o === 'mirror') { ed.mirror = !ed.mirror; op.setAttribute('aria-pressed', ed.mirror); toast(ed.mirror ? 'Espejo: lo que dibujes se copia al otro lado' : 'Espejo apagado'); }
+      if (o === 'mirror') { ed.mirror = !ed.mirror; $$('[data-edop="mirror"]').forEach(b => b.setAttribute('aria-pressed', ed.mirror)); toast(ed.mirror ? 'Espejo: lo que dibujes se copia al otro lado' : 'Espejo apagado'); }
       if (o === 'outline') { snap(); autoOutline(); A.render(); }
       if (o === 'shade') { snap(); autoShade(); A.render(); }
       if (o === 'noanim') { if (ed.f2) { ed.map2 = ed.map; ed.map = ed.map1; } ed.map2 = null; ed.map1 = null; ed.f2 = false; A.render(); }
@@ -1014,8 +1083,9 @@ A.after.admincat = el => {
     const mv = e.target.closest('[data-mv]'); if (mv) { if (mv.dataset.mv === 'center') { ed.dx = 0; ed.dy = 0; } else { const [a, b] = mv.dataset.mv.split(',').map(Number); ed.dx = (+ed.dx || 0) + a; ed.dy = (+ed.dy || 0) + b; } drawTryOn(); }
     const tp = e.target.closest('[data-try]'); if (tp) { ed.tryPet = tp.dataset.try; $$('[data-try]', el).forEach(b => b.setAttribute('aria-pressed', b === tp)); drawTryOn(); }
     const hw = e.target.closest('[data-edhow]'); if (hw) { ed.how = hw.dataset.edhow; A.render(); }
-  });
-  el.addEventListener('change', e => {
+  };
+  el.addEventListener('click', onClick); if (full) full.addEventListener('click', onClick);
+  const onChange = e => {
     const t = e.target;
     if (t.dataset.ed) { const k = t.dataset.ed; if (k === 'w' || k === 'h') { const mw = ed.kind === 'walls' || ed.kind === 'floors' ? 48 : 96, mh = ed.kind === 'walls' ? 34 : mw; snap(); resizeMap(Math.max(3, Math.min(mw, +$('[data-ed="w"]', el).value || ed.w)), Math.max(3, Math.min(mh, +$('[data-ed="h"]', el).value || ed.h))); A.render(); return; } ed[k] = k === 'wall' ? !!t.value : t.type === 'number' || t.type === 'range' ? +t.value : t.value; if (k === 'slot' || k === 'wall') edPaintCanvas(); }
     if (t.id === 'edFile' && t.files.length > 1) importMany([...t.files]);
@@ -1023,7 +1093,8 @@ A.after.admincat = el => {
     if (t.id === 'edPhoto' && t.files[0]) importImage(t.files[0], 'photo');
     if (t.dataset.ph) { ed.ph[t.dataset.ph] = t.type === 'checkbox' ? t.checked : +t.value; runPhoto(); }
     if (t.id === 'edAddCol') addColor(t.value);
-  });
+  };
+  el.addEventListener('change', onChange); if (full) full.addEventListener('change', onChange);
   el.addEventListener('input', e => {
     const t = e.target;
     if (t.dataset.ed && t.dataset.ed !== 'w' && t.dataset.ed !== 'h') { ed[t.dataset.ed] = t.type === 'number' || t.type === 'range' ? +t.value : t.value; if (t.dataset.ed === 'dw') { drawTryOn(); drawRoomPreview(); } }
