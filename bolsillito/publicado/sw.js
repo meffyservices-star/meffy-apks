@@ -1,4 +1,4 @@
-const C = 'bolsillito-v33';
+const C = 'bolsillito-v34';
 const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
 const CORE = ['/', '/offline.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', CDN].concat([0, 1, 2, 3, 4, 5].map(i => '/p' + i + '.bin?v=1'));
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
@@ -45,8 +45,6 @@ self.addEventListener('push', e => {
     : { body: d.body || '¿Anotamos lo de hoy?', icon: '/icon-192.png', badge: '/badge.png', tag: 'bolsillito-recordatorio', data: { url: d.url || '/' } };
   e.waitUntil((async () => {
     await self.registration.showNotification(d.title || 'Bolsillito', opts);
-    // si la app está abierta y a la vista, que suene la alarma ahí mismo
-    if (rem) { const ws = await self.clients.matchAll({ type: 'window', includeUncontrolled: true }); ws.filter(w => w.visibilityState === 'visible').forEach(w => w.postMessage({ type: 'bolsi-alarma', rem })); }
   })());
 });
 self.addEventListener('notificationclick', e => {
@@ -54,7 +52,7 @@ self.addEventListener('notificationclick', e => {
   const data = e.notification.data || {}; const url = data.url || '/';
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(ws => {
     const w = ws.find(c => 'focus' in c);
-    if (w) { if (data.rem) w.postMessage({ type: 'bolsi-alarma', rem: data.rem }); return w.focus(); }
+    if (w) { if (data.rem && 'navigate' in w) return w.navigate(url).then(c => c && c.focus()).catch(() => w.focus()); return w.focus(); }
     return self.clients.openWindow(url);
   }));
 });

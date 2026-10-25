@@ -129,7 +129,17 @@ async function subscribeDevice() {
 }
 const updSub = patch => { const ep = myEp(); if (ep && online()) return Store.sb.from('push_subs').update(patch).eq('endpoint', ep).then(() => {}, () => {}); };
 // si ya tenía los avisos activos de antes, recuerda este celular
-async function adoptSub() { if (!canPush() || myEp() || Notification.permission !== 'granted') return; try { const reg = await navigator.serviceWorker.ready; const s = await reg.pushManager.getSubscription(); if (s) setEp(s.endpoint); } catch (e) { } }
+// al abrir la app: si el celular tiene permiso y está suscrito, se vuelve a registrar como activo (así nunca queda apagado sin querer)
+async function adoptSub() {
+  if (!canPush() || Notification.permission !== 'granted' || !online()) return;
+  try {
+    const reg = await navigator.serviceWorker.ready; let s = await reg.pushManager.getSubscription();
+    if (!s) { if (!myEp()) return; s = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(VAPID) }); }
+    const j = s.toJSON(), r = RM();
+    const { error } = await Store.sb.from('push_subs').upsert({ endpoint: j.endpoint, user_id: Store.uid, p256dh: j.keys.p256dh, auth: j.keys.auth, hour: r.hour, tz: tz(), pet: petName(), enabled: true, daily: !!r.on }, { onConflict: 'endpoint' });
+    if (!error) { setEp(j.endpoint); r.endpoint = j.endpoint; }
+  } catch (e) { console.warn(e); }
+}
 addEventListener('beforeinstallprompt', e => { e.preventDefault(); A.installEvt = e; if (S.route === 'recordatorio') A.render(); });
 addEventListener('appinstalled', () => { A.installEvt = null; toast('¡Listo! Bolsillito ya está instalada como app.'); });
 ACT.installApp = async () => { const e = A.installEvt; if (!e) return; e.prompt(); try { await e.userChoice; } catch (er) { } A.installEvt = null; A.render(); };
@@ -186,7 +196,7 @@ ${past.length ? `<details class="card rm-past"><summary><b>Ya pasaron (${past.le
 <div class="card stack rm-daily"><div class="row" style="gap:12px">${img(petSprite(), 44)}<div style="flex:1"><b>Aviso para anotar</b><div class="faint">Todos los días ${esc(petName())} te recuerda anotar tus gastos. Si ese día ya anotaste, no te molesta.</div></div><span class="toggle"><input type="checkbox" id="rmOn" ${r.on ? 'checked' : ''} ${online() && canPush() ? '' : 'disabled'}><span></span></span></div>
 <label class="f">¿A qué hora?<select class="in" id="rmH">${Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === r.hour ? 'selected' : ''}>${hourTxt(h)}</option>`).join('')}</select></label></div>
 ${appCard()}${!standalone() && !isIOS() && !isAndroid() ? `<div class="card stack" style="background:#fff7d6"><b>¿El aviso dice el link de la página?</b><div class="faint">Pasa cuando abres Bolsillito desde el navegador o con un acceso directo. Instálala como app y los avisos dirán solo "Bolsillito", como las demás apps.</div>${A.installEvt ? '<button class="btn pink" data-act="installApp" style="justify-content:center">Instalar Bolsillito</button>' : '<div class="faint">En Chrome toca el menú ⋮ y luego <b>"Instalar app"</b> (no "Agregar a pantalla de inicio"). Si ya tenías un acceso directo, bórralo primero.</div>'}</div>` : ''}
-<p class="faint" style="margin:0">Los avisos suenan con el tono de notificaciones de tu celular. Si la app está abierta, además te sale la alarma en pantalla.</p>`;
+<p class="faint" style="margin:0">Los avisos suenan con el tono de notificaciones de tu celular. Llegan aunque la app esté cerrada.</p>`;
 };
 A.after.recordatorio = el => {
   const on = $('#rmOn', el), h = $('#rmH', el);
@@ -275,71 +285,31 @@ function editor(r0, preset) {
   });
 }
 
-// ---------------- Alarma (pantalla que suena) ----------------
+// ---------------- Con la app abierta: aviso chiquito (la notificación la manda el servidor) ----------------
 const FK = 'bolsi_rem_fired';
 const fired = () => { try { return JSON.parse(localStorage.getItem(FK) || '[]'); } catch (e) { return []; } };
 const markFired = k => { try { localStorage.setItem(FK, JSON.stringify(fired().concat(k).slice(-80))); } catch (e) { } };
-let alarmOpen = false;
-function showAlarm(r, b, key) {
-  if (alarmOpen) return; alarmOpen = true;
-  const k = K(r.kind);
-  const box = document.createElement('div'); box.className = 'ral'; box.setAttribute('role', 'alertdialog'); box.style.setProperty('--kb', k.bg); box.style.setProperty('--k', k.ink);
-  const canPay = b === 0 && ['suscripcion', 'servicio'].includes(r.kind) && A.quickAdd;
-  box.innerHTML = `<div class="ral-card">
-<div class="ral-sky">${[0, 1, 2, 3, 4].map(i => `<i style="--i:${i}"></i>`).join('')}</div>
-<div class="ral-clock">${img('reloj_alarma', 92)}</div>
-<div class="ral-when">${b > 0 ? 'Es ' + cuando(b) : 'Ahora'} · ${fmtTime(r.time)}</div>
-<h2 class="ral-t">${esc(r.title || 'Recordatorio')}</h2>
-${noteTxt(r) ? `<p class="ral-n">${esc(noteTxt(r))}</p>` : ''}
-<div class="ral-pet"><span class="ral-bub">${esc(b > 0 ? 'Te aviso con tiempo' : '¡No se te olvide!')}</span>${img(petSprite(), 70, '', 'ral-hop')}</div>
-<button class="btn pink ral-ok">¡Listo!</button>
-${canPay ? '<button class="btn ral-pay">Anotar el pago</button>' : ''}
-<button class="btn ral-snz">Recuérdame en 10 min</button>
-</div>`;
-  document.body.appendChild(box); requestAnimationFrame(() => box.classList.add('in'));
-  let vib = null; if (navigator.vibrate) { navigator.vibrate([400, 200, 400]); vib = setInterval(() => navigator.vibrate([400, 200, 400]), 2500); }
-  setTimeout(() => clearInterval(vib), 30000);
-  const close = then => {
-    clearInterval(vib); if (navigator.vibrate) navigator.vibrate(0);
-    box.classList.remove('in'); setTimeout(() => box.remove(), 250); alarmOpen = false;
-    try { navigator.serviceWorker.ready.then(reg => reg.getNotifications({ tag: 'rem-' + r.id })).then(ns => ns.forEach(n => n.close())).catch(() => {}); } catch (e) { }
-    if (r.auto) { S.settings.reminders = RL().filter(x => x.id !== r.id); save(); }
-    if (then) then();
-    if (S.route === 'recordatorio') A.render();
-  };
-  $('.ral-ok', box).onclick = () => close();
-  const pay = $('.ral-pay', box); if (pay) pay.onclick = () => close(() => A.quickAdd(null, { type: 'expense', note: r.title.replace(/^Pagar /, ''), amount: r.amount || undefined, date: today() }));
-  $('.ral-snz', box).onclick = () => close(() => {
-    const t = new Date(Date.now() + 10 * 60000);
-    RL().push({ id: 'snz' + uid(), auto: true, kind: r.kind, title: r.title, note: r.note, amount: r.amount, repeat: 'once', date: ymd(t), time: `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`, before: [0], on: true });
-    save(); toast('Te lo recuerdo en 10 minutos');
-  });
-}
-A.showAlarm = showAlarm;
-// con la app abierta revisa cada ratito si toca alguno
 function checkDue() {
-  if (alarmOpen || document.hidden) return;
+  if (document.hidden) return;
   const now = new Date(), t = today(), cur = nowMin();
   for (const r of RL()) {
-    if (r.on === false) continue; const at = atMin(r); if (cur < at || cur > at + 15) continue;
+    if (r.on === false) continue; const at = atMin(r); if (cur < at || cur > at + 10) continue;
     for (const b of befores(r)) {
-      if (!occurs(r, ymd(addDays(now, b)))) continue; const key = t + ':' + b, fk = r.id + '|' + key;
-      if (fired().includes(fk)) continue; markFired(fk); showAlarm(r, b, key); return;
+      if (!occurs(r, ymd(addDays(now, b)))) continue; const fk = r.id + '|' + t + ':' + b;
+      if (fired().includes(fk)) continue; markFired(fk);
+      toast(`${b > 0 ? 'Es ' + cuando(b) + ': ' : 'Recordatorio: '}${r.title}`); if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      if (r.auto) { S.settings.reminders = RL().filter(x => x.id !== r.id); save(); }
+      return;
     }
   }
 }
-setInterval(checkDue, 15000); document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(checkDue, 800); });
-// si el aviso llega con la app abierta, o tocan el aviso, el service worker nos cuenta
-if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => {
-  const m = e.data || {}; if (m.type !== 'bolsi-alarma' || !m.rem) return;
-  const r = RL().find(x => x.id === m.rem.id) || { id: m.rem.id, title: m.rem.title, note: m.rem.note, kind: m.rem.kind, time: (() => { const d = new Date(); return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; })() };
-  const fk = r.id + '|' + m.rem.key; if (fired().includes(fk)) return; markFired(fk); showAlarm(r, +m.rem.b || 0, m.rem.key);
-});
+setInterval(checkDue, 20000); document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(checkDue, 800); });
+// al tocar la notificación se abre la app en Recordatorios
 function openFromLink() {
   const q = new URLSearchParams(location.search); const id = q.get('alarma'); if (!id) return;
-  try { history.replaceState({ r: S.route || 'home' }, '', '/'); } catch (e) { }
-  const key = q.get('k') || today() + ':0', r = RL().find(x => x.id === id); if (!r) return;
-  const fk = r.id + '|' + key; markFired(fk); setTimeout(() => showAlarm(r, +(key.split(':')[1] || 0), key), 700);
+  const key = q.get('k') || today() + ':0'; markFired(id + '|' + key);
+  try { history.replaceState({ r: 'home' }, '', '/'); } catch (e) { }
+  setTimeout(() => { if (A.go) A.go('recordatorio'); }, 300);
 }
 
 // avisa al servidor que hoy ya anotaste (así no te manda el aviso para anotar)

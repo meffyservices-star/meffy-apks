@@ -11,7 +11,7 @@ App de finanzas personales (gastos, presupuestos, metas y journal). Publicada en
   - `p0.bin`…`p5.bin` — el código de la app comprimido (gzip partido en 6).
 - `fuente/` — el mismo código de `p*.bin`, pero legible: `app.js`, `estilos.css`, `cuerpo.html`.
 - `empaquetar.js` — vuelve a crear `p*.bin` desde `fuente/`.
-- `servidor/recordatorio/index.ts` — copia de la función de Supabase `recordatorio` que manda los avisos (pg_cron la llama cada 5 minutos).
+- `servidor/recordatorio/index.ts` — copia de la función de Supabase `recordatorio` que manda los avisos (pg_cron la llama cada minuto).
 
 ## Cómo hacer cambios
 
@@ -25,11 +25,12 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
 
 - **25-oct-2026**
   - **Recordatorios** nuevos (Más → Recordatorios, en `fuente/recordatorios.js`): pago de tarjeta, suscripciones, servicios, cobrar, cumples, salud y "otra cosita". Cada uno con hora, monto y notita opcionales, repetición (una vez, diario, semanal, mensual, anual) y aviso el mismo día, 1, 3 o 7 días antes. Sugiere avisos para las tarjetas con día de pago y las suscripciones que encuentra.
-  - **Alarma en pantalla**: con la app abierta sale una pantalla bonita (reloj pixel, la mascota, "¡Listo!" y "Recuérdame en 10 min") y vibra. Con la app cerrada llega el aviso al celular (vibra y se queda hasta tocarlo). Los avisos suenan con el tono de notificaciones de cada celular: no hay sonidos propios (se quitaron a pedido de la dueña, porque con la app cerrada igual suena el tono del teléfono).
+  - Los recordatorios llegan como **notificación** del celular (con el tono de notificaciones del teléfono, vibran y se quedan hasta tocarlas); al tocarla se abre Recordatorios. Con la app abierta sale además un aviso chiquito. Sin sonidos propios ni cuadro grande de alarma (a pedido de la dueña); el relojito queda solo de decoración junto a la mascota.
+  - Al abrir la app, si el celular tiene permiso de avisos, se vuelve a registrar como activo en `push_subs` (antes, apagar el aviso diario en la versión vieja dejaba el celular sin avisos). pg_cron revisa cada minuto.
   - **Tablero de sueños → Decorar con stickers** (`fuente/tablero.js`): stickers pixel, mascotas especiales, regalos de amigas, cintas washi (las de la Tiendita si las compró) y stickers propios que sube la usuaria (quedan guardados en "Los míos"). Se mueven con el dedo, se agrandan/giran con dos dedos o con los botones, se duplican, se traen al frente y se quitan.
   - Despensa: al comprar comida ya no se vuelve a abrir la hoja (no salta arriba); se actualiza el contador, las estrellitas y la despensa de atrás al instante.
   - Más rápido: los personajes ahora se muestran con una referencia corta (blob:) en vez de meter la imagen entera en cada pantalla, así el celular no las vuelve a decodificar al refrescar.
-  - Servidor: tabla `reminders` en Supabase, columna `push_subs.daily` (el aviso para anotar ahora es aparte de los avisos del celular) y pg_cron cada 5 minutos.
+  - Servidor: tabla `reminders` en Supabase, columna `push_subs.daily` (el aviso para anotar ahora es aparte de los avisos del celular) y pg_cron cada minuto.
 
 - **24-oct-2026**
   - Personajes nuevos en toda la app: Ale (pudín), Gochi, Shey, Yaki (rollito de canela) y el chanchito de ahorro (también en el juego de atrapar monedas). Están en `fuente/personajes.js`: son las imágenes originales tal cual (360 px, sin redibujar), y `Pix.sprite` las entrega con el tamaño de un dibujo de 20x20. Los colores especiales (fresa, menta, noche, chocolate) se tiñen solos. La ropa se reacomodó a los dibujos nuevos.

@@ -1,4 +1,4 @@
-// Manda los avisos de Bolsillito. Lo llama pg_cron cada 5 minutos con la llave x-cron-key.
+// Manda los avisos de Bolsillito. Lo llama pg_cron cada minuto con la llave x-cron-key.
 // 1) El recordatorio diario para anotar (tabla push_subs, columna daily).
 // 2) Los recordatorios que arma cada usuaria (tabla reminders): pago de tarjeta, suscripciones, cositas…
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4';
