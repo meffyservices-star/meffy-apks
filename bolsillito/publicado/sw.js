@@ -1,4 +1,4 @@
-const C = 'bolsillito-v32';
+const C = 'bolsillito-v33';
 const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
 const CORE = ['/', '/offline.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', CDN].concat([0, 1, 2, 3, 4, 5].map(i => '/p' + i + '.bin?v=1'));
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
@@ -20,10 +20,6 @@ self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (/^(cdn\.jsdelivr\.net|fonts\.googleapis\.com|fonts\.gstatic\.com)$/.test(u.hostname)) {
     e.respondWith(caches.match(e.request).then(m => m || fetch(e.request).then(r => { if (r.ok || r.type === 'opaque') { const cp = r.clone(); caches.open(C).then(c => c.put(e.request, cp)); } return r; })));
-    return;
-  }
-  if (/\/storage\/v1\/object\/public\/music\/[^/]+\/alarmas\//.test(u.pathname)) {
-    e.respondWith(caches.open(C).then(c => c.match(u.href).then(m => m || fetch(u.href, { mode: 'cors' }).then(r => { if (r.ok) c.put(u.href, r.clone()); return r; }).catch(() => fetch(e.request)))));
     return;
   }
   if (u.origin !== location.origin) return;

@@ -75,48 +75,6 @@ function repeatTxt(r) {
 function beforeTxt(r) { const L = befores(r).filter(b => b > 0).sort((a, b) => b - a); if (!L.length) return ''; return 'avisa ' + L.map(b => b === 1 ? '1 día' : b === 7 ? '1 semana' : b + ' días').join(' y ') + ' antes'; }
 const noteTxt = r => [r.amount ? money(+r.amount) : '', r.note || ''].filter(Boolean).join(' · ');
 
-// ---------------- Sonidos de la alarma ----------------
-const BUILTIN = [['b:campanita', 'Campanita'], ['b:cajita', 'Cajita musical'], ['b:pajaritos', 'Pajaritos'], ['b:burbujas', 'Burbujas'], ['b:suave', 'Bip suavecito']];
-const uploaded = () => ((A.CFG && A.CFG.alarmSounds) || []).filter(x => x && x.src);
-const allSounds = () => BUILTIN.map(([id, name]) => ({ id, name })).concat(uploaded().map(x => ({ id: 'up:' + x.id, name: x.name || 'Canción', src: x.src, vol: x.vol })));
-const defSound = () => (A.CFG && A.CFG.alarmDefault) || 'b:campanita';
-const soundOf = r => { const id = (r && r.sound) || defSound(); return allSounds().find(s => s.id === id) || allSounds().find(s => s.id === defSound()) || allSounds()[0]; };
-const Player = (() => {
-  let ctx = null, timer = null, au = null, cur = null, stopT = null;
-  const mk = () => { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); return ctx; };
-  const tone = (f, t0, dur, type, vol, f2) => {
-    const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + t0; o.type = type || 'sine'; o.frequency.setValueAtTime(f, t);
-    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur * .6);
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .012); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + dur + .03);
-  };
-  const PAT = {
-    campanita: { every: 1700, play: () => [[1318.5, 0], [1568, .16], [2093, .32]].forEach(([f, t]) => { tone(f, t, 1.2, 'sine', .16); tone(f * 2.01, t, .5, 'sine', .04); }) },
-    cajita: { every: 2300, play: () => [1046.5, 1318.5, 1568, 2093, 1975.5, 1568, 1318.5, 1568].forEach((f, i) => { tone(f, i * .24, .6, 'triangle', .13); tone(f * 2, i * .24, .25, 'sine', .03); }) },
-    pajaritos: { every: 1500, play: () => [0, .14, .28, .75, .86].forEach((t, i) => tone(2600 + (i % 2) * 500, t, .12, 'sine', .09, 4100)) },
-    burbujas: { every: 1300, play: () => [0, .1, .22, .3, .45, .6].forEach(t => tone(320 + Math.random() * 260, t, .14, 'sine', .14, 900 + Math.random() * 500)) },
-    suave: { every: 1500, play: () => [0, .22].forEach(t => tone(880, t, .16, 'sine', .14)) }
-  };
-  const stop = () => { clearInterval(timer); clearTimeout(stopT); timer = null; if (au) { au.pause(); au.src = ''; } au = null; cur = null; };
-  // devuelve false si el celular no dejó sonar (hay que tocar la pantalla primero)
-  const start = async (snd, opts) => {
-    stop(); if (!snd) return true; cur = snd.id; const loop = !opts || opts.loop !== false;
-    if (snd.src) {
-      au = new Audio(snd.src); au.loop = loop; au.volume = Math.max(.05, Math.min(1, (snd.vol != null ? snd.vol : 80) / 100));
-      try { await au.play(); } catch (e) { return false; }
-    } else {
-      const p = PAT[snd.id.slice(2)] || PAT.campanita;
-      try { mk(); } catch (e) { return false; }
-      if (ctx.state !== 'running') { try { await Promise.race([ctx.resume(), new Promise(r => setTimeout(r, 300))]); } catch (e) { } if (ctx.state !== 'running') return false; }
-      p.play(); if (loop) timer = setInterval(() => { if (ctx.state === 'running') p.play(); }, p.every);
-    }
-    if (opts && opts.maxMs) stopT = setTimeout(stop, opts.maxMs);
-    return true;
-  };
-  return { start, stop, playing: () => cur };
-})();
-A.remPlayer = Player;
-
 // ---------------- Guardar en el servidor (para que lleguen los avisos con la app cerrada) ----------------
 let syncT = null;
 const toRow = r => {
@@ -124,7 +82,7 @@ const toRow = r => {
   return { user_id: Store.uid, id: r.id, title: (r.title || 'Recordatorio').slice(0, 80), note: noteTxt(r).slice(0, 140) || null, kind: r.kind || 'otro', repeat: r.repeat,
     date: r.repeat === 'once' ? r.date : null, dom: ['monthly', 'yearly'].includes(r.repeat) ? Math.min(31, Math.max(1, +r.dom || 1)) : null,
     wdays: r.repeat === 'weekly' ? (r.wdays || []) : null, month: r.repeat === 'yearly' ? (+r.month || 1) : null,
-    hour: h, minute: m, before: befores(r), tz: tz(), sound: r.sound || null, enabled: r.on !== false, updated_at: new Date().toISOString() };
+    hour: h, minute: m, before: befores(r), tz: tz(), sound: null, enabled: r.on !== false, updated_at: new Date().toISOString() };
 };
 async function syncNow() {
   if (!online() || !Store.uid) { S.remDirty = true; return; }
@@ -212,7 +170,7 @@ A.screens.recordatorio = () => {
 <div class="rm-hero-art"><span class="rm-hero-pet">${img(petSprite(), 74)}</span><span class="rm-hero-clock">${img('reloj_alarma', 40)}</span></div>
 <div class="rm-hero-tx">${nextOn ? `<span class="rm-kicker">Lo próximo</span><b class="rm-hero-t">${esc(nextOn.x.title)}</b><span class="rm-hero-w">${esc(daysTxt(nextOn.o.days) || shortDate(nextOn.o.date))} · ${fmtTime(nextOn.x.time)}</span>`
     : `<span class="rm-kicker">Tus recordatorios</span><b class="rm-hero-t">¿Qué te recuerdo?</b><span class="rm-hero-w">${esc(petName())} te avisa para que no se te pase nada.</span>`}</div></div>`;
-  const dev = !online() ? `<div class="rm-dev warn">${img('nube', 26)}<span>Sin internet: tus recordatorios suenan con la app abierta. Los avisos al celular se activan al volver la conexión.</span></div>`
+  const dev = !online() ? `<div class="rm-dev warn">${img('nube', 26)}<span>Sin internet: tus recordatorios salen con la app abierta. Los avisos al celular se activan al volver la conexión.</span></div>`
     : !canPush() ? `<div class="rm-dev warn">${img('alerta', 26)}<span>${isIOS() && !standalone() ? 'En iPhone primero agrega Bolsillito a tu pantalla de inicio (Compartir → "Agregar a inicio") y ábrela desde ahí.' : 'Este navegador no permite avisos. Prueba con Chrome o instalando la app.'}</span></div>`
     : perm === 'denied' ? `<div class="rm-dev warn">${img('alerta', 26)}<span>Bloqueaste los avisos de Bolsillito. Actívalos en los ajustes de tu celular (Notificaciones → Bolsillito).</span></div>`
     : devOn() ? `<div class="rm-dev ok">${img('check', 24)}<span><b>Avisos activados en este celular</b><br>Te llegan aunque la app esté cerrada.</span><button class="btn sm" data-act="rmTest">Probar</button></div>`
@@ -228,7 +186,7 @@ ${past.length ? `<details class="card rm-past"><summary><b>Ya pasaron (${past.le
 <div class="card stack rm-daily"><div class="row" style="gap:12px">${img(petSprite(), 44)}<div style="flex:1"><b>Aviso para anotar</b><div class="faint">Todos los días ${esc(petName())} te recuerda anotar tus gastos. Si ese día ya anotaste, no te molesta.</div></div><span class="toggle"><input type="checkbox" id="rmOn" ${r.on ? 'checked' : ''} ${online() && canPush() ? '' : 'disabled'}><span></span></span></div>
 <label class="f">¿A qué hora?<select class="in" id="rmH">${Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === r.hour ? 'selected' : ''}>${hourTxt(h)}</option>`).join('')}</select></label></div>
 ${appCard()}${!standalone() && !isIOS() && !isAndroid() ? `<div class="card stack" style="background:#fff7d6"><b>¿El aviso dice el link de la página?</b><div class="faint">Pasa cuando abres Bolsillito desde el navegador o con un acceso directo. Instálala como app y los avisos dirán solo "Bolsillito", como las demás apps.</div>${A.installEvt ? '<button class="btn pink" data-act="installApp" style="justify-content:center">Instalar Bolsillito</button>' : '<div class="faint">En Chrome toca el menú ⋮ y luego <b>"Instalar app"</b> (no "Agregar a pantalla de inicio"). Si ya tenías un acceso directo, bórralo primero.</div>'}</div>` : ''}
-<p class="faint" style="margin:0">Con la app abierta, tus recordatorios suenan con su alarma. Con la app cerrada te llega el aviso al celular (con el sonido de avisos de tu teléfono) y al tocarlo suena tu alarma.</p>`;
+<p class="faint" style="margin:0">Los avisos suenan con el tono de notificaciones de tu celular. Si la app está abierta, además te sale la alarma en pantalla.</p>`;
 };
 A.after.recordatorio = el => {
   const on = $('#rmOn', el), h = $('#rmH', el);
@@ -256,7 +214,7 @@ ACT.remClearPast = a => { if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '
 // ---------------- Crear / editar ----------------
 function editor(r0, preset) {
   const isNew = !r0;
-  const d = Object.assign({ kind: 'otro', title: '', note: '', amount: '', repeat: 'monthly', date: today(), dom: new Date().getDate(), wdays: [new Date().getDay()], month: new Date().getMonth() + 1, time: '09:00', before: [0], sound: '', on: true }, preset || {}, r0 ? JSON.parse(JSON.stringify(r0)) : {});
+  const d = Object.assign({ kind: 'otro', title: '', note: '', amount: '', repeat: 'monthly', date: today(), dom: new Date().getDate(), wdays: [new Date().getDay()], month: new Date().getMonth() + 1, time: '09:00', before: [0], on: true }, preset || {}, r0 ? JSON.parse(JSON.stringify(r0)) : {});
   if (isNew && preset && preset.kind && !preset.repeat) Object.assign(d, { cumple: { repeat: 'yearly', before: [1, 0] }, salud: { repeat: 'daily' }, servicio: { before: [2, 0] }, tarjeta: { before: [3, 0] }, cobro: { repeat: 'once' }, suscripcion: { before: [1] } }[preset.kind] || {});
   const cards = (S.fin.accounts || []).filter(a => !a.archived && (a.type === 'tarjeta' || a.liability));
   const REPS = [['once', 'Una vez'], ['daily', 'Diario'], ['weekly', 'Semanal'], ['monthly', 'Mensual'], ['yearly', 'Anual']];
@@ -266,7 +224,6 @@ function editor(r0, preset) {
     : d.repeat === 'weekly' ? `<div class="f">¿Qué días?<div class="rm-wd">${[1, 2, 3, 4, 5, 6, 0].map(i => `<button type="button" data-wd="${i}" aria-pressed="${(d.wdays || []).includes(i)}" aria-label="${DIAS[i]}">${DIAS_C[i]}</button>`).join('')}</div></div>`
     : d.repeat === 'monthly' ? `<label class="f">¿Qué día del mes?<select class="in" id="reDom">${Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}" ${+d.dom === i + 1 ? 'selected' : ''}>${i === 30 ? '31 (o el último día)' : 'Día ' + (i + 1)}</option>`).join('')}</select></label>${d.kind === 'tarjeta' && cards.length ? `<label class="f">¿Qué tarjeta?<select class="in" id="reAc"><option value="">Ninguna en especial</option>${cards.map(a => `<option value="${esc(a.id)}" ${d.acct === a.id ? 'selected' : ''}>${esc(a.name)}${a.due ? ' · paga el ' + a.due : ''}</option>`).join('')}</select></label>` : ''}`
     : d.repeat === 'yearly' ? `<label class="f">¿Qué fecha? (se repite cada año)<input class="in" type="date" id="reY" value="${yDate()}"></label>` : '';
-  const sndHTML = () => allSounds().map(s => `<div class="rm-snd ${(d.sound || defSound()) === s.id ? 'on' : ''}"><button type="button" class="rm-snd-pick" data-snd="${esc(s.id)}">${img(s.src ? 'music' : 'campanita', 22)}<span>${esc(s.name)}</span>${(d.sound || defSound()) === s.id ? img('check', 16, 'margin-left:auto') : ''}</button><button type="button" class="iconbtn sm rm-snd-play" data-play="${esc(s.id)}" aria-label="Escuchar ${esc(s.name)}">${Player.playing() === s.id ? '■' : '▶'}</button></div>`).join('');
   const prevHTML = () => { const b = Math.max(...befores(d)); const t = (d.title || K(d.kind).ph.replace(/^Ej\. /, '')); return `<div class="rm-notif"><img src="/icon-192.png" alt=""><div><div class="rm-notif-h"><b>Bolsillito</b><span>ahora</span></div><b>${esc(b > 0 && d.repeat !== 'daily' ? t + ' · ' + cuando(b) : t)}</b><span>${esc(noteTxt(d) || petName() + ' te lo recuerda.')}</span></div></div>`; };
   const html = `<div class="rm-ed stack">
 <div class="rm-ed-kinds">${Object.entries(KINDS).map(([k, v]) => `<button type="button" class="rm-ek" data-k="${k}" aria-pressed="${d.kind === k}">${tile(k, 40)}<span>${v.name}</span></button>`).join('')}</div>
@@ -276,7 +233,6 @@ function editor(r0, preset) {
 <div class="f">¿Cada cuánto?<div class="seg rm-seg" id="reRep">${REPS.map(([k, n]) => `<button type="button" data-rep="${k}" aria-pressed="${d.repeat === k}">${n}</button>`).join('')}</div></div>
 <div id="reWhen" class="stack" style="gap:10px">${whenHTML()}</div>
 <div class="f" id="reBefW" ${d.repeat === 'daily' ? 'hidden' : ''}>Avísame<div class="chips">${BEF.map(([b, n]) => `<button type="button" class="chip" data-bef="${b}" aria-pressed="${befores(d).includes(b)}">${n}</button>`).join('')}</div></div>
-<div class="f">Sonido de la alarma<div class="rm-snds" id="reSnd">${sndHTML()}</div></div>
 <div class="f">Así te llega<div id="rePrev">${prevHTML()}</div></div>
 <div class="row" style="gap:8px;margin-top:4px">${isNew ? '' : '<button type="button" class="btn danger" id="reDel">Borrar</button>'}<button type="button" class="btn pink" id="reOk" style="flex:1;justify-content:center;padding:12px">${isNew ? 'Guardar recordatorio' : 'Guardar cambios'}</button></div>
 </div>`;
@@ -301,9 +257,7 @@ function editor(r0, preset) {
       if (b.dataset.rep) { d.repeat = b.dataset.rep; $$('[data-rep]', sh).forEach(x => x.setAttribute('aria-pressed', x.dataset.rep === d.repeat)); if (d.repeat === 'once' && (!d.date || d.date < today())) d.date = today(); reWhen(); }
       if (b.dataset.wd) { const i = +b.dataset.wd, s = new Set(d.wdays || []); s.has(i) ? s.delete(i) : s.add(i); d.wdays = [...s]; b.setAttribute('aria-pressed', s.has(i)); }
       if (b.dataset.bef != null && b.dataset.bef !== '') { const v = +b.dataset.bef, s = new Set(befores(d)); s.has(v) ? s.delete(v) : s.add(v); d.before = [...s].sort((x, y) => y - x); b.setAttribute('aria-pressed', s.has(v)); rePrev(); }
-      if (b.dataset.snd) { d.sound = b.dataset.snd; $('#reSnd', sh).innerHTML = sndHTML(); }
-      if (b.dataset.play) { const id = b.dataset.play; if (Player.playing() === id) Player.stop(); else { const ok = await Player.start(allSounds().find(s => s.id === id), { loop: false, maxMs: 9000 }); if (!ok) toast('Sube el volumen y toca otra vez'); } $('#reSnd', sh).innerHTML = sndHTML(); }
-      if (b.id === 'reDel') { if (!b.dataset.s) { b.dataset.s = 1; b.textContent = '¿Segura?'; return; } S.settings.reminders = RL().filter(x => x.id !== r0.id); Player.stop(); closeSheet(); save(); A.render(); toast('Recordatorio borrado'); }
+      if (b.id === 'reDel') { if (!b.dataset.s) { b.dataset.s = 1; b.textContent = '¿Segura?'; return; } S.settings.reminders = RL().filter(x => x.id !== r0.id); closeSheet(); save(); A.render(); toast('Recordatorio borrado'); }
       if (b.id === 'reOk') {
         d.title = ($('#reT', sh).value || '').trim(); if (!d.title) { $('#reT', sh).focus(); return toast('Escribe qué te recuerdo'); }
         if (d.repeat === 'weekly' && !(d.wdays || []).length) return toast('Elige al menos un día');
@@ -311,15 +265,14 @@ function editor(r0, preset) {
         if (d.repeat === 'once') { const tooLate = d.date < today() || (d.date === today() && atMin(d) <= nowMin()); if (tooLate) return toast('Esa hora ya pasó. Elige una más tarde.'); }
         if (!befores(d).length) d.before = [0];
         if (d.amount === '' || !(+d.amount > 0)) delete d.amount;
-        Player.stop(); delete d.auto;
+        delete d.sound; delete d.auto;
         if (isNew) { d.id = 'r' + uid(); d.on = true; RL().push(d); } else Object.assign(r0, d);
         save(); closeSheet(); A.render();
-        const sn = soundOf(d); if (sn && sn.src) fetch(sn.src).catch(() => {});
         const o = nextOcc(d); toast(o ? `¡Listo! Te aviso ${(daysTxt(o.days) || 'el ' + shortDate(o.date)).toLowerCase()} a las ${fmtTime(d.time)}` : 'Guardado');
         if (!devOn() && canPush() && Notification.permission !== 'denied' && online() && !S.settings.remAsked) { S.settings.remAsked = 1; A.saveSettings(); setTimeout(async () => { if (await subscribeDevice()) { toast('Avisos activados: te llegan aunque la app esté cerrada'); A.render(); } }, 600); }
       }
     });
-  }, { onClose: () => Player.stop() });
+  });
 }
 
 // ---------------- Alarma (pantalla que suena) ----------------
@@ -329,7 +282,7 @@ const markFired = k => { try { localStorage.setItem(FK, JSON.stringify(fired().c
 let alarmOpen = false;
 function showAlarm(r, b, key) {
   if (alarmOpen) return; alarmOpen = true;
-  const k = K(r.kind), snd = soundOf(r);
+  const k = K(r.kind);
   const box = document.createElement('div'); box.className = 'ral'; box.setAttribute('role', 'alertdialog'); box.style.setProperty('--kb', k.bg); box.style.setProperty('--k', k.ink);
   const canPay = b === 0 && ['suscripcion', 'servicio'].includes(r.kind) && A.quickAdd;
   box.innerHTML = `<div class="ral-card">
@@ -339,19 +292,15 @@ function showAlarm(r, b, key) {
 <h2 class="ral-t">${esc(r.title || 'Recordatorio')}</h2>
 ${noteTxt(r) ? `<p class="ral-n">${esc(noteTxt(r))}</p>` : ''}
 <div class="ral-pet"><span class="ral-bub">${esc(b > 0 ? 'Te aviso con tiempo' : '¡No se te olvide!')}</span>${img(petSprite(), 70, '', 'ral-hop')}</div>
-<button class="ral-tap" hidden>${img('music', 20)} Toca aquí para que suene</button>
-<div class="ral-snd">${img(snd && snd.src ? 'music' : 'campanita', 16)} ${esc(snd ? snd.name : '')}</div>
 <button class="btn pink ral-ok">¡Listo!</button>
 ${canPay ? '<button class="btn ral-pay">Anotar el pago</button>' : ''}
 <button class="btn ral-snz">Recuérdame en 10 min</button>
 </div>`;
   document.body.appendChild(box); requestAnimationFrame(() => box.classList.add('in'));
   let vib = null; if (navigator.vibrate) { navigator.vibrate([400, 200, 400]); vib = setInterval(() => navigator.vibrate([400, 200, 400]), 2500); }
-  const tap = $('.ral-tap', box);
-  Player.start(snd, { maxMs: 90000 }).then(ok => { if (!ok && alarmOpen) tap.hidden = false; });
-  tap.onclick = async () => { if (await Player.start(snd, { maxMs: 90000 })) tap.hidden = true; };
+  setTimeout(() => clearInterval(vib), 30000);
   const close = then => {
-    Player.stop(); clearInterval(vib); if (navigator.vibrate) navigator.vibrate(0);
+    clearInterval(vib); if (navigator.vibrate) navigator.vibrate(0);
     box.classList.remove('in'); setTimeout(() => box.remove(), 250); alarmOpen = false;
     try { navigator.serviceWorker.ready.then(reg => reg.getNotifications({ tag: 'rem-' + r.id })).then(ns => ns.forEach(n => n.close())).catch(() => {}); } catch (e) { }
     if (r.auto) { S.settings.reminders = RL().filter(x => x.id !== r.id); save(); }
@@ -362,7 +311,7 @@ ${canPay ? '<button class="btn ral-pay">Anotar el pago</button>' : ''}
   const pay = $('.ral-pay', box); if (pay) pay.onclick = () => close(() => A.quickAdd(null, { type: 'expense', note: r.title.replace(/^Pagar /, ''), amount: r.amount || undefined, date: today() }));
   $('.ral-snz', box).onclick = () => close(() => {
     const t = new Date(Date.now() + 10 * 60000);
-    RL().push({ id: 'snz' + uid(), auto: true, kind: r.kind, title: r.title, note: r.note, amount: r.amount, repeat: 'once', date: ymd(t), time: `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`, before: [0], sound: r.sound, on: true });
+    RL().push({ id: 'snz' + uid(), auto: true, kind: r.kind, title: r.title, note: r.note, amount: r.amount, repeat: 'once', date: ymd(t), time: `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`, before: [0], on: true });
     save(); toast('Te lo recuerdo en 10 minutos');
   });
 }
@@ -383,7 +332,7 @@ setInterval(checkDue, 15000); document.addEventListener('visibilitychange', () =
 // si el aviso llega con la app abierta, o tocan el aviso, el service worker nos cuenta
 if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => {
   const m = e.data || {}; if (m.type !== 'bolsi-alarma' || !m.rem) return;
-  const r = RL().find(x => x.id === m.rem.id) || { id: m.rem.id, title: m.rem.title, note: m.rem.note, kind: m.rem.kind, sound: m.rem.sound, time: (() => { const d = new Date(); return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; })() };
+  const r = RL().find(x => x.id === m.rem.id) || { id: m.rem.id, title: m.rem.title, note: m.rem.note, kind: m.rem.kind, time: (() => { const d = new Date(); return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; })() };
   const fk = r.id + '|' + m.rem.key; if (fired().includes(fk)) return; markFired(fk); showAlarm(r, +m.rem.b || 0, m.rem.key);
 });
 function openFromLink() {
@@ -409,53 +358,4 @@ A.start = async () => {
   openFromLink(); setTimeout(checkDue, 2500);
 };
 
-// ---------------- Panel de admin: sonidos de los recordatorios ----------------
-{
-  let prevId = null, prevAu = null;
-  const stopPrev = () => { if (prevAu) { prevAu.pause(); prevAu.src = ''; } prevAu = null; prevId = null; Player.stop(); };
-  const D = () => A.adminDraft && A.adminDraft();
-  const html = Dr => {
-    const L = Dr.alarmSounds = Dr.alarmSounds || []; const def = Dr.alarmDefault || 'b:campanita';
-    const opts = BUILTIN.map(([id, n]) => [id, n]).concat(L.filter(x => x.src).map(x => ['up:' + x.id, x.name || 'Canción']));
-    return `<details class="card" ${S.ralOpen ? 'open' : ''} id="ralCard"><summary><b>Sonidos de los recordatorios</b></summary>
-<p class="faint">Sube canciones o sonidos (mp3, m4a, ogg o wav, hasta 8 MB) con su nombrecito. Las usuarias los eligen como alarma de sus recordatorios; suenan en bucle hasta que tocan "¡Listo!". Toca <b>Guardar cambios</b> al final.</p>
-<label class="f">Sonido que viene puesto<select class="in" data-ral-def>${opts.map(([id, n]) => `<option value="${esc(id)}" ${def === id ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>
-<div class="stack" style="gap:8px;margin-top:10px">${L.map((x, i) => `<div class="card flat stack" style="gap:8px"><div class="row" style="gap:8px">${img('music', 22)}<input class="in" data-ral-name="${i}" value="${esc(x.name || '')}" maxlength="30" placeholder="Nombre del sonido" style="flex:1"></div>
-<div class="row" style="gap:8px"><span class="faint" style="min-width:58px">Volumen</span><input type="range" min="5" max="100" value="${x.vol != null ? x.vol : 80}" data-ral-vol="${i}" style="flex:1;accent-color:#e86f97"><b data-ral-vn="${i}" style="min-width:38px;text-align:right">${x.vol != null ? x.vol : 80}%</b></div>
-<div class="row" style="gap:8px"><button class="btn sm" data-act="ralPlay" data-i="${i}">${prevId === x.id ? 'Parar' : 'Escuchar'}</button><button class="btn sm danger" data-act="ralDel" data-i="${i}">Quitar</button></div></div>`).join('')}</div>
-${L.length < 20 ? `<div class="card flat stack" style="gap:8px;margin-top:8px;background:#fff7d6"><b>Agregar un sonido</b><input class="in" id="ralNewName" maxlength="30" placeholder="Nombrecito (ej. Mi canción favorita)"><label class="btn pink sm" style="cursor:pointer;align-self:flex-start">Elegir canción y subir<input type="file" accept="audio/*" id="ralFile" hidden></label><div class="faint" id="ralSt"></div></div>` : '<p class="faint">Llegaste al máximo de 20 sonidos.</p>'}
-<p class="faint" style="margin:8px 0 0">También vienen 5 sonidos hechos por la app (Campanita, Cajita musical, Pajaritos, Burbujas y Bip suavecito) que funcionan sin internet.</p></details>`;
-  };
-  const mh = A.musicAdminHTML; A.musicAdminHTML = Dr => (mh ? mh(Dr) : '') + html(Dr);
-  ACT.ralPlay = a => { const x = ((D() || {}).alarmSounds || [])[+a.dataset.i]; if (!x) return; if (prevId === x.id) { stopPrev(); A.render(); return; } stopPrev(); prevAu = new Audio(x.src); prevAu.volume = (x.vol != null ? x.vol : 80) / 100; prevAu.play().catch(() => toast('No se pudo reproducir')); prevId = x.id; prevAu.onended = () => { prevId = null; A.render(); }; S.ralOpen = true; A.render(); };
-  ACT.ralDel = a => { const d = D(); if (!d) return; if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Segura?'; return; } const x = d.alarmSounds[+a.dataset.i]; if (x && prevId === x.id) stopPrev(); d.alarmSounds.splice(+a.dataset.i, 1); if (x && d.alarmDefault === 'up:' + x.id) d.alarmDefault = 'b:campanita'; S.ralOpen = true; toast('Quitado. Toca Guardar cambios.'); A.render(); };
-  const aa = A.after.admin;
-  A.after.admin = el => {
-    if (aa) aa(el); const card = el.querySelector('#ralCard'); if (!card) return;
-    card.addEventListener('toggle', () => { S.ralOpen = card.open; if (!card.open) stopPrev(); });
-    card.addEventListener('input', e => {
-      const t = e.target, d = D(); if (!d) return; d.alarmSounds = d.alarmSounds || [];
-      if (t.dataset.ralName) { const x = d.alarmSounds[+t.dataset.ralName]; if (x) x.name = t.value; }
-      if (t.dataset.ralVol) { const x = d.alarmSounds[+t.dataset.ralVol]; if (x) { x.vol = +t.value; const l = card.querySelector(`[data-ral-vn="${t.dataset.ralVol}"]`); if (l) l.textContent = t.value + '%'; if (prevAu && prevId === x.id) prevAu.volume = +t.value / 100; } }
-    });
-    card.addEventListener('change', async e => {
-      const t = e.target, d = D(); if (!d) return;
-      if (t.dataset.ralDef != null) { d.alarmDefault = t.value; return; }
-      if (t.id !== 'ralFile' || !t.files || !t.files[0]) return;
-      const f = t.files[0], st = card.querySelector('#ralSt'), name = (card.querySelector('#ralNewName').value || '').trim() || f.name.replace(/\.[^.]+$/, '').slice(0, 30);
-      if (f.size > 8 * 1024 * 1024) { st.textContent = 'Es muy pesada (máximo 8 MB).'; return; }
-      if (Store.mode !== 'supa' || !Store.sb) { st.textContent = 'Necesitas internet e iniciar sesión para subir sonidos.'; return; }
-      st.textContent = 'Subiendo…';
-      const ext = (f.name.split('.').pop() || 'mp3').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'mp3';
-      const type = f.type || ({ mp3: 'audio/mpeg', m4a: 'audio/mp4', ogg: 'audio/ogg', wav: 'audio/wav' }[ext] || 'audio/mpeg');
-      const id = Date.now().toString(36), path = Store.uid + '/alarmas/' + id + '.' + ext;
-      const { error } = await Store.sb.storage.from('music').upload(path, f, { contentType: type });
-      if (error) { st.textContent = 'No se pudo subir: ' + (error.message || 'error'); return; }
-      const src = Store.sb.storage.from('music').getPublicUrl(path).data.publicUrl;
-      d.alarmSounds = d.alarmSounds || []; d.alarmSounds.push({ id, name, src, vol: 80 });
-      S.ralOpen = true; toast(`"${name}" subido. Toca Guardar cambios para que lo vean todas.`); A.render();
-    });
-  };
-  const sv = ACT.cfgSave; if (sv) ACT.cfgSave = (...x) => { stopPrev(); return sv(...x); };
-}
 })();
