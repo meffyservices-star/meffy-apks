@@ -1476,3 +1476,30 @@ body.night .rm-ek[aria-pressed="true"], body.night .rm-snd.on { background: rgba
 @keyframes rmTwinkle { 0%, 100% { opacity: .2; transform: scale(.6); } 50% { opacity: 1; transform: scale(1.1); } }
 @media (prefers-reduced-motion: reduce) { .rm-hero-pet, .rm-hero-clock, .rm-swing, .ral-clock, .ral-hop, .ral-sky i, .rm-item.soon .rm-when, .ral-tap { animation: none; } }
 .rm-ed div.f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 800; color: var(--ink-soft); }
+.shop-tile.bought { animation: shopBought .45s ease; }
+@keyframes shopBought { 0% { transform: scale(1); } 35% { transform: scale(.92); } 70% { transform: scale(1.06); } 100% { transform: scale(1); } }
+
+/* ===== Tablero de sueños: decoraciones ===== */
+.bd-deco { position: absolute; inset: 0; pointer-events: none; z-index: 4; border-radius: inherit; }
+.bdx { position: absolute; transform: translate(-50%, -50%) rotate(var(--r, 0deg)); pointer-events: none; user-select: none; -webkit-user-select: none; }
+.bdx img { display: block; width: 100%; height: auto; filter: drop-shadow(0 2px 2px rgba(107,59,63,.18)); -webkit-user-drag: none; }
+.bdx img.pixel { image-rendering: pixelated; }
+.bdx.is-washi .bdx-washi, .bdx-wpick .bdx-washi { display: block; width: 100%; aspect-ratio: 4 / 1; opacity: .92; box-shadow: 0 1px 2px rgba(107,59,63,.15); }
+.bdx-washi.torn { clip-path: polygon(0 8%, 3% 0, 6% 10%, 9% 0, 100% 0, 97% 10%, 100% 22%, 97% 40%, 100% 60%, 97% 78%, 100% 92%, 97% 100%, 0 100%, 3% 88%, 0 72%, 3% 55%, 0 38%, 3% 20%); }
+.bd-deco.on .bdx { pointer-events: auto; touch-action: none; cursor: grab; }
+.bd-deco.on .bdx.sel { outline: 2px dashed #e2648f; outline-offset: 4px; border-radius: 6px; }
+.board.decorating { outline: 3px dashed #f4a6c0; outline-offset: 3px; }
+.board.decorating .pol, .board.decorating .bd-word, .board.decorating .bd-title { pointer-events: none; }
+.bdx-bar { position: sticky; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); z-index: 6; display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 20px; background: var(--glass-strong); border: 2px solid var(--glass-line); box-shadow: var(--shadow); }
+.bdx-tools { display: flex; gap: 6px; justify-content: space-between; }
+.bdx-tools button { flex: 1; height: 40px; border: 2px solid var(--glass-line); border-radius: 12px; background: var(--glass); font-size: 18px; font-weight: 800; color: var(--ink); display: grid; place-items: center; }
+.bdx-tools button.del { background: #ffd9e3; color: #a3264f; border-color: #ffc2d2; }
+.bdx-hint { font-size: 12.5px; font-weight: 700; color: var(--ink-soft); text-align: center; }
+.bdx-add { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.bdx-washis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.bdx-wpick { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 14px; border: 2px solid var(--glass-line); background: var(--glass-strong); font-size: 12px; font-weight: 800; color: var(--ink); text-align: left; }
+.bdx-wpick.lock { opacity: .5; }
+.bdx-mine button { position: relative; }
+.bdx-mine button img { width: 100%; height: 100%; object-fit: contain; }
+.bdx-mine i { position: absolute; top: -4px; right: -4px; width: 20px; height: 20px; border-radius: 50%; background: #fff; color: #a3264f; font-style: normal; font-weight: 900; font-size: 13px; line-height: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.bd-tools { display: flex; justify-content: center; margin: -4px 0 4px; }

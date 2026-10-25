@@ -27,6 +27,9 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
   - **Recordatorios** nuevos (Más → Recordatorios, en `fuente/recordatorios.js`): pago de tarjeta, suscripciones, servicios, cobrar, cumples, salud y "otra cosita". Cada uno con hora, monto y notita opcionales, repetición (una vez, diario, semanal, mensual, anual) y aviso el mismo día, 1, 3 o 7 días antes. Sugiere avisos para las tarjetas con día de pago y las suscripciones que encuentra.
   - **Alarma**: con la app abierta suena la alarma elegida en una pantalla bonita (reloj pixel, la mascota, "¡Listo!" y "Recuérdame en 10 min"). Con la app cerrada llega el aviso al celular (vibra y se queda hasta tocarlo) y al tocarlo suena la alarma. Trae 5 sonidos hechos por la app (funcionan sin internet).
   - Panel de admin → **Sonidos de los recordatorios**: la admin sube canciones con su nombrecito, volumen y elige el sonido que viene puesto. Se guardan en el bucket `music` (carpeta `alarmas`) y el celular los guarda para sonar sin internet.
+  - **Tablero de sueños → Decorar con stickers** (`fuente/tablero.js`): stickers pixel, mascotas especiales, regalos de amigas, cintas washi (las de la Tiendita si las compró) y stickers propios que sube la usuaria (quedan guardados en "Los míos"). Se mueven con el dedo, se agrandan/giran con dos dedos o con los botones, se duplican, se traen al frente y se quitan.
+  - Despensa: al comprar comida ya no se vuelve a abrir la hoja (no salta arriba); se actualiza el contador, las estrellitas y la despensa de atrás al instante.
+  - Más rápido: los personajes ahora se muestran con una referencia corta (blob:) en vez de meter la imagen entera en cada pantalla, así el celular no las vuelve a decodificar al refrescar.
   - Servidor: tabla `reminders` en Supabase, columna `push_subs.daily` (el aviso para anotar ahora es aparte de los avisos del celular) y pg_cron cada 5 minutos.
 
 - **24-oct-2026**

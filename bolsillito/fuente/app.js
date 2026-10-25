@@ -232,7 +232,9 @@ const d = DEFS[base]; if (!d) return '';
 let url;
 if (d.art) { // imagen original (personajes): se muestra tal cual, con el tamaño de un dibujo de 20x20
 const png = variant && RAW_TINT[variant] ? artTint(d, variant) : d.art; if (!png) return sprite(base, scale);
-const z = 20 * (scale || 1); url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="' + z + '" height="' + z + '" viewBox="0 0 360 360"><image href="' + png + '" width="360" height="360"/></svg>');
+const z = 20 * (scale || 1); const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + z + '" height="' + z + '" viewBox="0 0 360 360"><image href="' + png + '" width="360" height="360"/></svg>';
+// referencia corta (blob:) en vez de meter la imagen entera en la pantalla: el celular la decodifica una sola vez y no parpadea al refrescar
+try { url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })); } catch (e) { url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); }
 } else if (d.raw) { // ícono dibujado a mano con sus propios colores y contorno
 let pal = d.pal.split(','); if (variant && RAW_TINT[variant]) pal = pal.map(c => tintRaw(c, RAW_TINT[variant])); const grid = d.raw.map(r => [...r].map(ch => ch === '.' ? null : pal[parseInt(ch, 36)]));
 url = toURL(grid, d.fit ? Math.max(1, Math.round((scale || 1) * d.fit / grid[0].length)) : (scale || 1), null, null);
@@ -2716,6 +2718,7 @@ arcoiris: { name: 'Arcoíris pastel', css: 'linear-gradient(180deg,#ffc2dc 0 20%
 durazno: { name: 'Durazno con corazones', css: 'radial-gradient(circle at 5px 6px,#ff9fb0 2px,transparent 2.6px) 0 0/14px 12px,#ffe0cf' },
 kraft: { name: 'Kraft', css: 'repeating-linear-gradient(90deg,rgba(0,0,0,.04) 0 2px,transparent 2px 5px),#d9b98e' }
 };
+App.WASHI = WASHI;
 const STICKY = ['#fff1a8', '#ffd9bf', '#ffd1e3', '#e2d7ff', '#d3e8ff', '#d2f0dc'];
 const PAPER = ['#fffaf3', '#ffffff', '#fff0f5', '#f3efff', '#eef6ff', '#effaf3', '#fff7e0', '#2b2742'];
 const SHAPES = ['triángulo', 'círculo', 'estrella', 'cuadrado', 'corazón', 'nube', 'línea', 'línea punteada'];

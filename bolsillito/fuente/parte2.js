@@ -393,12 +393,21 @@ ACT.pcLove = () => {
 ACT.pcSleep = () => { const id = P().active, c = care(id); c.sleep = !c.sleep; c.t = Date.now(); A.saveSettings(); A.render(); };
 ACT.pcShop = () => {
   const p = P();
-  const draw = () => openSheet('Comprar comida', `<div class="stack"><div class="row between"><span class="faint">Se guarda en la despensa.</span>${starsPill()}</div>
-<div class="fr-shop">${Object.entries(FOODS).filter(([, f]) => !f.off).map(([k, f]) => `<button class="shop-tile" data-buyfood="${k}" ${bal() < f.price ? 'disabled' : ''}><img class="pixel" alt="" src="${spr(f.sprite || k, 3)}" style="width:40px"><span>${esc(f.name)}</span><em>${ST(12)} ${f.price} · tienes ${p.pantry[k] || 0}</em></button>`).join('')}</div>
+  const tiles = () => Object.entries(FOODS).filter(([, f]) => !f.off).map(([k, f]) => `<button class="shop-tile" data-buyfood="${k}" ${bal() < f.price ? 'disabled' : ''}><img class="pixel" alt="" src="${spr(f.sprite || k, 3)}" style="width:40px"><span>${esc(f.name)}</span><em>${ST(12)} ${f.price} · tienes <b data-have="${k}">${p.pantry[k] || 0}</b></em></button>`).join('');
+  openSheet('Comprar comida', `<div class="stack"><div class="row between"><span class="faint">Se guarda en la despensa.</span><span id="fsBal">${starsPill()}</span></div>
+<div class="fr-shop">${tiles()}</div>
 <p class="faint" style="margin:0">También te llega comida en el regalo del día.</p></div>`, sh => {
-    sh.addEventListener('click', e => { const b = e.target.closest('[data-buyfood]'); if (!b) return; const k = b.dataset.buyfood; if (!spend(FOODS[k].price)) return; p.pantry[k] = (p.pantry[k] || 0) + 1; A.saveSettings(); toast(`${FOODS[k].name} a la despensa`); draw(); });
+    // al comprar se actualiza solo lo que cambió (sin volver a abrir la hoja ni saltar arriba)
+    sh.addEventListener('click', e => {
+      const b = e.target.closest('[data-buyfood]'); if (!b || b.disabled) return; const k = b.dataset.buyfood; if (!spend(FOODS[k].price)) return;
+      p.pantry[k] = (p.pantry[k] || 0) + 1; A.saveSettings(); toast(`${FOODS[k].name} a la despensa`); if (window.Sfx) window.Sfx.play('coin', true);
+      const h = b.querySelector(`[data-have="${k}"]`); if (h) h.textContent = p.pantry[k];
+      b.classList.remove('bought'); void b.offsetWidth; b.classList.add('bought');
+      $$('[data-buyfood]', sh).forEach(x => { x.disabled = bal() < FOODS[x.dataset.buyfood].price; });
+      const bl = $('#fsBal', sh); if (bl) bl.innerHTML = starsPill();
+      refreshCare();
+    });
   });
-  draw();
 };
 ACT.pcClose = () => { closeSheet(); A.render(); };
 const _closeSheet = A.closeSheet;
