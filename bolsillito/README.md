@@ -23,6 +23,10 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
 
 ## Historial
 
+- **26-oct-2026 (noche)**
+  - Panel → Agregar cosas nuevas: en Mascotas, Muebles, Ropa, Comida, Paredes y Pisos sale **"… que ya vienen en la app"** con botones **Quitar**, **Reemplazar** y **Volver a poner** (por ejemplo Maca, Dony, Gela y Cupi).
+  - Quitar: ya no sale en tiendas, adopción ni regalos; quien ya lo tenía lo conserva. Reemplazar: se dibuja o sube el nuevo, el viejo se quita y a quien lo tenía le llega el nuevo (mascota con su cuidado y nivel, ropa puesta, muebles del cuarto, comida de la despensa, pared/piso). Se guarda en la configuración (`catalog.gone` y `catalog.swap`).
+
 - **26-oct-2026**
   - **Compras** nueva (Más → Tu dinero → Compras, en `fuente/compras.js`): varias listas (súper, mercado, farmacia, casa, otra) con presupuesto, plantillas y listas que se repiten cada semana o mes.
   - Cada cosa con cantidad, unidad (und, kg, g, lb, litro, ml, paquete, docena) y precio; subtotal y total en vivo (en el carrito / falta / total). Entiende lo que se escribe o dicta: "2 kg de tomate a $1.20", "leche x3", "media docena de huevos".

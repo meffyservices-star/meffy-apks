@@ -173,6 +173,7 @@ function registerCatalog() {
   const tileDef = (name, x, W, H) => { const t = x.pal ? x : null; if (!t) return; Pix.define(name, { raw: tiledRaw(x.map, W, H), pal: x.pal }); };
   c.walls.forEach(x => { const k = 'cw_' + x.id; tileDef('x_pared_' + k, x, 144, 34); customKeys.walls.push(k); if (!x.off && !notYet(x)) WALLS[k] = [x.name, x.how === 'stars' ? +x.price || 0 : 0]; });
   c.floors.forEach(x => { const k = 'cl_' + x.id; tileDef('x_piso_' + k, x, 144, 98); customKeys.floors.push(k); if (!x.off && !notYet(x)) FLOORS[k] = [x.name, x.how === 'stars' ? +x.price || 0 : 0]; });
+  applyGone();
   seasonGate();
 }
 function seasonGate() {
@@ -180,13 +181,14 @@ function seasonGate() {
   Object.entries(A.ACC).forEach(([id, a]) => {
     if (a.season || a.raro || a.ach) a.off = !!a.offAdmin || (!owned.includes('acc:' + id) && !(a.season && inSeason(a.season)) && !(a.ach && achOk(a.ach)));
     if (a.custom && a.offAdmin) a.off = true;
+    if (a.gone) a.off = true;
   });
 }
 A.registerCatalog = registerCatalog;
 const achOk = id => { const a = (A.RC.ACH || []).find(x => x.id === id); return a && A.rcStats ? a.ok(A.rcStats()) : false; };
 
 function allPets() {
-  const out = {}; Object.entries(BASE_PETS).forEach(([k, v]) => out[k] = v);
+  const out = {}; const gp = goneOf('pets'); const mine = ((S.settings.pet || {}).owned || []); Object.entries(BASE_PETS).forEach(([k, v]) => { if (!gp.includes(k) || mine.includes(k)) out[k] = v; });
   catalog().pets.forEach(x => { if (!x.off && !(x.from && x.from > A.today())) out['cp_' + x.id] = { name: x.name, sprite: 'cp_' + x.id, desc: x.desc || '', say: x.say || x.desc || '¡Hola!', how: x.how || 'stars', price: +x.price || 0, ach: x.ach, season: x.season, custom: true }; });
   return out;
 }
@@ -195,7 +197,7 @@ A.allPets = allPets;
 // ---------------- Estado de las mascotas ----------------
 function P() {
   const s = S.settings; const p = s.pet = s.pet || {};
-  p.owned = p.owned || ['gochi', 'yaki', 'shey', 'ale']; p.room = p.room || ['gochi', 'yaki', 'shey'];
+  p.owned = p.owned || ['gochi', 'yaki', 'shey', 'ale'].filter(k => !goneOf('pets').includes(k)); p.room = p.room || ['gochi', 'yaki', 'shey'].filter(k => p.owned.includes(k));
   p.care = p.care || {}; p.xp = p.xp || {}; p.since = p.since || {}; p.lvSeen = p.lvSeen || {};
   p.pantry = p.pantry || { fresa: 3, galleta: 3, leche: 2, manzanita: 2 };
   return p;
@@ -732,7 +734,7 @@ function rollGift() {
   const p = P(), r = room(); const wk = weekDays(); const g = G(); const t = today();
   const big = t === wk[6] && wk.slice(0, 6).every(d => g.opened.includes(d));
   if (big) {
-    if (!p.owned.includes('gela')) return { kind: 'pet', id: 'gela', name: 'Gela', src: spr('gela', 5), big };
+    if (!p.owned.includes('gela') && !goneOf('pets').includes('gela')) return { kind: 'pet', id: 'gela', name: 'Gela', src: spr('gela', 5), big };
     if (!cnt('hongo')) return { kind: 'furn', id: 'hongo', name: FURN.hongo.name, src: Pix.sprite('x_hongo', 4), stars: 10, big };
     const rareAcc = Object.entries(A.ACC).find(([k, a]) => a.raro && !(R().owned || []).includes('acc:' + k));
     if (rareAcc) return { kind: 'acc', id: rareAcc[0], name: rareAcc[1].name, src: spr('acc_' + rareAcc[0], 6), big };
@@ -822,6 +824,7 @@ A.screens.admincat = () => {
 <div class="ad-kinds">${Object.entries(KINDS).map(([k, [n]]) => `<button data-act="catKind" data-v="${k}" aria-pressed="${k === kind}">${n}</button>`).join('')}</div>
 ${list.length ? `<div class="card"><h3>${KIND_PL[kind]} que ya agregaste</h3><div class="ad-list">${list.map(x => `<button class="ad-item ${x.off ? 'off' : ''} ${ed.id === x.id ? 'on' : ''}" data-act="catEdit" data-id="${x.id}"><span class="ad-item-art ${kind === 'walls' || kind === 'floors' ? 'tile' : ''}"><img class="pixel" alt="" src="${Pix.sprite(sprOf(kind, x.id), 2)}"></span><b>${esc(x.name)}</b><span>${x.off ? 'Oculto' : x.from && x.from > A.today() ? 'Sale el ' + x.from.slice(8) + '/' + x.from.slice(5, 7) : esc(howLabel(x, kind))}${x.col ? ' · ' + esc(x.col) : ''}${x.map2 ? ' · se mueve' : ''}</span></button>`).join('')}</div></div>` : ''}
 <div class="card stack" id="catForm">${formHTML()}</div>
+${builtinHTML(kind)}
 <details class="card stack" ${S.seasOpen ? 'open' : ''}><summary><b>Temporadas</b> <span class="faint">(Noche de brujas, Navidad, San Valentín y las tuyas)</span></summary>
 <div class="list" style="margin:8px 0">${allSeasons().map(se => `<div class="li"><span class="tx-main"><b>${esc(se.name)}</b><span>${esc(se.when)}${inSeason(se.id) ? ' · <b>activa ahora</b>' : ''} · ${se.items.length} cosas</span></span>${se.custom ? `<button class="btn sm danger" data-act="seDel" data-id="${se.id}">Borrar</button>` : ''}</div>`).join('')}</div>
 <div class="formgrid"><label class="f full">Nueva temporada<input class="in" id="seName" placeholder="Ej. Día de la madre" maxlength="30"></label><label class="f">Desde<input class="in" id="seFrom" type="date"></label><label class="f">Hasta<input class="in" id="seTo" type="date"></label></div>
@@ -840,6 +843,10 @@ const HELP = {
   chars: 'Personajes para el juego Cruzar la calle. Sube un dibujo pixel (de frente, con fondo transparente). Pueden salir en la máquina gacha, venderse con estrellitas o darse gratis desde el inicio.'
 };
 function formHTML() {
+  if (ed.replaces) return replBanner() + formHTML0();
+  return formHTML0();
+}
+function formHTML0() {
   const k = ed.kind; const tile = k === 'walls' || k === 'floors';
   const maxW = tile ? 48 : 96, maxH = k === 'walls' ? 34 : tile ? 48 : 96;
   const photo = ed.mode === 'photo';
@@ -1335,10 +1342,101 @@ ACT.edSave = () => {
   if (kind === 'furn') Object.assign(item, { wall: !!ed.wall, cat: ed.cat || (ed.wall ? 'pared' : 'deco') });
   if (ed.how === 'logro') item.ach = ed.ach; if (ed.how === 'temporada') item.season = ed.season;
   const i = list.findIndex(x => x.id === item.id); if (i >= 0) list[i] = item; else list.push(item);
+  if (ed.replaces) markSwap(kind, ed.replaces, item.id);
   ed = null; saveCatalog();
 };
 ACT.edOff = () => { const list = A.CFG.catalog[ed.kind]; const it = list.find(x => x.id === ed.id); if (it) it.off = !it.off; ed = null; saveCatalog(); };
 ACT.edDel = a => { if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Segura? Toca otra vez'; return; } A.CFG.catalog[ed.kind] = A.CFG.catalog[ed.kind].filter(x => x.id !== ed.id); ed = null; saveCatalog(); };
+
+// ---- Lo que ya viene en la app: la dueña lo puede quitar o reemplazar ----
+const GONE_KINDS = ['pets', 'furn', 'clothes', 'food', 'walls', 'floors'];
+const NEW_PFX = { pets: 'cp_', furn: 'cf_', clothes: 'cc_', food: 'cfo_', walls: 'cw_', floors: 'cl_' };
+function goneOf(kind) { const g = (A.CFG && A.CFG.catalog && A.CFG.catalog.gone) || {}; return g[kind] || []; }
+const GONE_STASH = { walls: {}, floors: {} };
+function builtins(kind) {
+  if (kind === 'pets') return Object.entries(BASE_PETS).map(([k, v]) => ({ k, name: v.name, src: spr(v.sprite, 2) }));
+  if (kind === 'furn') return Object.entries(FURN).filter(([, v]) => !v.custom).map(([k, v]) => ({ k, name: v.name, src: Pix.sprite(furnSprite(k), 2) }));
+  if (kind === 'clothes') return Object.entries(A.ACC || {}).filter(([, v]) => !v.custom).map(([k, v]) => ({ k, name: v.name, src: Pix.sprite('acc_' + k, 3) }));
+  if (kind === 'food') return Object.entries(FOODS).filter(([, v]) => !v.custom).map(([k, v]) => ({ k, name: v.name, src: spr(v.sprite || k, 3) }));
+  const T = kind === 'walls' ? WALLS : FLOORS, st = GONE_STASH[kind], pre = kind === 'walls' ? 'x_pared_' : 'x_piso_', cp = kind === 'walls' ? 'cw_' : 'cl_';
+  return Object.entries(Object.assign({}, st, T)).filter(([k]) => !k.startsWith(cp)).map(([k, v]) => ({ k, name: v[0], src: Pix.sprite(pre + k, 1), tile: true }));
+}
+function applyGone() {
+  const g = k => goneOf(k);
+  Object.entries(FURN).forEach(([k, v]) => { if (v.custom) return; const on = g('furn').includes(k); if (on && !v._gone) { v._off0 = v.off; v._gone = true; v.off = true; } else if (!on && v._gone) { v.off = v._off0; delete v._gone; delete v._off0; } });
+  Object.entries(FOODS).forEach(([k, v]) => { if (v.custom) return; const on = g('food').includes(k); if (on && !v._gone) { v._off0 = v.off; v._gone = true; v.off = true; } else if (!on && v._gone) { v.off = v._off0; delete v._gone; delete v._off0; } });
+  Object.entries(A.ACC || {}).forEach(([k, a]) => { if (a.custom) return; const on = g('clothes').includes(k); if (on && !a.gone) { a._off0 = a.off; a.gone = true; } else if (!on && a.gone) { a.gone = false; a.off = a._off0; delete a._off0; } });
+  [['walls', WALLS, 'cw_'], ['floors', FLOORS, 'cl_']].forEach(([kind, T, cp]) => {
+    const st = GONE_STASH[kind];
+    Object.keys(st).forEach(k => { if (!g(kind).includes(k)) { T[k] = st[k]; delete st[k]; } });
+    g(kind).forEach(k => { if (T[k] && !k.startsWith(cp)) { st[k] = T[k]; delete T[k]; } });
+  });
+  migrateSwaps();
+}
+// a quien tenía lo viejo le llega lo nuevo que lo reemplazó
+function migrateSwaps() {
+  const sw = (A.CFG && A.CFG.catalog && A.CFG.catalog.swap) || {}; let ch = false;
+  Object.entries(sw).forEach(([key, nu]) => {
+    const [kind, old] = key.split(':'); if (!old || !nu || old === nu) return;
+    if (kind === 'pets') {
+      if (!S.settings.pet || !A.ANCH[nu]) return; const p = P();
+      const swap = arr => { if (!arr.includes(old)) return arr; ch = true; return [...new Set(arr.map(x => x === old ? nu : x))]; };
+      p.owned = swap(p.owned); p.room = swap(p.room); if (p.active === old) { p.active = nu; ch = true; }
+      ['care', 'xp', 'since', 'lvSeen'].forEach(f => { if (p[f] && p[f][old] != null && p[f][nu] == null) { p[f][nu] = p[f][old]; delete p[f][old]; ch = true; } });
+      const ro = R(); if (ro.equip && ro.equip[old] && !ro.equip[nu]) { ro.equip[nu] = ro.equip[old]; delete ro.equip[old]; ch = true; }
+    } else if (kind === 'clothes') {
+      const n2 = 'cc_' + nu.replace(/^cc_/, ''); if (!A.ACC[n2]) return; const ro = R(); ro.owned = ro.owned || [];
+      if (ro.owned.includes('acc:' + old)) { ro.owned = [...new Set(ro.owned.map(x => x === 'acc:' + old ? 'acc:' + n2 : x))]; ch = true; }
+      Object.values(ro.equip || {}).forEach(eq => { if (eq && typeof eq === 'object') Object.keys(eq).forEach(sl => { if (eq[sl] === old) { eq[sl] = n2; ch = true; } }); });
+    } else if (kind === 'furn') {
+      if (!FURN[nu] || !S.settings.rincon) return; const r = room(); const n = cnt(old);
+      if (n > 0) { addInv(nu, n); addInv(old, -n); ch = true; }
+      Object.values(r.rooms || {}).forEach(rm => (rm.items || []).forEach(it => { if (it.k === old) { it.k = nu; ch = true; } }));
+    } else if (kind === 'food') {
+      if (!FOODS[nu] || !S.settings.pet) return; const p = P();
+      if (p.pantry[old]) { p.pantry[nu] = (p.pantry[nu] || 0) + p.pantry[old]; delete p.pantry[old]; ch = true; }
+    } else if (kind === 'walls' || kind === 'floors') {
+      const T = kind === 'walls' ? WALLS : FLOORS, f = kind === 'walls' ? 'wall' : 'floor'; if (!T[nu] || !S.settings.rincon) return; const r = room();
+      if (r.owned.includes(f + ':' + old)) { r.owned = r.owned.map(x => x === f + ':' + old ? f + ':' + nu : x); ch = true; }
+      Object.values(r.rooms || {}).forEach(rm => { if (rm[f] === old) { rm[f] = nu; ch = true; } });
+    }
+  });
+  if (ch) A.saveSettings();
+}
+function setGone(kind, k, on) {
+  A.CFG.catalog = A.CFG.catalog || {}; const g = A.CFG.catalog.gone = A.CFG.catalog.gone || {};
+  g[kind] = (g[kind] || []).filter(x => x !== k); if (on) g[kind].push(k);
+  if (!on && A.CFG.catalog.swap) delete A.CFG.catalog.swap[kind + ':' + k];
+}
+function markSwap(kind, old, id) {
+  setGone(kind, old, true); const sw = A.CFG.catalog.swap = A.CFG.catalog.swap || {};
+  sw[kind + ':' + old] = NEW_PFX[kind] + id;
+}
+function builtinHTML(kind) {
+  if (!GONE_KINDS.includes(kind)) return '';
+  const g = goneOf(kind); const sw = (A.CFG.catalog && A.CFG.catalog.swap) || {};
+  const list = builtins(kind); if (!list.length) return '';
+  const nameOf = key => { const all = catalog()[kind] || []; const it = all.find(x => NEW_PFX[kind] + x.id === key); return it ? it.name : 'otro'; };
+  return `<div class="card stack" id="bltCard"><h3 style="margin:0">${KIND_PL[kind]} que ya vienen en la app</h3>
+<p class="faint" style="margin:0">Quítalos o reemplázalos por uno tuyo. Lo quitado ya no sale en la tienda ni para adoptar; quien ya lo tenía lo conserva. Si lo reemplazas, a quien lo tenía le llega el nuevo.</p>
+<div class="list">${list.map(x => { const off = g.includes(x.k); const to = sw[kind + ':' + x.k];
+    return `<div class="li" style="gap:10px;${off ? 'opacity:.6' : ''}"><span class="ad-item-art ${x.tile ? 'tile' : ''}" style="flex:0 0 auto"><img class="pixel" alt="" src="${x.src}" style="max-width:40px;max-height:40px"></span><span class="tx-main" style="flex:1;min-width:0"><b>${esc(x.name)}</b><span>${off ? (to ? 'Reemplazado por ' + esc(nameOf(to)) : 'Quitado de la app') : 'Viene con la app'}</span></span>
+<span class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-end">${off ? `<button class="btn sm" data-act="bltBack" data-k="${x.k}">Volver a poner</button>` : `<button class="btn sm" data-act="bltRepl" data-k="${x.k}">Reemplazar</button><button class="btn sm danger" data-act="bltDel" data-k="${x.k}">Quitar</button>`}</span></div>`; }).join('')}</div></div>`;
+}
+function replBanner() {
+  const b = builtins(ed.kind).find(x => x.k === ed.replaces); if (!b) return '';
+  return `<div class="row" style="gap:10px;padding:10px;border-radius:12px;background:#fff3c4;color:#6b4d12"><img class="pixel" alt="" src="${b.src}" style="max-width:36px;max-height:36px"><div style="flex:1"><b>Reemplazando a ${esc(b.name)}</b><div style="font-size:13px">Dibuja o sube el nuevo y toca Guardar. ${esc(b.name)} se quita de la app y a quien lo tenía le llega este.</div></div><button class="btn sm" data-act="bltCancel">Cancelar</button></div>`;
+}
+ACT.bltDel = a => { if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Segura? Toca otra vez'; return; } setGone(S.catKind || 'pets', a.dataset.k, true); saveCatalog(); };
+ACT.bltBack = a => { setGone(S.catKind || 'pets', a.dataset.k, false); saveCatalog(); };
+ACT.bltRepl = a => {
+  const kind = S.catKind || 'pets', k = a.dataset.k; newDraft(kind);
+  const pre = kind === 'pets' ? BASE_PETS[k] : kind === 'furn' ? FURN[k] : kind === 'food' ? FOODS[k] : kind === 'clothes' ? A.ACC[k] : null;
+  if (pre) { ed.name = pre.name || ''; if (pre.desc) ed.desc = pre.desc; if (pre.price != null) ed.price = pre.price; if (pre.how && ['stars', 'free', 'logro', 'raro'].includes(pre.how)) ed.how = pre.how; if (pre.ach) ed.ach = pre.ach; if (kind === 'clothes' && pre.slot) ed.slot = pre.slot; if (kind === 'food' && pre.gain) ed.gain = pre.gain; if (kind === 'furn') { ed.wall = !!pre.wall; if (pre.cat) ed.cat = pre.cat; } }
+  else { const T = kind === 'walls' ? WALLS : FLOORS; const v = T[k] || GONE_STASH[kind][k]; if (v) { ed.name = v[0]; ed.price = v[1]; ed.how = v[1] ? 'stars' : 'free'; } }
+  ed.replaces = k; A.render(); setTimeout(() => { const f = $('#catForm'); if (f) f.scrollIntoView({ behavior: 'smooth' }); }, 50);
+};
+ACT.bltCancel = () => { newDraft(S.catKind || 'pets'); A.render(); };
 // botón en el panel de admin
 const adminScreen = A.screens.admin;
 A.screens.admin = () => { const h = adminScreen(); if (!Store.isOwner) return h; const btn = `<button class="card row" data-go="admincat" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer"><img class="pixel" alt="" src="${spr('maca', 3)}" style="width:44px"><img class="pixel" alt="" src="${Pix.sprite('x_lampara', 2)}" style="height:44px;margin-left:-6px"><div style="flex:1"><b>Agregar mascotas, muebles, ropa, comida y personajes</b><div class="faint">Dibújalas o sube una imagen pixel</div></div><span class="faint">›</span></button>`; const i = h.indexOf('<details'); return i > 0 ? h.slice(0, i) + btn + h.slice(i) : h + btn; };
