@@ -367,6 +367,7 @@ async function publishRoom() {
   }
 }
 async function fetchRoom(code) { const { data, error } = await Store.sb.from('rooms').select('user_id, code, name, body, hearts, updated_at').eq('code', code.toUpperCase()).maybeSingle(); if (error) throw error; return data; }
+A.fetchRoom = fetchRoom;
 async function loadInbox() {
   const me = Store.uid;
   const [n, e, g] = await Promise.all([
@@ -889,7 +890,7 @@ const baseOf = v => String(v || '').replace(/^s:/, '').split('~')[0];
 const oimg = (n, size) => `<img class="pixel" alt="" src="${origSprite(n, 3)}" style="width:${size}px;height:${size}px;object-fit:contain">`;
 const cimg = (n, size) => `<img class="pixel" alt="" src="${Pix.sprite(n, 3)}" style="width:${size}px;height:${size}px;object-fit:contain">`;
 const NAVK = ['home', 'wallet', 'add', 'month', 'journal', 'more'];
-const OFFABLE = ['rincon', 'logros', 'tienda', 'suscripciones', 'recordatorio', 'year', 'goals', 'recurring', 'projections', 'rules', 'juegos', 'jardin', 'tablero', 'visitas', 'coleccion', 'regalo', 'crecer', 'shey', 'cuarto', 'loans', 'cuotas'];
+const OFFABLE = ['rincon', 'logros', 'tienda', 'compras', 'suscripciones', 'recordatorio', 'year', 'goals', 'recurring', 'projections', 'rules', 'juegos', 'jardin', 'tablero', 'visitas', 'coleccion', 'regalo', 'crecer', 'shey', 'cuarto', 'loans', 'cuotas'];
 function iconTiles(list) {
   const L = LOOK().icons || {};
   return `<div class="lk-grid">${list.filter(([n]) => n && Pix.has(n)).map(([n, label]) => `<button data-act="lkPick" data-n="${esc(n)}" data-l="${esc(label)}"><span class="lk-ic">${cimg(n, 34)}${L[n] ? '<i class="lk-dot" title="Cambiado"></i>' : ''}</span><span>${esc(label)}</span></button>`).join('')}</div>`;
@@ -914,7 +915,7 @@ A.screens.adminlook = () => {
 ${changed.length ? `<div class="card"><h3>Ya cambiados</h3>${iconTiles(changed.map(n => [n, n]))}</div>` : ''}
 <button class="card row" data-act="lkAny" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer">${cimg('sparkle', 36)}<div style="flex:1"><b>Cambiar cualquier otro dibujito</b><div class="faint">Comidas, estrellitas, adornos, lo que sea</div></div><span class="faint">›</span></button>`;
   } else if (tab === 'names') {
-    const keys = [...new Set(NAVK.concat(['rincon', 'logros', 'tienda', 'suscripciones', 'recordatorio', 'year', 'goals', 'recurring', 'projections', 'rules', 'juegos', 'jardin', 'tablero', 'visitas', 'coleccion', 'regalo', 'crecer', 'shey', 'cuarto', 'loans', 'settings', 'appearance', 'plan', 'data']))].filter(k => ORIGP[k]);
+    const keys = [...new Set(NAVK.concat(['rincon', 'logros', 'tienda', 'suscripciones', 'recordatorio', 'compras', 'year', 'goals', 'recurring', 'projections', 'rules', 'juegos', 'jardin', 'tablero', 'visitas', 'coleccion', 'regalo', 'crecer', 'shey', 'cuarto', 'loans', 'settings', 'appearance', 'plan', 'data']))].filter(k => ORIGP[k]);
     body = `<div class="card stack"><b>Ponle otro nombre a las secciones</b><span class="faint">Déjalo vacío para usar el nombre original. Los nombres cortos se ven mejor en la barra de abajo.</span>
 ${keys.map(k => `<div class="setrow"><span class="row" style="gap:8px">${cimg(baseOf(map[k]) || 'sparkle', 24)}<span class="faint" style="min-width:0">${esc(ORIGP[k])}</span></span><input class="in" data-lkname="${k}" value="${esc((L.names || {})[k] || '')}" placeholder="${esc(ORIGP[k])}" maxlength="24" style="max-width:170px"></div>`).join('')}
 <button class="btn pink" data-act="lkNames" style="justify-content:center">Guardar nombres</button></div>`;

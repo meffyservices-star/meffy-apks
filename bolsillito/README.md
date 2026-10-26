@@ -23,6 +23,16 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
 
 ## Historial
 
+- **26-oct-2026**
+  - **Compras** nueva (Más → Tu dinero → Compras, en `fuente/compras.js`): varias listas (súper, mercado, farmacia, casa, otra) con presupuesto, plantillas y listas que se repiten cada semana o mes.
+  - Cada cosa con cantidad, unidad (und, kg, g, lb, litro, ml, paquete, docena) y precio; subtotal y total en vivo (en el carrito / falta / total). Entiende lo que se escribe o dicta: "2 kg de tomate a $1.20", "leche x3", "media docena de huevos".
+  - Se ordena por pasillo con íconos pixel (frutas, verduras, carnes, lácteos, panadería, despensa, bebidas, snacks, limpieza, aseo, farmacia, mascotas). Tachado animado, casilla pixel y la mascota empujando el carrito según lo que vas marcando.
+  - Dictar con la voz, pegar una lista de WhatsApp, mandarla por WhatsApp y **lista compartida** con amigas de Visitas (tabla `shared_lists` en Supabase, con cambios en vivo; sin internet se guarda y sube después).
+  - **Cerrar compra**: se vuelve un gasto en la cuenta elegida (el saldo se ajusta solo), guarda tienda y precios, actualiza "En casa", +5 estrellitas si cumplió el presupuesto y la primera vez regala el mueble **Carrito de súper** (también está en la tienda del cuarto).
+  - **En casa**: lo que hay en casa (hay / queda poco / se acabó) y pasar lo que falta a una lista.
+  - **Precios**: último precio de cada cosa, si subió o bajó, historial y en qué tienda sale más barato.
+  - **Resumen**: total de la semana y del mes, promedio semanal, proyección del mes, presupuesto mensual de compras, gráfico de 8 semanas, en qué se va y dónde compraste.
+
 - **25-oct-2026**
   - Tablero de sueños: se quitaron las frases "Este es mi año" y "Me lo merezco" (también para quien ya las tenía) y la estrellita, el brillo y el corazón de adorno. Ahora solo muestra las fotos y lo que pone la usuaria.
   - **Recordatorios** nuevos (Más → Recordatorios, en `fuente/recordatorios.js`): pago de tarjeta, suscripciones, servicios, cobrar, cumples, salud y "otra cosita". Cada uno con hora, monto y notita opcionales, repetición (una vez, diario, semanal, mensual, anual) y aviso el mismo día, 1, 3 o 7 días antes. Sugiere avisos para las tarjetas con día de pago y las suscripciones que encuentra.
