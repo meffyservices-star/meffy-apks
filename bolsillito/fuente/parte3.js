@@ -214,8 +214,8 @@ A.gameKit = { gameShell, loadImgs, endCard, GM, payGame, gsfx: n => gsfx(n), ST,
 function lookArt(pet, accId, sc) {
   const an = A.ANCH[pet], a = A.ACC[accId]; const base = `<img class="pixel mz-base" alt="" src="${spr(an ? an.sprite : pet, sc)}">`;
   if (!an || !a) return `<span class="mz">${base}</span>`;
-  let left = an.hx - a.w / 2, top = a.slot === 'head' ? an.hy - a.h + 2 + (a.lift || 0) : a.slot === 'face' ? an.fy - a.h / 2 : an.ny - 1; left += a.dx || 0; top += a.dy || 0;
-  return `<span class="mz" style="animation:none">${base}<img class="pixel mz-acc" alt="" src="${spr('acc_' + accId, sc)}" style="left:${left / 20 * 100}%;top:${top / 20 * 100}%;width:${a.w / 20 * 100}%"></span>`;
+  const eq = ((S.settings.rincon || {}).equip || {})[pet];
+  return `<span class="mz" style="animation:none">${base}<img class="pixel mz-acc" alt="" src="${spr('acc_' + accId, sc)}" style="${A.accStyle(A.accPlace(an, a, a.slot, accId, eq))}"></span>`;
 }
 function seasonItem(key) {
   const [kind, id] = key.split(':'); const r = S.settings.rincon || {}; const owned = r.owned || []; const bl = bal();

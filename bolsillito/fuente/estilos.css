@@ -1692,3 +1692,16 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 @media (prefers-reduced-motion: reduce) { .cp-hero-pet, .cp-hero-cart, .cp-float, .cp-road-pet, .cp-hop { animation: none; } }
 .cp-tools .chip[aria-pressed] { background: #fff; color: var(--paper-ink); border-color: var(--glass-line); }
 .cp-tools .chip[aria-pressed="true"] { background: #ffe0ea; color: #8a3a55; }
+
+/* Acomodar la ropa (Tiendita) */
+.btn.fit-open { margin: 8px auto 0; justify-content: center; position: relative; z-index: 3; }
+.mz.fitting { animation: none; touch-action: none; }
+.mz.fitting .mz-acc { pointer-events: auto; cursor: pointer; }
+.mz.fitting .mz-acc.fit-sel { cursor: grab; outline: 2px dashed var(--accent, #e0577f); outline-offset: 2px; filter: drop-shadow(0 0 4px rgba(255,255,255,.9)); }
+.mz.fitting .mz-acc:not(.fit-sel) { opacity: .8; }
+.fit-panel { display: flex; flex-direction: column; gap: 10px; }
+.fit-ctl { display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.fit-pad { display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); gap: 4px; }
+.fit-pad .iconbtn { width: 44px; height: 44px; font-size: 16px; }
+.fit-size { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.fit-size .iconbtn { width: 44px; height: 44px; font-size: 22px; }

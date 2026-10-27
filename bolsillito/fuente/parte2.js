@@ -607,11 +607,7 @@ function dressed(id, eq, sc) {
   if (!an || !eq) return base;
   return base + ['neck', 'head', 'face'].map(slot => {
     const a = A.ACC[eq[slot]]; if (!a) return '';
-    let left = an.hx - a.w / 2, top;
-    if (slot === 'head') { top = an.hy - a.h + 2 + (a.lift || 0); if (a.halo) top = an.hy - a.h - 1; if (a.side) { left = an.hx + 2; top = an.hy - 1; } }
-    else if (slot === 'face') top = an.fy - a.h / 2; else top = an.ny - 1;
-    left += a.dx || 0; top += a.dy || 0;
-    return `<img class="pixel rm-acc" alt="" src="${Pix.sprite('acc_' + eq[slot], sc || 4)}" draggable="false" style="left:${left / 20 * 100}%;top:${top / 20 * 100}%;width:${a.w / 20 * 100}%">`;
+    return `<img class="pixel rm-acc" alt="" src="${Pix.sprite('acc_' + eq[slot], sc || 4)}" draggable="false" style="${A.accStyle(A.accPlace(an, a, slot, eq[slot], eq))}">`;
   }).join('');
 }
 A.petDressed = dressed;

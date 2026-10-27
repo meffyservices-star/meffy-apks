@@ -2431,19 +2431,29 @@ return r;
 const hasAcc = id => A.isPlus() || R().owned.includes('acc:' + id) || false;
 const canUse = id => ACC[id] && (ACC[id].plus ? A.isPlus() : hasAcc(id));
 A.canWearAle = () => A.isPlus();
-function wear(cid, opts) {
-const an = ANCH[cid]; const eq = (R().equip[cid]) || {}; const scale = (opts && opts.scale) || 5;
-const useEq = cid === 'ale' ? (A.isPlus() ? eq : {}) : eq;
-const layers = Object.values(SLOTS).length && ['neck', 'head', 'face'].map(slot => {
-const id = useEq[slot]; const a = ACC[id]; if (!a || !canUse(id)) return '';
+// dónde va cada prenda sobre la mascota: el lugar de siempre + lo que la usuaria acomodó (eq.fit[prenda] = { x, y, s })
+function accPlace(an, a, slot, id, eq) {
 let left = an.hx - a.w / 2, top;
 if (slot === 'head') { top = an.hy - a.h + 2 + (a.lift || 0); if (a.halo) top = an.hy - a.h - 1; if (a.side) { left = an.hx + 2; top = an.hy - 1; } }
 else if (slot === 'face') top = an.fy - a.h / 2;
 else top = an.ny - 1;
 left += a.dx || 0; top += a.dy || 0;
-return `<img class="pixel mz-acc" alt="" src="${Pix.sprite('acc_' + id, scale)}" style="left:${left / 20 * 100}%;top:${top / 20 * 100}%;width:${a.w / 20 * 100}%">`;
+const f = eq && eq.fit && eq.fit[id]; let w = a.w;
+if (f) { const sc = +f.s || 1; w = a.w * sc; left += (a.w - w) / 2 + (+f.x || 0); top += (a.h - a.h * sc) / 2 + (+f.y || 0); }
+return { left, top, w };
+}
+A.accPlace = accPlace;
+const accStyle = p => `left:${p.left / 20 * 100}%;top:${p.top / 20 * 100}%;width:${p.w / 20 * 100}%`;
+A.accStyle = accStyle;
+function wear(cid, opts) {
+const an = ANCH[cid]; const eq = (R().equip[cid]) || {}; const scale = (opts && opts.scale) || 5;
+const useEq = cid === 'ale' ? (A.isPlus() ? eq : {}) : eq;
+const layers = Object.values(SLOTS).length && ['neck', 'head', 'face'].map(slot => {
+const id = useEq[slot]; const a = ACC[id]; if (!a || !canUse(id)) return '';
+const fitOn = opts && opts.fit; const sel = fitOn && S.fitSel === slot;
+return `<img class="pixel mz-acc ${sel ? 'fit-sel' : ''}" alt="" data-fit-slot="${slot}" src="${Pix.sprite('acc_' + id, scale)}" style="${accStyle(accPlace(an, a, slot, id, eq))}">`;
 }).join('');
-return `<span class="mz ${(opts && opts.cls) || ''}"><img class="pixel mz-base" alt="${an.name}" src="${Pix.sprite(an.sprite, scale)}">${layers}</span>`;
+return `<span class="mz ${(opts && opts.cls) || ''} ${opts && opts.fit ? 'fitting' : ''}"><img class="pixel mz-base" alt="${an.name}" src="${Pix.sprite(an.sprite, scale)}">${layers}</span>`;
 }
 A.wear = wear; A.ANCH = ANCH; A.SLOTS = SLOTS;
 A.PAGES.tienda = 'Tiendita';
@@ -2453,6 +2463,9 @@ const r = R(); const bal = A.rinconBalance ? A.rinconBalance() : 0;
 const who = S.shopWho || (A.petActive && A.petActive()) || 'gochi'; const sec = S.shopSec || 'head';
 const aleLocked = who === 'ale' && !A.isPlus();
 const eq = r.equip[who] || {};
+const worn = Object.keys(SLOTS).filter(sl => eq[sl] && ACC[eq[sl]] && canUse(eq[sl]));
+if (S.fitWho !== who || !worn.length || aleLocked) S.fitting = false;
+const fitting = !!S.fitting; if (fitting && !worn.includes(S.fitSel)) S.fitSel = worn[0];
 const tile = (id, a) => {
 const owned = hasAcc(id) && !a.plus; const usable = canUse(id); const on = eq[a.slot] === id;
 const lockTxt = a.plus ? (A.isPlus() ? '' : '<span class="lock">Meffy+</span>') : owned || A.isPlus() ? '' : `<span class="lock" style="background:#fff09a">${A.px('estrellita', 12)} ${a.price}</span>`;
@@ -2461,15 +2474,64 @@ return `<button class="shop-tile ${on ? 'on' : ''}" data-act="shopItem" data-id=
 return `${A.header('tienda', `<span class="pill sm" style="background:#fff09a;color:#6b4d12">${A.px('estrellita', 18)} ${bal}</span>`)}
 <div class="seg" style="overflow-x:auto">${Object.entries(ANCH).filter(([k]) => !A.petOwns || A.petOwns(k) || k === who).map(([k, an]) => `<button data-act="shopWho" data-v="${k}" aria-pressed="${who === k}">${an.name}${k === 'ale' && !A.isPlus() ? ' ' + A.px('diamante', 14) : ''}</button>`).join('')}</div>
 <div class="rc-scene probador" style="min-height:300px;align-items:center"><div class="pb-room">${App.probadorHTML ? App.probadorHTML() : ''}</div><span class="pb-sign">Probador</span>${Store.isOwner ? '<button class="pb-edit" data-act="probEdit">Decorar (solo tú)</button>' : ''}
-<div class="rc-row pb-stage"><span class="pb-podium" aria-hidden="true"></span>${wear(who, { cls: 'big' })}</div>
-<div class="rc-say">${aleLocked ? 'Ale se viste solo con Meffy+. Con Meffy+ además tienes todos los accesorios para todos.' : `Elige qué ponerle a ${ANCH[who].name}. Toca otra vez para quitárselo.`}</div>
+<div class="rc-row pb-stage"><span class="pb-podium" aria-hidden="true"></span>${wear(who, { cls: 'big', fit: fitting })}</div>
+${fitting ? '' : `<div class="rc-say">${aleLocked ? 'Ale se viste solo con Meffy+. Con Meffy+ además tienes todos los accesorios para todos.' : `Elige qué ponerle a ${ANCH[who].name}. Toca otra vez para quitárselo.`}</div>`}
+${!aleLocked && worn.length && !fitting ? `<button class="btn fit-open" data-act="fitOpen">${A.px('estrellita', 16)} Acomodar la ropa</button>` : ''}
 </div>
+${fitting ? fitPanel(who, worn) : ''}
 ${aleLocked ? '<button class="btn pink" data-go="plan" style="justify-content:center">Conoce Meffy+</button>' : ''}
 <div class="seg">${Object.entries(SLOTS).map(([k, n]) => `<button data-act="shopSec" data-v="${k}" aria-pressed="${sec === k}">${n}</button>`).join('')}<button data-act="shopSec" data-v="mas" aria-pressed="${sec === 'mas'}">Más cositas</button></div>
 ${sec === 'mas' ? (A.rcExtrasHTML ? A.rcExtrasHTML(bal) : '') : `<div class="shop-grid">${Object.entries(ACC).filter(([, a]) => a.slot === sec && !a.off).map(([id, a]) => tile(id, a)).join('')}</div>`}
 <p class="faint" style="margin:0">Gana estrellitas anotando tus gastos, resistiendo antojos con tu mascota y cerrando el día con tu mascota. Las cosas marcadas con Meffy+ vienen incluidas en el plan.</p>`;
 };
+// ===== Acomodar la ropa: cada usuaria mueve y agranda/achica lo que tiene puesto su mascota =====
+function fitPanel(who, worn) {
+const eq = R().equip[who]; const sl = S.fitSel; const id = eq[sl]; const f = (eq.fit && eq.fit[id]) || {};
+const pct = Math.round((+f.s || 1) * 100);
+return `<div class="card fit-panel">
+<b>Acomodar la ropa de ${esc(ANCH[who].name)}</b>
+<p class="faint" style="margin:0">Arrastra la prenda con el dedo sobre ${esc(ANCH[who].name)} o usa las flechitas. Se guarda solo para tu mascota.</p>
+${worn.length > 1 ? `<div class="chips">${worn.map(k => `<button class="chip" data-act="fitSel" data-v="${k}" aria-pressed="${k === sl}"><img class="pixel" alt="" src="${Pix.sprite('acc_' + eq[k], 2)}" style="height:16px;width:auto"> ${esc(ACC[eq[k]].name)}</button>`).join('')}</div>` : `<div class="chips"><span class="chip" aria-pressed="true"><img class="pixel" alt="" src="${Pix.sprite('acc_' + id, 2)}" style="height:16px;width:auto"> ${esc(ACC[id].name)}</span></div>`}
+<div class="fit-ctl">
+<div class="fit-pad"><span></span><button class="iconbtn" data-act="fitMove" data-v="0,-0.5" aria-label="Subir">▲</button><span></span><button class="iconbtn" data-act="fitMove" data-v="-0.5,0" aria-label="Izquierda">◀</button><button class="iconbtn" data-act="fitMove" data-v="center" aria-label="Como venía" title="Como venía">●</button><button class="iconbtn" data-act="fitMove" data-v="0.5,0" aria-label="Derecha">▶</button><span></span><button class="iconbtn" data-act="fitMove" data-v="0,0.5" aria-label="Bajar">▼</button><span></span></div>
+<div class="fit-size"><span class="faint">Tamaño</span><div class="row" style="gap:8px;align-items:center"><button class="iconbtn" data-act="fitSize" data-v="-0.1" aria-label="Más chico">−</button><b>${pct}%</b><button class="iconbtn" data-act="fitSize" data-v="0.1" aria-label="Más grande">+</button></div></div>
+</div>
+<div class="row" style="gap:8px"><button class="btn" data-act="fitReset" style="flex:1;justify-content:center">Como venía</button><button class="btn pink" data-act="fitDone" style="flex:1;justify-content:center">Listo</button></div>
+</div>`;
+}
+const fitWho = () => S.shopWho || (A.petActive && A.petActive()) || 'gochi';
+function fitGet(make) {
+const eq = R().equip[fitWho()]; if (!eq) return null; const id = eq[S.fitSel]; if (!id) return null;
+if (!make) return (eq.fit && eq.fit[id]) || null;
+eq.fit = eq.fit || {}; return (eq.fit[id] = eq.fit[id] || { x: 0, y: 0, s: 1 });
+}
+const clampFit = f => { f.x = Math.max(-12, Math.min(12, Math.round(f.x * 2) / 2)); f.y = Math.max(-14, Math.min(14, Math.round(f.y * 2) / 2)); f.s = Math.max(.4, Math.min(2.5, Math.round(f.s * 10) / 10)); };
+function fitTidy() { const eq = R().equip[fitWho()]; if (!eq || !eq.fit) return; Object.keys(eq.fit).forEach(k => { const f = eq.fit[k]; if (!f || (!+f.x && !+f.y && (+f.s || 1) === 1)) delete eq.fit[k]; }); if (!Object.keys(eq.fit).length) delete eq.fit; }
 const ACT = A.ACTIONS;
+ACT.fitOpen = () => { S.fitting = true; S.fitWho = fitWho(); S.fitSel = null; A.render(); setTimeout(() => { const el = document.querySelector('.pb-stage'); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 30); };
+ACT.fitSel = a => { S.fitSel = a.dataset.v; A.render(); };
+ACT.fitMove = a => { if (a.dataset.v === 'center') { const f = fitGet(true); f.x = 0; f.y = 0; } else { const [x, y] = a.dataset.v.split(',').map(Number); const f = fitGet(true); f.x += x; f.y += y; clampFit(f); } fitTidy(); A.saveSettings(); A.render(); };
+ACT.fitSize = a => { const f = fitGet(true); f.s = (+f.s || 1) + +a.dataset.v; clampFit(f); fitTidy(); A.saveSettings(); A.render(); };
+ACT.fitReset = () => { const eq = R().equip[fitWho()]; const id = eq && eq[S.fitSel]; if (eq && eq.fit && id) delete eq.fit[id]; fitTidy(); A.saveSettings(); A.render(); };
+ACT.fitDone = () => { S.fitting = false; fitTidy(); A.saveSettings(); A.render(); if (A.pixelHearts) setTimeout(() => A.pixelHearts(document.querySelector('.mz.big')), 60); };
+// arrastrar con el dedo (o el mouse) la prenda elegida; tocar otra prenda la elige
+let fdrag = null;
+document.addEventListener('pointerdown', e => {
+if (!S.fitting) return; const mz = e.target.closest('.mz.fitting'); if (!mz) return;
+const hit = e.target.closest('[data-fit-slot]'); if (hit && hit.dataset.fitSlot !== S.fitSel) { S.fitSel = hit.dataset.fitSlot; A.render(); return; }
+const img = mz.querySelector('.fit-sel'); if (!img) return; e.preventDefault();
+const f0 = fitGet(false) || { x: 0, y: 0, s: 1 };
+fdrag = { x: e.clientX, y: e.clientY, fx: +f0.x || 0, fy: +f0.y || 0, k: 20 / mz.getBoundingClientRect().width, img, l0: parseFloat(img.style.left), t0: parseFloat(img.style.top), id: e.pointerId, moved: false };
+try { mz.setPointerCapture(e.pointerId); } catch (er) { }
+}, { passive: false });
+document.addEventListener('pointermove', e => {
+if (!fdrag || e.pointerId !== fdrag.id) return; e.preventDefault();
+const dx = (e.clientX - fdrag.x) * fdrag.k, dy = (e.clientY - fdrag.y) * fdrag.k; fdrag.moved = true;
+const f = { x: fdrag.fx + dx, y: fdrag.fy + dy, s: 1 }; clampFit(f);
+fdrag.img.style.left = (fdrag.l0 + (f.x - fdrag.fx) * 5) + '%'; fdrag.img.style.top = (fdrag.t0 + (f.y - fdrag.fy) * 5) + '%'; fdrag.nx = f.x; fdrag.ny = f.y;
+}, { passive: false });
+const fend = e => { if (!fdrag || e.pointerId !== fdrag.id) return; const d = fdrag; fdrag = null; if (!d.moved || d.nx == null) return; const f = fitGet(true); f.x = d.nx; f.y = d.ny; fitTidy(); A.saveSettings(); A.render(); };
+document.addEventListener('pointerup', fend); document.addEventListener('pointercancel', fend);
 ACT.shopWho = a => { S.shopWho = a.dataset.v; A.render(); };
 ACT.shopSec = a => { S.shopSec = a.dataset.v; A.render(); };
 ACT.shopItem = a => {
