@@ -13,7 +13,7 @@ A.giveStars = give; A.spendStars = spend;
 const starsPill = () => `<span class="pill sm" style="background:#fff09a;color:#6b4d12">${ST(18)} ${bal()}</span>`;
 const clamp = v => Math.max(0, Math.min(100, Math.round(v)));
 const pageIcon = (k, n) => Object.values(A.PACKS).forEach(pk => { pk.map[k] = pk.map[k] || ('s:' + n + (pk.map.home && pk.map.home.includes('~') ? '~' + pk.map.home.split('~')[1] : '')); });
-function sub(key, back, right) { return `<div class="ph"><div class="ph-left"><button class="navarrow" data-go="${back || 'rincon'}" aria-label="Volver">‹</button><span class="pill">${esc(A.PAGES[key])}</span></div>${right || ''}</div>`; }
+function sub(key, back, right) { return `<div class="ph"><div class="ph-left"><button class="navarrow" data-go="${back || 'rincon'}" aria-label="Volver">‹</button><span class="pill">${esc(A.PAGES[key])}</span><button class="ph-icon" data-act="pageicon" data-k="${key}" aria-label="Cambiar icono de ${esc(A.PAGES[key])}">${A.iconHTML(A.pageIcon(key), 34)}</button></div>${right || ''}</div>`; }
 A.subHeader = sub;
 
 // ---------------- Catálogo ----------------
@@ -327,7 +327,7 @@ A.screens.rincon = () => {
 </div>
 ${fridgeHTML()}
 <section class="stack"><div class="ph"><span class="pill sm">Más cositas</span><button class="btn sm" data-go="coleccion">Cambiar de mascota</button></div>
-<div class="pc-places">${PLACES().map(([go, ic, n, dot]) => `<button class="pc-place" data-go="${go}">${dot ? '<span class="pc-dot"></span>' : ''}<img class="pixel" alt="" src="${spr(ic, 3)}">${n}</button>`).join('')}</div></section>`;
+<div class="pc-places">${PLACES().map(([go, ic, n, dot]) => `<button class="pc-place" data-go="${go}">${dot ? '<span class="pc-dot"></span>' : ''}${(S.settings.navIcons || {})[go] ? A.iconHTML(S.settings.navIcons[go], 38) : `<img class="pixel" alt="" src="${spr(ic, 3)}">`}${n}</button>`).join('')}</div></section>`;
 };
 const decoOff = () => { if (!S.pcDeco) return; const r = room(); S.pcDeco = false; S.roomEdit = false; S.roomSel = null; r.cur = r.prevCur2 && r.rooms[r.prevCur2] && r.prevCur2 !== 'cuidar' ? r.prevCur2 : 'cuarto'; A.saveSettings(); };
 ACT.pcDecor = () => { S.pcTab = 'cuidar'; S.pcDeco = true; const r = room(); if (r.cur !== 'cuidar') r.prevCur2 = r.cur; r.cur = 'cuidar'; S.roomTab = 'muebles'; S.roomSel = null; S.roomEdit = true; A.saveSettings(); A.render(); window.scrollTo(0, 0); };

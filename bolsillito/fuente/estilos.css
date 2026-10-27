@@ -1705,3 +1705,8 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .fit-pad .iconbtn { width: 44px; height: 44px; font-size: 16px; }
 .fit-size { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .fit-size .iconbtn { width: 44px; height: 44px; font-size: 22px; }
+
+.pc-place .ic, .pc-place > span:not(.pc-dot) { height: 42px; display: grid; place-items: center; }
+.ph-left .ph-icon { flex: none; }
+.ph-left { min-width: 0; }
+.ph:has(> .ph-left > .navarrow) { flex-wrap: wrap; row-gap: 6px; }

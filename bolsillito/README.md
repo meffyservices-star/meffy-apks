@@ -26,6 +26,7 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
 - **26-oct-2026 (más noche)**
   - Tiendita → Probador: botón **Acomodar la ropa** para todas las usuarias. Se elige la prenda puesta, se arrastra con el dedo sobre la mascota o se mueve con flechitas, y se agranda/achica (40 %–250 %). "Como venía" la deja como la puso la admin.
   - Se guarda por mascota y por prenda en `rincon.equip[mascota].fit` y se ve igual en el cuarto, Cuidar, visitas de amigas y ropa de temporada (`App.accPlace` en `fuente/app.js`). Caché `bolsillito-v38`.
+  - El ícono de **Colección** (y de Regalo del día, Crecer, Elegir mascota y las demás pantallas que se abren desde la mascota) ahora se puede cambiar: tocar el ícono junto al título. Los cuadritos de "Más cositas" usan ese ícono si se cambió. Caché `bolsillito-v39`.
 
 - **26-oct-2026 (noche)**
   - Panel → Agregar cosas nuevas: en Mascotas, Muebles, Ropa, Comida, Paredes y Pisos sale **"… que ya vienen en la app"** con botones **Quitar**, **Reemplazar** y **Volver a poner** (por ejemplo Maca, Dony, Gela y Cupi).
