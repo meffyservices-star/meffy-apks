@@ -823,7 +823,7 @@ ACT.rgDone = () => {
 };
 
 // ---------------- Admin: crear mascotas, muebles, ropa, comida, paredes, pisos, stickers e íconos ----------------
-const KINDS = { pets: ['Mascota', 20, 20], furn: ['Mueble', 24, 24], clothes: ['Ropa', 12, 8], food: ['Comida', 16, 16], walls: ['Pared', 16, 16], floors: ['Piso', 16, 16], stickers: ['Sticker', 24, 24], icons: ['Ícono', 16, 16], chars: ['Personaje', 20, 20], boxes: ['Cajita sorpresa', 20, 20] };
+const KINDS = { pets: ['Mascota', 20, 20], furn: ['Mueble', 24, 24], clothes: ['Ropa', 12, 8], food: ['Comida', 16, 16], walls: ['Pared', 16, 16], floors: ['Piso', 16, 16], stickers: ['Sticker', 24, 24], icons: ['Ícono', 16, 16], chars: ['Personaje', 20, 20], boxes: ['Cajita sorpresa', 14, 16] };
 const KIND_NEW = { pets: 'Nueva mascota', furn: 'Nuevo mueble', clothes: 'Nueva ropa', food: 'Nueva comida', walls: 'Nueva pared', floors: 'Nuevo piso', stickers: 'Nuevo sticker', icons: 'Nuevo ícono', chars: 'Nuevo personaje del juego', boxes: 'Nueva cajita sorpresa' };
 const KIND_PL = { pets: 'Mascotas', furn: 'Muebles', clothes: 'Ropa', food: 'Comidas', walls: 'Paredes', floors: 'Pisos', stickers: 'Stickers', icons: 'Íconos', chars: 'Personajes de Cruzar la calle', boxes: 'Cajitas sorpresa' };
 const KIND_SPR = { pets: 'cp_', furn: 'cf_', clothes: 'acc_cc_', food: 'cfo_', walls: 'x_pared_cw_', floors: 'x_piso_cl_', stickers: 'cs_', icons: 'ci_', chars: 'cg_', boxes: 'cbx_' };
@@ -876,7 +876,7 @@ const HELP = {
   icons: 'Los íconos son gratis: les aparecen a todas al elegir el ícono de una cuenta, tarjeta o categoría.',
   clothes: 'Muévela y cámbiale el tamaño sobre la mascota hasta que quede en su lugar.',
   furn: 'Mira el tamaño junto a la camita y ajústalo.',
-  boxes: 'La cajita que se ve en la Tiendita. Dibújala o sube tu dibujo pixel (o usa una de las listas). Abajo eliges qué sorpresitas trae y qué tan difícil es sacar cada una.',
+  boxes: 'Dibuja o sube solo la portada de la cajita (el frente). La app le pone la tapa, el costado y el contorno. Abajo eliges el color, en qué estante va, el precio y qué sorpresitas trae.',
   chars: 'Personajes para el juego Cruzar la calle. Sube un dibujo pixel (de frente, con fondo transparente). Pueden salir en la máquina gacha, venderse con estrellitas o darse gratis desde el inicio.'
 };
 function formHTML() {
