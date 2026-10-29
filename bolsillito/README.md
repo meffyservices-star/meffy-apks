@@ -23,6 +23,9 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
 
 ## Historial
 
+- **28-oct-2026 (cerca de medianoche)**
+  - **Carreritas mejoradas**: las rivales corren de verdad (aceleran y se cansan, pero llegan justo en su tiempo), cambian de carril para esquivar y se ven con su nombre; posición en vivo (1.º/4) con avisos de "¡Pasaste a…!" y "…te pasó". Botón **Saltar** (o deslizar hacia arriba / tocar tu mascota) para brincar conos, charcos y cajas; **rampas** que te hacen volar; barra de **Turbo** que se llena con 7 estrellitas; racha de estrellitas que te acelera. Tres tramos con paisaje propio (Pradera, Playa, Dulcelandia), arcos de salida y meta, semáforo de salida, polvito, líneas de velocidad, sacudón al chocar (pierdes 2 estrellitas), confeti y **podio** al terminar. Premio extra por racha (+1 con 6, +2 con 9). Caché `bolsillito-v44`.
+
 - **28-oct-2026 (más noche)**
   - **Regalar estrellitas desde el panel** fallaba porque la tabla `gifts` solo acepta hasta 10 estrellitas por fila (restricciones `gifts_check` y `gifts_qty_check`) y no acepta el tipo `thanks`. Cambiar esas restricciones fue cancelado, así que ahora la app manda paquetitos de 10 que se abren juntos en la cajita, y los "gracias" viajan como `kind: 'tpl'` con `payload.thanks`.
   - **Tiendita → Edición limitada** compacta: una tarjetita con las cosas en una fila que se desliza; **Ver todo** la abre grande y **Achicar** la vuelve a cerrar.
