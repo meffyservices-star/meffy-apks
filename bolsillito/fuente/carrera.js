@@ -38,28 +38,31 @@ async function loadRivals() {
       const codes = (S.settings.friends || []).map(f => f.code).filter(Boolean).slice(0, 30);
       const own = ownerUid();
       const reqs = [];
-      if (codes.length) reqs.push(Store.sb.from('rooms').select('user_id, code, name, race:body->race, active:body->active').in('code', codes));
-      if (own && own !== me) reqs.push(Store.sb.from('rooms').select('user_id, code, name, race:body->race, active:body->active').eq('user_id', own));
+      if (codes.length) reqs.push(Store.sb.from('rooms').select('user_id, code, name, race:body->race, active:body->active, equip:body->equip').in('code', codes));
+      if (own && own !== me) reqs.push(Store.sb.from('rooms').select('user_id, code, name, race:body->race, active:body->active, equip:body->equip').eq('user_id', own));
       const res = await Promise.all(reqs.map(q => Promise.race([q, new Promise(r => setTimeout(() => r({ data: [] }), 5000))])));
       const seen = new Set();
       res.forEach(r => (r.data || []).forEach(x => {
         if (!x || x.user_id === me || seen.has(x.user_id)) return; seen.add(x.user_id);
         const isOwner = x.user_id === own; const rc = x.race && x.race.w === w ? x.race : null;
-        if (!rc && !isOwner) { out.push({ name: x.name || 'Amiga', sprite: spriteOf(x.active || 'gochi'), t: null, friend: true }); return; }
-        out.push({ name: isOwner ? 'Meffy' : (x.name || 'Amiga'), sprite: rc ? (Pix.has(rc.pet) ? rc.pet : spriteOf(x.active || 'pudin')) : 'pudin', t: rc ? +rc.t : 49, owner: isOwner, practice: !rc, friend: !isOwner });
+        const pk = x.active || null, eq = pk && x.equip ? x.equip[pk] : null;
+        if (!rc && !isOwner) { out.push({ name: x.name || 'Amiga', sprite: spriteOf(pk || 'gochi'), pk, eq, t: null, friend: true }); return; }
+        out.push({ name: isOwner ? 'Meffy' : (x.name || 'Amiga'), sprite: rc ? (Pix.has(rc.pet) ? rc.pet : spriteOf(x.active || 'pudin')) : 'pudin', pk, eq, t: rc ? +rc.t : 49, owner: isOwner, practice: !rc, friend: !isOwner });
       }));
     } catch (e) {}
   }
   if (!out.some(r => r.owner) && !Store.isOwner) out.push({ name: 'Meffy', sprite: 'pudin', t: 49, owner: true, practice: true });
   // amigas que no han corrido esta semana: corren con un tiempo de práctica para que igual estén en la pista
   out.forEach((r, i) => { if (r.t == null) { r.t = 52 + (i % 4) * 3; r.practice = true; } });
-  let b = 0; while (out.length < 3 && b < BOTS.length) { const [n, sp, t] = BOTS[b++]; if (!out.some(r => r.name === n)) out.push({ name: n, sprite: spriteOf(sp), t, bot: true }); }
+  let b = 0; while (out.length < 3 && b < BOTS.length) { const [n, sp, t] = BOTS[b++]; if (!out.some(r => r.name === n)) out.push({ name: n, sprite: spriteOf(sp), pk: sp, t, bot: true }); }
   rivalsCache = out.sort((a, b2) => a.t - b2.t).slice(0, 7); rivalsAt = Date.now();
   return rivalsCache;
 }
 A.raceRivals = loadRivals;
 
 // ---------------- El juego ----------------
+Pix.define('cr_flecha', { w: 12, h: 12, fn(p) { p.r(5, 1, 2, 1, '#ffffff'); p.r(4, 2, 4, 1, '#ffffff'); p.r(3, 3, 6, 1, '#ffffff'); p.r(2, 4, 8, 1, '#ffffff'); p.r(1, 5, 10, 1, '#ffffff'); p.r(4, 6, 4, 5, '#ffffff'); } });
+Pix.define('cr_rayo', { w: 12, h: 14, fn(p) { [[6, 0, 3], [5, 1, 3], [4, 2, 3], [3, 3, 3], [2, 4, 3], [2, 5, 8], [3, 6, 6], [5, 7, 3], [4, 8, 3], [3, 9, 3], [2, 10, 3], [2, 11, 2]].forEach(([x, y, w]) => p.r(x, y, w, 1, '#ffffff')); } });
 Pix.define('cr_rampa', { w: 20, h: 12, fn(p) { for (let y = 0; y < 12; y++) p.r(1, y, 18, 1, y < 2 ? '#ffe27a' : y % 3 === 0 ? '#f2a33a' : '#ffc96b'); p.r(0, 10, 20, 2, '#b07a52'); [[6, 4], [10, 4], [14, 4], [8, 7], [12, 7]].forEach(([x, y]) => p.px(x, y, '#ffffff')); } });
 // tramos del camino: cada uno con su pasto, su pista y sus adornos
 const ZONES = [
@@ -70,16 +73,31 @@ const ZONES = [
 const zoneAt = m => ZONES.reduce((z, x) => (m >= x.m ? x : z), ZONES[0]);
 // las rivales no corren parejo: aceleran y se cansan, pero llegan justo en su tiempo
 const paceF = (u, ph, amp) => u >= 1 ? 1 : Math.max(0, u + amp * (Math.sin(2 * Math.PI * (2 * u + ph)) - Math.sin(2 * Math.PI * ph)) / (4 * Math.PI));
+const PAD = 8, KPX = 8, NB = 20 + PAD * 2, NH = PAD + 21; // sin espacio abajo: los pies tocan el piso
+async function dressedCanvas(pk, eq, sprite) {
+  const an = pk && A.ANCH[pk]; const slots = an && eq ? ['neck', 'head', 'face'].filter(sl => eq[sl] && A.ACC[eq[sl]]) : [];
+  const src = { base: spr(sprite || spriteOf(pk || 'gochi'), 4) }; slots.forEach(sl => { src[sl] = spr('acc_' + eq[sl], 4); });
+  const im = await loadImgs(src);
+  const cv = document.createElement('canvas'); cv.width = NB * KPX; cv.height = NH * KPX; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+  g.drawImage(im.base, PAD * KPX, PAD * KPX, 20 * KPX, 20 * KPX);
+  slots.forEach(sl => { const a = A.ACC[eq[sl]]; const p = A.accPlace(an, a, sl, eq[sl], eq); const i2 = im[sl]; const ratio = i2.naturalWidth ? i2.naturalHeight / i2.naturalWidth : a.h / a.w; g.drawImage(i2, (PAD + p.left) * KPX, (PAD + p.top) * KPX, p.w * KPX, p.w * ratio * KPX); });
+  return cv;
+}
+const myEq = () => { const pk = activePet(); return ((S.settings.rincon || {}).equip || {})[pk] || null; };
+A.raceDressed = dressedCanvas;
 async function raceGame() {
   const sh = gameShell('race'); let { w: W, h: H } = sh.fit();
   const rivals = (await loadRivals()).map((r, i) => Object.assign({}, r, { ph: (i * .37) % 1, amp: .5 + (i % 3) * .2, lane: i % 3, lx: 0, last: 0 }));
   const map = { pet: spr(petSprite(), 4), star: spr('estrellita', 3), cono: spr('cr_cono', 4), charco: spr('cr_charco', 4), caja: spr('cr_caja', 4), turbo: spr('cr_turbo', 4), rampa: spr('cr_rampa', 4), flag: spr('cr_bandera', 4), flor: spr(Pix.has('flower') ? 'flower' : 'estrellita', 3) };
-  rivals.forEach((r, i) => { map['r' + i] = spr(r.sprite, 4); });
   const I = await loadImgs(map);
+  // cada corredora con su ropita puesta
+  const meCv = await dressedCanvas(activePet(), myEq(), petSprite());
+  const RC = await Promise.all(rivals.map(r => dressedCanvas(r.pk, r.eq, r.sprite)));
+  rivals.forEach((r, i) => { r.cv = RC[i]; r.url = RC[i].toDataURL(); }); const meUrl = meCv.toDataURL();
   const LANES = 3; let TW, TX, LW;
   const geo = () => { TW = Math.min(W - 70, 320); TX = (W - TW) / 2; LW = TW / LANES; };
   geo();
-  const PET = 54, PY = () => H - 170;
+  const PET = 54, PY = () => H - 170; let ctl = null;
   let lane, x, dist, v, slow, boost, items, nextSpawn, time, stars, run = true, paused = true, last = 0, raf, count, pops, finished, hits, deco, jump, meter, combo, dust, shake, place, lastPlace, conf, zoneShown, lastStretch, maxCombo;
   const laneX = l => TX + LW * l + LW / 2;
   function reset() {
@@ -154,7 +172,7 @@ async function raceGame() {
     if (!lastStretch && dist > GOAL - 100) { lastStretch = true; banner('¡Último tramo!', '#c44a72'); }
     pops.forEach(p => p.t -= dt); pops = pops.filter(p => p.t > 0);
     if (dist >= GOAL) {
-      dist = GOAL; finished = true; place = 1 + rivals.filter(r => r.t < time).length; gsfx(place === 1 ? 'record' : 'gift');
+      dist = GOAL; finished = true; if (ctl) ctl.hidden = true; place = 1 + rivals.filter(r => r.t < time).length; gsfx(place === 1 ? 'record' : 'gift');
       for (let i = 0; i < 60; i++) conf.push({ x: W / 2, y: H * .35, vx: (Math.random() - .5) * 9, vy: -Math.random() * 7 - 2, r: Math.random() * 6, c: ['#f27ea1', '#ffd166', '#9fd6f2', '#b59ae6', '#8fd16a'][i % 5] });
       setTimeout(over, 1400);
     }
@@ -183,7 +201,8 @@ async function raceGame() {
   }
   function drawRunner(g, im, cx, y, size, hop, alpha, tag, tagC) {
     g.fillStyle = 'rgba(80,40,50,.18)'; g.beginPath(); g.ellipse(cx, y + 6, size * .36, 5, 0, 0, 7); g.fill();
-    g.save(); if (alpha != null) g.globalAlpha = alpha; g.drawImage(im, cx - size / 2, y - size + 8 - hop, size, size); g.restore();
+    const k = size / 20, full = NB * k;
+    g.save(); if (alpha != null) g.globalAlpha = alpha; g.drawImage(im, cx - full / 2, y - size + 8 - hop - PAD * k, full, NH * k); g.restore();
     if (tag) { g.font = '800 11px Nunito, sans-serif'; g.textAlign = 'center'; const tw = g.measureText(tag).width + 12; g.fillStyle = tagC || 'rgba(255,255,255,.92)'; const ty = y - size - 6 - hop; g.beginPath(); g.roundRect ? g.roundRect(cx - tw / 2, ty - 12, tw, 16, 8) : g.rect(cx - tw / 2, ty - 12, tw, 16); g.fill(); g.fillStyle = tagC ? '#fff' : '#6b3b3f'; g.fillText(tag, cx, ty); }
   }
   function draw() {
@@ -209,12 +228,12 @@ async function raceGame() {
     // polvito
     dust.forEach(d => { g.fillStyle = `rgba(255,255,255,${d.t / 30})`; g.beginPath(); g.arc(d.x, d.y, d.r, 0, 7); g.fill(); });
     // rivales: corren de verdad, cambian de carril y se te adelantan o se quedan
-    rivals.forEach((r, i) => { const m = rivalDist(r); const y = yOf(m); if (y < -60 || y > H + 60) return; const hop = Math.abs(Math.sin(time * 16 + i)) * 4; drawRunner(g, I['r' + i], r.lx + (i % 2 ? 6 : -6), y, 44, hop, 1, r.name, r.owner ? 'rgba(242,126,161,.95)' : null); });
+    rivals.forEach((r, i) => { const m = rivalDist(r); const y = yOf(m); if (y < -60 || y > H + 60) return; const hop = Math.abs(Math.sin(time * 16 + i)) * 4; drawRunner(g, r.cv, r.lx + (i % 2 ? 6 : -6), y, 44, hop, 1, r.name, r.owner ? 'rgba(242,126,161,.95)' : null); });
     // tu mascota (con salto)
     const jh = jump > 0 ? Math.sin(Math.PI * (1 - jump / (jump > .62 ? 1 : .62))) * (jump > .62 ? 46 : 34) : 0;
     const hop = count > 0 ? 0 : (jump > 0 ? jh : Math.abs(Math.sin(time * 18)) * 3);
     if (boost > 0) { g.fillStyle = 'rgba(255,190,90,.6)'; for (let k = 1; k < 4; k++) { g.beginPath(); g.ellipse(x, PY() + 8 + k * 9, 12 - k * 3, 4, 0, 0, 7); g.fill(); } }
-    drawRunner(g, I.pet, x, PY(), PET + (jump > 0 ? 6 : 0), hop, slow > 0 && Math.floor(time * 20) % 2 ? .45 : 1, 'Tú', 'rgba(242,166,58,.95)');
+    drawRunner(g, meCv, x, PY(), PET + (jump > 0 ? 6 : 0), hop, slow > 0 && Math.floor(time * 20) % 2 ? .45 : 1, 'Tú', 'rgba(242,166,58,.95)');
     // textitos
     pops.forEach(p => {
       if (p.banner) { const k = Math.min(1, (70 - p.t) / 10), out = Math.min(1, p.t / 12); g.save(); g.globalAlpha = out; g.translate(W / 2, H * .28); g.scale(.6 + .4 * k, .6 + .4 * k); g.font = '900 34px Nunito, sans-serif'; g.textAlign = 'center'; g.lineWidth = 7; g.strokeStyle = '#ffffff'; g.strokeText(p.txt, 0, 0); g.fillStyle = p.c; g.fillText(p.txt, 0, 0); g.restore(); return; }
@@ -238,13 +257,14 @@ async function raceGame() {
     if (finished) { conf.forEach(c => { g.save(); g.translate(c.x, c.y); g.rotate(c.r); g.fillStyle = c.c; g.fillRect(-4, -2, 8, 4); g.restore(); }); g.font = '900 38px Nunito, sans-serif'; g.textAlign = 'center'; g.lineWidth = 8; g.strokeStyle = '#fff'; const t = place === 1 ? '¡Llegaste 1.º!' : `Llegaste ${place}.º`; g.strokeText(t, W / 2, H * .3); g.fillStyle = place === 1 ? '#f2a33a' : '#c44a72'; g.fillText(t, W / 2, H * .3); }
     $('#gmA', sh.ov).innerHTML = `${fmtT(Math.max(0, time))}${time > 0 ? ` · <b>${place}.º</b>/${rivals.length + 1}` : ''}`;
     $('#gmB', sh.ov).innerHTML = `${img('estrellita', 16)} ${stars} · ${Math.round(GOAL - dist)} m`;
-    const tb = $('.cr-turbo', sh.ov); if (tb) { tb.style.setProperty('--m', meter); tb.classList.toggle('ready', meter >= 1); }
+    const tb = $('.cr-turbo', sh.ov); if (tb) { const n = Math.round(meter * 7); tb.querySelectorAll('.cr-cells i').forEach((c, i) => c.classList.toggle('on', i < n)); tb.classList.toggle('ready', meter >= 1); }
+    if (ctl) ctl.hidden = finished || count > 0 && time === 0 && paused;
   }
   function loop(t) { if (!run) return; const dt = Math.min(2.2, last ? (t - last) / 16.67 : 1); last = t; if (!paused) step(dt); if (run) draw(); raf = requestAnimationFrame(loop); }
   function over() {
     if (!run) return; A.gameMusic.stop(); run = false; cancelAnimationFrame(raf);
     const t = Math.round(time * 100) / 100;
-    const all = rivals.map(r => ({ name: r.name, t: r.t, owner: r.owner, practice: r.practice, bot: r.bot, sprite: r.sprite })).concat([{ name: 'Tú', t, me: true, sprite: petSprite() }]).sort((a, b) => a.t - b.t);
+    const all = rivals.map(r => ({ name: r.name, t: r.t, owner: r.owner, practice: r.practice, bot: r.bot, url: r.url })).concat([{ name: 'Tú', t, me: true, url: meUrl }]).sort((a, b) => a.t - b.t);
     const pos = all.findIndex(r => r.me) + 1;
     const prize = [0, 10, 6, 4][pos] || 2;
     const prev = myBest(); const rec = prev == null || t < prev;
@@ -254,7 +274,7 @@ async function raceGame() {
     A.petAddXp && A.petAddXp(10, 'game'); A.saveSettings();
     if (rec && A.publishRoom && Store.mode === 'supa') { A.publishRoom().catch(() => {}); rivalsCache = null; }
     const pod = all.slice(0, 3);
-    const podium = `<div class="cr-podium">${[1, 0, 2].filter(i => pod[i]).map(i => `<div class="cr-pod p${i + 1} ${pod[i].me ? 'me' : ''}"><img class="pixel" alt="" src="${spr(pod[i].sprite || 'gochi', 4)}"><span>${esc(pod[i].name)}</span><b>${i + 1}</b></div>`).join('')}</div>`;
+    const podium = `<div class="cr-podium">${[1, 0, 2].filter(i => pod[i]).map(i => `<div class="cr-pod p${i + 1} ${pod[i].me ? 'me' : ''}"><img class="pixel" alt="" src="${pod[i].url}"><span>${esc(pod[i].name)}</span><b>${i + 1}</b></div>`).join('')}</div>`;
     const lines = `${podium}<div class="gm-big">${fmtT(t)}</div>${rec ? `<div class="cr-rec">${prev == null ? 'Tu primer tiempo de la semana' : '¡Nuevo récord de la semana!'}</div>` : `<div class="faint">Tu récord de la semana: ${fmtT(prev)}</div>`}
 <div class="cr-rank">${all.map((r, i) => `<div class="${r.me ? 'me' : ''} ${r.owner ? 'owner' : ''}"><span>${i + 1}</span><b>${esc(r.name)}${r.practice || r.bot ? ' <em>práctica</em>' : ''}</b><span>${fmtT(r.t)}</span></div>`).join('')}</div>
 <div class="row" style="justify-content:center;gap:6px;font-weight:800">${ST(18)} +${earned} estrellitas</div>${earned < fromStars + prize + comboB ? '<div class="faint">Llegaste al máximo de estrellitas de carreritas por hoy.</div>' : `<div class="faint">${fromStars} por ${stars} atrapadas + ${prize} por tu lugar${comboB ? ` + ${comboB} por tu racha de ${maxCombo}` : ''}${hits ? ` · chocaste ${hits} ${hits === 1 ? 'vez' : 'veces'}` : ' · ¡sin chocar!'}</div>`}`;
@@ -275,8 +295,8 @@ async function raceGame() {
   const kd = e => { if (e.key === 'ArrowLeft') move(-1); if (e.key === 'ArrowRight') move(1); if (e.key === 'ArrowUp' || e.key === ' ') { e.preventDefault(); doJump(); } if (e.key === 't' || e.key === 'Shift') useTurbo(); if (e.key === 'Escape') sh.close(); };
   addEventListener('keydown', kd);
   // botones grandes: saltar y turbo
-  const ctl = document.createElement('div'); ctl.className = 'cr-ctl';
-  ctl.innerHTML = `<button class="cr-jump" aria-label="Saltar">${img('cr_rampa', 26)}<span>Saltar</span></button><button class="cr-turbo" aria-label="Turbo"><i></i>${img('cr_turbo', 24)}<span>Turbo</span></button>`;
+  ctl = document.createElement('div'); ctl.className = 'cr-ctl';
+  ctl.innerHTML = `<button class="cr-btn cr-jump" aria-label="Saltar"><img class="pixel" alt="" src="${spr('cr_flecha', 4)}"><span>SALTAR</span></button><button class="cr-btn cr-turbo" aria-label="Turbo"><img class="pixel" alt="" src="${spr('cr_rayo', 4)}"><span>TURBO</span><span class="cr-cells">${'<i></i>'.repeat(7)}</span></button>`;
   sh.ov.appendChild(ctl);
   ctl.querySelector('.cr-jump').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); doJump(); });
   ctl.querySelector('.cr-turbo').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); useTurbo(); });
@@ -289,7 +309,7 @@ async function raceGame() {
   m.innerHTML = `<div class="gm-end"><div class="gm-k">CARRERITAS</div>
 <div class="faint" style="margin-bottom:6px">${GOAL} m por la Pradera, la Playa y Dulcelandia. Tus rivales corren con su mejor tiempo de esta semana: ¡pásalas!</div>
 <div class="gm-legend"><span>${img('estrellita', 26)}Llenan tu turbo</span><span>${img('cr_rampa', 26)}Rampa</span><span>${img('cr_cono', 26)}Salta o esquiva</span></div>
-<div class="cr-rank small">${rivals.map(r => `<div class="${r.owner ? 'owner' : ''}"><span>${img(r.sprite, 20)}</span><b>${esc(r.name)}${r.practice || r.bot ? ' <em>práctica</em>' : ''}</b><span>${fmtT(r.t)}</span></div>`).join('')}${best != null ? `<div class="me"><span>${img(petSprite(), 20)}</span><b>Tú</b><span>${fmtT(best)}</span></div>` : ''}</div>
+<div class="cr-rank small">${rivals.map(r => `<div class="${r.owner ? 'owner' : ''}"><span><img class="pixel cr-face" alt="" src="${r.url}"></span><b>${esc(r.name)}${r.practice || r.bot ? ' <em>práctica</em>' : ''}</b><span>${fmtT(r.t)}</span></div>`).join('')}${best != null ? `<div class="me"><span><img class="pixel cr-face" alt="" src="${meUrl}"></span><b>Tú</b><span>${fmtT(best)}</span></div>` : ''}</div>
 <div class="faint">Toca a los lados o desliza para cambiar de carril. Desliza hacia arriba o toca <b>Saltar</b> para brincar los obstáculos. Con 7 estrellitas se llena el <b>Turbo</b>.</div>
 <button class="btn pink" data-x="go" style="justify-content:center;margin-top:10px;width:100%">¡A correr!</button></div>`;
   m.onclick = e => { if (e.target.closest('[data-x]')) { m.hidden = true; paused = false; A.gameMusic.start('carrera'); } };

@@ -23,6 +23,9 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
 
 ## Historial
 
+- **28-oct-2026 (22h)**
+  - Carreritas: cada corredora lleva **su ropita** (la tuya de `rincon.equip`; la de tus amigas y Meffy desde `rooms.body.equip` de su mascota activa), dibujada con `A.accPlace` igual que en el cuarto (`dressedCanvas`). Podio con las mascotas paradas encima (sin flotar) y su nombre abajo. Botones **SALTAR** y **TURBO** nuevos en estilo pixel (el turbo muestra 7 cuadritos que se llenan con estrellitas) y se esconden al terminar. Caché `bolsillito-v45`.
+
 - **28-oct-2026 (cerca de medianoche)**
   - **Carreritas mejoradas**: las rivales corren de verdad (aceleran y se cansan, pero llegan justo en su tiempo), cambian de carril para esquivar y se ven con su nombre; posición en vivo (1.º/4) con avisos de "¡Pasaste a…!" y "…te pasó". Botón **Saltar** (o deslizar hacia arriba / tocar tu mascota) para brincar conos, charcos y cajas; **rampas** que te hacen volar; barra de **Turbo** que se llena con 7 estrellitas; racha de estrellitas que te acelera. Tres tramos con paisaje propio (Pradera, Playa, Dulcelandia), arcos de salida y meta, semáforo de salida, polvito, líneas de velocidad, sacudón al chocar (pierdes 2 estrellitas), confeti y **podio** al terminar. Premio extra por racha (+1 con 6, +2 con 9). Caché `bolsillito-v44`.
 

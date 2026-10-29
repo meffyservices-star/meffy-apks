@@ -1997,3 +1997,24 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .cr-pod.p3 b { height: 30px; background: linear-gradient(180deg, #f3b98a, #d98c5a); }
 .cr-pod.me span { color: #c44a72; }
 .cr-pod.p1 img { width: 54px; }
+/* Carreritas: podio quieto, caritas con ropa y botones pixel */
+.cr-pod img, .cr-pod.p1 img { animation: none; width: 72px; margin-bottom: -2px; }
+.cr-pod.p1 img { width: 82px; }
+.cr-face { width: 30px; height: 30px; margin: -6px 0; image-rendering: pixelated; }
+.game.race .cr-ctl { bottom: calc(22px + env(safe-area-inset-bottom, 0px)); padding: 0 22px; }
+.game.race .cr-ctl[hidden] { display: none; }
+.cr-ctl .cr-btn { width: 86px; height: 70px; border: 0; border-radius: 0; gap: 3px; padding: 6px 4px 7px; font: 600 11px var(--f-pixel); letter-spacing: .04em; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.22); box-shadow: 0 -4px 0 #6b3b3f, 0 4px 0 #6b3b3f, -4px 0 0 #6b3b3f, 4px 0 0 #6b3b3f, 0 8px 0 rgba(80,40,50,.35), inset 0 4px 0 rgba(255,255,255,.45), inset 0 -5px 0 rgba(0,0,0,.18); }
+.cr-ctl .cr-btn:active { transform: translateY(4px); box-shadow: 0 -4px 0 #6b3b3f, 0 4px 0 #6b3b3f, -4px 0 0 #6b3b3f, 4px 0 0 #6b3b3f, inset 0 4px 0 rgba(0,0,0,.15); }
+.cr-ctl .cr-btn img { width: 28px; height: auto; filter: drop-shadow(0 2px 0 rgba(0,0,0,.2)); }
+.cr-ctl .cr-jump { background: #7cc4a0; }
+.cr-ctl .cr-turbo { background: #c9a0a8; }
+.cr-ctl .cr-turbo.ready { background: #f2a33a; animation: crPixReady .5s steps(2) infinite; }
+@keyframes crPixReady { 50% { background: #ffc24d; } }
+.cr-cells { display: flex; gap: 2px; }
+.cr-ctl .cr-cells i { position: static; display: block; width: 7px; height: 6px; background: rgba(107,59,63,.35); transition: none; }
+.cr-ctl .cr-cells i.on { background: #ffe27a; box-shadow: inset 0 -2px 0 #e6a23c; }
+
+.cr-pod { gap: 0; }
+.cr-pod span { order: 3; margin-top: 4px; }
+.cr-pod b { order: 2; }
+.cr-pod img { order: 1; }
