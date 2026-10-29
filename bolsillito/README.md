@@ -23,6 +23,13 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
 
 ## Historial
 
+- **28-oct-2026**
+  - **Regalos de amigas**: si el regalo era algo nuevo que la admin agregó en el panel (por ejemplo un mueble `cf_…`), el celular de la amiga usaba la lista vieja guardada y le salía el código raro y no le llegaba. Ahora la configuración nueva se aplica en vivo apenas llega (`Store.refreshConfig` en `offline.js` → `App.reloadConfig`), también al volver a la app; al abrir la cajita, si no conoce el regalo, primero trae la lista nueva. El mueble se guarda igual aunque todavía no esté, y nunca se muestra el código (sale "Un mueble nuevo"). Se reactivó en la cajita el regalo #14 (Usagi Panzón Dorado) que no había llegado.
+  - **Compras**: cabecera con banner de la **Tiendita** (toldo a rayas y estantes) y Ale, el pudín, empujando su carrito, como el banner de Inicio (se puede cambiar con el botón del banner). Pestañas con dibujitos, resumen en tres cuadritos (semana, mes, lo que falta en tus listas) y tarjetas de listas con su color.
+  - **Cuarto**: los muebles y la oscuridad de la noche ya no se pasan por encima de Cuidar / Cuarto / Jugar al bajar (`isolation` en `.room`).
+  - **Luces**: los muebles del panel en la categoría Luces alumbran de noche, y en el panel → Muebles hay **"Hace algo especial"**: alumbra de noche (se toca en la vista del cuarto de dónde sale la luz y se elige el tamaño), es ventana, o nada. Cada lámpara prendida aclara un poco el cuarto.
+  - **Ventanas**: un mueble marcado como ventana muestra el paisaje de día, atardecer o noche con estrellas (y la lluvia del clima real). Se elige el color del vidrio para que se vuelva transparente, o se deja el vidrio vacío al dibujar. Caché `bolsillito-v40`.
+
 - **26-oct-2026 (más noche)**
   - Tiendita → Probador: botón **Acomodar la ropa** para todas las usuarias. Se elige la prenda puesta, se arrastra con el dedo sobre la mascota o se mueve con flechitas, y se agranda/achica (40 %–250 %). "Como venía" la deja como la puso la admin.
   - Se guarda por mascota y por prenda en `rincon.equip[mascota].fit` y se ve igual en el cuarto, Cuidar, visitas de amigas y ropa de temporada (`App.accPlace` en `fuente/app.js`). Caché `bolsillito-v38`.

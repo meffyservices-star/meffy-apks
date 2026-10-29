@@ -164,7 +164,7 @@ function registerCatalog() {
   customKeys = { pets: [], furn: [], clothes: [], food: [], icons: [], walls: [], floors: [] };
   const c = catalog();
   c.pets.forEach(x => { const k = 'cp_' + x.id; defX(k, x, x.w || 20, x.h || 20); customKeys.pets.push(k); if (!x.off && !notYet(x)) A.ANCH[k] = { hx: x.pal ? 10 : (x.w || 20) / 2, hy: x.hy || 5, fy: x.fy || 10, ny: x.ny || 15, sprite: k, name: x.name }; });
-  c.furn.forEach(x => { const k = 'cf_' + x.id; defX(k, x, x.w, x.h); customKeys.furn.push(k); const fw = x.dw || x.w, fh = x.dh || x.h; if (notYet(x)) return; FURN[k] = { name: x.name, w: fw, h: fh, price: x.how === 'free' ? 0 : +x.price || 0, how: x.how, ach: x.ach, season: x.season, sprite: k, x: Math.max(0, 72 - fw / 2), y: x.wall ? 4 : 70, cat: x.cat || (x.wall ? 'pared' : 'deco'), wall: !!x.wall, off: x.off, custom: true }; });
+  c.furn.forEach(x => { const k = 'cf_' + x.id; defX(k, x, x.w, x.h); customKeys.furn.push(k); const fw = x.dw || x.w, fh = x.dh || x.h; if (notYet(x)) return; FURN[k] = Object.assign({ name: x.name, w: fw, h: fh, price: x.how === 'free' ? 0 : +x.price || 0, how: x.how, ach: x.ach, season: x.season, sprite: k, x: Math.max(0, 72 - fw / 2), y: x.wall ? 4 : 70, cat: x.cat || (x.wall ? 'pared' : 'deco'), wall: !!x.wall, off: x.off, custom: true }, furnSpecial(k, x, fw, fh)); });
   c.food.forEach(x => { const k = 'cfo_' + x.id; defX(k, x, x.w || 16, x.h || 16); customKeys.food.push(k); if (notYet(x)) return; FOODS[k] = { name: x.name, art: x.name, gain: +x.gain || 20, price: +x.price || 3, sprite: k, off: x.off, custom: true }; });
   c.clothes.forEach(x => { const k = 'cc_' + x.id; customKeys.clothes.push(k); if (notYet(x)) return; addAcc(k, { slot: x.slot || 'head', name: x.name, price: x.how === 'free' ? 0 : +x.price || 10, season: x.how === 'temporada' ? x.season : null, ach: x.how === 'logro' ? x.ach : null, raro: x.how === 'raro', map: x.map.map(r => r), off: x.off, offAdmin: x.off, custom: true, dx: +x.dx || 0, dy: +x.dy || 0 }, x.pal ? x : null); if (x.dw && !x.pal) { const a = A.ACC[k]; const r0 = a.h / a.w; a.w = x.dw; a.h = x.dw * r0; } });
   c.icons.forEach(x => { if (x.off || notYet(x)) return; const k = 'ci_' + x.id; defX(k, x, x.w || 16, x.h || 16); customKeys.icons.push(k); });
@@ -176,6 +176,40 @@ function registerCatalog() {
   applyGone();
   seasonGate();
 }
+// luces y ventanas de los muebles hechos en el panel
+// light: '' = según la categoría (los de Luces alumbran), 'no' = nada, 'luz' = alumbra de noche, 'ventana' = se ve el día y la noche
+const furnLit = x => x.light === 'luz' || (!x.light && x.cat === 'luces');
+const lightR = (x, fw, fh) => +x.lr || Math.round(Math.max(22, Math.max(fw, fh) * 1.6));
+function glassBox(x) { // dónde va el paisaje: el vidrio si se eligió su color; si no, el centro del dibujo
+  const ch = glassChar(x); if (!ch) return [.12, .12, .88, .88];
+  let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1; x.map.forEach((r, j) => [...r].forEach((c, i) => { if (c === ch) { x0 = Math.min(x0, i); y0 = Math.min(y0, j); x1 = Math.max(x1, i); y1 = Math.max(y1, j); } }));
+  return x1 < 0 ? [.12, .12, .88, .88] : [x0 / x.w, y0 / x.h, (x1 + 1) / x.w, (y1 + 1) / x.h];
+}
+function glassChar(x) { if (!x.glass || !x.pal) return null; const pal = typeof x.pal === 'string' ? x.pal.split(',') : x.pal; const i = pal.findIndex(c => (c || '').toLowerCase() === x.glass.toLowerCase()); return i < 0 ? null : i.toString(36); }
+function furnSpecial(k, x, fw, fh) {
+  const o = {};
+  if (furnLit(x)) o.glow = [(x.lx != null ? +x.lx : .5) * fw, (x.ly != null ? +x.ly : .3) * fh, lightR(x, fw, fh)];
+  if (x.light === 'ventana') {
+    o.win = glassBox(x);
+    const ch = glassChar(x); // el color del vidrio se vuelve transparente para que se vea el paisaje de atrás
+    if (ch) { Pix.define(k + '__win', { raw: x.map.map(r => r.split(ch).join('.')), pal: x.pal }); o.winSprite = k + '__win'; }
+  }
+  return o;
+}
+// el paisaje que se ve por las ventanas: día, atardecer y noche
+(function () {
+  const hills = (p, a, b, c) => { p.e(8, 34, 16, 9, a); p.e(34, 35, 18, 10, b); p.e(22, 38, 20, 8, c); p.r(0, 30, 40, 2, c); p.r(0, 32, 40, 8, c); };
+  const tree = (p, x, y, l, d) => { p.r(x, y + 3, 1, 3, '#7a5236'); p.e(x + .5, y + 2, 2.4, 2.6, l); p.px(x - 1, y + 3, d); p.px(x + 1, y + 1, d); };
+  Pix.define('x_paisaje_dia', { w: 40, h: 32, flat: true, fn(p) { p.r(0, 0, 40, 32, '#9fd4f5'); p.r(0, 0, 40, 6, '#86c6ef'); p.r(0, 14, 40, 10, '#b9e2fa'); p.e(31, 7, 4, 4, '#fff3b0'); p.e(31, 7, 3, 3, '#ffe27a');
+    p.e(9, 8, 4, 2, '#ffffff'); p.e(13, 7, 3, 2.2, '#ffffff'); p.e(6, 9, 2.4, 1.6, '#f2f8ff'); p.e(22, 13, 3, 1.4, '#ffffff'); p.e(25, 12.6, 2, 1.4, '#ffffff');
+    hills(p, '#9fd28a', '#86c475', '#74b565'); tree(p, 6, 21, '#5fa456', '#4c8a45'); tree(p, 30, 22, '#5fa456', '#4c8a45'); p.px(14, 27, '#ffd1df'); p.px(20, 28, '#fff3b0'); p.px(25, 27, '#ffd1df'); p.px(11, 29, '#ffffff'); } });
+  Pix.define('x_paisaje_tarde', { w: 40, h: 32, flat: true, fn(p) { p.r(0, 0, 40, 32, '#ffc7a8'); p.r(0, 0, 40, 6, '#e9a3c4'); p.r(0, 6, 40, 6, '#f6b2b8'); p.r(0, 17, 40, 8, '#ffd9a8'); p.e(20, 23, 6, 6, '#ffe7a3'); p.e(20, 23, 4.5, 4.5, '#ffb46b');
+    p.e(8, 9, 4, 1.4, '#ffd7e2'); p.e(30, 7, 4.5, 1.4, '#ffd7e2'); p.e(33, 12, 2.6, 1, '#ffe4ec');
+    hills(p, '#c98aa0', '#b07a96', '#9a6b88'); tree(p, 6, 21, '#8a5f7f', '#6f4c68'); tree(p, 31, 22, '#8a5f7f', '#6f4c68'); p.px(16, 29, '#ffcf8f'); p.px(26, 28, '#ffcf8f'); } });
+  Pix.define('x_paisaje_noche', { w: 40, h: 32, flat: true, fn(p) { p.r(0, 0, 40, 32, '#2f2c74'); p.r(0, 0, 40, 8, '#24205c'); p.r(0, 18, 40, 8, '#3e3b8f'); p.e(29, 8, 4, 4, '#fff6cf'); p.e(30.6, 7, 3.4, 3.4, '#2f2c74');
+    [[4, 4], [9, 10], [14, 3], [19, 8], [23, 2], [36, 4], [35, 13], [6, 15], [17, 14], [24, 11], [12, 18]].forEach(([x, y], i) => p.px(x, y, i % 3 ? '#e9e6ff' : '#fff3b0')); p.px(14, 2, '#bdb8ff'); p.px(14, 4, '#bdb8ff'); p.px(13, 3, '#bdb8ff'); p.px(15, 3, '#bdb8ff');
+    hills(p, '#3b4f7c', '#33456f', '#2a3a60'); tree(p, 6, 21, '#2c4a5e', '#213a4c'); tree(p, 31, 22, '#2c4a5e', '#213a4c'); p.px(12, 27, '#ffe27a'); p.px(13, 27, '#ffe27a'); p.px(27, 28, '#ffe27a'); p.px(19, 25, '#c8f7a8'); p.px(33, 26, '#c8f7a8'); } });
+})();
 function seasonGate() {
   const owned = R().owned || [];
   Object.entries(A.ACC).forEach(([id, a]) => {
@@ -623,12 +657,15 @@ function roomHTML(rmIn, opts) {
   const pets = list.map(x => x.k);
   const spots = petSpots(rm, pets, part, list.findIndex(x => x.guest));
   const zOf = (it, f) => f.flat ? 1 : f.wall ? 2 : 10 + Math.round(it.y + f.h);
+  let lit = 0;
   const html = items.map(({ it, f }) => {
-    const sp = night && ['ventana', 'ventana_lila', 'ventana_redonda'].includes(it.k) ? 'x_' + it.k + '_noche' : furnSprite(it.k);
+    const sp = night && ['ventana', 'ventana_lila', 'ventana_redonda'].includes(it.k) ? 'x_' + it.k + '_noche' : f.winSprite || furnSprite(it.k);
     let extra = '';
+    if (f.win) { const [a, b, c2, d2] = f.win; const ax = it.fl ? 1 - c2 : a; extra += `<span class="rm-sky t-${part}" style="left:${pct(it.x + ax * f.w, RW)};top:${pct(it.y + b * f.h, RH)};width:${pct((c2 - a) * f.w, RW)};height:${pct((d2 - b) * f.h, RH)};z-index:${zOf(it, f)};background-image:url('${Pix.sprite('x_paisaje_' + part, 3)}')">${night ? '<i></i><i></i><i></i>' : ''}</span>`; }
     if (f.photo && photos.length) { const src = photos[ph++ % photos.length]; extra = `<span class="rm-photo" style="left:${pct(it.x + 2, RW)};top:${pct(it.y + 2, RH)};width:${pct(12, RW)};height:${pct(10, RH)};z-index:${zOf(it, f) + 1};background-image:url('${esc(src)}')"></span>`; }
-    const wx = A.weather && A.weather(); if (wx && /ventana/.test(it.k) && f.wall && wx.kind !== 'sol') extra += `<span class="rm-wx ${wx.kind}" style="left:${pct(it.x + f.w * .16, RW)};top:${pct(it.y + f.h * .14, RH)};width:${pct(f.w * .68, RW)};height:${pct(f.h * .6, RH)};z-index:${zOf(it, f) + 1}"></span>`;
-    const glow = night && f.glow ? `<span class="rm-glow" style="left:${pct(it.x + f.glow[0] - f.glow[2], RW)};top:${pct(it.y + f.glow[1] - f.glow[2], RH)};width:${pct(f.glow[2] * 2, RW)}"></span>` : '';
+    const wx = A.weather && A.weather(); if (wx && (f.win || /ventana/.test(it.k)) && f.wall && wx.kind !== 'sol') extra += `<span class="rm-wx ${wx.kind}" style="left:${pct(it.x + f.w * .16, RW)};top:${pct(it.y + f.h * .14, RH)};width:${pct(f.w * .68, RW)};height:${pct(f.h * .6, RH)};z-index:${zOf(it, f) + 1}"></span>`;
+    const gx = f.glow ? (it.fl ? f.w - f.glow[0] : f.glow[0]) : 0; if (night && f.glow) lit++;
+    const glow = night && f.glow ? `<span class="rm-glow" style="left:${pct(it.x + gx - f.glow[2], RW)};top:${pct(it.y + f.glow[1] - f.glow[2], RH)};width:${pct(f.glow[2] * 2, RW)};animation-delay:-${(it.x % 7) * .4}s"></span>` : '';
     return `<img class="pixel rm-it ${opts.sel === it.u ? 'sel' : ''}" alt="${esc(f.name)}" data-u="${it.u}" draggable="false" src="${Pix.sprite(sp, 3)}" style="left:${pct(it.x, RW)};top:${pct(it.y, RH)};width:${pct(f.w, RW)};z-index:${zOf(it, f)};${it.fl ? 'transform:scaleX(-1);' : ''}">${extra}${glow}`;
   }).join('');
   const petHtml = spots.map((s, i) => `<span class="rm-pet ${s.sleep ? 'sleep' : ''} ${list[i].guest ? 'guest' : ''}" data-pk="${esc(s.k)}" aria-label="${esc(info(s.k).name)}" style="left:${pct(s.x, RW)};top:${pct(s.y, RH)};z-index:${10 + Math.round(s.z)};animation-delay:-${i * .6}s">${dressed(s.k, list[i].eq, 4)}</span>`
@@ -637,7 +674,7 @@ function roomHTML(rmIn, opts) {
     + (s.eat ? `<img class="pixel rm-food" alt="" src="${spr(['cupcake', 'dona', 'fresa', 'galleta'][i % 4], 2)}" style="left:${pct(s.eat.x, RW)};top:${pct(s.eat.y, RH)};z-index:${10 + Math.round(s.z) + 1}">` : '')).join('');
   return `<div class="room-frame"><div class="room ${edit ? 'editing' : ''} t-${part}" id="${opts.id || 'roomBox'}">
 <img class="pixel rm-wall" alt="" src="${Pix.sprite('x_pared_' + (WALLS[rm.wall] ? rm.wall : 'rosa'), 3)}"><img class="pixel rm-floor" alt="" src="${Pix.sprite('x_piso_' + (FLOORS[rm.floor] ? rm.floor : 'madera'), 3)}">
-${html}${petHtml}<span class="rm-shade"></span>
+${html}${petHtml}<span class="rm-shade" style="--sh:${Math.max(.12, .3 - lit * .05).toFixed(2)}"></span>
 ${opts.inner || ''}</div><span class="room-door"></span></div>`;
 }
 A.roomHTML = (rm, opts) => roomHTML(rm, opts);
@@ -849,7 +886,7 @@ function formHTML0() {
   return `<b>${ed.id ? 'Editar: ' + esc(ed.name) : KIND_NEW[k]}</b>
 <div class="formgrid">
 <label class="f">Nombre<input class="in" data-ed="name" value="${esc(ed.name)}" placeholder="${PH[k]}"></label>
-${k === 'pets' ? `<label class="f">Cómo es<input class="in" data-ed="desc" value="${esc(ed.desc)}" placeholder="Ej. Muy dormilona"></label>` : k === 'food' ? `<label class="f">Llena la pancita (+)<input class="in" data-ed="gain" type="number" value="${ed.gain}"></label>` : k === 'clothes' ? `<label class="f">Dónde se pone<select class="in" data-ed="slot">${[['head', 'Cabeza'], ['face', 'Cara'], ['neck', 'Cuello']].map(([v, n]) => `<option value="${v}" ${ed.slot === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>` : k === 'furn' ? `<label class="f">Va en<select class="in" data-ed="wall"><option value="" ${!ed.wall ? 'selected' : ''}>El piso</option><option value="1" ${ed.wall ? 'selected' : ''}>La pared</option></select></label><label class="f">Sale en la tienda en<select class="in" data-ed="cat">${FCATS.filter(([c]) => c !== 'todo').map(([c, n]) => `<option value="${c}" ${(ed.cat || (ed.wall ? 'pared' : 'deco')) === c ? 'selected' : ''}>${n}</option>`).join('')}</select></label>` : ''}
+${k === 'pets' ? `<label class="f">Cómo es<input class="in" data-ed="desc" value="${esc(ed.desc)}" placeholder="Ej. Muy dormilona"></label>` : k === 'food' ? `<label class="f">Llena la pancita (+)<input class="in" data-ed="gain" type="number" value="${ed.gain}"></label>` : k === 'clothes' ? `<label class="f">Dónde se pone<select class="in" data-ed="slot">${[['head', 'Cabeza'], ['face', 'Cara'], ['neck', 'Cuello']].map(([v, n]) => `<option value="${v}" ${ed.slot === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>` : k === 'furn' ? `<label class="f">Va en<select class="in" data-ed="wall"><option value="" ${!ed.wall ? 'selected' : ''}>El piso</option><option value="1" ${ed.wall ? 'selected' : ''}>La pared</option></select></label><label class="f">Sale en la tienda en<select class="in" data-ed="cat">${FCATS.filter(([c]) => c !== 'todo').map(([c, n]) => `<option value="${c}" ${(ed.cat || (ed.wall ? 'pared' : 'deco')) === c ? 'selected' : ''}>${n}</option>`).join('')}</select></label><label class="f">Hace algo especial<select class="in" data-ed="light">${[['', 'Según la tienda (los de Luces alumbran)'], ['no', 'Nada'], ['luz', 'Alumbra de noche (lámpara)'], ['ventana', 'Es ventana (se ve el día y la noche)']].map(([v, n]) => `<option value="${v}" ${(ed.light || '') === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>` : ''}
 </div>
 ${HELP[k] ? `<p class="faint" style="margin:0">${HELP[k]}</p>` : ''}
 <div class="ad-up">
@@ -937,14 +974,33 @@ function drawTryOn() {
   const v = $('#tryDw'); if (v) v.textContent = ed.dw;
 }
 // ---- Vista en el cuarto: la camita de referencia y lo que estás creando ----
-function roomPreviewHTML() { return `<div class="f">Así se ve en el cuarto<div class="ad-room" id="adRoom"></div>${ed.kind === 'furn' ? `<label class="f">Tamaño en el cuarto: <b id="furnDw">${ed.dw}</b><input type="range" min="6" max="100" value="${ed.dw}" data-ed="dw"></label>` : ''}</div>`; }
+function edLit() { return ed.kind === 'furn' && furnLit({ light: ed.light, cat: ed.cat || (ed.wall ? 'pared' : 'deco') }); }
+function edColors() { const used = new Set(); ed.map.forEach(r => [...r].forEach(c => { if (c !== '.') used.add(c); })); return [...used].map(c => ed.pal[parseInt(c, 36)]).filter((c, i, a) => c && a.indexOf(c) === i); }
+function specialHTML() {
+  if (ed.kind !== 'furn') return '';
+  if (edLit()) return `<div class="ad-special"><b>Luz de la lámpara</b><span class="faint">Toca en el cuarto de abajo el lugar de donde sale la luz (el foco o la pantalla).</span><label class="f">Tamaño de la luz: <b id="litR">${lightR(ed, +ed.dw || 20, (+ed.dw || 20) * ed.h / ed.w)}</b><input type="range" min="8" max="80" value="${lightR(ed, +ed.dw || 20, (+ed.dw || 20) * ed.h / ed.w)}" data-ed="lr"></label></div>`;
+  if (ed.light === 'ventana') { const cols = edColors(); return `<div class="ad-special"><b>Vidrio de la ventana</b><span class="faint">Toca el color del vidrio: esa parte se vuelve transparente y por ahí se ve el cielo de día, el atardecer o la noche con estrellas (y la lluvia si llueve). Si dejaste el vidrio vacío al dibujar, no hace falta elegir nada.</span><div class="ad-glass"><button type="button" data-act="edGlass" data-v="" aria-pressed="${!ed.glass}">Vacío</button>${cols.map(c => `<button type="button" data-act="edGlass" data-v="${esc(c)}" aria-pressed="${(ed.glass || '').toLowerCase() === c.toLowerCase()}" style="--c:${esc(c)}"><i></i></button>`).join('')}</div></div>`; }
+  return '';
+}
+function roomPreviewHTML() { const sp = ed.kind === 'furn' && (edLit() || ed.light === 'ventana'); return `<div class="f">Así se ve en el cuarto${sp ? `<div class="chips" style="margin:4px 0 0">${[['dia', 'Día'], ['tarde', 'Tarde'], ['noche', 'Noche']].map(([v, n]) => `<button type="button" class="chip" data-act="edPart" data-v="${v}" aria-pressed="${(ed.part || 'noche') === v}">${n}</button>`).join('')}</div>` : ''}<div class="ad-room ${sp ? 't-' + (ed.part || 'noche') : ''}" id="adRoom"></div>${ed.kind === 'furn' ? `<label class="f">Tamaño en el cuarto: <b id="furnDw">${ed.dw}</b><input type="range" min="6" max="100" value="${ed.dw}" data-ed="dw"></label>${specialHTML()}` : ''}</div>`; }
+ACT.edPart = a => { ed.part = a.dataset.v; A.render(); };
+ACT.edGlass = a => { ed.glass = a.dataset.v || ''; A.render(); };
 function tiledRaw(map, W, H) { const th = map.length, tw = map[0].length; return Array.from({ length: H }, (_, y) => { const r = map[y % th]; return r.repeat(Math.ceil(W / tw)).slice(0, W); }); }
 function drawRoomPreview() {
   const box = $('#adRoom'); if (!box) return; const k = ed.kind; const pal = ed.pal.join(',');
   let wall = Pix.sprite('x_pared_rosa', 3), floor = Pix.sprite('x_piso_madera', 3), item = '';
   if (k === 'walls') { Pix.define('__edwall', { raw: tiledRaw(ed.map, 144, 34), pal }); wall = Pix.sprite('__edwall', 3); }
   if (k === 'floors') { Pix.define('__edfloor', { raw: tiledRaw(ed.map, 144, 98), pal }); floor = Pix.sprite('__edfloor', 3); }
-  if (k === 'furn') { const w = +ed.dw || 20, h = w * ed.h / ed.w; item = `<img class="pixel" alt="" src="${Pix.sprite('__edprev', Math.max(1, Math.ceil(90 / ed.w)))}" style="left:${(72 - w / 2) / 144 * 100}%;top:${(ed.wall ? 6 : Math.max(36, 110 - h)) / 132 * 100}%;width:${w / 144 * 100}%">`; const v = $('#furnDw'); if (v) v.textContent = ed.dw; }
+  if (k === 'furn') {
+    const w = +ed.dw || 20, h = w * ed.h / ed.w, X = 72 - w / 2, Y = ed.wall ? 6 : Math.max(36, 110 - h); const part = ed.part || 'noche'; let src = '__edprev';
+    const pc = (v, T) => v / T * 100 + '%'; let back = '', front = '';
+    if (ed.light === 'ventana') { const tmp = { map: ed.map, w: ed.w, h: ed.h, pal: ed.pal, glass: ed.glass }; const [a, b, c2, d2] = glassBox(tmp); const ch = glassChar(tmp); if (ch) { Pix.define('__edprev_win', { raw: ed.map.map(r => r.split(ch).join('.')), pal: ed.pal.join(',') }); src = '__edprev_win'; } back = `<span class="rm-sky t-${part}" style="position:absolute;left:${pc(X + a * w, 144)};top:${pc(Y + b * h, 132)};width:${pc((c2 - a) * w, 144)};height:${pc((d2 - b) * h, 132)};background-image:url('${Pix.sprite('x_paisaje_' + part, 3)}')">${part === 'noche' ? '<i></i><i></i><i></i>' : ''}</span>`; }
+    if (edLit() && part === 'noche') { const r = lightR(ed, w, h); const lx = ed.lx != null ? +ed.lx : .5, ly = ed.ly != null ? +ed.ly : .3; front = `<span class="rm-glow" style="left:${pc(X + lx * w - r, 144)};top:${pc(Y + ly * h - r, 132)};width:${pc(r * 2, 144)}"></span><span class="ad-lpt" style="left:${pc(X + lx * w, 144)};top:${pc(Y + ly * h, 132)}"></span>`; }
+    item = `${back}<img class="pixel" alt="" id="adItem" src="${Pix.sprite(src, Math.max(1, Math.ceil(90 / ed.w)))}" style="left:${pc(X, 144)};top:${pc(Y, 132)};width:${pc(w, 144)}">`;
+    if (ed.light === 'ventana' || edLit()) item += `<span class="rm-shade" style="--sh:${edLit() ? .2 : .3}"></span>${front}`;
+    const v = $('#furnDw'); if (v) v.textContent = ed.dw;
+    box.onclick = e => { if (!edLit()) return; const rc = box.getBoundingClientRect(); const ux = (e.clientX - rc.left) / rc.width * 144, uy = (e.clientY - rc.top) / rc.height * 132; ed.lx = Math.round(Math.max(0, Math.min(1, (ux - X) / w)) * 100) / 100; ed.ly = Math.round(Math.max(0, Math.min(1, (uy - Y) / h)) * 100) / 100; if ((ed.part || 'noche') !== 'noche') ed.part = 'noche'; drawRoomPreview(); };
+  }
   box.innerHTML = `<img class="pixel ad-room-wall" alt="" src="${wall}"><img class="pixel ad-room-floor" alt="" src="${floor}"><img class="pixel" alt="" src="${Pix.sprite('x_cama', 3)}" style="left:${8 / 144 * 100}%;top:${30 / 132 * 100}%;width:${26 / 144 * 100}%">${item}`;
 }
 function edPaintCanvas() {
@@ -1099,7 +1155,7 @@ A.after.admincat = el => {
   el.addEventListener('click', onClick); if (full) full.addEventListener('click', onClick);
   const onChange = e => {
     const t = e.target;
-    if (t.dataset.ed) { const k = t.dataset.ed; if (k === 'w' || k === 'h') { const mw = ed.kind === 'walls' || ed.kind === 'floors' ? 48 : 96, mh = ed.kind === 'walls' ? 34 : mw; snap(); resizeMap(Math.max(3, Math.min(mw, +$('[data-ed="w"]', el).value || ed.w)), Math.max(3, Math.min(mh, +$('[data-ed="h"]', el).value || ed.h))); A.render(); return; } ed[k] = k === 'wall' ? !!t.value : t.type === 'number' || t.type === 'range' ? +t.value : t.value; if (k === 'slot' || k === 'wall') edPaintCanvas(); }
+    if (t.dataset.ed) { const k = t.dataset.ed; if (k === 'w' || k === 'h') { const mw = ed.kind === 'walls' || ed.kind === 'floors' ? 48 : 96, mh = ed.kind === 'walls' ? 34 : mw; snap(); resizeMap(Math.max(3, Math.min(mw, +$('[data-ed="w"]', el).value || ed.w)), Math.max(3, Math.min(mh, +$('[data-ed="h"]', el).value || ed.h))); A.render(); return; } ed[k] = k === 'wall' ? !!t.value : t.type === 'number' || t.type === 'range' ? +t.value : t.value; if (k === 'slot' || k === 'wall') edPaintCanvas(); if (k === 'light' || k === 'cat' || k === 'wall') A.render(); }
     if (t.id === 'edFile' && t.files.length > 1) importMany([...t.files]);
     else if (t.id === 'edFile' && t.files[0]) importImage(t.files[0], 'pixel');
     if (t.id === 'edPhoto' && t.files[0]) importImage(t.files[0], 'photo');
@@ -1109,7 +1165,7 @@ A.after.admincat = el => {
   el.addEventListener('change', onChange); if (full) full.addEventListener('change', onChange);
   el.addEventListener('input', e => {
     const t = e.target;
-    if (t.dataset.ed && t.dataset.ed !== 'w' && t.dataset.ed !== 'h') { ed[t.dataset.ed] = t.type === 'number' || t.type === 'range' ? +t.value : t.value; if (t.dataset.ed === 'dw') { drawTryOn(); drawRoomPreview(); } }
+    if (t.dataset.ed && t.dataset.ed !== 'w' && t.dataset.ed !== 'h') { ed[t.dataset.ed] = t.type === 'number' || t.type === 'range' ? +t.value : t.value; if (t.dataset.ed === 'dw') { drawTryOn(); drawRoomPreview(); } if (t.dataset.ed === 'lr') { const v = $('#litR'); if (v) v.textContent = t.value; drawRoomPreview(); } }
     if (t.dataset.ph && t.type === 'range') { const v = $(t.dataset.ph === 'n' ? '#phNv' : '#phKv', el); if (v) v.textContent = t.value; }
   });
 };
@@ -1335,7 +1391,7 @@ ACT.edSave = () => {
   if (kind === 'pets') Object.assign(item, { desc: ed.desc, say: ed.desc });
   if (kind === 'food') Object.assign(item, { gain: +ed.gain || 20 });
   if (kind === 'chars') item.rare = +ed.rare || 1;
-  if (kind === 'furn') Object.assign(item, { wall: !!ed.wall, cat: ed.cat || (ed.wall ? 'pared' : 'deco') });
+  if (kind === 'furn') { Object.assign(item, { wall: !!ed.wall, cat: ed.cat || (ed.wall ? 'pared' : 'deco') }); if (ed.light) item.light = ed.light; if (ed.lx != null) { item.lx = +ed.lx; item.ly = +ed.ly; } if (+ed.lr) item.lr = +ed.lr; if (ed.light === 'ventana' && ed.glass) item.glass = ed.glass; }
   if (ed.how === 'logro') item.ach = ed.ach; if (ed.how === 'temporada') item.season = ed.season;
   const i = list.findIndex(x => x.id === item.id); if (i >= 0) list[i] = item; else list.push(item);
   if (ed.replaces) markSwap(kind, ed.replaces, item.id);
@@ -1448,6 +1504,11 @@ A.start = async () => {
   await st0();
   latestCatalog = A.CFG && A.CFG.catalog ? JSON.parse(JSON.stringify(A.CFG.catalog)) : null;
   registerCatalog();
+  // cuando llega la configuración nueva (o se vuelve a la app), se registran los muebles, ropa y comida nuevos
+  const rc0 = A.reloadConfig;
+  if (rc0) A.reloadConfig = () => { rc0(); latestCatalog = A.CFG && A.CFG.catalog ? JSON.parse(JSON.stringify(A.CFG.catalog)) : null; registerCatalog(); A.render(); };
+  A._ready = true;
+  if (Store.refreshConfig) document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && navigator.onLine) Store.refreshConfig(); });
   const p = P(); if (p.active) { care(p.active); if (!p.since[p.active]) p.since[p.active] = today(); }
   // si el logro de Cupi ya está, queda lista para adoptar (no se adopta sola)
   A.render();

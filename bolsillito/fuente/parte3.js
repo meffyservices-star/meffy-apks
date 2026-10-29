@@ -554,7 +554,9 @@ ACT.vsGift = () => {
   });
 };
 // ---- abrir tu cajita ----
-function giftLabel(g) { return g.kind === 'food' ? (A.FOODS[g.item] || {}).name || g.item : g.kind === 'furn' ? (A.FURN[g.item] || {}).name || g.item : g.kind === 'acc' ? (A.ACC[g.item] || {}).name || g.item : g.kind === 'stars' ? g.qty + ' estrellitas' : g.kind === 'sticker' ? 'Pegatina ' + (PEGATINAS[g.item] || '') : 'Plantilla ' + g.item; }
+function giftKnown(g) { return g.kind === 'food' ? !!A.FOODS[g.item] : g.kind === 'furn' ? !!A.FURN[g.item] : g.kind === 'acc' ? !!A.ACC[g.item] : true; }
+const GIFT_GENERIC = { food: 'Una comidita', furn: 'Un mueble nuevo', acc: 'Ropita nueva' };
+function giftLabel(g) { return g.kind === 'food' ? (A.FOODS[g.item] || {}).name || GIFT_GENERIC.food : g.kind === 'furn' ? (A.FURN[g.item] || {}).name || GIFT_GENERIC.furn : g.kind === 'acc' ? (A.ACC[g.item] || {}).name || GIFT_GENERIC.acc : g.kind === 'stars' ? g.qty + ' estrellitas' : g.kind === 'sticker' ? 'Pegatina ' + (PEGATINAS[g.item] || '') : 'Plantilla ' + g.item; }
 function giftSrc(g) { return g.kind === 'food' ? spr((A.FOODS[g.item] || {}).sprite || g.item, 5) : g.kind === 'furn' ? Pix.sprite(A.FURN[g.item] ? A.furnSprite(g.item) : 'gift', 3) : g.kind === 'acc' ? spr('acc_' + g.item, 6) : g.kind === 'stars' ? spr('estrellita', 5) : g.kind === 'sticker' ? spr(g.item, 5) : spr('ui_plantilla', 5); }
 ACT.vsOpenBox = () => {
   const box = (V.gifts || []).filter(g => g.to_user === Store.uid && !g.opened);
@@ -563,6 +565,8 @@ ACT.vsOpenBox = () => {
   openSheet('Tu cajita', `<div class="rg-stage" id="gbStage" style="min-height:300px">${''}<div class="rg-halo"></div><div class="rg-title" style="font-size:18px">${esc(g.from_name)} te dejó algo</div><button class="rg-btn" id="gbOpen" aria-label="Abrir"><img class="pixel rg-box shake" alt="" src="${spr('regalo_cerrado', 7)}" style="width:150px"></button><div class="rg-hint">Toca para abrir · quedan ${box.length}</div></div>`, sh => {
     $('#gbOpen', sh).onclick = async () => {
       const bx = $('.rg-box', sh); bx.classList.remove('shake'); bx.classList.add('pop');
+      // si es algo nuevo que la admin agregó y este celular todavía no lo tiene, primero se trae la lista nueva
+      if (!giftKnown(g) && Store.refreshConfig) await Store.refreshConfig();
       const { error } = await Store.sb.from('gifts').update({ opened: true }).eq('id', g.id);
       if (error) { toast('No se pudo abrir. Revisa tu conexión.'); return; }
       g.opened = true; applyGiftFromFriend(g); A.saveSettings(); A.render(); A.renderNav();
@@ -573,7 +577,8 @@ ACT.vsOpenBox = () => {
 function applyGiftFromFriend(g) {
   const pst = A.petState();
   if (g.kind === 'food') pst.pantry[g.item] = (pst.pantry[g.item] || 0) + g.qty;
-  if (g.kind === 'furn' && A.FURN[g.item]) A.giveFurn(g.item, g.qty);
+  // se guarda aunque el mueble todavía no esté en este celular: aparece en cuanto llega la lista nueva
+  if (g.kind === 'furn' && (A.FURN[g.item] || /^cf_/.test(g.item))) A.giveFurn(g.item, g.qty);
   if (g.kind === 'acc') { const r = S.settings.rincon = S.settings.rincon || { owned: [] }; r.owned = r.owned || []; if (!r.owned.includes('acc:' + g.item)) r.owned.push('acc:' + g.item); }
   if (g.kind === 'stars') A.giveStars(g.qty);
   if (g.kind === 'sticker') { const L2 = S.settings.giftStickers = S.settings.giftStickers || []; if (!L2.includes(g.item)) L2.push(g.item); }

@@ -15,6 +15,30 @@ Pix.define('x_carrito_super', { raw: fix(CART, 24), pal: CARTP });
 Pix.define('cp_cart_vacio', { raw: fix(CART, 24).map((r, i) => i < 5 ? r.replace(/[456]/g, '.') : r), pal: CARTP });
 if (A.FURN && !A.FURN.carrito_super) A.FURN.carrito_super = { name: 'Carrito de súper', w: 24, h: 22, price: 40, x: 70, y: 66, cat: 'mesas' };
 
+// banner de la tiendita (toldo a rayas, estantes con frutas y frascos) para la cabecera de Compras
+if (Pix.BANNERS && !Pix.BANNERS.tiendita) Pix.BANNERS.tiendita = { name: 'Tiendita', draw(ctx, W, H, r) {
+  const R = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); };
+  for (let x = 0; x < W; x++) R(x, 0, 1, H, Math.floor(x / 6) % 2 ? '#fdf6e6' : '#fbeed3');
+  // toldo
+  for (let x = 0; x < W; x += 8) { R(x, 0, 4, 7, '#f48fb1'); R(x + 4, 0, 4, 7, '#ffffff'); }
+  R(0, 0, W, 1, '#e0729a');
+  for (let x = 0; x < W; x += 8) { const c = (x / 8) % 2 ? '#ffffff' : '#f48fb1'; R(x + 1, 7, 6, 1, c); R(x + 2, 8, 4, 1, c); R(x + 3, 9, 2, 1, c); }
+  // estantes
+  const shelf = y => { R(4, y, W - 8, 2, '#d39b68'); R(4, y + 2, W - 8, 1, '#b07a52'); };
+  const fruit = (x, y, c, h) => { R(x, y, 3, 3, c); R(x + 1, y - 1, 1, 1, '#4f8a43'); if (h) R(x, y, 1, 1, h); };
+  const jar = (x, y, c) => { R(x, y - 5, 4, 5, '#ffffff'); R(x, y - 3, 4, 3, c); R(x, y - 6, 4, 1, '#d39b68'); R(x + 1, y - 4, 1, 1, '#ffffff'); };
+  const box = (x, y, c, c2) => { R(x, y - 6, 5, 6, c); R(x + 1, y - 4, 3, 2, c2); };
+  shelf(19); shelf(31);
+  const top = [['f', '#ff6f8f'], ['f', '#ffb35c'], ['j', '#ffd1df'], ['b', '#9fd6f2', '#ffffff'], ['f', '#8fd16a'], ['j', '#fff09a'], ['f', '#ff6f8f'], ['b', '#ffc4d4', '#e0729a'], ['j', '#c8f0d4'], ['f', '#ffb35c'], ['f', '#b59ae6'], ['j', '#ffd1df'], ['b', '#fff09a', '#d9a441'], ['f', '#ff6f8f'], ['f', '#8fd16a']];
+  let x = 7; top.forEach(([t, c, c2], i) => { if (t === 'f') { fruit(x, 15, c, '#ffffff'); if (i % 2) fruit(x + 2, 16, c); x += 6; } else if (t === 'j') { jar(x, 19, c); x += 7; } else { box(x, 19, c, c2); x += 8; } });
+  x = 9; [['b', '#9fd6f2', '#ffffff'], ['j', '#fff09a'], ['f', '#ff6f8f'], ['f', '#ffb35c'], ['b', '#c8f0d4', '#5f9e6a'], ['j', '#ffd1df'], ['f', '#8fd16a'], ['b', '#ffc4d4', '#e0729a'], ['j', '#d9c8f6'], ['f', '#ff6f8f']].forEach(([t, c, c2]) => { if (t === 'f') { fruit(x, 27, c, '#ffffff'); x += 6; } else if (t === 'j') { jar(x, 31, c); x += 8; } else { box(x, 31, c, c2); x += 9; } });
+  // brillitos
+  const st = (x, y, c) => { R(x, y - 1, 1, 3, c); R(x - 1, y, 3, 1, c); };
+  for (let i = 0; i < 7; i++) st(6 + Math.floor(r() * (W - 12)), 11 + Math.floor(r() * 3), ['#ffb3cb', '#9fd6f2', '#ffe27a'][i % 3]);
+  // ondita de abajo con puntitos, como el de Inicio
+  const sc = (y, c, dots) => { R(0, y + 2, W, 60, c); for (let x = 0; x < W; x += 6) { R(x + 1, y, 4, 1, c); R(x, y + 1, 6, 1, c); } if (dots) for (let x = 3; x < W; x += 7) for (let yy = y + 5; yy < y + 40; yy += 6) R(x + ((yy / 6) % 2 ? 3 : 0), yy, 1, 1, '#ffffff'); };
+  sc(H - 10, '#ffffff'); sc(H - 8, '#f48fb1', true);
+} };
 const spr = (n, sc) => Pix.sprite(n, sc || 3);
 const img = (n, size, extra, cls) => `<img class="pixel ${cls || ''}" alt="" src="${spr(n, 3)}" style="width:${size}px;height:auto;${extra || ''}">`;
 const online = () => Store.mode === 'supa' && Store.sb && navigator.onLine !== false;
@@ -209,12 +233,24 @@ addEventListener('online', () => { C().shDirty.forEach(pushShared); loadShared()
 
 // ---------------- Pantalla principal ----------------
 const TABS = [['listas', 'Listas'], ['casa', 'En casa'], ['precios', 'Precios'], ['resumen', 'Resumen']];
+const TAB_IC = { listas: 'cp_ticket', casa: 'casita', precios: 'estrellita', resumen: 'trofeo' };
+// cabecera: el banner con Ale (el pudín) empujando su carrito, como el de Inicio
+function bannerTop() {
+  const bs = S.settings.banners = S.settings.banners || {}; if (!bs.compras) bs.compras = { preset: 'tiendita' };
+  const plan = C().lists.reduce((n, l) => n + l.items.filter(i => !i.done).length, 0);
+  const wk = sumH(histIn(thisWeek(), '9999'));
+  const ale = A.wear ? A.wear('ale', { scale: 4 }) : img('pudin', 76);
+  const inner = `<div class="greet">Compras<small>${plan ? `Te faltan ${plan === 1 ? '1 cosita' : plan + ' cositas'}` : wk > 0 ? 'Esta semana llevas ' + money(wk) : '¿Qué toca comprar hoy?'}</small></div>
+<div class="cp-bn-art" aria-hidden="true"><span class="cp-bn-ale">${ale}</span><span class="cp-bn-cart">${img(plan > 0 || wk > 0 ? 'x_carrito_super' : 'cp_cart_vacio', 74)}</span></div>${A.privBtn ? A.privBtn('onbanner') : ''}`;
+  const h = A.bannerHTML ? A.bannerHTML('compras', inner) : '';
+  return h ? h.replace('class="banner"', 'class="banner cp-banner"') : A.header('compras', A.privBtn ? A.privBtn() : '');
+}
 const tab = () => S.cpTab || 'listas';
 A.screens.compras = () => {
   C(); if (!SH.loaded) loadShared();
   const t = tab();
-  return `${A.header('compras', A.privBtn ? A.privBtn() : '')}
-<div class="seg cp-tabs" role="tablist">${TABS.map(([k, n]) => `<button role="tab" data-act="cpTab" data-v="${k}" aria-pressed="${t === k}">${n}</button>`).join('')}</div>
+  return `${bannerTop()}
+<div class="seg cp-tabs" role="tablist">${TABS.map(([k, n]) => `<button role="tab" data-act="cpTab" data-v="${k}" aria-pressed="${t === k}">${img(TAB_IC[k], 18)}<span>${n}</span></button>`).join('')}</div>
 ${t === 'casa' ? casaHTML() : t === 'precios' ? preciosHTML() : t === 'resumen' ? resumenHTML() : listasHTML()}`;
 };
 ACT.cpTab = a => { S.cpTab = a.dataset.v; A.render(); };
@@ -222,16 +258,17 @@ ACT.cpTab = a => { S.cpTab = a.dataset.v; A.render(); };
 function heroHTML() {
   const w0 = thisWeek(), m0 = thisMonth() + '-01';
   const wk = sumH(histIn(w0, '9999')), mo = sumH(histIn(m0, '9999'));
-  const plan = C().lists.reduce((s, l) => s + tot(l), 0);
+  const plan = C().lists.reduce((s, l) => s + l.items.filter(i => !i.done).reduce((n, i) => n + iTot(i), 0), 0);
   const mb = +C().monthBudget || 0;
-  return `<div class="cp-hero">
-<div class="cp-hero-art" aria-hidden="true"><span class="cp-hero-pet">${img(petSprite(), 58)}</span><span class="cp-hero-cart">${img(plan > 0 ? 'x_carrito_super' : 'cp_cart_vacio', 66)}</span></div>
-<div class="cp-hero-tx"><span class="cp-kicker">Esta semana</span><b class="cp-hero-t">${money(wk)}</b><span class="cp-hero-w">${money(mo)} en ${MES[new Date().getMonth()]}${mb ? ' de ' + money(mb) : ''}</span>
-${mb ? `<span class="cp-bar sm ${mo > mb ? 'over' : ''}"><i style="width:${pct(mo, mb)}%"></i></span>` : ''}</div></div>`;
+  const stat = (ic, bg, k, v, sub2) => `<div class="cp-st"><span class="cp-st-ic" style="background:${bg}">${img(ic, 26)}</span><span class="cp-st-k">${k}</span><b class="cp-money">${v}</b>${sub2 ? `<span class="cp-st-s">${sub2}</span>` : ''}</div>`;
+  return `<div class="cp-hero2">
+<div class="cp-hero2-h"><b>Tu carrito</b><span>${MES[new Date().getMonth()]}</span></div>
+<div class="cp-stats">${stat('cp_ticket', '#ffe3ec', 'Esta semana', money(wk))}${stat('bolsa', '#fff3c4', 'En ' + MES[new Date().getMonth()], money(mo), mb ? 'de ' + money(mb) : '')}${stat('x_carrito_super', '#dff3e6', 'En tus listas', money(plan), plan ? 'por comprar' : '')}</div>
+${mb ? `<span class="cp-bar ${mo > mb ? 'over' : mo > mb * .85 ? 'warn' : ''}"><i style="width:${pct(mo, mb)}%"></i></span><span class="cp-hero2-f">${mo > mb ? 'Te pasaste por ' + money(mo - mb) : 'Te quedan ' + money(mb - mo) + ' para compras este mes'}</span>` : ''}</div>`;
 }
 function listCard(l) {
   const n = l.items.length, d = doneN(l), T = tot(l), k = kind(l.kind), over = l.budget > 0 && T > l.budget, sw = sharedWith(l);
-  return `<button class="cp-lcard" data-act="cpOpen" data-id="${esc(l.id)}">
+  return `<button class="cp-lcard" data-act="cpOpen" data-id="${esc(l.id)}" style="--k:${k.bg}">
 <span class="cp-tile" style="background:${k.bg};width:48px;height:48px">${img(k.ic, 32)}</span>
 <span class="cp-lcard-tx"><b>${esc(l.name)}</b><span>${n ? `${d} de ${n} en el carrito` : 'Vacía · toca para anotar'}${l.repeat ? ' · se repite ' + (l.repeat === 'weekly' ? 'cada semana' : 'cada mes') : ''}</span>${sw ? `<span class="cp-with">${img('heart', 12)} con ${esc(sw)}</span>` : ''}
 <span class="cp-bar ${over ? 'over' : ''}"><i style="width:${pct(d, n)}%"></i></span></span>
@@ -242,7 +279,7 @@ function listasHTML() {
   const lowN = C().pantry.filter(p => p.state !== 'ok').length;
   return `${heroHTML()}
 <div class="cp-sec"><h3>Mis listas</h3><button class="btn pink sm" data-act="cpNew">+ Nueva lista</button></div>
-${Ls.length ? `<div class="cp-lists">${Ls.map(listCard).join('')}</div>` : `<div class="card cp-empty">${img('cp_ticket', 54, '', 'cp-float')}<b>Arma tu primera lista</b><span class="faint">Anota lo que necesitas, con cantidad y precio. Te voy sumando el total mientras compras.</span><button class="btn pink" data-act="cpNew">Crear lista</button></div>`}
+${Ls.length ? `<div class="cp-lists">${Ls.map(listCard).join('')}</div>` : `<div class="card cp-empty"><span class="cp-empty-art">${img('cp_ticket', 50, '', 'cp-float')}${img('cp_leche', 34, '', 'cp-float b')}${img('cp_carne', 34, '', 'cp-float c')}</span><b>Arma tu primera lista</b><span class="faint">Anota lo que necesitas, con cantidad y precio. Te voy sumando el total mientras compras.</span><button class="btn pink" data-act="cpNew">Crear lista</button></div>`}
 ${lowN ? `<button class="card cp-tip" data-act="cpTab" data-v="casa">${img('bolsa', 30)}<span><b>Se te está acabando ${lowN === 1 ? '1 cosita' : lowN + ' cositas'} en casa</b><br><span class="faint">Toca para pasarlas a una lista</span></span><span class="cp-chev">›</span></button>` : ''}
 ${C().tpls.length ? `<div class="cp-sec"><h3>Plantillas</h3></div><div class="cp-tpls">${C().tpls.map(t => `<div class="cp-tpl"><button data-act="cpFromTpl" data-id="${esc(t.id)}">${img(kind(t.kind).ic, 26)}<span><b>${esc(t.name)}</b><span>${t.items.length} cosas</span></span></button><button class="iconbtn sm" data-act="cpTplDel" data-id="${esc(t.id)}" aria-label="Borrar plantilla">×</button></div>`).join('')}</div>` : ''}
 ${C().hist.length ? `<div class="cp-sec"><h3>Compras recientes</h3><button class="btn sm" data-act="cpTab" data-v="resumen">Ver resumen</button></div><div class="cp-hist">${C().hist.slice(0, 5).map(histRow).join('')}</div>` : ''}`;

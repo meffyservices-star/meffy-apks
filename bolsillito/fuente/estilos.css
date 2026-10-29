@@ -1710,3 +1710,71 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .ph-left .ph-icon { flex: none; }
 .ph-left { min-width: 0; }
 .ph:has(> .ph-left > .navarrow) { flex-wrap: wrap; row-gap: 6px; }
+
+/* ===== 28-oct-2026: el cuarto ya no se sube encima de las pestañas, luces de lámparas y ventanas con día y noche ===== */
+.room, .room-frame, .ad-room, .pc-room { isolation: isolate; }
+.room { z-index: 0; transform: translateZ(0); }
+.room.t-noche .rm-shade { background: rgba(38, 30, 96, var(--sh, .3)); }
+.room.t-tarde .rm-shade { background: rgba(255, 160, 120, .14); }
+.room .rm-glow, .ad-room .rm-glow { position: absolute; aspect-ratio: 1; border-radius: 50%; z-index: 301; pointer-events: none; mix-blend-mode: screen;
+  background: radial-gradient(circle, rgba(255, 244, 196, .95) 0, rgba(255, 224, 150, .6) 22%, rgba(255, 200, 140, .26) 48%, rgba(255, 190, 140, 0) 72%);
+  animation: luzSuave 3.4s ease-in-out infinite; }
+@keyframes luzSuave { 0%, 100% { opacity: .92; transform: scale(1); } 50% { opacity: 1; transform: scale(1.04); } }
+.rm-sky { position: absolute; pointer-events: none; background-size: cover; background-position: center bottom; image-rendering: pixelated; overflow: hidden; }
+.rm-sky.t-dia::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,.35) 0 18%, transparent 18% 30%, rgba(255,255,255,.2) 30% 36%, transparent 36%); }
+.rm-sky.t-noche { box-shadow: 0 0 10px 3px rgba(140, 150, 255, .25); }
+.rm-sky i { position: absolute; width: 6%; aspect-ratio: 1; background: #fff6cf; border-radius: 1px; animation: estrellita 2.4s ease-in-out infinite; }
+.rm-sky i:nth-child(1) { left: 16%; top: 22%; }
+.rm-sky i:nth-child(2) { left: 52%; top: 12%; animation-delay: -.8s; }
+.rm-sky i:nth-child(3) { left: 70%; top: 40%; animation-delay: -1.6s; width: 4%; }
+@keyframes estrellita { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+.ad-room .rm-shade { position: absolute; inset: 0; pointer-events: none; z-index: 300; }
+.ad-room.t-noche .rm-shade { background: rgba(38, 30, 96, var(--sh, .3)); }
+.ad-room.t-tarde .rm-shade { background: rgba(255, 160, 120, .14); }
+.ad-room.t-dia .rm-shade { background: none; }
+.ad-room .ad-lpt { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 2px #c44a72; z-index: 302; pointer-events: none; }
+.ad-room.t-noche, .ad-room.t-tarde, .ad-room.t-dia { cursor: crosshair; }
+.ad-special { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding: 10px 12px; border-radius: 14px; background: #fff7fa; border: 2px dashed #f3c4d3; }
+.ad-glass { display: flex; flex-wrap: wrap; gap: 6px; }
+.ad-glass button { min-width: 38px; height: 34px; padding: 0 8px; border-radius: 10px; border: 2px solid #f0dbe2; background: #fff; font: inherit; font-size: 12px; color: inherit; cursor: pointer; display: grid; place-items: center; }
+.ad-glass button i { width: 18px; height: 18px; border-radius: 5px; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); }
+.ad-glass button[aria-pressed="true"] { border-color: #c44a72; box-shadow: 0 0 0 2px #ffd1df; }
+
+/* ===== Compras más bonita: banner con Ale y su carrito, pestañas con dibujitos, resumen en cuadritos ===== */
+.cp-banner .cp-bn-art { position: absolute; right: 12px; bottom: 22px; z-index: 3; width: 150px; height: 84px; pointer-events: none; }
+.cp-banner .cp-bn-ale { position: absolute; left: 0; bottom: 0; width: 80px; height: 80px; animation: cpEmpuja 2.6s ease-in-out infinite; filter: drop-shadow(0 4px 0 rgba(80,40,50,.18)); }
+.cp-banner .cp-bn-ale > *, .cp-banner .cp-bn-ale img { width: 100%; height: auto; }
+.cp-banner .cp-bn-ale .mz { width: 100%; }
+.cp-banner .cp-bn-cart { position: absolute; right: 0; bottom: 0; animation: cpRueda 2.6s ease-in-out infinite; filter: drop-shadow(0 4px 0 rgba(80,40,50,.18)); }
+.cp-banner .cp-bn-cart img { image-rendering: pixelated; }
+.cp-banner .greet small { max-width: 180px; }
+@keyframes cpEmpuja { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(2px, -3px); } 50% { transform: translate(4px, 0); } 75% { transform: translate(2px, -2px); } }
+@keyframes cpRueda { 0%, 100% { transform: translateX(0) rotate(0); } 50% { transform: translateX(4px) rotate(-1.5deg); } }
+@media (prefers-reduced-motion: reduce) { .cp-banner .cp-bn-ale, .cp-banner .cp-bn-cart { animation: none; } }
+.cp-tabs { padding: 5px; border-radius: 20px; }
+.cp-tabs button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px 5px; font-size: 12.5px; border-radius: 15px; }
+.cp-tabs button img { width: 20px; transition: transform .2s; }
+.cp-tabs button[aria-pressed="true"] img { transform: scale(1.12) translateY(-1px); filter: drop-shadow(0 0 0 #fff) drop-shadow(0 0 2px rgba(255,255,255,.7)); }
+.cp-hero2 { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 24px; border: 2px solid #fff; box-shadow: var(--shadow);
+  background: radial-gradient(circle, rgba(244,143,177,.16) 1.2px, transparent 1.6px) 0 0 / 14px 14px, linear-gradient(160deg, #fff6f9, #fffaf0 60%, #f1fbf4); }
+.cp-hero2-h { display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px; }
+.cp-hero2-h b { font-family: var(--f-display); font-size: 19px; font-weight: 600; }
+.cp-hero2-h span { font-size: 12px; font-weight: 800; color: #c9668a; text-transform: capitalize; }
+.cp-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.cp-st { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; padding: 10px 10px 9px; border-radius: 18px; background: #fff; border: 2px solid #f6e3e9; box-shadow: 0 3px 0 rgba(201,102,138,.12); }
+.cp-st-ic { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; margin-bottom: 4px; box-shadow: inset 0 0 0 2px #fff; }
+.cp-st-ic img { image-rendering: pixelated; }
+.cp-st-k { font-size: 11.5px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.cp-st .cp-money { font-size: 17px; line-height: 1.15; }
+.cp-st-s { font-size: 11px; color: var(--ink-faint); }
+.cp-hero2-f { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-top: -4px; padding: 0 4px; }
+.cp-lcard { position: relative; overflow: hidden; padding-left: 16px; background: linear-gradient(90deg, var(--k, #ffe3ec) 0 6px, var(--glass-strong) 6px); }
+.cp-lcard .cp-tile { box-shadow: 0 3px 0 rgba(122,74,58,.12), 0 0 0 3px var(--k, #ffe3ec); }
+.cp-empty { background: radial-gradient(circle, rgba(244,143,177,.14) 1.2px, transparent 1.6px) 0 0 / 14px 14px, var(--glass-strong); }
+.cp-empty-art { position: relative; display: block; width: 120px; height: 66px; }
+.cp-empty-art img { position: absolute; image-rendering: pixelated; }
+.cp-empty-art img:nth-child(1) { left: 35px; top: 0; }
+.cp-empty-art img:nth-child(2) { left: 0; top: 22px; animation-delay: -.8s; transform: rotate(-10deg); }
+.cp-empty-art img:nth-child(3) { right: 0; top: 24px; animation-delay: -1.5s; }
+.cp-sec h3 { display: flex; align-items: center; gap: 6px; }
+.cp-sec h3::before { content: ''; width: 8px; height: 8px; border-radius: 2px; background: #f48fb1; box-shadow: 0 0 0 2px #ffe3ec; transform: rotate(45deg); }

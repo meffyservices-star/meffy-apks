@@ -28,7 +28,9 @@ window.__offline = function (Store) {
     var sb = this.sb = supabase.createClient(C.url, C.key, { auth: { persistSession: true, autoRefreshToken: true } });
     var self = this;
     var cachedCfg = lsGet('config'); if (cachedCfg) this.config = cachedCfg;
-    var cfgP = (async function () { try { var rc = await withTimeout(sb.from('app_config').select('body').eq('id', 1).single(), 6000); if (rc.data && rc.data.body && Object.keys(rc.data.body).length) { self.config = rc.data.body; lsSet('config', rc.data.body); } } catch (e) {} })();
+    // la configuración guardada se usa para abrir rápido; cuando llega la nueva (muebles, ropa y comida que agregó la admin) se aplica en vivo
+    self.refreshConfig = async function () { try { var rc = await withTimeout(sb.from('app_config').select('body').eq('id', 1).single(), 6000); if (rc.data && rc.data.body && Object.keys(rc.data.body).length) { var changed = JSON.stringify(rc.data.body) !== JSON.stringify(self.config || null); self.config = rc.data.body; lsSet('config', rc.data.body); if (changed && window.App && App.reloadConfig && App._ready) { try { App.reloadConfig(); } catch (e) {} } return true; } } catch (e) {} return false; };
+    var cfgP = self.refreshConfig();
     if (!cachedCfg && navigator.onLine) await cfgP;
 
     var lastUid = lsGet('lastUid');

@@ -2744,6 +2744,7 @@ const start = A.start;
 A.start = async () => {
 await start();
 A.CFG = merge(DEFAULTS(), Store.config); apply();
+A.reloadConfig = () => { if (draft) return; A.CFG = merge(DEFAULTS(), Store.config); apply(); A.renderNav(); A.render(); };
 if (Store.mode === 'supa' && Store.profile) {
 const pr = Store.profile; S.settings.plan = pr.plan; S.settings.planType = pr.plan_type || null;
 if (!S.settings.name && pr.name) S.settings.name = pr.name;
