@@ -1,4 +1,4 @@
-const C = 'bolsillito-v40';
+const C = 'bolsillito-v41';
 const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
 const CORE = ['/', '/offline.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', CDN].concat([0, 1, 2, 3, 4, 5].map(i => '/p' + i + '.bin?v=1'));
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
@@ -42,7 +42,7 @@ self.addEventListener('push', e => {
   const rem = d.rem || null;
   const opts = rem
     ? { body: d.body || '', icon: '/icon-192.png', badge: '/badge.png', tag: d.tag || ('rem-' + rem.id), renotify: true, requireInteraction: true, vibrate: [400, 200, 400, 200, 600], data: { url: d.url || '/', rem } }
-    : { body: d.body || '¿Anotamos lo de hoy?', icon: '/icon-192.png', badge: '/badge.png', tag: 'bolsillito-recordatorio', data: { url: d.url || '/' } };
+    : { body: d.body || '¿Anotamos lo de hoy?', icon: '/icon-192.png', badge: '/badge.png', tag: d.tag || 'bolsillito-recordatorio', renotify: !!d.tag, vibrate: d.tag ? [200, 100, 200] : undefined, data: { url: d.url || '/' } };
   e.waitUntil((async () => {
     await self.registration.showNotification(d.title || 'Bolsillito', opts);
   })());
@@ -52,7 +52,11 @@ self.addEventListener('notificationclick', e => {
   const data = e.notification.data || {}; const url = data.url || '/';
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(ws => {
     const w = ws.find(c => 'focus' in c);
-    if (w) { if (data.rem && 'navigate' in w) return w.navigate(url).then(c => c && c.focus()).catch(() => w.focus()); return w.focus(); }
+    if (w) {
+      if (data.rem && 'navigate' in w) return w.navigate(url).then(c => c && c.focus()).catch(() => w.focus());
+      if (url !== '/') w.postMessage({ abrir: url }); // avisos de amigas: la app abierta va directo a la cajita o a Visitas
+      return w.focus();
+    }
     return self.clients.openWindow(url);
   }));
 });

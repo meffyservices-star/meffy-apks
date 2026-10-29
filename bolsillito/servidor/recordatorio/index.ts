@@ -1,6 +1,7 @@
 // Manda los avisos de Bolsillito. Lo llama pg_cron cada minuto con la llave x-cron-key.
 // 1) El recordatorio diario para anotar (tabla push_subs, columna daily).
 // 2) Los recordatorios que arma cada usuaria (tabla reminders): pago de tarjeta, suscripciones, cositas…
+// 3) Avisos de amigas: cuando te dejan algo en la cajita y cuando te dan las gracias (tabla gifts, payload.avisado).
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4';
 import webpush from 'npm:web-push@3.6.7';
 
@@ -102,5 +103,22 @@ Deno.serve(async (req: Request) => {
       if (keys.length) await sb.from('reminders').update({ sent: [...(r.sent || []), ...keys].slice(-20) }).eq('user_id', r.user_id).eq('id', r.id);
     }
   }
-  return new Response(JSON.stringify({ sent, gone, rems }), { headers: { 'Content-Type': 'application/json' } });
+  // 3) Avisos de amigas (solo lo de la última media hora, una sola vez por regalo)
+  let amigas = 0;
+  const since = new Date(Date.now() - 30 * 60000).toISOString();
+  const { data: gData } = await sb.from('gifts').select('id, to_user, from_name, kind, msg, payload, opened').gte('created_at', since).limit(300);
+  for (const g of (gData || []) as { id: number; to_user: string; from_name: string; kind: string; msg: string; payload: Record<string, unknown>; opened: boolean }[]) {
+    const pl0 = g.payload || {};
+    if (pl0.avisado) continue;
+    if (!(g.opened && g.kind !== 'thanks')) {
+      const quien = (g.from_name || '').trim() || 'Una amiga';
+      const pl = g.kind === 'thanks'
+        ? { title: `${quien} te dio las gracias`, body: g.msg ? `“${g.msg}”` : 'Le encantó tu regalito.', url: '/?visitas=1', tag: 'gracias-' + g.id }
+        : { title: `${quien} te dejó algo en tu cajita`, body: g.msg ? `“${g.msg}” · Toca para abrirla.` : 'Toca para abrirla.', url: '/?cajita=1', tag: 'cajita' };
+      for (const s of byUser.get(g.to_user) || []) await push(s, pl, 24 * 3600);
+      amigas++;
+    }
+    await sb.from('gifts').update({ payload: { ...pl0, avisado: true } }).eq('id', g.id);
+  }
+  return new Response(JSON.stringify({ sent, gone, rems, amigas }), { headers: { 'Content-Type': 'application/json' } });
 });

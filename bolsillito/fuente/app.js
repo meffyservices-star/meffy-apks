@@ -2703,10 +2703,21 @@ A.openSheet(u.name || fmtPhone(u.phone), `<div class="stack">
 <div class="card flat stack"><b>¿Olvidó su contraseña?</b><p class="faint" style="margin:0">Por seguridad nadie puede ver las contraseñas, ni siquiera tú. Ponle una nueva, pásasela y que la cambie en su perfil.</p>
 <div class="row"><input class="in" id="usPw" placeholder="Nueva contraseña (mín. 6)" autocomplete="off"><button class="btn pink sm" data-u="pw">Cambiar</button></div></div>
 <div class="f">Meffy+<div class="seg" style="margin-top:4px"><button data-u="plan" data-v="free" aria-pressed="${u.plan !== 'plus'}">Gratis</button><button data-u="plan" data-v="mensual" aria-pressed="${u.plan === 'plus' && u.plan_type === 'mensual'}">Mensual</button><button data-u="plan" data-v="anual" aria-pressed="${u.plan === 'plus' && u.plan_type === 'anual'}">Anual</button></div></div>
+<div class="card flat stack"><b>Regalar estrellitas</b><p class="faint" style="margin:0">${self ? 'Se suman a tu Tiendita al instante.' : 'Le llegan a su cajita como regalo de Meffy, con aviso al celular.'}</p>
+<div class="chips">${[10, 25, 50, 100].map(n => `<button class="chip" data-u="starsN" data-v="${n}">+${n}</button>`).join('')}</div><div class="row"><input class="in" id="usStars" type="number" inputmode="numeric" min="1" max="5000" placeholder="Otra cantidad"><button class="btn pink sm" data-u="stars">Regalar</button></div>
+<input class="in" id="usStarsMsg" maxlength="140" placeholder="Mensajito (opcional)"></div>
 ${self ? '' : `<div class="row" style="flex-wrap:wrap"><button class="btn sm" data-u="role">${u.role === 'admin' ? 'Quitar admin' : 'Hacer admin'}</button><button class="btn sm" data-u="block">${u.blocked ? 'Reactivar cuenta' : 'Pausar cuenta'}</button><button class="btn danger sm" data-u="del">Borrar cuenta</button></div>`}
 </div>`, sh => sh.addEventListener('click', async e => {
 const b = e.target.closest('[data-u]'); if (!b) return; const k = b.dataset.u;
 try {
+if (k === 'starsN') { sh.querySelector('#usStars').value = b.dataset.v; return; }
+if (k === 'stars') {
+const n = Math.floor(+sh.querySelector('#usStars').value || 0); if (n < 1 || n > 5000) return toast('Escribe cuántas estrellitas (1 a 5000)');
+const msg = (sh.querySelector('#usStarsMsg').value || '').trim().slice(0, 140);
+if (self) { A.giveStars(n); A.saveSettings(); toast(`+${n} estrellitas para ti ✦`); }
+else { const { error } = await Store.sb.from('gifts').insert({ to_user: u.id, from_user: Store.uid, from_name: 'Meffy', kind: 'stars', item: 'estrellitas', qty: n, msg, payload: { admin: true } }); if (error) throw new Error('No se pudo mandar. Revisa tu conexión.'); toast(`Le mandaste ${n} estrellitas a ${u.name || 'ella'} ✦`); }
+sh.querySelector('#usStars').value = ''; sh.querySelector('#usStarsMsg').value = ''; return;
+}
 if (k === 'name') { await Store.adminCall({ action: 'set_name', id: u.id, name: sh.querySelector('#usName').value }); u.name = sh.querySelector('#usName').value; toast('Nombre guardado'); }
 if (k === 'pw') { const pw = sh.querySelector('#usPw').value.trim(); if (pw.length < 6) return toast('Mínimo 6 caracteres'); await Store.adminCall({ action: 'set_password', id: u.id, password: pw }); toast('Contraseña cambiada. Pásasela a ' + (u.name || 'ella')); sh.querySelector('#usPw').value = ''; return; }
 if (k === 'plan') { const v = b.dataset.v; await Store.adminCall({ action: 'set_plan', id: u.id, plan: v === 'free' ? 'free' : 'plus', plan_type: v }); u.plan = v === 'free' ? 'free' : 'plus'; u.plan_type = v === 'free' ? null : v; toast(v === 'free' ? 'Ahora tiene el plan gratis' : 'Meffy+ ' + v + ' activado ✦'); }

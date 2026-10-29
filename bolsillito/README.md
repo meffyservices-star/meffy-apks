@@ -11,17 +11,26 @@ App de finanzas personales (gastos, presupuestos, metas y journal). Publicada en
   - `p0.bin`…`p5.bin` — el código de la app comprimido (gzip partido en 6).
 - `fuente/` — el mismo código de `p*.bin`, pero legible: `app.js`, `estilos.css`, `cuerpo.html`.
 - `empaquetar.js` — vuelve a crear `p*.bin` desde `fuente/`.
-- `servidor/recordatorio/index.ts` — copia de la función de Supabase `recordatorio` que manda los avisos (pg_cron la llama cada minuto).
+- `servidor/recordatorio/index.ts` — copia de la función de Supabase `recordatorio` que manda los avisos (pg_cron la llama cada minuto): aviso diario, recordatorios y avisos de amigas.
 
 ## Cómo hacer cambios
 
 1. Edita lo que necesites en `fuente/` (o directamente `offline.js`, `sw.js` o `index.html` en `publicado/`).
 2. Si tocaste `fuente/`, ejecuta `node bolsillito/empaquetar.js`.
-3. Sube la carpeta `bolsillito/publicado` a Vercel en el proyecto **bolsillito**: `vercel deploy --prod` desde esa carpeta.
+3. Sube los cambios a GitHub (`main`) y publica en Vercel el proyecto **bolsillito** desde ese commit (el proyecto no publica solo al hacer push; también sirve `vercel deploy --prod` desde `bolsillito/publicado`).
 
 Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exactos dentro de `app.js`. Si cambias esas líneas en `fuente/app.js`, revisa que los arreglos sigan aplicando.
 
 ## Historial
+
+- **28-oct-2026 (noche)**
+  - **Que nada se pierda** (`publicado/offline.js`): cada celular recuerda la última versión de la nube de cada documento (`base:`). Antes de subir revisa que nadie la haya cambiado; si otro celular la cambió, no la pisa: espera a que no estés escribiendo, recarga y **junta los cambios de los dos** (gastos por `id`, ajustes campo por campo; si el mismo dato cambió en los dos, gana el celular que sube). Al volver a la app trae lo nuevo de la nube. Si falla la subida, se reintenta sola; si el celular se queda sin espacio, avisa. Después de recargar vuelve a la pantalla donde estabas.
+  - **Más**: buscador ("Buscar en Bolsillito…") que encuentra todas las secciones y acciones por nombre o por palabras (por ejemplo "luces" → Mi cuarto, "ahorro viaje" → Metas), y un aviso de si todo está guardado en la nube o cuántos cambios esperan internet, con botón **Subir ahora** (`fuente/extras.js`).
+  - **Bienvenida con Ale** para usuarias nuevas (3 pantallitas, pide el nombre) y la tarjeta **Primeros pasitos** en Inicio: anotar el primer gasto, elegir mascota, decorar el cuarto, primera lista de compras, activar avisos, agregar una amiga y borrar los ejemplos (+3 estrellitas cada uno y +10 al terminar). Se vuelve a abrir buscando "Primeros pasitos".
+  - **Avisos de amigas**: notificación al celular cuando te dejan algo en la cajita y cuando te dan las gracias (la función `recordatorio` revisa la tabla `gifts` cada minuto y marca `payload.avisado`). Al tocar el aviso se abre la cajita. Al abrir un regalo hay **Dar las gracias** con mensajito; los gracias salen en Visitas.
+  - **Cajita**: al regalar estrellitas cada botón dice por qué no se puede (te faltan estrellitas o pasa el límite de 10 al día). La dueña no tiene límite y tiene botones de 20 y 50.
+  - **Panel → Usuarias → Regalar estrellitas**: a ti se suman al instante; a otra usuaria le llegan a su cajita como regalo de Meffy, con aviso.
+  - **Juego nuevo Carreritas** (`fuente/carrera.js`): 600 m en 3 carriles esquivando conos, charcos y cajas, con turbo y estrellitas. Las rivales son tus amigas agregadas y Meffy con su mejor tiempo de la semana (se publica en `rooms.body.race`; `ownerUid` en la configuración identifica a Meffy). Premio: 1 estrellita por cada 3 atrapadas + 10/6/4/2 por el lugar, hasta 60 al día aparte de los otros juegos. Tabla de la semana en Juegos. Caché `bolsillito-v41`.
 
 - **28-oct-2026**
   - **Regalos de amigas**: si el regalo era algo nuevo que la admin agregó en el panel (por ejemplo un mueble `cf_…`), el celular de la amiga usaba la lista vieja guardada y le salía el código raro y no le llegaba. Ahora la configuración nueva se aplica en vivo apenas llega (`Store.refreshConfig` en `offline.js` → `App.reloadConfig`), también al volver a la app; al abrir la cajita, si no conoce el regalo, primero trae la lista nueva. El mueble se guarda igual aunque todavía no esté, y nunca se muestra el código (sale "Un mueble nuevo"). Se reactivó en la cajita el regalo #14 (Usagi Panzón Dorado) que no había llegado.
