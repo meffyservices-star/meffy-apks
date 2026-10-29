@@ -2715,7 +2715,11 @@ if (k === 'stars') {
 const n = Math.floor(+sh.querySelector('#usStars').value || 0); if (n < 1 || n > 5000) return toast('Escribe cuántas estrellitas (1 a 5000)');
 const msg = (sh.querySelector('#usStarsMsg').value || '').trim().slice(0, 140);
 if (self) { A.giveStars(n); A.saveSettings(); toast(`+${n} estrellitas para ti ✦`); }
-else { const { error } = await Store.sb.from('gifts').insert({ to_user: u.id, from_user: Store.uid, from_name: 'Meffy', kind: 'stars', item: 'estrellitas', qty: n, msg, payload: { admin: true } }); if (error) throw new Error('No se pudo mandar. Revisa tu conexión.'); toast(`Le mandaste ${n} estrellitas a ${u.name || 'ella'} ✦`); }
+else {
+// la base de datos acepta hasta 10 estrellitas por regalo: se mandan en paquetitos que llegan juntos a su cajita
+const rows = []; for (let left = n; left > 0; left -= 10) rows.push({ to_user: u.id, from_user: Store.uid, from_name: 'Meffy', kind: 'stars', item: 'estrellitas', qty: Math.min(10, left), msg: rows.length ? '' : msg, payload: { admin: true, total: n, avisado: rows.length ? true : undefined } });
+const { error } = await Store.sb.from('gifts').insert(rows); if (error) { console.warn(error); throw new Error('No se pudo mandar: ' + (navigator.onLine ? 'la nube no lo aceptó.' : 'no hay internet.')); }
+toast(`Le mandaste ${n} estrellitas a ${u.name || 'ella'} ✦`); }
 sh.querySelector('#usStars').value = ''; sh.querySelector('#usStarsMsg').value = ''; return;
 }
 if (k === 'name') { await Store.adminCall({ action: 'set_name', id: u.id, name: sh.querySelector('#usName').value }); u.name = sh.querySelector('#usName').value; toast('Nombre guardado'); }

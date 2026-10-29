@@ -110,11 +110,12 @@ Deno.serve(async (req: Request) => {
   for (const g of (gData || []) as { id: number; to_user: string; from_name: string; kind: string; msg: string; payload: Record<string, unknown>; opened: boolean }[]) {
     const pl0 = g.payload || {};
     if (pl0.avisado) continue;
-    if (!(g.opened && g.kind !== 'thanks')) {
+    const thx = g.kind === 'thanks' || (g.kind === 'tpl' && !!pl0.thanks);
+    if (!(g.opened && !thx)) {
       const quien = (g.from_name || '').trim() || 'Una amiga';
-      const pl = g.kind === 'thanks'
+      const pl = thx
         ? { title: `${quien} te dio las gracias`, body: g.msg ? `“${g.msg}”` : 'Le encantó tu regalito.', url: '/?visitas=1', tag: 'gracias-' + g.id }
-        : { title: `${quien} te dejó algo en tu cajita`, body: g.msg ? `“${g.msg}” · Toca para abrirla.` : 'Toca para abrirla.', url: '/?cajita=1', tag: 'cajita' };
+        : { title: `${quien} te dejó algo en tu cajita`, body: (pl0.total ? `${pl0.total} estrellitas. ` : '') + (g.msg ? `“${g.msg}” · Toca para abrirla.` : 'Toca para abrirla.'), url: '/?cajita=1', tag: 'cajita' };
       for (const s of byUser.get(g.to_user) || []) await push(s, pl, 24 * 3600);
       amigas++;
     }

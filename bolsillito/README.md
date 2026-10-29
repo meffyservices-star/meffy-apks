@@ -23,6 +23,11 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
 
 ## Historial
 
+- **28-oct-2026 (más noche)**
+  - **Regalar estrellitas desde el panel** fallaba porque la tabla `gifts` solo acepta hasta 10 estrellitas por fila (restricciones `gifts_check` y `gifts_qty_check`) y no acepta el tipo `thanks`. Cambiar esas restricciones fue cancelado, así que ahora la app manda paquetitos de 10 que se abren juntos en la cajita, y los "gracias" viajan como `kind: 'tpl'` con `payload.thanks`.
+  - **Tiendita → Edición limitada** compacta: una tarjetita con las cosas en una fila que se desliza; **Ver todo** la abre grande y **Achicar** la vuelve a cerrar.
+  - **Cajitas sorpresa** (`fuente/cajitas.js`): Panel → Agregar cosas nuevas → **Cajita sorpresa**. Dibujo propio o uno listo (Ropa, Personajes, Muebles y juguetes, Cuadros, Misterio), precio y sorpresitas (ropa, muebles, mascotas, comida o estrellitas) con rareza Común/Raro/Súper raro y su porcentaje. En la Tiendita se ve qué puede traer cada una; al abrirla se sacude, se abre y muestra el premio. Si sale ropa o mascota repetida, devuelve el 40 % del precio. Se guarda en `catalog.boxes` (`cbx_<id>`). Caché `bolsillito-v42`.
+
 - **28-oct-2026 (noche)**
   - **Que nada se pierda** (`publicado/offline.js`): cada celular recuerda la última versión de la nube de cada documento (`base:`). Antes de subir revisa que nadie la haya cambiado; si otro celular la cambió, no la pisa: espera a que no estés escribiendo, recarga y **junta los cambios de los dos** (gastos por `id`, ajustes campo por campo; si el mismo dato cambió en los dos, gana el celular que sube). Al volver a la app trae lo nuevo de la nube. Si falla la subida, se reintenta sola; si el celular se queda sin espacio, avisa. Después de recargar vuelve a la pantalla donde estabas.
   - **Más**: buscador ("Buscar en Bolsillito…") que encuentra todas las secciones y acciones por nombre o por palabras (por ejemplo "luces" → Mi cuarto, "ahorro viaje" → Metas), y un aviso de si todo está guardado en la nube o cuántos cambios esperan internet, con botón **Subir ahora** (`fuente/extras.js`).

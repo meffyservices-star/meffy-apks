@@ -208,6 +208,7 @@ async function catchGame(mode) {
   raf = requestAnimationFrame(loop);
 }
 // herramientas compartidas con los juegos de otros archivos (Cruzar la calle)
+A.lookArt = (p, a, sc) => lookArt(p, a, sc);
 A.gameKit = { gameShell, loadImgs, endCard, GM, payGame, gsfx: n => gsfx(n), ST, spr, img, starsPill, bal, activePet, petSprite, GAME_CAP };
 
 // ================= Ropa de temporada (en la Tiendita) =================
@@ -231,14 +232,20 @@ A.screens.tienda = () => {
   const SE_THEME = { halloween: ['#5b4791', '#a27fd6', '#f6b07a', 'Noche de brujas'], navidad: ['#c8475f', '#e98a8f', '#5fa77a'], valentin: ['#e0577f', '#f7a6c0', '#ffd6e2'] };
   const PALS = [['#e0577f', '#f7a6c0', '#ffd6e2'], ['#5fa7d6', '#a9d3f2', '#e1f1fc'], ['#6cb38a', '#a6dcbc', '#e3f5ea'], ['#e6a23c', '#f5c97c', '#fff1d4'], ['#8a6fd1', '#bfaef0', '#efe9ff'], ['#e07b5f', '#f4b29d', '#ffe6dc']];
   const theme = se => { if (SE_THEME[se.id]) return SE_THEME[se.id]; let h = 0; String(se.id).split('').forEach(c => h = (h * 31 + c.charCodeAt(0)) >>> 0); return PALS[h % PALS.length]; };
-  const hero = cur.map(se => { const [c1, c2, c3] = theme(se); const days = A.seasonDaysLeft(se); return `<div class="se-hero" style="--se1:${c1};--se2:${c2};--se3:${c3}">
+  // compacta: una tarjetita con las cosas en una fila que se desliza; "Ver todo" la abre grande
+  const mini = se => { const [c1, c2, c3] = theme(se); const days = A.seasonDaysLeft(se); return `<div class="se-mini" style="--se1:${c1};--se2:${c2};--se3:${c3}">
+<div class="se-mini-h"><span class="se-mini-art">${se.look ? lookArt(se.pet, se.look, 3) : img('gift', 40)}</span><span class="se-mini-tx"><span class="se-k">${img('estrellita', 12)} Edición limitada · ${days === 1 ? 'último día' : days + ' días'}</span><b>${esc(se.name)}</b></span><button class="se-mini-more" data-act="seExpand" data-id="${esc(se.id)}">Ver todo</button></div>
+<div class="se-mini-row">${se.items.map(seasonItem).join('')}</div></div>`; };
+  const big = se => { const [c1, c2, c3] = theme(se); const days = A.seasonDaysLeft(se); return `<div class="se-hero" style="--se1:${c1};--se2:${c2};--se3:${c3}"><button class="se-mini-more on-hero" data-act="seExpand" data-id="${esc(se.id)}">Achicar</button>
 <div class="se-top"><div class="se-topline"><span class="se-k">${img('estrellita', 14)} Edición limitada</span><span class="se-days">${days === 1 ? 'Último día' : 'Quedan ' + days + ' días'}</span></div><div class="se-name">${esc(se.name)}</div><div class="se-when">${esc(se.when || '')}</div>
 <div class="se-looks">${se.look ? lookArt(se.pet, se.look, 5) : img('gift', 64)}${se.id === 'halloween' ? lookArt('shey', 'bruja', 5) : ''}</div></div>
-<div class="se-body"><div class="se-sub">Solo por esta temporada</div><div class="se-items">${se.items.map(seasonItem).join('')}</div></div></div>`; }).join('');
+<div class="se-body"><div class="se-sub">Solo por esta temporada</div><div class="se-items">${se.items.map(seasonItem).join('')}</div></div></div>`; };
+  const hero = cur.map(se => (S.seOpen === se.id ? big(se) : mini(se))).join('') + (A.boxesShopHTML ? A.boxesShopHTML() : '');
   const extra = `${hero}<details class="card se-next"><summary><b>Lo que viene</b></summary>${next.map(se => `<div class="row" style="gap:10px;padding:6px 0">${se.look ? `<span style="width:48px;flex:none">${lookArt(se.pet, se.look, 3)}</span>` : `<span style="width:48px;flex:none">${img('gift', 34)}</span>`}<div style="flex:1"><b>${esc(se.name)}</b><div class="faint">${se.items.filter(k => k.startsWith('acc:')).map(k => esc((A.ACC[k.slice(4)] || {}).name || '')).join(' y ')} · ${esc(se.when)}</div></div>${img('candado', 22)}</div>`).join('')}
 <div class="row" style="gap:10px;padding:6px 0"><span style="width:48px;flex:none">${lookArt(activePet(), 'fiesta', 3)}</span><div style="flex:1"><b>Tu cumpleaños</b><div class="faint">Gorrito de fiesta gratis para todas tus mascotas</div></div><input class="in" type="date" id="bdayIn" value="${bd ? new Date().getFullYear() + '-' + bd : ''}" style="max-width:150px" aria-label="Tu cumpleaños"></div></details>`;
   const i = html.indexOf('<div class="seg"'); return i >= 0 ? html.slice(0, i) + extra + html.slice(i) : html + extra;
 };
+ACT.seExpand = a => { S.seOpen = S.seOpen === a.dataset.id ? null : a.dataset.id; A.render(); };
 const afterTienda = A.after.tienda;
 A.after.tienda = el => { afterTienda && afterTienda(el); const b = $('#bdayIn', el); if (b) b.onchange = () => { S.settings.birthday = b.value ? b.value.slice(5) : ''; A.saveSettings(); birthdayGift(); toast('¡Anotado! Ese día habrá sorpresa.'); }; };
 function birthdayGift() {
@@ -441,8 +448,8 @@ ${Pix.has('x_farol') ? `<img class="pixel vl-lamp" alt="" src="${spr('x_farol', 
   const toMe = (V.inbox || []).filter(n => n.to_user === Store.uid);
   const ev = (V.events || []).filter(e => e.to_user === Store.uid);
   const letters = ev.filter(e => e.kind === 'letter'); const helps = ev.filter(e => ['feed', 'water', 'play'].includes(e.kind)).slice(0, 6);
-  const box = (V.gifts || []).filter(g => g.to_user === Store.uid && !g.opened && g.kind !== 'thanks');
-  const thx = (V.gifts || []).filter(g => g.to_user === Store.uid && g.kind === 'thanks' && !g.opened);
+  const box = (V.gifts || []).filter(g => g.to_user === Store.uid && !g.opened && !isThx(g));
+  const thx = (V.gifts || []).filter(g => g.to_user === Store.uid && isThx(g) && !g.opened);
   const unreadL = letters.filter(l => !(S.settings.lettersRead || []).includes(l.id)).length;
   return `${sub('visitas', 'rincon', V.mine ? `<span class="pill sm">${img('heart', 16)} ${V.mine.hearts || 0}</span>` : '')}
 ${hero('Tu barrio', friends.length ? (friends.length === 1 ? '1 amiga en tu lista' : friends.length + ' amigas en tu lista') : 'Agrega a tus amigas con su código')}
@@ -526,6 +533,7 @@ ACT.vsLetters = () => {
 ACT.vsMyBook = async () => { if (!online()) return; await loadSigns(Store.uid); const sg = V.signs[Store.uid] || []; openSheet('Tu libro de visitas', sg.length ? `<div class="vs-book">${sg.map(s2 => `<div class="vs-sign" style="--rot:${(s2.created_at.charCodeAt(18) % 7) - 3}deg"><img class="pixel" alt="" src="${spr(s2.style && s2.style.st || 'heart', 3)}"><b>${esc(s2.from_name)}</b><span>${esc(s2.text || '')}</span><em>${ago(s2.created_at)}</em></div>`).join('')}</div>` : '<p class="faint">Todavía nadie firmó tu libro. Comparte tu código con tus amigas.</p>'); };
 // ---- la cajita: mandar regalos ----
 const STAR_DAY = 10, STICK_DAY = 3;
+const isThx = g => g.kind === 'thanks' || (g.kind === 'tpl' && g.payload && g.payload.thanks);
 function accOwned() { const r = S.settings.rincon || {}; return (r.owned || []).filter(k => k.startsWith('acc:')).map(k => k.slice(4)).filter(k => A.ACC[k] && !A.ACC[k].plus); }
 ACT.vsGift = () => {
   const c = cur(); if (!c) return; const tab = V.gTab || 'food'; const pst = A.petState();
@@ -556,8 +564,9 @@ ACT.vsGift = () => {
       if (kind === 'furn') { if (!A.furnTake(item)) return toast('Ese mueble está puesto en tu cuarto'); }
       if (kind === 'acc') { const r = S.settings.rincon; r.owned = r.owned.filter(x => x !== 'acc:' + item); Object.values(r.equip || {}).forEach(eq => { Object.keys(eq).forEach(sl => { if (eq[sl] === item) eq[sl] = null; }); }); }
       if (kind === 'tpl') { const tp = (S.settings.jrTpls || []).find(x => x.id === item); if (!tp) return; row.payload = { name: tp.name, page: tp.page }; row.item = tp.name.slice(0, 60); }
-      const { error } = await Store.sb.from('gifts').insert(row);
-      if (error) { toast('No se pudo mandar. Revisa tu conexión.'); if (kind === 'stars') A.giveStars(row.qty); if (kind === 'food') pst.pantry[item]++; if (kind === 'furn') A.giveFurn(item); if (kind === 'acc') S.settings.rincon.owned.push('acc:' + item); return; }
+      const rows = [row]; if (kind === 'stars' && row.qty > 10) { rows.length = 0; for (let left = row.qty; left > 0; left -= 10) rows.push(Object.assign({}, row, { qty: Math.min(10, left), msg: rows.length ? '' : row.msg, payload: rows.length ? { avisado: true } : {} })); }
+      const { error } = await Store.sb.from('gifts').insert(rows);
+      if (error) { console.warn(error); toast(navigator.onLine ? 'No se pudo mandar: la nube no lo aceptó.' : 'No se pudo mandar: no hay internet.'); if (kind === 'stars') A.giveStars(row.qty); if (kind === 'food') pst.pantry[item]++; if (kind === 'furn') A.giveFurn(item); if (kind === 'acc') S.settings.rincon.owned.push('acc:' + item); return; }
       A.saveSettings(); V.gMsg = ''; closeSheet(); toast(`¡Lo dejaste en la cajita de ${c.name}!`); await loadInbox(); A.render();
     });
   });
@@ -568,32 +577,35 @@ const GIFT_GENERIC = { food: 'Una comidita', furn: 'Un mueble nuevo', acc: 'Ropi
 function giftLabel(g) { return g.kind === 'food' ? (A.FOODS[g.item] || {}).name || GIFT_GENERIC.food : g.kind === 'furn' ? (A.FURN[g.item] || {}).name || GIFT_GENERIC.furn : g.kind === 'acc' ? (A.ACC[g.item] || {}).name || GIFT_GENERIC.acc : g.kind === 'stars' ? g.qty + ' estrellitas' : g.kind === 'sticker' ? 'Pegatina ' + (PEGATINAS[g.item] || '') : 'Plantilla ' + g.item; }
 function giftSrc(g) { return g.kind === 'food' ? spr((A.FOODS[g.item] || {}).sprite || g.item, 5) : g.kind === 'furn' ? Pix.sprite(A.FURN[g.item] ? A.furnSprite(g.item) : 'gift', 3) : g.kind === 'acc' ? spr('acc_' + g.item, 6) : g.kind === 'stars' ? spr('estrellita', 5) : g.kind === 'sticker' ? spr(g.item, 5) : spr('ui_plantilla', 5); }
 ACT.vsThxOk = async () => {
-  const L = (V.gifts || []).filter(g => g.to_user === Store.uid && g.kind === 'thanks' && !g.opened);
+  const L = (V.gifts || []).filter(g => g.to_user === Store.uid && isThx(g) && !g.opened);
   L.forEach(g => { g.opened = true; }); A.render();
   try { await Store.sb.from('gifts').update({ opened: true }).in('id', L.map(g => g.id)); } catch (e) {}
 };
 // dar las gracias por un regalo: le llega un aviso a tu amiga
 async function sendThanks(g, msg) {
   if (!online()) { toast('Para dar las gracias necesitas internet.'); return false; }
-  const row = { to_user: g.from_user, from_user: Store.uid, from_name: myName(), kind: 'thanks', item: String(g.id), qty: 1, msg: (msg || '').trim().slice(0, 140), payload: { de: giftLabel(g) } };
+  const row = { to_user: g.from_user, from_user: Store.uid, from_name: myName(), kind: 'tpl', item: 'gracias', qty: 1, msg: (msg || '').trim().slice(0, 140), payload: { thanks: true, gift: g.id, de: giftLabel(g) } };
   const { error } = await Store.sb.from('gifts').insert(row);
   if (error) { toast('No se pudo mandar. Revisa tu conexión.'); return false; }
   S.settings.thanked = (S.settings.thanked || []).concat(g.id).slice(-80); A.saveSettings();
   toast(`¡Le diste las gracias a ${g.from_name || 'tu amiga'}!`); return true;
 }
 ACT.vsOpenBox = () => {
-  const box = (V.gifts || []).filter(g => g.to_user === Store.uid && !g.opened && g.kind !== 'thanks');
+  const box = (V.gifts || []).filter(g => g.to_user === Store.uid && !g.opened && !isThx(g));
   if (!box.length) return toast('Tu cajita está vacía. Comparte tu código para que te dejen regalitos.');
-  const g = box[box.length - 1];
-  openSheet('Tu cajita', `<div class="rg-stage" id="gbStage" style="min-height:300px">${''}<div class="rg-halo"></div><div class="rg-title" style="font-size:18px">${esc(g.from_name)} te dejó algo</div><button class="rg-btn" id="gbOpen" aria-label="Abrir"><img class="pixel rg-box shake" alt="" src="${spr('regalo_cerrado', 7)}" style="width:150px"></button><div class="rg-hint">Toca para abrir · quedan ${box.length}</div></div>`, sh => {
+  const g0 = box[box.length - 1];
+  // los paquetitos de estrellitas que llegaron juntos se abren como un solo regalo
+  const sibs = g0.kind === 'stars' ? box.filter(x => x.kind === 'stars' && x.from_user === g0.from_user && x.created_at === g0.created_at) : [g0];
+  const g = Object.assign({}, g0, { qty: sibs.reduce((n, x) => n + x.qty, 0), msg: (sibs.find(x => x.msg) || g0).msg });
+  openSheet('Tu cajita', `<div class="rg-stage" id="gbStage" style="min-height:300px">${''}<div class="rg-halo"></div><div class="rg-title" style="font-size:18px">${esc(g.from_name)} te dejó algo</div><button class="rg-btn" id="gbOpen" aria-label="Abrir"><img class="pixel rg-box shake" alt="" src="${spr('regalo_cerrado', 7)}" style="width:150px"></button><div class="rg-hint">Toca para abrir · quedan ${box.length - sibs.length + 1}</div></div>`, sh => {
     $('#gbOpen', sh).onclick = async () => {
       const bx = $('.rg-box', sh); bx.classList.remove('shake'); bx.classList.add('pop');
       // si es algo nuevo que la admin agregó y este celular todavía no lo tiene, primero se trae la lista nueva
       if (!giftKnown(g) && Store.refreshConfig) await Store.refreshConfig();
-      const { error } = await Store.sb.from('gifts').update({ opened: true }).eq('id', g.id);
+      const { error } = await Store.sb.from('gifts').update({ opened: true }).in('id', sibs.map(x => x.id));
       if (error) { toast('No se pudo abrir. Revisa tu conexión.'); return; }
-      g.opened = true; applyGiftFromFriend(g); A.saveSettings(); A.render(); A.renderNav();
-      setTimeout(() => { $('#gbStage', sh).innerHTML = `<div class="rg-halo"></div><div class="rg-burst"></div><div class="rg-prize" style="position:relative;top:0"><img class="pixel" alt="" src="${giftSrc(g)}" style="max-width:110px;max-height:110px"><div class="rg-card"><div class="rg-k">DE ${esc(g.from_name.toUpperCase())}</div><b>${esc(giftLabel(g))}</b>${g.msg ? `<div style="font-size:13px;margin-top:4px">“${esc(g.msg)}”</div>` : ''}</div></div><div class="gb-thx" id="gbThx"><input class="in" id="gbThxMsg" maxlength="140" placeholder="Mensajito de gracias (opcional)"><button class="btn" id="gbThxBtn">${img('heart', 18)} Dar las gracias</button></div>${box.length > 1 ? '<button class="btn pink" id="gbNext" style="position:relative;margin-top:10px">Abrir el siguiente</button>' : ''}`; const nx = $('#gbNext', sh); if (nx) nx.onclick = () => ACT.vsOpenBox(); const tb = $('#gbThxBtn', sh); if (tb) tb.onclick = async () => { tb.disabled = true; if (await sendThanks(g, ($('#gbThxMsg', sh) || {}).value)) $('#gbThx', sh).innerHTML = `<span class="faint">${img('heart', 16)} Le diste las gracias</span>`; else tb.disabled = false; }; }, 600);
+      sibs.forEach(x => { x.opened = true; }); applyGiftFromFriend(g); A.saveSettings(); A.render(); A.renderNav();
+      setTimeout(() => { $('#gbStage', sh).innerHTML = `<div class="rg-halo"></div><div class="rg-burst"></div><div class="rg-prize" style="position:relative;top:0"><img class="pixel" alt="" src="${giftSrc(g)}" style="max-width:110px;max-height:110px"><div class="rg-card"><div class="rg-k">DE ${esc(g.from_name.toUpperCase())}</div><b>${esc(giftLabel(g))}</b>${g.msg ? `<div style="font-size:13px;margin-top:4px">“${esc(g.msg)}”</div>` : ''}</div></div><div class="gb-thx" id="gbThx"><input class="in" id="gbThxMsg" maxlength="140" placeholder="Mensajito de gracias (opcional)"><button class="btn" id="gbThxBtn">${img('heart', 18)} Dar las gracias</button></div>${box.length > sibs.length ? '<button class="btn pink" id="gbNext" style="position:relative;margin-top:10px">Abrir el siguiente</button>' : ''}`; const nx = $('#gbNext', sh); if (nx) nx.onclick = () => ACT.vsOpenBox(); const tb = $('#gbThxBtn', sh); if (tb) tb.onclick = async () => { tb.disabled = true; if (await sendThanks(g, ($('#gbThxMsg', sh) || {}).value)) $('#gbThx', sh).innerHTML = `<span class="faint">${img('heart', 16)} Le diste las gracias</span>`; else tb.disabled = false; }; }, 600);
     };
   });
 };

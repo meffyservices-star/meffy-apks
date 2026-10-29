@@ -152,7 +152,7 @@ function daysLeft(se) {
 A.seasonDaysLeft = daysLeft;
 
 // ---- cosas que agrega la administradora (se guardan en la configuración de la app) ----
-const catalog = () => { const c = (A.CFG && A.CFG.catalog) || {}; return { pets: c.pets || [], furn: c.furn || [], clothes: c.clothes || [], food: c.food || [], icons: c.icons || [], stickers: c.stickers || [], walls: c.walls || [], floors: c.floors || [], seasons: c.seasons || [], chars: c.chars || [] }; };
+const catalog = () => { const c = (A.CFG && A.CFG.catalog) || {}; return { pets: c.pets || [], furn: c.furn || [], clothes: c.clothes || [], food: c.food || [], icons: c.icons || [], stickers: c.stickers || [], walls: c.walls || [], floors: c.floors || [], seasons: c.seasons || [], chars: c.chars || [], boxes: c.boxes || [] }; };
 const defMap = (name, w, h, map) => Pix.define(name, { w, h, fn(p) { p.map(0, 0, map); } });
 const defX = (name, x, w, h) => { if (x.pal) { Pix.define(name, { raw: x.map, pal: x.pal }); if (x.map2) { Pix.define(name + '__2', { raw: x.map2, pal: x.pal }); A.ANIM[name] = name + '__2'; } } else defMap(name, w, h, x.map); };
 const notYet = x => x.from && x.from > A.today();
@@ -170,6 +170,7 @@ function registerCatalog() {
   c.icons.forEach(x => { if (x.off || notYet(x)) return; const k = 'ci_' + x.id; defX(k, x, x.w || 16, x.h || 16); customKeys.icons.push(k); });
   c.stickers.forEach(x => { if (x.off || notYet(x)) return; defX('cs_' + x.id, x, x.w, x.h); });
   c.chars.forEach(x => defX('cg_' + x.id, x, x.w || 20, x.h || 20));
+  c.boxes.forEach(x => defX('cbx_' + x.id, x, x.w || 20, x.h || 20));
   const tileDef = (name, x, W, H) => { const t = x.pal ? x : null; if (!t) return; Pix.define(name, { raw: tiledRaw(x.map, W, H), pal: x.pal }); };
   c.walls.forEach(x => { const k = 'cw_' + x.id; tileDef('x_pared_' + k, x, 144, 34); customKeys.walls.push(k); if (!x.off && !notYet(x)) WALLS[k] = [x.name, x.how === 'stars' ? +x.price || 0 : 0]; });
   c.floors.forEach(x => { const k = 'cl_' + x.id; tileDef('x_piso_' + k, x, 144, 98); customKeys.floors.push(k); if (!x.off && !notYet(x)) FLOORS[k] = [x.name, x.how === 'stars' ? +x.price || 0 : 0]; });
@@ -822,10 +823,10 @@ ACT.rgDone = () => {
 };
 
 // ---------------- Admin: crear mascotas, muebles, ropa, comida, paredes, pisos, stickers e íconos ----------------
-const KINDS = { pets: ['Mascota', 20, 20], furn: ['Mueble', 24, 24], clothes: ['Ropa', 12, 8], food: ['Comida', 16, 16], walls: ['Pared', 16, 16], floors: ['Piso', 16, 16], stickers: ['Sticker', 24, 24], icons: ['Ícono', 16, 16], chars: ['Personaje', 20, 20] };
-const KIND_NEW = { pets: 'Nueva mascota', furn: 'Nuevo mueble', clothes: 'Nueva ropa', food: 'Nueva comida', walls: 'Nueva pared', floors: 'Nuevo piso', stickers: 'Nuevo sticker', icons: 'Nuevo ícono', chars: 'Nuevo personaje del juego' };
-const KIND_PL = { pets: 'Mascotas', furn: 'Muebles', clothes: 'Ropa', food: 'Comidas', walls: 'Paredes', floors: 'Pisos', stickers: 'Stickers', icons: 'Íconos', chars: 'Personajes de Cruzar la calle' };
-const KIND_SPR = { pets: 'cp_', furn: 'cf_', clothes: 'acc_cc_', food: 'cfo_', walls: 'x_pared_cw_', floors: 'x_piso_cl_', stickers: 'cs_', icons: 'ci_', chars: 'cg_' };
+const KINDS = { pets: ['Mascota', 20, 20], furn: ['Mueble', 24, 24], clothes: ['Ropa', 12, 8], food: ['Comida', 16, 16], walls: ['Pared', 16, 16], floors: ['Piso', 16, 16], stickers: ['Sticker', 24, 24], icons: ['Ícono', 16, 16], chars: ['Personaje', 20, 20], boxes: ['Cajita sorpresa', 20, 20] };
+const KIND_NEW = { pets: 'Nueva mascota', furn: 'Nuevo mueble', clothes: 'Nueva ropa', food: 'Nueva comida', walls: 'Nueva pared', floors: 'Nuevo piso', stickers: 'Nuevo sticker', icons: 'Nuevo ícono', chars: 'Nuevo personaje del juego', boxes: 'Nueva cajita sorpresa' };
+const KIND_PL = { pets: 'Mascotas', furn: 'Muebles', clothes: 'Ropa', food: 'Comidas', walls: 'Paredes', floors: 'Pisos', stickers: 'Stickers', icons: 'Íconos', chars: 'Personajes de Cruzar la calle', boxes: 'Cajitas sorpresa' };
+const KIND_SPR = { pets: 'cp_', furn: 'cf_', clothes: 'acc_cc_', food: 'cfo_', walls: 'x_pared_cw_', floors: 'x_piso_cl_', stickers: 'cs_', icons: 'ci_', chars: 'cg_', boxes: 'cbx_' };
 const PALK = Object.keys(Pix.PAL);
 const BASE_PAL = PALK.map(k => Pix.PAL[k]);
 function blankMap(w, h) { return Array.from({ length: h }, () => '.'.repeat(w)); }
@@ -844,11 +845,13 @@ function newDraft(kind, item) {
   ed.color = ed.color && ed.color !== 'P' ? ed.color : String(PALK.indexOf('P').toString(36));
   ed.tool = 'pen'; ed.hist = [];
   if (kind === 'furn' && !ed.dw) ed.dw = Math.min(40, Math.max(10, ed.w));
+  if (kind === 'boxes' && !item) { ed.price = 30; ed.items = []; if (A.boxPreset) A.boxPreset(ed, 0); }
   if (kind === 'clothes' && !ed.dw) ed.dw = ed.w + 2;
   ed.tryPet = ed.tryPet || A.petActive && A.petActive() || 'gochi';
   edImg = null; ed.mode = null;
 }
 const sprOf = (kind, id) => KIND_SPR[kind] + id;
+A.catEd = () => ed; A.catEdRedraw = () => { edPaintCanvas(); const pv = $('#edPrev'); if (pv) { Pix.define('__edprev', { raw: ed.map, pal: ed.pal.join(',') }); pv.src = Pix.sprite('__edprev', Math.max(1, Math.ceil(90 / ed.w))); } };
 A.screens.admincat = () => {
   if (!Store.isOwner) return `${sub('admincat', 'admin')}<div class="card empty">Esta sección es solo para la dueña de la app.</div>`;
   const kind = S.catKind || 'pets'; const c = catalog(); const list = c[kind] || [];
@@ -865,7 +868,7 @@ ${builtinHTML(kind)}
 <p class="faint" style="margin:0">Se repite cada año en esas fechas. Luego, al agregar ropa o muebles, elige "Temporada" y escoge esta.</p></details>`;
 };
 function howLabel(x, kind) { if (kind === 'stickers' || kind === 'icons') return 'Gratis'; return x.how === 'gacha' ? 'Máquina gacha · ' + (['', 'Común', 'Raro', 'Súper raro'][+x.rare || 1]) : x.how === 'stars' ? `${x.price} estrellitas` : x.how === 'logro' ? 'Por logro' : x.how === 'temporada' ? 'De temporada' : x.how === 'raro' ? 'Regalo raro' : 'Gratis'; }
-const PH = { pets: 'Ej. Mochi de coco', furn: 'Ej. Lámpara de luna', clothes: 'Ej. Gorrito de lana', food: 'Ej. Flan', walls: 'Ej. Rayitas rosadas', floors: 'Ej. Baldosa de corazones', stickers: 'Ej. Gatito feliz', icons: 'Ej. Mi banco', chars: 'Ej. Pandy' };
+const PH = { pets: 'Ej. Mochi de coco', furn: 'Ej. Lámpara de luna', clothes: 'Ej. Gorrito de lana', food: 'Ej. Flan', walls: 'Ej. Rayitas rosadas', floors: 'Ej. Baldosa de corazones', stickers: 'Ej. Gatito feliz', icons: 'Ej. Mi banco', chars: 'Ej. Pandy', boxes: 'Ej. Cajita de gorritos' };
 const HELP = {
   walls: 'Dibuja o sube un cuadrito que se repite a lo ancho de toda la pared (la pared mide 34 de alto).',
   floors: 'Dibuja o sube una baldosa: se repite en todo el piso, como azulejos.',
@@ -873,6 +876,7 @@ const HELP = {
   icons: 'Los íconos son gratis: les aparecen a todas al elegir el ícono de una cuenta, tarjeta o categoría.',
   clothes: 'Muévela y cámbiale el tamaño sobre la mascota hasta que quede en su lugar.',
   furn: 'Mira el tamaño junto a la camita y ajústalo.',
+  boxes: 'La cajita que se ve en la Tiendita. Dibújala o sube tu dibujo pixel (o usa una de las listas). Abajo eliges qué sorpresitas trae y qué tan difícil es sacar cada una.',
   chars: 'Personajes para el juego Cruzar la calle. Sube un dibujo pixel (de frente, con fondo transparente). Pueden salir en la máquina gacha, venderse con estrellitas o darse gratis desde el inicio.'
 };
 function formHTML() {
@@ -913,7 +917,7 @@ ${palHTML()}`}
 <div class="f">Variantes de color<div class="ad-vars">${VARS.map(([n, hue]) => `<button class="ad-var" data-var="${n}"><img class="pixel" alt="" src="${varPreview(hue)}"><span>${n}</span></button>`).join('')}</div><span class="faint" style="font-size:12px">Toca una y se crea una copia en ese color, lista para guardar.</span></div>
 ${k === 'clothes' ? tryOnHTML() : ''}${k === 'furn' || tile ? roomPreviewHTML() : ''}
 <div class="formgrid"><label class="f">Colección (opcional)<input class="in" data-ed="col" value="${esc(ed.col || '')}" placeholder="Ej. Otoño cozy" list="adCols"><datalist id="adCols">${[...new Set(Object.values(catalog()).flat().map(x => x && x.col).filter(Boolean))].map(c => `<option value="${esc(c)}">`).join('')}</datalist></label><label class="f">Sale el día (opcional)<input class="in" data-ed="from" type="date" value="${ed.from || ''}"></label></div>
-${k === 'stickers' || k === 'icons' ? '' : `<div class="f">¿Cómo se consigue?<div class="chips">${(k === 'chars' ? [['gacha', 'Máquina gacha'], ['stars', 'Con estrellitas'], ['free', 'Gratis desde el inicio']] : tile ? [['stars', 'Con estrellitas'], ['free', 'Gratis']] : [['stars', 'Con estrellitas'], ['logro', 'Logro'], ['temporada', 'Temporada'], ['raro', 'Regalo raro'], ...(k === 'food' ? [] : [['free', 'Gratis']])]).map(([v, n]) => `<button class="chip" data-edhow="${v}" aria-pressed="${ed.how === v}">${n}</button>`).join('')}</div></div>
+${k === 'boxes' ? (A.boxFormHTML ? A.boxFormHTML(ed) : '') : k === 'stickers' || k === 'icons' ? '' : `<div class="f">¿Cómo se consigue?<div class="chips">${(k === 'chars' ? [['gacha', 'Máquina gacha'], ['stars', 'Con estrellitas'], ['free', 'Gratis desde el inicio']] : tile ? [['stars', 'Con estrellitas'], ['free', 'Gratis']] : [['stars', 'Con estrellitas'], ['logro', 'Logro'], ['temporada', 'Temporada'], ['raro', 'Regalo raro'], ...(k === 'food' ? [] : [['free', 'Gratis']])]).map(([v, n]) => `<button class="chip" data-edhow="${v}" aria-pressed="${ed.how === v}">${n}</button>`).join('')}</div></div>
 <div class="formgrid">
 ${k === 'chars' && ed.how === 'gacha' ? `<label class="f">Qué tan difícil de sacar<select class="in" data-ed="rare">${[[1, 'Común'], [2, 'Raro'], [3, 'Súper raro']].map(([v, n]) => `<option value="${v}" ${+ed.rare === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>` : ''}
 ${ed.how === 'stars' || k === 'food' ? `<label class="f">Precio en estrellitas<input class="in" data-ed="price" type="number" min="0" value="${ed.price}"></label>` : ''}
@@ -1391,6 +1395,7 @@ ACT.edSave = () => {
   if (kind === 'pets') Object.assign(item, { desc: ed.desc, say: ed.desc });
   if (kind === 'food') Object.assign(item, { gain: +ed.gain || 20 });
   if (kind === 'chars') item.rare = +ed.rare || 1;
+  if (kind === 'boxes') { const err = A.boxSaveItem ? A.boxSaveItem(ed, item) : 'Falta la parte de las cajitas'; if (err) return toast(err); }
   if (kind === 'furn') { Object.assign(item, { wall: !!ed.wall, cat: ed.cat || (ed.wall ? 'pared' : 'deco') }); if (ed.light) item.light = ed.light; if (ed.lx != null) { item.lx = +ed.lx; item.ly = +ed.ly; } if (+ed.lr) item.lr = +ed.lr; if (ed.light === 'ventana' && ed.glass) item.glass = ed.glass; }
   if (ed.how === 'logro') item.ach = ed.ach; if (ed.how === 'temporada') item.season = ed.season;
   const i = list.findIndex(x => x.id === item.id); if (i >= 0) list[i] = item; else list.push(item);
