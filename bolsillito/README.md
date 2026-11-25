@@ -23,6 +23,8 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
 
 ## Historial
 
+  - **Amigos** (Más → Amigas): solicitudes de amistad (RPC `send_friend_request` / `respond_friend_request`, tabla `friend_requests`), buscar por código con vista previa, última vez en línea con día y hora (`rooms.last_seen`, se puede ocultar), actividad de amigas y explicación de todo lo que se puede hacer juntas. Aviso push de solicitudes (edge `recordatorio`, sección 5). Admin: hora real de última entrada (`profiles.last_seen`), avisos a una o todas (`admin_avisos`) y premio a las 3 más activas. Mascota: dormida ya no pierde felicidad. Jardín: el riego de hoy no se deshace sin querer. Caché `bolsillito-v46`.
+
 - **28-oct-2026 (22h)**
   - Carreritas: cada corredora lleva **su ropita** (la tuya de `rincon.equip`; la de tus amigas y Meffy desde `rooms.body.equip` de su mascota activa), dibujada con `A.accPlace` igual que en el cuarto (`dressedCanvas`). Podio con las mascotas paradas encima (sin flotar) y su nombre abajo. Botones **SALTAR** y **TURBO** nuevos en estilo pixel (el turbo muestra 7 cuadritos que se llenan con estrellitas) y se esconden al terminar. Caché `bolsillito-v45`.
 

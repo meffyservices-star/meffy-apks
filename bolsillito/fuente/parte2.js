@@ -247,7 +247,8 @@ function care(id) {
   const c = p.care[id] = p.care[id] || { h: 60, f: 70, e: 70, l: 70, t: now, sleep: false };
   const hrs = Math.max(0, (now - (c.t || now)) / 36e5);
   if (hrs > 0.01) {
-    c.h = clamp(c.h - 4 * hrs); c.f = clamp(c.f - 2 * hrs); c.l = clamp(c.l - 2.5 * hrs);
+    // dormida casi no se cansa de hambre ni de tristeza: dormir no debe bajarle la felicidad
+    const z = c.sleep; c.h = clamp(c.h - (z ? 1 : 4) * hrs); c.f = clamp(z ? c.f + 1 * hrs : c.f - 2 * hrs); c.l = clamp(c.l - (z ? 0.5 : 2.5) * hrs);
     c.e = clamp(c.sleep ? c.e + 14 * hrs : c.e - 3 * hrs); c.t = now;
     if (c.sleep && c.e >= 100) c.sleep = false;
   }
@@ -427,7 +428,7 @@ ACT.pcLove = () => {
   if (r.lastPet !== t) { r.lastPet = t; r.pets = (r.pets || 0) + 1; toast('¡Le diste cariño! +1 estrellita'); }
   say(['¡Te quiero mucho!', 'Jiji, me haces cosquillas.', '¡Eres la mejor!', 'Más mimos, porfa.'][Math.floor(Math.random() * 4)]); refreshCare();
 };
-ACT.pcSleep = () => { const id = P().active, c = care(id); c.sleep = !c.sleep; c.t = Date.now(); A.saveSettings(); A.render(); };
+ACT.pcSleep = () => { const id = P().active, c = care(id); if (!c.sleep && c.e >= 95) return say('No tengo sueño todavía. ¡Juguemos un ratito!'); c.sleep = !c.sleep; c.t = Date.now(); A.saveSettings(); A.render(); };
 ACT.pcShop = () => {
   const p = P();
   const tiles = () => Object.entries(FOODS).filter(([, f]) => !f.off).map(([k, f]) => `<button class="shop-tile" data-buyfood="${k}" ${bal() < f.price ? 'disabled' : ''}><img class="pixel" alt="" src="${spr(f.sprite || k, 3)}" style="width:40px"><span>${esc(f.name)}</span><em>${ST(12)} ${f.price} · tienes <b data-have="${k}">${p.pantry[k] || 0}</b></em></button>`).join('');

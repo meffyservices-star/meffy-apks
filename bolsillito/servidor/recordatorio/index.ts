@@ -2,6 +2,8 @@
 // 1) El recordatorio diario para anotar (tabla push_subs, columna daily).
 // 2) Los recordatorios que arma cada usuaria (tabla reminders): pago de tarjeta, suscripciones, cositas…
 // 3) Avisos de amigas: cuando te dejan algo en la cajita y cuando te dan las gracias (tabla gifts, payload.avisado).
+// 4) Avisos del admin (tabla admin_avisos): a una usuaria o a todas las que tienen notificaciones activadas.
+// 5) Solicitudes de amistad (tabla friend_requests): cuando te mandan una y cuando aceptan la tuya.
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4';
 import webpush from 'npm:web-push@3.6.7';
 
@@ -121,5 +123,38 @@ Deno.serve(async (req: Request) => {
     }
     await sb.from('gifts').update({ payload: { ...pl0, avisado: true } }).eq('id', g.id);
   }
-  return new Response(JSON.stringify({ sent, gone, rems, amigas }), { headers: { 'Content-Type': 'application/json' } });
+
+  // 4) Avisos del admin: a una usuaria (to_user) o a todas (to_user vacío). Solo los de las últimas 24 horas, una sola vez.
+  let avisos = 0;
+  const hace24 = new Date(Date.now() - 24 * 3600000).toISOString();
+  const { data: aData } = await sb.from('admin_avisos').select('id, to_user, title, body, url').eq('sent', false).gte('created_at', hace24).order('created_at').limit(50);
+  for (const a of (aData || []) as { id: number; to_user: string | null; title: string; body: string; url: string | null }[]) {
+    const targets = a.to_user ? (byUser.get(a.to_user) || []) : subs;
+    let n = 0;
+    for (const s of targets) if (await push(s, { title: a.title, body: a.body, url: a.url || '/', tag: 'aviso-' + a.id }, 24 * 3600)) n++;
+    await sb.from('admin_avisos').update({ sent: true, sent_count: n }).eq('id', a.id);
+    avisos++;
+  }
+
+  // 5) Solicitudes de amistad: aviso a quien la recibe y, cuando la aceptan, a quien la mandó (una sola vez cada una)
+  let solicitudes = 0;
+  const { data: fData } = await sb.from('friend_requests').select('id, from_user, to_user, from_name, to_name, status, notified, notified_reply')
+    .or('and(status.eq.pending,notified.eq.false),and(status.neq.pending,notified_reply.eq.false)').limit(100);
+  for (const f of (fData || []) as { id: number; from_user: string; to_user: string; from_name: string; to_name: string; status: string; notified: boolean; notified_reply: boolean }[]) {
+    if (f.status === 'pending') {
+      const quien = (f.from_name || '').trim() || 'Una amiga';
+      for (const s of byUser.get(f.to_user) || []) await push(s, { title: `${quien} quiere ser tu amiga`, body: 'Toca para aceptar o rechazar su solicitud.', url: '/?amigos=1', tag: 'sol-' + f.id }, 24 * 3600);
+      await sb.from('friend_requests').update({ notified: true }).eq('id', f.id);
+      solicitudes++;
+    } else {
+      if (f.status === 'accepted') {
+        const quien = (f.to_name || '').trim() || 'Tu amiga';
+        for (const s of byUser.get(f.from_user) || []) await push(s, { title: `${quien} aceptó tu solicitud`, body: '¡Ya son amigas! Toca para visitar su cuarto.', url: '/?amigos=1', tag: 'sol-ok-' + f.id }, 24 * 3600);
+        solicitudes++;
+      }
+      // si la rechazaron no se avisa, solo se marca como vista por el sistema
+      await sb.from('friend_requests').update({ notified: true, notified_reply: true }).eq('id', f.id);
+    }
+  }
+  return new Response(JSON.stringify({ sent, gone, rems, amigas, avisos, solicitudes }), { headers: { 'Content-Type': 'application/json' } });
 });

@@ -272,13 +272,14 @@ A.screens.jardin = () => {
 <div class="garden" id="garden" style="background-image:url(${Pix.banner('pradera')})">${bloom ? `<img class="pixel gd-fly" alt="" src="${spr('mariposa', 3)}"><img class="pixel gd-fly b" alt="" src="${spr('mariposa', 3)}">` : ''}
 <div class="gd-soil">${hs.map((h, i) => `<div class="gd-plot" data-plot="${h.id}"><img class="pixel gd-plant ${inf[i].plant}" alt="${esc(h.name)}" src="${spr(inf[i].plant, 4)}"><span class="gd-tag">${esc(h.name)}</span></div>`).join('')}</div></div>
 <div class="list">${hs.map((h, i) => { const x = inf[i]; return `<div class="li gd-row"><button class="gd-name" data-act="gdEdit" data-id="${h.id}"><span class="ic">${img(h.icon || 'brote', 28)}</span><span class="tx-main"><b>${esc(h.name)}</b><span>${x.plant === 'marchita' ? `Se está marchitando: ${x.missed} días sin regar` : x.streak ? `${x.streak} ${x.streak === 1 ? 'día' : 'días'} seguidos` + (x.streak < 7 ? ` · florece en ${7 - x.streak}` : x.streak < 30 ? ` · girasol en ${30 - x.streak}` : ' · ¡girasol!') : 'Riégala hoy para que brote'}${h.auto ? ' · se riega sola al anotar' : ''}</span></span></button>
-<button class="btn sm ${x.done ? 'ok' : 'pink'} gd-water" data-act="gdWater" data-id="${h.id}" ${x.done && h.auto ? 'disabled' : ''}>${img(x.done ? 'check' : 'regadera', 18)}${x.done ? 'Regado' : 'Regar'}</button></div>`; }).join('')}</div>
+<span class="row" style="gap:6px"><button class="btn sm ${x.done ? 'ok' : 'pink'} gd-water" data-act="gdWater" data-id="${h.id}" ${x.done ? 'disabled' : ''}>${img(x.done ? 'check' : 'regadera', 18)}${x.done ? 'Regado hoy' : 'Regar'}</button>${x.done && !h.auto ? `<button class="btn sm" data-act="gdUndo" data-id="${h.id}" aria-label="Deshacer el riego de hoy">↶</button>` : ''}</span></div>`; }).join('')}</div>
 <button class="btn" data-act="gdNew" style="justify-content:center">Nuevo hábito +</button>
 <p class="faint" style="margin:0">Cada hábito cumplido riega su planta y te da 1 estrellita. A los 7 días florece y a los 30 sale un girasol. Si la dejas 3 días, se marchita, pero revive en cuanto la riegues.</p>`;
 };
+ACT.gdUndo = a => { const g = GD(); const h = g.habits.find(x => x.id === a.dataset.id); if (!h || h.auto) return; const t = today(); h.days = (h.days || []).filter(d => d !== t); A.saveSettings(); A.render(); };
 ACT.gdWater = a => {
   const g = GD(); const h = g.habits.find(x => x.id === a.dataset.id); if (!h) return; const t = today(); h.days = h.days || [];
-  if (h.days.includes(t)) { if (h.auto) return; h.days = h.days.filter(d => d !== t); A.saveSettings(); A.render(); return; }
+  if (h.days.includes(t)) { toast('Ya la regaste hoy. Mañana crecerá un poquito más'); return; }
   h.days.push(t); h.days = h.days.filter(d => d >= ymd(addDays(new Date(), -400)));
   if (!g.sd || g.sd.d !== t) g.sd = { d: t, n: 0, ids: [] };
   if (!g.sd.ids.includes(h.id) && g.sd.n < 6) { g.sd.n++; g.sd.ids.push(h.id); A.giveStars(1); }
@@ -367,14 +368,14 @@ async function publishRoom() {
   if (!online()) return null;
   if (!S.settings.visitCode) { S.settings.visitCode = 'BOLSI-' + String(Math.floor(1000 + Math.random() * 9000)); A.saveSettings(); }
   for (let i = 0; i < 4; i++) {
-    const { data, error } = await Store.sb.from('rooms').upsert({ user_id: Store.uid, code: S.settings.visitCode, name: myName(), body: roomBody(), updated_at: new Date().toISOString() }, { onConflict: 'user_id' }).select('hearts').single();
+    const { data, error } = await Store.sb.from('rooms').upsert({ user_id: Store.uid, code: S.settings.visitCode, name: myName(), body: roomBody(), updated_at: new Date().toISOString(), ...(S.settings.hideSeen ? {} : { last_seen: new Date().toISOString() }) }, { onConflict: 'user_id' }).select('hearts').single();
     if (!error) { V.mine = data; return data; }
     if (String(error.code) === '23505') { S.settings.visitCode = 'BOLSI-' + String(Math.floor(1000 + Math.random() * 9000)); A.saveSettings(); continue; }
     console.warn(error); return null;
   }
 }
 A.publishRoom = () => publishRoom();
-async function fetchRoom(code) { const { data, error } = await Store.sb.from('rooms').select('user_id, code, name, body, hearts, updated_at').eq('code', code.toUpperCase()).maybeSingle(); if (error) throw error; return data; }
+async function fetchRoom(code) { const { data, error } = await Store.sb.from('rooms').select('user_id, code, name, body, hearts, updated_at, last_seen').eq('code', code.toUpperCase()).maybeSingle(); if (error) throw error; return data; }
 A.fetchRoom = fetchRoom;
 async function loadInbox() {
   const me = Store.uid;
@@ -403,9 +404,9 @@ const ago = s => { const d = Math.floor((Date.now() - new Date(s)) / 864e5); ret
 function refreshVisits(force) {
   if (V.loading || !online()) return; if (V.done && !force) return; V.loading = true;
   Promise.all([publishRoom(), loadInbox(), ...(S.settings.friends || []).map(f => fetchRoom(f.code).then(r => { if (r) { V.cache[f.code] = r; f.name = r.name; } }).catch(() => {}))])
-    .catch(e => console.warn(e)).finally(() => { V.loading = false; V.done = true; if (S.route === 'visitas') A.render(); });
+    .catch(e => console.warn(e)).finally(() => { V.loading = false; V.done = true; if (S.route === 'visitas' || S.route === 'amigos') A.render(); });
 }
-A.refreshVisits = refreshVisits;
+A.refreshVisits = refreshVisits; A.V = V; A.loadInbox = () => loadInbox();
 const did = (cur, kind) => (V.events || []).some(e => e.from_user === Store.uid && e.to_user === cur.user_id && e.kind === kind && e.day === today());
 const giftsToday = () => (V.gifts || []).filter(g => g.from_user === Store.uid && g.day === today());
 function friendRoomView(cur) {
@@ -459,13 +460,14 @@ ${thx.length ? `<div class="card vs-thx">${img('heart', 34)}<span><b>${thx.lengt
 <div class="card stack"><b>Tu código para que te agreguen</b><div class="row between"><span class="vs-code">${esc(S.settings.visitCode || '…')}</span><button class="btn sm" data-act="vsCopy">Copiar</button></div><span class="faint">Solo se ve tu cuarto: nunca tus cuentas ni tus gastos.</span></div>
 <div class="k-lbl">TUS AMIGAS</div>
 <div class="list vs-list">${friends.map(f => { const r = V.cache[f.code]; return `<div class="li"><span class="ic" style="width:44px;height:44px">${r && r.body && r.body.active && A.petInfo ? `<img class="pixel" alt="" src="${spr(A.petInfo(r.body.active).sprite, 3)}" style="width:40px">` : img('casita', 30)}</span><span class="tx-main"><b>${esc(f.name || f.code)}</b><span>${r ? 'Cambió su cuarto ' + ago(r.updated_at) : V.loading ? 'Cargando…' : 'No encontramos este código'}</span></span><button class="btn sm pink" data-act="vsGo" data-c="${esc(f.code)}" ${r ? '' : 'disabled'}>Visitar</button></div>`; }).join('') || '<div class="card empty">Agrega a tus amigas con su código para visitar sus cuartos.</div>'}</div>
-<div class="row" style="gap:8px"><input class="in" id="vsAdd" placeholder="Código de tu amiga (BOLSI-1234)" style="text-transform:uppercase"><button class="btn pink" data-act="vsAdd">Agregar</button></div>
+<button class="btn pink" data-go="amigos" style="justify-content:center">Agregar amigas y ver solicitudes${A.friendPending && A.friendPending() ? ' (' + A.friendPending() + ')' : ''}</button>
 ${helps.length ? `<div class="k-lbl">LO QUE HICIERON POR TI</div><div class="list">${helps.map(e => `<div class="li"><span class="ic">${img({ feed: 'cupcake', water: 'regadera', play: 'paw' }[e.kind], 26)}</span><span class="tx-main"><b>${esc(e.from_name)}</b><span>${{ feed: 'Le dio de comer a tu mascota', water: 'Regó tu jardín', play: 'Vino a jugar con tu mascota' }[e.kind]} · ${ago(e.created_at)}</span></span></div>`).join('')}</div>` : ''}
 ${toMe.length ? `<div class="k-lbl">CORAZONES Y NOTITAS</div><div class="list">${toMe.slice(0, 10).map(n => `<div class="li"><span class="ic">${img(n.kind === 'heart' ? 'heart' : 'ui_nota', 26)}</span><span class="tx-main"><b>${esc(n.from_name || 'Una amiga')}</b><span>${n.kind === 'heart' ? 'Le encantó tu cuarto' : '“' + esc(n.text) + '”'} · ${ago(n.created_at)}</span></span></div>`).join('')}</div>` : ''}
 <button class="btn" data-act="vsMyBook" style="justify-content:center">${img('book', 18)} Ver mi libro de visitas</button>`;
 };
 ACT.vsCopy = () => { const c = S.settings.visitCode; if (!c) return; (navigator.clipboard ? navigator.clipboard.writeText(c) : Promise.reject()).then(() => toast('Código copiado')).catch(() => toast(c)); };
-ACT.vsAdd = async () => {
+ACT.vsAdd = () => A.go('amigos');
+ACT.vsAddOld = async () => {
   const v = ($('#vsAdd').value || '').trim().toUpperCase().replace(/\s/g, ''); const code = /^\d{4}$/.test(v) ? 'BOLSI-' + v : v;
   if (!/^BOLSI-\d{4}$/.test(code)) return toast('El código es así: BOLSI-1234');
   if (code === S.settings.visitCode) return toast('Ese es tu propio código');
@@ -619,7 +621,7 @@ function applyGiftFromFriend(g) {
   if (g.kind === 'sticker') { const L2 = S.settings.giftStickers = S.settings.giftStickers || []; if (!L2.includes(g.item)) L2.push(g.item); }
   if (g.kind === 'tpl' && g.payload && g.payload.page) { const L2 = S.settings.jrTpls = S.settings.jrTpls || []; if (L2.length < 20) L2.push({ id: uid(), name: (g.payload.name || 'Plantilla') + ' (de ' + g.from_name + ')', page: g.payload.page }); }
 }
-A.navDotVisits = () => (V.gifts || []).some(g => g.to_user === Store.uid && !g.opened);
+A.navDotVisits = () => (V.gifts || []).some(g => g.to_user === Store.uid && !g.opened) || !!(A.friendPending && A.friendPending());
 A.openCajita = () => { A.go('visitas'); const t = () => { if (V.gifts) ACT.vsOpenBox(); else setTimeout(t, 500); }; setTimeout(t, 600); };
 // cuando cambias tu cuarto, se actualiza lo que ven tus amigas
 let pubT = null; const saveSet = A.saveSettings;

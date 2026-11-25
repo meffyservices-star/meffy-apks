@@ -38,6 +38,7 @@ const INFO = {
   juegos: ['Saltar, atrapar monedas, cruzar la calle', 'juegos jugar saltar monedas estrellitas cruzar calle minijuegos'],
   jardin: ['Tus hábitos como plantitas', 'jardin habitos plantas regar'],
   tablero: ['Tu moodboard del año', 'tablero suenos moodboard manifestar fotos stickers'],
+  amigos: ['Agregar amigas y solicitudes', 'amigos amigas solicitudes agregar codigo aceptar rechazar compartir ultima vez en linea'],
   visitas: ['Tus amigas, tu cajita y tus cartas', 'visitas amigas cajita regalos cartas codigo libro de visitas barrio gracias'],
   compartidas: ['Páginas de journal con amigas', 'compartidas paginas con amigas journal compartido'],
   recordatorio: ['Avisos al celular', 'recordatorios avisos notificaciones alarma pago de tarjeta cumpleanos'],
@@ -150,7 +151,7 @@ const STEPS = [
   ['cuarto', 'Decora el cuarto de tu mascota', 'go:rincon', () => !!(S.settings.seen || {}).cuarto, 'sp:casita'],
   ['compras', 'Arma tu primera lista de compras', 'go:compras', () => !!(((Store.get('compras') || {}).lists || []).length || ((S.cp || {}).lists || []).length), 'sp:x_carrito_super'],
   ['avisos', 'Activa los avisos del celular', 'go:recordatorio', () => typeof Notification !== 'undefined' && Notification.permission === 'granted', 'sp:campana'],
-  ['amiga', 'Agrega a una amiga', 'go:visitas', () => !!(S.settings.friends || []).length, 'sp:casita'],
+  ['amiga', 'Agrega a una amiga', 'go:amigos', () => !!(S.settings.friends || []).length, 'sp:casita'],
   ['ejemplos', 'Borra los datos de ejemplo', 'clearExamples', () => !(S.tx || []).some(t => t.example), 'sp:estrellita']
 ];
 const STEP_STARS = 3, ALL_STARS = 10;

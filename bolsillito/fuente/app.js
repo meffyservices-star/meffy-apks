@@ -1723,11 +1723,11 @@ const sc = A.screens, after = A.after, ACT = A.ACTIONS;
 const rerender = () => { A.render(); };
 function avatarHTML(cls) { return S.settings.photo ? `<img class="avatar ${cls}" alt="Tu foto" src="${esc(S.settings.photo)}">` : `<img class="avatar ${cls} pixel" alt="" src="${Pix.sprite('pudin', 5)}" style="object-fit:contain;padding:8px">`; }
 A.avatarHTML = avatarHTML;
-const MENU = ['rincon', 'logros', 'tienda', 'compras', 'suscripciones', 'recordatorio', 'year', 'goals', 'recurring', 'projections', 'rules', 'settings', 'appearance', 'plan', 'data'];
+const MENU = ['rincon', 'amigos', 'visitas', 'logros', 'tienda', 'compras', 'suscripciones', 'recordatorio', 'year', 'goals', 'recurring', 'projections', 'rules', 'settings', 'appearance', 'plan', 'data'];
 sc.more = () => `
 ${A.header('more')}${A.appCard ? A.appCard() : ''}
 <button class="card row" data-go="data" style="gap:14px;text-align:left;width:100%;color:inherit;font:inherit;cursor:pointer">${avatarHTML('')}<div style="min-width:0"><b class="mid" style="display:block">${esc(S.settings.name || 'Tu perfil')}</b><div class="faint">${A.isPlus() ? '<span class="tag gold">Meffy+</span> ' : ''}${S.settings.photo ? 'Toca para editar tu perfil' : 'Toca para poner tu foto y tu nombre'}</div></div></button>
-${(() => { const vis = MENU.concat(Store.isOwner ? ['admin'] : []).filter(k => !(S.settings.hidden || []).includes(k) || ['settings', 'appearance', 'plan', 'data', 'admin'].includes(k)); const TINT = { rincon: '#e3f3df', logros: '#fff4c2', tienda: '#efe6fb', suscripciones: '#efe6fb', recordatorio: '#e1effb', compras: '#ffe0ea', year: '#fff4c2', goals: '#e1effb', recurring: '#fde3ea', projections: '#e3f3df', rules: '#dcf3ec', settings: '#ffe8c7', appearance: '#dcf3ec', plan: '#fde3ea', data: '#e1effb', admin: '#f3e4dc' }; const G = [['Tu mascota', ['rincon', 'logros', 'tienda']], ['Tu dinero', ['compras', 'goals', 'suscripciones', 'recurring', 'year', 'projections', 'rules']], ['Ajustes', ['recordatorio', 'settings', 'appearance', 'plan', 'data', 'admin']]]; const used = new Set(G.flatMap(g => g[1])); const extra = vis.filter(k => !used.has(k)); if (extra.length) G[1][1] = G[1][1].concat(extra); return G.map(([t, ks]) => { const L = ks.filter(k => vis.includes(k)); return L.length ? `<div class="ph"><span class="pill sm">${t}</span></div><div class="menugrid tinted">${L.map(k => `<button data-go="${k}"><span class="ni" style="background:${TINT[k] || '#fde3ea'}">${iconHTML(A.pageIcon(k), 36)}</span>${esc(A.PAGES[k])}</button>`).join('')}</div>` : ''; }).join(''); })()}
+${(() => { const vis = MENU.concat(Store.isOwner ? ['admin'] : []).filter(k => !(S.settings.hidden || []).includes(k) || ['settings', 'appearance', 'plan', 'data', 'admin'].includes(k)); const TINT = { rincon: '#e3f3df', amigos: '#ffe0ea', visitas: '#e1effb', logros: '#fff4c2', tienda: '#efe6fb', suscripciones: '#efe6fb', recordatorio: '#e1effb', compras: '#ffe0ea', year: '#fff4c2', goals: '#e1effb', recurring: '#fde3ea', projections: '#e3f3df', rules: '#dcf3ec', settings: '#ffe8c7', appearance: '#dcf3ec', plan: '#fde3ea', data: '#e1effb', admin: '#f3e4dc' }; const G = [['Tu mascota', ['rincon', 'logros', 'tienda']], ['Amigas', ['amigos', 'visitas']], ['Tu dinero', ['compras', 'goals', 'suscripciones', 'recurring', 'year', 'projections', 'rules']], ['Ajustes', ['recordatorio', 'settings', 'appearance', 'plan', 'data', 'admin']]]; const used = new Set(G.flatMap(g => g[1])); const extra = vis.filter(k => !used.has(k)); if (extra.length) G[2][1] = G[2][1].concat(extra); return G.map(([t, ks]) => { const L = ks.filter(k => vis.includes(k)); return L.length ? `<div class="ph"><span class="pill sm">${t}</span></div><div class="menugrid tinted">${L.map(k => `<button data-go="${k}"><span class="ni" style="background:${TINT[k] || '#fde3ea'}">${iconHTML(A.pageIcon(k), 36)}</span>${esc(A.PAGES[k])}</button>`).join('')}</div>` : ''; }).join(''); })()}
 `;
 sc.goals = () => `
 ${A.bannerHTML('goals') || ''}
@@ -2656,7 +2656,7 @@ const D = draft; const R = D.rewards; const P = D.plan;
 const accRow = (k, a) => { const o = Object.assign({}, ORIG.acc[k], D.shop[k] || {}); return `<div class="setrow" style="flex-wrap:wrap"><span class="row" style="gap:8px;min-width:0;flex:1 1 160px"><img class="pixel" alt="" src="${Pix.sprite('acc_' + k, 3)}" style="width:${Math.min(40, a.w * 3)}px"><input class="in" data-cf="shop.${k}.name" value="${esc(o.name)}" style="min-width:0"></span><span class="row" style="gap:6px">${A.px('estrellita', 16)}${num('shop.' + k + '.price', o.price || 0)}<label class="chip"><input type="checkbox" data-cf="shop.${k}.plus" ${o.plus ? 'checked' : ''}> Meffy+</label><label class="chip"><input type="checkbox" data-cf="shop.${k}.off" ${o.off ? 'checked' : ''}> Oculto</label></span></div>`; };
 return `${A.header('admin', '<span class="tag gold">Solo tú</span>')}
 <div class="card"><b>Panel de admin</b><p class="muted" style="margin:6px 0 0">Aquí manejas a tus usuarias y cambias precios, estrellitas, la Tiendita, los logros, las frases de la noche y las novedades.</p></div>
-${Store.mode === 'supa' ? usersHTML() : ''}
+${Store.mode === 'supa' ? usersHTML() + avisosHTML() : ''}
 <details class="card" open><summary><b>Meffy+</b></summary>
 ${row('Precio mensual ($)', num('plan.monthly', P.monthly, .01))}${row('Precio anual ($)', num('plan.annual', P.annual, .01))}
 ${row('Estrellitas de regalo cada mes (mensual)', num('plan.bonusMonthly', P.bonusMonthly))}${row('Estrellitas de regalo al activar (anual)', num('plan.bonusAnnual', P.bonusAnnual))}
@@ -2681,24 +2681,52 @@ ${A.musicAdminHTML ? A.musicAdminHTML(D) : ''}
 let USERS = null, uq = '', loadingUsers = false;
 function loadUsers() {
 if (loadingUsers) return; loadingUsers = true;
-Store.adminCall({ action: 'list' }).then(d => { USERS = d.users || []; }).catch(e => { USERS = []; toast(e.message); }).finally(() => { loadingUsers = false; if (S.route === 'admin') A.render(); });
+Store.adminCall({ action: 'list' }).then(async d => { USERS = d.users || []; try { const { data } = await Store.sb.from('profiles').select('id, last_seen'); const m = Object.fromEntries((data || []).map(r => [r.id, r.last_seen])); USERS.forEach(u => { u.last_seen = m[u.id] || null; }); } catch (e) { } }).catch(e => { USERS = []; toast(e.message); }).finally(() => { loadingUsers = false; if (S.route === 'admin') A.render(); });
 }
 const ago = s => { if (!s) return 'nunca'; const d = Math.floor((Date.now() - new Date(s)) / 864e5); return d <= 0 ? 'hoy' : d === 1 ? 'ayer' : 'hace ' + d + ' días'; };
+const seenAt = u => u.last_seen || u.last_sign_in;
+const agoFull = s => { if (!s) return 'nunca'; const d = Math.floor((Date.now() - new Date(s)) / 864e5); const w = A.whenFull ? A.whenFull(s) : ''; return d <= 0 ? (w || 'hoy') : d === 1 ? (w || 'ayer') : (w ? w + ' · ' : '') + 'hace ' + d + ' días'; };
 const fmtPhone = p => p && p.startsWith('593') ? '0' + p.slice(3) : p;
 function usersHTML() {
 if (!USERS) { loadUsers(); return '<details class="card" open><summary><b>Usuarias</b></summary><div class="empty">Cargando…</div></details>'; }
-const q = uq.toLowerCase(); const list = USERS.filter(u => !q || (u.name || '').toLowerCase().includes(q) || (u.phone || '').includes(q.replace(/\D/g, '')) || fmtPhone(u.phone).includes(q));
-const plus = USERS.filter(u => u.plan === 'plus').length; const week = USERS.filter(u => u.last_sign_in && Date.now() - new Date(u.last_sign_in) < 7 * 864e5).length;
+const q = uq.toLowerCase(); const list = USERS.slice().sort((a, b) => (seenAt(b) || '') < (seenAt(a) || '') ? -1 : 1).filter(u => !q || (u.name || '').toLowerCase().includes(q) || (u.phone || '').includes(q.replace(/\D/g, '')) || fmtPhone(u.phone).includes(q));
+const plus = USERS.filter(u => u.plan === 'plus').length; const week = USERS.filter(u => seenAt(u) && Date.now() - new Date(seenAt(u)) < 7 * 864e5).length;
 return `<details class="card" open><summary><b>Usuarias (${USERS.length})</b></summary>
 <div class="grid2" style="margin-bottom:10px"><div class="card flat"><h3>Con Meffy+</h3><div class="mid">${plus}</div></div><div class="card flat"><h3>Activas esta semana</h3><div class="mid">${week}</div></div></div>
 <div class="row" style="margin-bottom:8px"><input class="in" id="uSearch" placeholder="Buscar por nombre o número" value="${esc(uq)}" type="search"><button class="btn sm" data-act="usersReload">Actualizar</button></div>
-<div class="list">${list.map(u => `<button class="li" data-act="userOpen" data-id="${u.id}" style="${u.blocked ? 'opacity:.55' : ''}"><span class="ic">${A.px(u.role === 'admin' ? 'gem' : u.plan === 'plus' ? 'pudin' : 'gochi', 28)}</span><span class="tx-main"><b>${esc(u.name || 'Sin nombre')}</b><span>${esc(fmtPhone(u.phone))} · entró ${ago(u.last_sign_in)}${u.blocked ? ' · pausada' : ''}</span></span><span class="tag ${u.plan === 'plus' ? 'gold' : ''}">${u.plan === 'plus' ? 'Meffy+ ' + (u.plan_type || '') : 'Gratis'}</span></button>`).join('') || '<div class="empty">Nadie con ese nombre o número.</div>'}</div></details>`;
+<div class="list">${list.map(u => `<button class="li" data-act="userOpen" data-id="${u.id}" style="${u.blocked ? 'opacity:.55' : ''}"><span class="ic">${A.px(u.role === 'admin' ? 'gem' : u.plan === 'plus' ? 'pudin' : 'gochi', 28)}</span><span class="tx-main"><b>${esc(u.name || 'Sin nombre')}</b><span>${esc(fmtPhone(u.phone))} · entró ${agoFull(seenAt(u))}${u.blocked ? ' · pausada' : ''}</span></span><span class="tag ${u.plan === 'plus' ? 'gold' : ''}">${u.plan === 'plus' ? 'Meffy+ ' + (u.plan_type || '') : 'Gratis'}</span></button>`).join('') || '<div class="empty">Nadie con ese nombre o número.</div>'}</div></details>`;
 }
+function avisosHTML() {
+if (!USERS) return '';
+const act = USERS.filter(u => seenAt(u)).sort((a, b) => (seenAt(b) < seenAt(a) ? -1 : 1)).filter(u => Date.now() - new Date(seenAt(u)) < 7 * 864e5).slice(0, 3);
+return `<details class="card"><summary><b>Avisos y premios</b></summary>
+<p class="faint">Manda un aviso al celular de una usuaria o de todas. Solo les llega a quienes activaron las notificaciones; a las demás les aparece un recordatorio dentro de la app.</p>
+<label class="f">Para<select class="in" id="avTo"><option value="">Todas</option>${USERS.map(u => `<option value="${u.id}">${esc(u.name || fmtPhone(u.phone))}</option>`).join('')}</select></label>
+<label class="f">Título<input class="in" id="avTitle" maxlength="60" placeholder="Ej. ¡Novedades en Bolsillito!"></label>
+<label class="f">Mensaje<textarea class="in" id="avBody" maxlength="180" placeholder="Lo que quieres contarles"></textarea></label>
+<button class="btn pink" data-act="avSend" style="justify-content:center">Enviar aviso</button>
+<div class="card flat stack" style="margin-top:10px"><b>Premiar a las más activas</b><span class="faint">${act.length ? act.map(u => esc(u.name || 'Sin nombre') + ' (' + agoFull(seenAt(u)) + ')').join(' · ') : 'Todavía no hay actividad esta semana.'}</span>
+<button class="btn sm" data-act="avReward" ${act.length ? '' : 'disabled'}>Regalar 25 estrellitas a estas ${act.length}</button></div></details>`;
+}
+A.ACTIONS.avSend = async () => {
+const to = document.getElementById('avTo').value || null, title = document.getElementById('avTitle').value.trim(), body = document.getElementById('avBody').value.trim();
+if (!title || !body) return toast('Escribe el título y el mensaje');
+const { error } = await Store.sb.from('admin_avisos').insert({ to_user: to, title, body, url: '/' });
+if (error) { console.warn(error); return toast('No se pudo enviar el aviso'); }
+document.getElementById('avTitle').value = ''; document.getElementById('avBody').value = ''; toast(to ? 'Aviso enviado' : 'Aviso enviado a todas ✦');
+};
+A.ACTIONS.avReward = async () => {
+const act = USERS.filter(u => seenAt(u) && Date.now() - new Date(seenAt(u)) < 7 * 864e5).sort((a, b) => (seenAt(b) < seenAt(a) ? -1 : 1)).slice(0, 3);
+const rows = []; act.forEach(u => { if (u.id === Store.uid) return; for (let left = 25; left > 0; left -= 10) rows.push({ to_user: u.id, from_user: Store.uid, from_name: 'Meffy', kind: 'stars', item: 'estrellitas', qty: Math.min(10, left), msg: left === 25 ? 'Por ser de las más activas esta semana ✦' : '', payload: { admin: true, total: 25, avisado: left === 25 ? undefined : true } }); });
+if (!rows.length) return toast('No hay a quién premiar');
+const { error } = await Store.sb.from('gifts').insert(rows); if (error) return toast('No se pudo mandar');
+toast('Premio enviado ✦');
+};
 A.ACTIONS.usersReload = () => { USERS = null; A.render(); };
 A.ACTIONS.userOpen = a => {
 const u = USERS.find(x => x.id === a.dataset.id); if (!u) return; const self = u.id === Store.uid;
 A.openSheet(u.name || fmtPhone(u.phone), `<div class="stack">
-<div class="card flat"><div class="row between"><span>Número</span><b style="user-select:all">${esc(fmtPhone(u.phone))}</b></div><div class="row between"><span>Se unió</span><b>${new Date(u.created_at).toLocaleDateString('es-EC')}</b></div><div class="row between"><span>Último ingreso</span><b>${ago(u.last_sign_in)}</b></div><div class="row between"><span>Rol</span><b>${u.role === 'admin' ? 'Administradora' : 'Usuaria'}</b></div></div>
+<div class="card flat"><div class="row between"><span>Número</span><b style="user-select:all">${esc(fmtPhone(u.phone))}</b></div><div class="row between"><span>Se unió</span><b>${new Date(u.created_at).toLocaleDateString('es-EC')}</b></div><div class="row between"><span>Última vez en la app</span><b>${agoFull(seenAt(u))}</b></div><div class="row between"><span>Rol</span><b>${u.role === 'admin' ? 'Administradora' : 'Usuaria'}</b></div></div>
 <label class="f">Nombre<input class="in" id="usName" value="${esc(u.name || '')}"></label><button class="btn sm" data-u="name" style="align-self:flex-start">Guardar nombre</button>
 <div class="card flat stack"><b>¿Olvidó su contraseña?</b><p class="faint" style="margin:0">Por seguridad nadie puede ver las contraseñas, ni siquiera tú. Ponle una nueva, pásasela y que la cambie en su perfil.</p>
 <div class="row"><input class="in" id="usPw" placeholder="Nueva contraseña (mín. 6)" autocomplete="off"><button class="btn pink sm" data-u="pw">Cambiar</button></div></div>
