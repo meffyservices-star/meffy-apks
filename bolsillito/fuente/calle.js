@@ -25,7 +25,7 @@ A.calleBuilt = () => BUILT;
 const catChars = () => (((A.CFG && A.CFG.catalog) || {}).chars || []).filter(x => !x.off && !(x.from && x.from > A.today()));
 function allChars() {
   const out = catChars().map(x => ({ id: 'cg_' + x.id, name: x.name, sprite: 'cg_' + x.id, how: x.how || 'gacha', price: +x.price || 0, rare: +x.rare || 1 }));
-  Object.entries(BUILT).forEach(([k, b]) => { if (goneCh(k) && !CS().owned.includes('cgb_' + k)) return; out.push({ id: 'cgb_' + k, name: b.name, sprite: 'cgb_' + k, how: 'gacha', rare: b.rare }); });
+  Object.entries(BUILT).forEach(([k, b]) => { if (goneCh(k) && !(((S.settings.calle || {}).owned) || []).includes('cgb_' + k)) return; out.push({ id: 'cgb_' + k, name: b.name, sprite: 'cgb_' + k, how: 'gacha', rare: b.rare }); });
   return out;
 }
 const PET_CHAR = () => ({ id: 'pet', name: (A.petInfo ? A.petInfo(K.activePet()).name : 'Tu mascota'), sprite: K.petSprite(), how: 'free', rare: 1, pet: true });

@@ -32,6 +32,7 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
   - **v64**: "Borrar ejemplos" ahora también quita los saldos y presupuestos de ejemplo que no hayas editado (también para quien ya los había borrado).
   - **v65**: se quitaron los Retos; Tarrito compartido rediseñado (tarritos de cristal con monedas, etiquetas, repisa) y Cuentas como recibo; fotos de perfil de tus amistades en ambos.
   - **v66 – Personalizar** (`config.js`): nueva pantalla en Más para mostrar u ocultar secciones del menú, cada juego, las cosas del cuarto (misiones, paseos, mariposas, burbujas) y la guía "Primeros pasitos".
+- v114: arreglado el error que impedía abrir Juegos (se trababa si se había quitado un personaje de Cruzar la calle).
 - v113: si algo falla aparece un aviso en pantalla con el error (para poder arreglarlo rápido).
 - v112: la app ya no se recarga sola (ni por versión nueva ni por cambios de otro celular); Guardar siempre guarda.
 - v111: las letras ahora vienen guardadas dentro de la app (ya no dependen de internet), para que siempre se vean bien.
