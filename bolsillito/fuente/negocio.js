@@ -9,7 +9,7 @@ const num = v => Math.max(0, Math.round((+String(v).replace(',', '.') || 0) * 10
 const gid = x => document.getElementById(x);
 const MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const DIA = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
-const N = () => (S.settings.neg = S.settings.neg || { name: '', tipo: '', goal: 0, prods: [], sales: [], exps: [], clients: [], pays: [] });
+const N = () => { const n = (S.settings.neg = S.settings.neg || { name: '', tipo: '', goal: 0, prods: [], sales: [], exps: [], clients: [], pays: [] }); ['sales', 'exps', 'clients'].forEach(k => { if (n[k] && n[k].includes(null)) n[k] = n[k].filter(Boolean); }); return n; };
 const save = () => A.saveSettings();
 const r2 = x => Math.round(x * 100) / 100;
 // ---------- tipos de negocio ----------
@@ -63,6 +63,56 @@ ACT.negPedir = async () => {
   try { const { error } = await Store.sb.from('negocio_acceso').upsert({ user_id: Store.uid, estado: 'pendiente', nombre: (S.settings.name || '').slice(0, 40) }, { ignoreDuplicates: true }); if (error) throw error; NEG.estado = NEG.estado || 'pendiente'; toast('Listo, se lo avisamos a Meffy'); A.render(); } catch (e) { toast('No se pudo pedir ahora'); }
 };
 ACT.negCerrarPromo = () => { S.settings.negPromo = 1; save(); A.render(); };
+
+// ---------- panel web (solo admin) ----------
+const PN_URL = 'https://nhyxgfnjjzrdwshiuoyo.supabase.co/functions/v1/bolsillito-sync';
+const PNL = { at: 0, busy: false, err: '' };
+function pnOn() { return !!(window.Store && Store.isOwner && Store.mode === 'supa'); }
+const hide = o => (Object.defineProperty(o, 'toJSON', { value: () => undefined, enumerable: false }), o);
+const capz = t => (t || 'Otro').charAt(0).toUpperCase() + (t || 'otro').slice(1);
+const gye = ts => new Date(Date.parse(ts) - 5 * 3600e3).toISOString().slice(0, 10);
+async function pnCall(body) {
+  const { data } = await Store.sb.auth.getSession(); const tk = data && data.session && data.session.access_token; if (!tk) throw new Error('sin sesión');
+  const r = await fetch(PN_URL, { method: 'POST', headers: { Authorization: 'Bearer ' + tk, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({})); if (!r.ok || j.error) throw new Error(j.error || 'No respondió'); return j;
+}
+function pnApply(d) {
+  const n = N(), subs = new Map((d.subs || []).map(x => [x.id, x]));
+  const cl = (d.clients || []).map(c => { const ss = (d.subs || []).filter(x => x.customer_id === c.id), nx = ss.filter(x => x.renewal_date).sort((a, b) => a.renewal_date < b.renewal_date ? -1 : 1)[0]; return hide({ id: 'pn_' + c.id, n: c.name || 'Sin nombre', tel: c.phone || '', plan: ss.map(x => x.plan_name).filter(Boolean).slice(0, 2).join(', '), renov: nx ? nx.renewal_date : '', pn: 1 }); });
+  const sa = [];
+  (d.payments || []).forEach(p => { const o = p.cb_orders || {}, a = +p.amount || 0; sa.push(hide({ id: 'pn_' + p.id, d: p.payment_date, items: [{ p: null, n: o.service || 'Pago', q: 1, pr: a, c: 0 }], total: a, paid: a, cli: o.client_id ? 'pn_' + o.client_id : '', met: capz(p.payment_method), pn: 1 })); });
+  (d.subpays || []).forEach(p => { const su = subs.get(p.subscription_id) || {}, a = +p.amount || 0; sa.push(hide({ id: 'pn_s' + p.id, d: gye(p.paid_at), items: [{ p: null, n: su.plan_name || 'Suscripción', q: 1, pr: a, c: 0 }], total: a, paid: a, cli: su.customer_id ? 'pn_' + su.customer_id : '', met: capz(p.payment_method), pn: 1 })); });
+  const ex = (d.expenses || []).map(e => hide({ id: 'pn_' + e.id, d: e.expense_date, amt: +e.amount || 0, n: e.note || e.provider || e.platform || 'Gasto', cat: e.platform || 'Panel', pn: 1 }));
+  n.sales = n.sales.filter(x => !x.pn && !x.tx).concat(sa); n.exps = n.exps.filter(x => !x.pn && !x.tx).concat(ex); n.clients = n.clients.filter(x => !x.pn).concat(cl);
+}
+async function pnRefresh(manual) {
+  if (!pnOn() || PNL.busy) return; PNL.busy = true;
+  try { const d = await pnCall({ action: 'pull' }); pnApply(d); try { localStorage.setItem('bols_pn', JSON.stringify(d)); } catch (e) {} PNL.at = Date.now(); PNL.err = ''; if (manual) toast('Sincronizado con tu panel'); }
+  catch (e) { PNL.err = e.message || 'error'; if (manual) toast('No pude conectar: ' + PNL.err); }
+  PNL.busy = false; { const sc = document.getElementById('scrim'); if (S.route === 'negocio' && !(sc && !sc.hidden)) A.render(); }
+}
+let PNC = false;
+function pnAuto() {
+  if (!pnOn()) return;
+  if (!PNC) { PNC = true; try { const c = JSON.parse(localStorage.getItem('bols_pn') || 'null'); if (c) pnApply(c); } catch (e) {} }
+  if (!PNL.busy && Date.now() - PNL.at > 60000 && Date.now() - (PNL.try || 0) > 20000) { PNL.try = Date.now(); setTimeout(() => pnRefresh(false), 50); }
+}
+const pnCard = () => `<button class="card ng-por ng-vin" data-act="negPnSync"><span class="ng-ic" style="background:#e1f6ea">${A.px('maletin', 26)}</span><span><b>Conectado con tu panel web</b><small class="faint">${PNL.busy ? 'Sincronizando…' : PNL.err ? 'Sin conexión ahora · toca para reintentar' : PNL.at ? 'Actualizado ' + new Date(PNL.at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) + ' · toca para sincronizar' : 'Conectando…'}</small></span></button>`;
+ACT.negPnSync = () => pnRefresh(true);
+async function pnPushSale(s) {
+  if (!pnOn() || s.paid < s.total || !s.total) return;
+  try {
+    const cn = (cliName(s.cli) || '').trim(), isPn = s.cli && s.cli.startsWith('pn_');
+    const r = await pnCall({ action: 'sale_add', client_id: isPn ? s.cli.slice(3) : null, client_name: isPn ? '' : cn, service: s.items.map(i => i.n).join(', ').slice(0, 80), amount: s.total, method: String(s.met || 'efectivo').toLowerCase(), date: s.d });
+    s.id = 'pn_' + r.id; s.pn = 1; hide(s); save(); toast('Guardado también en tu panel web');
+    if (!isPn && r.client_id && s.cli) { s.cli = 'pn_' + r.client_id; }
+  } catch (e) { toast('Queda solo en la app: ' + (e.message || 'sin conexión')); }
+}
+async function pnPushExp(x) {
+  if (!pnOn()) return;
+  try { const r = await pnCall({ action: 'expense_add', amount: x.amt, note: x.n || x.cat, platform: x.cat, date: x.d }); x.id = 'pn_' + r.id; x.pn = 1; hide(x); save(); toast('Guardado también en tu panel web'); }
+  catch (e) { toast('Queda solo en la app: ' + (e.message || 'sin conexión')); }
+}
 // ---------- cálculos ----------
 const ym = d => d.slice(0, 7);
 const mk = () => (A._negM = A._negM || A.ym(A.today()));
@@ -87,7 +137,7 @@ sc.negocio = () => '<div class="ngx">' + negScr() + '</div>';
 function negScr() {
   if (!okAcceso()) return lockedHTML();
   const n = N(); if (!n.tipo) return setupHTML();
-  syncLinks();
+  syncLinks(); pnAuto();
   if (TAB === 'pedidos' && !M().pedidos) TAB = 'resumen'; const body = { resumen, ventas, pedidos, productos, clientes }[TAB]();
   return `<div class="ph"><div class="ph-left"><span class="pill">${esc(n.name || 'Negocio')}</span><button class="ph-icon" data-act="pageicon" data-k="negocio" aria-label="Cambiar icono">${A.iconHTML(A.pageIcon('negocio'), 34)}</button></div><button class="round-btn" data-act="negAjustes" aria-label="Ajustes del negocio"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg></button></div>
 <div class="ng-nav">${tabsL().map(([k, t]) => `<button data-act="negTab" data-k="${k}" aria-pressed="${TAB === k}">${t}</button>`).join('')}</div><div class="stack ng-body">${body}</div>`;
@@ -144,8 +194,8 @@ function resumen() {
 <div class="ng-chips">${['hoy', 'semana', 'mes'].map(k => `<button data-act="negPer" data-k="${k}" aria-pressed="${PER === k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join('')}<span class="ng-range">${PER === 'hoy' ? 'Hoy' : PER === 'semana' ? 'Últimos 7 días' : MES[+a.slice(5, 7) - 1][0].toUpperCase() + MES[+a.slice(5, 7) - 1].slice(1)}</span></div>
 <div class="ng-k4"><div class="ng-k pink"><span>Ingresos</span><b>${money(st.ventas)}</b>${chip(dv)}</div><div class="ng-k sky"><span>Ganancia</span><b class="${st.ganancia < 0 ? 'neg' : ''}">${money(st.ganancia)}</b>${st.ventas ? `<em class="ng-d flat">${Math.round(st.ganancia / st.ventas * 100)}% margen</em>` : chip(dg)}</div><div class="ng-k sky"><span>Ventas</span><b>${st.ss.length}</b><em class="ng-d flat">ticket ${money(st.ss.length ? st.ventas / st.ss.length : 0)}</em></div><div class="ng-k pink"><span>Por cobrar</span><b>${money(deb)}</b><em class="ng-d flat">${(k => k + (k === 1 ? ' pendiente' : ' pendientes'))(new Set(pc.map(s => s.cli || s.id)).size)}</em></div></div>
 <div class="card"><h3>Ventas y gastos por día</h3>${chart(days)}<div class="ng-leg"><span><i style="background:#ef6fa3"></i>Ventas</span><span><i style="background:#7fbfe3"></i>Gastos</span></div></div>
-${!link ? `<button class="card ng-por ng-vin" data-act="negVinc"><span class="ng-ic" style="background:#e1effb">${A.px('maletin', 26)}</span><span><b>Vincula tu plata con el negocio</b><small class="faint">Elige qué ingresos y gastos de tu plata son del negocio y pasan solos</small></span><i>›</i></button>` : ''}
-${link ? `<button class="card ng-por ng-vin" data-act="negVinc"><span class="ng-ic" style="background:#e1effb">${A.px('maletin', 26)}</span><span><b>Vinculado con tu plata</b><small class="faint">${esc((n.link.cats || []).map(id => (A.cat(id) || {}).name).filter(Boolean).join(', ') || 'Sin categorías')} · Toca para cambiar</small></span></button>` : ''}<div class="card"><h3>Necesita tu atención</h3>${al.length ? `<div class="ng-als">${al.slice(0, 7).map(r => `<div class="ng-al ${r[7] || ''}"><span class="ng-ic" style="background:${r[1]}">${A.px(Pix.has(r[0]) ? r[0] : 'moneda', 24)}</span><span><b>${esc(r[2])}</b><small>${esc(r[3])}</small></span><button class="ng-mini" data-act="${r[4]}" data-${r[4] === 'negTab' ? 'k' : 'id'}="${r[5]}">${r[6]}</button></div>`).join('')}</div>` : '<p class="faint" style="margin:0">Todo en orden por ahora.</p>'}</div>
+${pnOn() ? pnCard() : ''}${(!link && !pnOn()) ? `<button class="card ng-por ng-vin" data-act="negVinc"><span class="ng-ic" style="background:#e1effb">${A.px('maletin', 26)}</span><span><b>Vincula tu plata con el negocio</b><small class="faint">Elige qué ingresos y gastos de tu plata son del negocio y pasan solos</small></span><i>›</i></button>` : ''}
+${(link && !pnOn()) ? `<button class="card ng-por ng-vin" data-act="negVinc"><span class="ng-ic" style="background:#e1effb">${A.px('maletin', 26)}</span><span><b>Vinculado con tu plata</b><small class="faint">${esc((n.link.cats || []).map(id => (A.cat(id) || {}).name).filter(Boolean).join(', ') || 'Sin categorías')} · Toca para cambiar</small></span></button>` : ''}<div class="card"><h3>Necesita tu atención</h3>${al.length ? `<div class="ng-als">${al.slice(0, 7).map(r => `<div class="ng-al ${r[7] || ''}"><span class="ng-ic" style="background:${r[1]}">${A.px(Pix.has(r[0]) ? r[0] : 'moneda', 24)}</span><span><b>${esc(r[2])}</b><small>${esc(r[3])}</small></span><button class="ng-mini" data-act="${r[4]}" data-${r[4] === 'negTab' ? 'k' : 'id'}="${r[5]}">${r[6]}</button></div>`).join('')}</div>` : '<p class="faint" style="margin:0">Todo en orden por ahora.</p>'}</div>
 ${st.top.length ? `<div class="card"><h3>Lo más vendido</h3><div class="ng-rank">${st.top.map((t, i) => { const p = n.prods.find(x => x.id === t.p) || { n: t.n }; return `<div><span class="ng-rn ${tint(i)}">${i + 1}</span>${img(p, 'ng-rimg')}<span class="ng-rt"><b>${esc(t.n)}</b><i style="width:${Math.max(8, t.q / mxq * 100)}%" class="${tint(i)}"></i></span><small>${t.q} vend.</small></div>`; }).join('')}</div></div>` : ''}
 <div class="card"><h3>Cómo te fue</h3><div class="ng-pl"><div><span>Ingresos por ventas</span><b>${money(st.ventas)}</b></div><div><span>Lo que te costó lo vendido</span><b>− ${money(st.costo)}</b></div><div><span>Gastos del negocio</span><b>− ${money(st.gastos)}</b></div><div class="tot"><span>Ganancia</span><b class="${st.ganancia < 0 ? 'neg' : 'pos'}">${money(st.ganancia)}</b></div></div>${st.ventas ? `<div class="ng-stack"><i class="c" style="width:${pcost}%"></i><i class="g" style="width:${pgas}%"></i><i class="p" style="width:${pgan}%"></i></div><div class="ng-leg"><span><i style="background:#ffc7dc"></i>Costo</span><span><i style="background:#a8d6f0"></i>Gastos</span><span><i style="background:#9fd9b3"></i>Ganancia</span></div>` : ''}</div>
 ${n.goal > 0 ? `<div class="card"><h3>Meta del mes</h3><div class="row" style="justify-content:space-between;margin-bottom:8px"><b class="num">${money(meta)} <span class="faint">de ${money(n.goal)}</span></b><b style="color:#c24f82">${Math.min(100, Math.round(meta / n.goal * 100))}%</b></div><div class="ng-prog"><i style="width:${Math.min(100, meta / n.goal * 100)}%"></i></div></div>` : ''}
@@ -212,7 +262,7 @@ ACT.negVentaOk = () => {
   let paid = total; if (c.pago === 'fiado') paid = 0; if (c.pago === 'abono') paid = Math.min(total, num(c.ab));
   if (paid < total && !c.cli) return toast('Para fiar elige a la clienta');
   items.forEach(i => { const p = n.prods.find(x => x.id === i.p); if (p && p.stock != null) p.stock = Math.max(0, p.stock - i.q); });
-  const sale = { id: id(), d: A.today(), items, total, paid, cli: c.cli || '', met: c.met }; n.sales.push(sale); save(); LAST = sale;
+  const sale = { id: id(), d: A.today(), items, total, paid, cli: c.cli || '', met: c.met }; n.sales.push(sale); save(); LAST = sale; pnPushSale(sale);
   CART = { items: {}, extra: [], cli: '', pago: 'todo', met: 'Efectivo', ab: '' }; closeSheet(); done(sale);
 };
 const receipt = s => { const n = N(); return `${n.name || 'Mi negocio'}\nComprobante de venta · ${dayLbl(s.d)}\n\n${s.items.map(i => `${i.q} × ${i.n}  ${money(i.q * i.pr)}`).join('\n')}\n\nTotal: ${money(s.total)}${debe(s) > 0 ? `\nPagado: ${money(s.paid)} · Saldo: ${money(debe(s))}` : '\nPagado'}\n\n¡Gracias por tu compra!`; };
@@ -225,7 +275,7 @@ ACT.negSaleOpen = a => {
   sheet('Venta', `<div class="stack ng-f"><div class="ng-total"><span>${dayLbl(s.d)}</span><b>${money(s.total)}</b></div>${s.items.map(i => `<div class="ng-row"><span>${i.q} × ${esc(i.n)}</span><b>${money(i.q * i.pr)}</b></div>`).join('')}<p class="faint">${esc(cliName(s.cli) || 'Sin clienta')} · ${debe(s) > 0 ? 'Debe ' + money(debe(s)) : 'Pagada'}</p>${debe(s) > 0 ? `<button class="btn pink ng-cta" data-act="negCobrar" data-id="${s.id}">Marcar como pagada</button>` : ''}<button class="btn ng-cta" data-act="negShare" data-id="${s.id}">Compartir comprobante</button><button class="btn ng-cta" data-act="negSaleDel" data-id="${s.id}">Borrar venta</button></div>`);
 };
 ACT.negCobrar = a => { const s = N().sales.find(x => x.id === a.dataset.id); if (s) { s.paid = s.total; save(); closeSheet(); toast('Cobrada'); A.render(); } };
-ACT.negSaleDel = a => { const n = N(), s = n.sales.find(x => x.id === a.dataset.id); if (!s) return; s.items.forEach(i => { const p = n.prods.find(x => x.id === i.p); if (p && p.stock != null) p.stock += i.q; }); n.sales = n.sales.filter(x => x !== s); save(); closeSheet(); A.render(); };
+ACT.negSaleDel = a => { const n = N(), s = n.sales.find(x => x.id === a.dataset.id); if (!s) return; if (s.pn) return toast('Esta venta se borra desde tu panel web'); s.items.forEach(i => { const p = n.prods.find(x => x.id === i.p); if (p && p.stock != null) p.stock += i.q; }); n.sales = n.sales.filter(x => x !== s); save(); closeSheet(); A.render(); };
 // ---- productos ----
 function productos() {
   const n = N();
@@ -273,10 +323,10 @@ ACT.negCliOpen = a => {
   sheet(c.n, `<div class="stack ng-f"><div class="ng-total"><span>${deb > 0 ? 'Te debe' : 'Al día'}</span><b>${money(deb)}</b></div>${ss.slice(0, 8).map(s => `<div class="ng-row"><span>${dayLbl(s.d)} · ${esc(s.items.map(i => i.n).join(', ').slice(0, 28))}</span><b>${money(s.total)}</b></div>`).join('') || '<p class="faint">Aún no te ha comprado.</p>'}
 ${M().renov ? `<div class="grid2"><label class="f">Plan<input class="in" id="ncP2" maxlength="24" value="${esc(c.plan || '')}"></label><label class="f">Renovación<input class="in" id="ncR2" type="date" value="${c.renov || ''}"></label></div><div class="grid2"><button class="btn ng-cta" data-act="negCliUp" data-id="${c.id}">Guardar datos</button><button class="btn ng-cta" data-act="negCliRenov" data-id="${c.id}">Renovó +1 mes</button></div>` : ''}${deb > 0 ? `<label class="f">Abonar<input class="in" id="ncAb" inputmode="decimal" placeholder="${deb}"></label><button class="btn pink ng-cta" data-act="negAbono" data-id="${c.id}">Registrar pago</button>${wa ? `<a class="btn ng-cta" style="text-decoration:none" href="${wa}" target="_blank" rel="noopener">Recordarle por WhatsApp</a>` : ''}` : ''}<button class="btn ng-cta" data-act="negCliDel" data-id="${c.id}">Borrar clienta</button></div>`);
 };
-ACT.negCliUp = a => { const c = N().clients.find(x => x.id === a.dataset.id); if (!c) return; c.plan = gid('ncP2').value.trim(); c.renov = gid('ncR2').value; save(); closeSheet(); A.render(); };
-ACT.negCliRenov = a => { const c = N().clients.find(x => x.id === a.dataset.id); if (!c) return; const t = A.today(), base = c.renov && c.renov > t ? c.renov : t, d = new Date(base + 'T12:00'); d.setMonth(d.getMonth() + 1); c.renov = iso(d); save(); closeSheet(); toast('Renovación hasta ' + dayLbl(c.renov)); A.render(); };
+ACT.negCliUp = a => { const c = N().clients.find(x => x.id === a.dataset.id); if (!c) return; if (c.pn) return toast('Esta clienta se edita desde tu panel web'); c.plan = gid('ncP2').value.trim(); c.renov = gid('ncR2').value; save(); closeSheet(); A.render(); };
+ACT.negCliRenov = a => { const c = N().clients.find(x => x.id === a.dataset.id); if (!c) return; if (c.pn) return toast('Esta clienta se edita desde tu panel web'); const t = A.today(), base = c.renov && c.renov > t ? c.renov : t, d = new Date(base + 'T12:00'); d.setMonth(d.getMonth() + 1); c.renov = iso(d); save(); closeSheet(); toast('Renovación hasta ' + dayLbl(c.renov)); A.render(); };
 ACT.negAbono = a => { const n = N(); let v = num(gid('ncAb').value); if (!v) return toast('Pon cuánto pagó'); n.sales.filter(s => s.cli === a.dataset.id && debe(s) > 0).sort((x, y) => x.d < y.d ? -1 : 1).forEach(s => { const t = Math.min(v, debe(s)); s.paid = r2((s.paid || 0) + t); v = r2(v - t); }); save(); closeSheet(); toast('Pago registrado'); A.render(); };
-ACT.negCliDel = a => { const n = N(); n.clients = n.clients.filter(x => x.id !== a.dataset.id); n.sales.forEach(s => { if (s.cli === a.dataset.id) s.cli = ''; }); save(); closeSheet(); A.render(); };
+ACT.negCliDel = a => { const n = N(); if ((n.clients.find(x => x.id === a.dataset.id) || {}).pn) return toast('Esta clienta se borra desde tu panel web'); n.clients = n.clients.filter(x => x.id !== a.dataset.id); n.sales.forEach(s => { if (s.cli === a.dataset.id) s.cli = ''; }); save(); closeSheet(); A.render(); };
 // ---- gastos ----
 function gastos() {
   const st = stats(mk()), by = {}; st.ee.forEach(e => { by[e.cat] = (by[e.cat] || 0) + e.amt; });
@@ -285,12 +335,13 @@ function gastos() {
 let GC = '';
 ACT.negGasto = () => { GC = T().exp[0]; sheet('Gasto del negocio', `<div class="stack ng-f"><label class="f">Cuánto<input class="in" id="ngeA" inputmode="decimal" placeholder="0.00"></label><label class="f">En qué (opcional)<input class="in" id="ngeN" maxlength="40" placeholder="Ej. cajitas"></label><div class="chips">${T().exp.map(c => `<button class="chip" aria-pressed="${c === GC}" data-act="negGCat" data-k="${esc(c)}">${esc(c)}</button>`).join('')}</div><button class="btn pink ng-cta" data-act="negGastoOk">Guardar</button></div>`); };
 ACT.negGCat = a => { GC = a.dataset.k; document.querySelectorAll('.chip[data-act=negGCat]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === GC)); };
-ACT.negGastoOk = () => { const v = num(gid('ngeA').value); if (!v) return toast('Pon un monto'); N().exps.push({ id: id(), d: A.today(), amt: v, n: gid('ngeN').value.trim(), cat: GC || 'Otros' }); save(); closeSheet(); A.render(); };
+ACT.negGastoOk = () => { const v = num(gid('ngeA').value); if (!v) return toast('Pon un monto'); const ex = { id: id(), d: A.today(), amt: v, n: gid('ngeN').value.trim(), cat: GC || 'Otros' }; N().exps.push(ex); save(); pnPushExp(ex); closeSheet(); A.render(); };
 ACT.negGastoOpen = a => sheet('Gasto', `<div class="stack ng-f"><button class="btn ng-cta" data-act="negGastoDel" data-id="${a.dataset.id}">Borrar este gasto</button></div>`);
-ACT.negGastoDel = a => { const n = N(); n.exps = n.exps.filter(x => x.id !== a.dataset.id); save(); closeSheet(); A.render(); };
+ACT.negGastoDel = a => { const n = N(); if ((n.exps.find(x => x.id === a.dataset.id) || {}).pn) return toast('Este gasto se borra desde tu panel web'); n.exps = n.exps.filter(x => x.id !== a.dataset.id); save(); closeSheet(); A.render(); };
 
 // ---------- vincular con mi plata personal ----------
 function syncLinks() {
+  if (pnOn()) { const q = N(); if (q.sales.some(x => x.tx) || q.exps.some(x => x.tx)) { q.sales = q.sales.filter(x => !x.tx); q.exps = q.exps.filter(x => !x.tx); } return; }
   const n = N(), L = n.link; if (!L || (!(L.cats || []).length && !(L.accts || []).length)) return;
   const hit = t => (t.type === 'income' || t.type === 'expense') && t.date >= (L.since || '0000') && ((L.cats || []).includes(t.cat) || (L.accts || []).includes(t.acct));
   const live = new Map(S.tx.filter(hit).map(t => [t.id, t])); let ch = false;
