@@ -2417,7 +2417,7 @@ if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('message',
   if (performance.now() < 20000 || document.hidden) return go();
   document.addEventListener('visibilitychange', function f() { if (!document.hidden) { document.removeEventListener('visibilitychange', f); go(); } });
 });
-window.BOLS_V = 'v118';
+window.BOLS_V = 'v119';
 A.ACTIONS.forceUpdate = async () => { A.toast('Buscando…'); try { const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(r => r.unregister())); const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); } catch (e) {} location.reload(); };
 A.ACTIONS.aleOpen = () => summary();
 const tipFn = A.ACTIONS.mascot;

@@ -58,7 +58,7 @@ const BASE_ING = { masa: 'ckh_masa', miel: 'ckh_miel', fresa: 'ckh_fresa', taza:
 let ING = BASE_ING;
 const BASE_COOK = ['masa', 'carne', 'carneh', 'salchicha', 'platano', 'pollo']; let COOKERS = BASE_COOK;
 const BASE_D = ['masa', 'miel', 'fresa', 'crema', 'chispas', 'taza', 'te', 'boba', 'cono', 'bola', 'matcha', 'chocolate', 'menta'];
-const BASE_S = ['pan', 'panb', 'pant', 'salchicha', 'carne', 'carneh', 'queso', 'quesoh', 'arroz', 'menestra', 'platano', 'pescado', 'yuca', 'pollo'];
+const BASE_S = ['pan', 'panb', 'salchicha', 'carne', 'carneh', 'queso', 'arroz', 'menestra', 'platano', 'pescado', 'yuca', 'pollo'];
 const BASE_P = ['harina', 'huevos', 'leche', 'mantequilla', 'azucar', 'aceite', 'sal', 'lechuga', 'tomate', 'mostaza', 'limon', 'cebolla'];
 let ORD_D = BASE_D, ORD_S = BASE_S, ORD_P = BASE_P;
 let STN = 'dulce', SHOWN = null; const order = () => (STN === 'dulce' ? ORD_D : STN === 'despensa' ? ORD_P : ORD_S).filter(k => !SHOWN || SHOWN.has(k));
@@ -77,7 +77,7 @@ const BASE_REC = [
   { id: 'pastelf', name: 'Pastel de fresa', steps: ['harina', 'huevos', 'cook', 'crema', 'fresa'], art: 'ckh_r_pastelf', price: 15, lvl: 6 },
   { id: 'hotdog', name: 'Hot dog', steps: ['pan', 'salchicha', 'cook', 'mostaza'], art: 'ckh_r_hotdog', price: 8, lvl: 1 },
   { id: 'bolon', name: 'Bolón', steps: ['platano', 'cook', 'queso'], art: 'ckh_r_bolon', price: 8, lvl: 2 },
-  { id: 'burger', name: 'Hamburguesa', steps: ['panb', 'carneh', 'cook', 'quesoh', 'pant'], art: 'ckh_r_burger', price: 13, lvl: 3 },
+  { id: 'burger', name: 'Hamburguesa', steps: ['panb', 'carneh', 'cook', 'queso', 'panb'], art: 'ckh_r_burger', price: 13, lvl: 3 },
   { id: 'arroz', name: 'Arroz con menestra', steps: ['arroz', 'menestra', 'carne', 'cook'], art: 'ckh_r_arroz', price: 12, lvl: 4 },
   { id: 'kfc', name: 'Pollito KFC', steps: ['pollo', 'aceite', 'cook'], art: 'ckh_r_kfc', price: 13, lvl: 4 },
   { id: 'enceb', name: 'Encebollado', steps: ['pescado', 'yuca', 'cebolla'], art: 'ckh_r_enceb', price: 14, lvl: 5 }
