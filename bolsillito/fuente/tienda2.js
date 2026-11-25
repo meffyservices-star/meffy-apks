@@ -66,7 +66,7 @@ function destacado() {
 }
 function wishHTML() {
   const b = bal(); const w = wish().map(id => [id, (A.ACC || {})[id]]).filter(([id, a]) => a && !bought(id));
-  if (!w.length) return `<div class="vt-wish empty"><b>Mi lista de deseos</b><span class="faint">Toca el corazón ♡ de cualquier prenda para guardarla aquí y ver cuánto te falta.</span></div>`;
+  if (!w.length) return `<div class="vt-wish empty"><b>Mi lista de deseos</b><span class="faint">Toca el corazoncito de cualquier prenda para guardarla aquí y ver cuánto te falta.</span></div>`;
   return `<div class="vt-wish"><div class="vt-h"><b>Mi lista de deseos</b><span class="faint">${w.length} ${w.length === 1 ? 'cosa' : 'cosas'}</span></div>${w.map(([id, a]) => { const p = Math.min(1, b / a.price); const ok = b >= a.price; return `<div class="vt-row"><img class="pixel" alt="" src="${spr('acc_' + id, 3)}" style="width:${Math.min(40, a.w * 3)}px"><span class="vt-tx"><b>${esc(a.name)}</b><span class="vt-bar"><i style="width:${Math.round(p * 100)}%"></i></span><span class="faint">${ok ? '¡Ya te alcanza!' : 'Te faltan ' + (a.price - b) + ' estrellitas'}</span></span>${ok ? `<button class="btn sm pink" data-act="shopItem" data-id="${id}">Comprar</button>` : `<button class="iconbtn sm" data-act="wishToggle" data-id="${id}" aria-label="Quitar de la lista">✕</button>`}</div>`; }).join('')}</div>`;
 }
 
@@ -105,7 +105,7 @@ ACT.shopItem = a => {
     sh.innerHTML = `<div class="stack" style="text-align:center"><div class="buy-art"><img class="pixel" alt="" src="${spr('acc_' + id, 6)}" style="width:${Math.min(96, it.w * 6)}px"></div><b style="font-size:18px">${esc(it.name)}</b><div class="faint">${ST(13)} ${it.price} estrellitas · tienes ${bal0}</div>
 <button class="btn pink" id="byGo" style="justify-content:center" ${ok ? '' : 'disabled'}>${ok ? 'Comprar por ' + it.price : 'Te faltan ' + (it.price - bal0) + ' estrellitas'}</button>
 <button class="btn" id="byGift" style="justify-content:center">🎁 Regalarlo a una amistad</button>
-<button class="btn" id="byWish" style="justify-content:center">${on ? '♥ Está en tu lista de deseos (quitar)' : '♡ Guardar en mi lista de deseos'}</button>
+<button class="btn" id="byWish" style="justify-content:center;gap:8px"><img class="pixel" alt="" src="${spr('heart', 3)}" style="width:18px;height:auto;${on ? '' : 'filter:grayscale(1);opacity:.55'}">${on ? 'Está en tu lista de deseos · quitar' : 'Guardar en mi lista de deseos'}</button>
 <button class="btn" id="byNo" style="justify-content:center">Ahora no</button></div>`;
     sh.querySelector('#byGo').onclick = () => { A.closeSheet(); si0({ dataset: { id, sure: '1' }, querySelector: () => ({}) }); };
     sh.querySelector('#byWish').onclick = () => { const l = wish(), i = l.indexOf(id); if (i >= 0) l.splice(i, 1); else if (l.length < 12) l.push(id); else return toast('Tu lista tiene espacio para 12 deseos'); A.saveSettings(); toast(i >= 0 ? 'Quitado de tu lista' : 'Guardado en tu lista de deseos'); draw(sh); A.render && 0; };
@@ -145,7 +145,7 @@ A.after.tienda = el => {
   const l = wish();
   el.querySelectorAll('.shop-tile[data-id]').forEach(t => {
     const id = t.dataset.id; if (bought(id) || t.querySelector('.wish-h')) return;
-    const h = document.createElement('span'); h.className = 'wish-h' + (l.includes(id) ? ' on' : ''); h.dataset.act = 'wishToggle'; h.dataset.id = id; h.setAttribute('role', 'button'); h.setAttribute('aria-label', l.includes(id) ? 'Quitar de mi lista de deseos' : 'Guardar en mi lista de deseos'); h.textContent = l.includes(id) ? '♥' : '♡';
+    const h = document.createElement('span'); h.className = 'wish-h' + (l.includes(id) ? ' on' : ''); h.dataset.act = 'wishToggle'; h.dataset.id = id; h.setAttribute('role', 'button'); h.setAttribute('aria-label', l.includes(id) ? 'Quitar de mi lista de deseos' : 'Guardar en mi lista de deseos'); h.innerHTML = `<img class="pixel" alt="" src="${spr('heart', 3)}" style="width:20px;height:auto">`;
     t.appendChild(h);
   });
 };
