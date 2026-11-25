@@ -2150,3 +2150,11 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .buy-art { display: flex; justify-content: center; align-items: center; height: 130px; border-radius: 18px; background: radial-gradient(circle, #fff, #fde1ec); }
 .wish-h { width: 34px; height: 34px; font-size: 20px; }
 .shop-in .shop-tile > .wish-h { position: absolute; top: 2px; left: 4px; z-index: 3; }
+/* compra con calma */
+.cm-intro { display: flex; gap: 12px; align-items: center; background: linear-gradient(135deg, #e8f3fd, #f4ecfb); }
+.cm-it { display: flex; flex-direction: column; gap: 8px; }
+.cm-it.ready { border: 2px solid #f27ea1; }
+.cm-saved { text-align: center; background: linear-gradient(135deg, #fff4c2, #ffe3ec); }
+.cm-big { font: 700 30px var(--f-pixel, inherit); color: #6b3b3f; }
+.deal-shelf .nw-r { background: #e0577f; }
+.cm-it .tx-main { display: flex; flex-direction: column; }

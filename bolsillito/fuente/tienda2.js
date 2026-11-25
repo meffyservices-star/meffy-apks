@@ -4,6 +4,7 @@ const A = App, S = A.S, { $, esc, toast } = A, ACT = A.ACTIONS;
 const spr = (n, k) => Pix.sprite(n, k || 3);
 const ST = s => `<img class="pixel" alt="" src="${spr('estrellita', 3)}" style="width:${s}px;height:auto;vertical-align:-3px">`;
 const wish = () => { const l = S.settings.wish; return Array.isArray(l) ? l : (S.settings.wish = []); };
+const bought = id => ((S.settings.rincon || {}).owned || []).includes('acc:' + id);
 const ownedAcc = id => A.isPlus() || ((S.settings.rincon || {}).owned || []).includes('acc:' + id);
 const bal = () => (A.rinconBalance ? A.rinconBalance() : 0);
 const buyable = () => Object.entries(A.ACC || {}).filter(([id, a]) => !a.off && !a.plus && !ownedAcc(id));
@@ -64,7 +65,7 @@ function destacado() {
   return `<div class="vt-dest"><span class="vt-art"><img class="pixel" alt="" src="${spr('acc_' + dp[0], 4)}" style="width:${Math.min(56, dp[1].w * 4)}px"></span><span class="vt-tx"><span class="vt-k">Destacado de hoy</span><b>${esc(dp[1].name)}</b><span class="faint">${ST(12)} ${dp[1].price} estrellitas</span></span><button class="btn sm pink" data-act="shDest" data-id="${dp[0]}">Ver</button></div>`;
 }
 function wishHTML() {
-  const b = bal(); const w = wish().map(id => [id, (A.ACC || {})[id]]).filter(([id, a]) => a && !ownedAcc(id));
+  const b = bal(); const w = wish().map(id => [id, (A.ACC || {})[id]]).filter(([id, a]) => a && !bought(id));
   if (!w.length) return `<div class="vt-wish empty"><b>Mi lista de deseos</b><span class="faint">Toca el corazón ♡ de cualquier prenda para guardarla aquí y ver cuánto te falta.</span></div>`;
   return `<div class="vt-wish"><div class="vt-h"><b>Mi lista de deseos</b><span class="faint">${w.length} ${w.length === 1 ? 'cosa' : 'cosas'}</span></div>${w.map(([id, a]) => { const p = Math.min(1, b / a.price); const ok = b >= a.price; return `<div class="vt-row"><img class="pixel" alt="" src="${spr('acc_' + id, 3)}" style="width:${Math.min(40, a.w * 3)}px"><span class="vt-tx"><b>${esc(a.name)}</b><span class="vt-bar"><i style="width:${Math.round(p * 100)}%"></i></span><span class="faint">${ok ? '¡Ya te alcanza!' : 'Te faltan ' + (a.price - b) + ' estrellitas'}</span></span>${ok ? `<button class="btn sm pink" data-act="shopItem" data-id="${id}">Comprar</button>` : `<button class="iconbtn sm" data-act="wishToggle" data-id="${id}" aria-label="Quitar de la lista">✕</button>`}</div>`; }).join('')}</div>`;
 }
@@ -103,10 +104,12 @@ ACT.shopItem = a => {
     const { bal0, ok } = sheetBuy(); const on = wish().includes(id);
     sh.innerHTML = `<div class="stack" style="text-align:center"><div class="buy-art"><img class="pixel" alt="" src="${spr('acc_' + id, 6)}" style="width:${Math.min(96, it.w * 6)}px"></div><b style="font-size:18px">${esc(it.name)}</b><div class="faint">${ST(13)} ${it.price} estrellitas · tienes ${bal0}</div>
 <button class="btn pink" id="byGo" style="justify-content:center" ${ok ? '' : 'disabled'}>${ok ? 'Comprar por ' + it.price : 'Te faltan ' + (it.price - bal0) + ' estrellitas'}</button>
+<button class="btn" id="byGift" style="justify-content:center">🎁 Regalarlo a una amistad</button>
 <button class="btn" id="byWish" style="justify-content:center">${on ? '♥ Está en tu lista de deseos (quitar)' : '♡ Guardar en mi lista de deseos'}</button>
 <button class="btn" id="byNo" style="justify-content:center">Ahora no</button></div>`;
     sh.querySelector('#byGo').onclick = () => { A.closeSheet(); si0({ dataset: { id, sure: '1' }, querySelector: () => ({}) }); };
     sh.querySelector('#byWish').onclick = () => { const l = wish(), i = l.indexOf(id); if (i >= 0) l.splice(i, 1); else if (l.length < 12) l.push(id); else return toast('Tu lista tiene espacio para 12 deseos'); A.saveSettings(); toast(i >= 0 ? 'Quitado de tu lista' : 'Guardado en tu lista de deseos'); draw(sh); A.render && 0; };
+    sh.querySelector('#byGift').onclick = () => { A.closeSheet(); setTimeout(() => A.giftAccPick && A.giftAccPick(id), 60); };
     sh.querySelector('#byNo').onclick = () => { A.closeSheet(); A.render(); };
   };
   A.openSheet(it.name, '<div id="byBox"></div>', sh => draw(sh.querySelector('#byBox')));
@@ -127,7 +130,7 @@ A.screens.tienda = () => {
   const tabs = [['col', 'Colecciones'], ['ropa', 'Ropa'], ...(boxes ? [['caj', 'Cajitas']] : []), ['des', 'Deseos' + (wish().length ? ' ' + wish().length : '')]];
   const tab = tabs.some(t => t[0] === S.shopTab) ? S.shopTab : (seasons.length ? 'col' : 'ropa');
   let body = '';
-  if (tab === 'col') { let up = ''; if (!seasons.length) { const n = A.allSeasons().filter(x => !A.inSeason(x.id) && x.items.length).sort((a, b) => daysTo(a) - daysTo(b))[0]; if (n) up = seasonCard(n, daysTo(n) || 1); } body = nuevoHTML() + seasons.map(x => seasonCard(x)).join('') + up + destacado() + categorias() + next; }
+  if (tab === 'col') { let up = ''; if (!seasons.length) { const n = A.allSeasons().filter(x => !A.inSeason(x.id) && x.items.length).sort((a, b) => daysTo(a) - daysTo(b))[0]; if (n) up = seasonCard(n, daysTo(n) || 1); } body = nuevoHTML() + (A.dealsHTML ? A.dealsHTML() : destacado()) + seasons.map(x => seasonCard(x)).join('') + up + categorias() + next; }
   else if (tab === 'ropa') body = probador + catalog;
   else if (tab === 'caj') body = boxes;
   else body = wishHTML() + destacado();
@@ -141,11 +144,28 @@ A.after.tienda = el => {
   if (af0) af0(el);
   const l = wish();
   el.querySelectorAll('.shop-tile[data-id]').forEach(t => {
-    const id = t.dataset.id; if (ownedAcc(id)) return;
+    const id = t.dataset.id; if (bought(id) || t.querySelector('.wish-h')) return;
     const h = document.createElement('span'); h.className = 'wish-h' + (l.includes(id) ? ' on' : ''); h.dataset.act = 'wishToggle'; h.dataset.id = id; h.setAttribute('role', 'button'); h.setAttribute('aria-label', l.includes(id) ? 'Quitar de mi lista de deseos' : 'Guardar en mi lista de deseos'); h.textContent = l.includes(id) ? '♥' : '♡';
     t.appendChild(h);
   });
 };
+
+
+// ---------- lo nuevo va primero en todos los estantes (ropa, muebles, comida...) ----------
+const KMAP = { cc_: 'clothes', cf_: 'furn', cp_: 'pets', cfo_: 'food', cw_: 'walls', cl_: 'floors' };
+function newestFirst(el) {
+  const c = (A.CFG && A.CFG.catalog) || {}; const info = {};
+  Object.entries(KMAP).forEach(([pfx, kind]) => (c[kind] || []).forEach((x, i) => { info[pfx + x.id] = { t: x.added || 0, i }; }));
+  el.querySelectorAll('.shop-grid, .fr-shop, .shop-shelf').forEach(g => {
+    const tiles = [...g.children].filter(t => t.classList && t.classList.contains('shop-tile')); if (tiles.length < 2) return;
+    const key = t => { const id = t.dataset.id || t.dataset.k || t.dataset.buyfood || t.dataset.ff || ''; return info[id.replace(/^(acc|furn|food):/, '')] || info[id] || null; };
+    const rank = tiles.map((t, n) => ({ t, n, k: key(t) }));
+    const sorted = rank.slice().sort((a, b) => (a.k && !b.k) ? -1 : (!a.k && b.k) ? 1 : (a.k && b.k) ? ((b.k.t - a.k.t) || (b.k.i - a.k.i)) : a.n - b.n);
+    if (sorted.some((r, i) => r !== rank[i])) sorted.forEach(r => g.appendChild(r.t));
+    sorted.forEach(r => { if (r.k && r.k.t && Date.now() - r.k.t < 14 * 864e5 && !r.t.querySelector('.nw-r')) { const b = document.createElement('i'); b.className = 'nw-r'; b.textContent = 'NUEVO'; r.t.appendChild(b); r.t.style.position = 'relative'; } });
+  });
+}
+['tienda', 'rincon', 'cuarto'].forEach(r => { const f0 = A.after[r]; A.after[r] = el => { if (f0) f0(el); try { newestFirst(el); } catch (e) { console.warn(e); } }; });
 
 // ---------- temporadas: nombre, texto, colores, fondo, modelo y fechas editables ----------
 const as0 = A.allSeasons;
