@@ -29,11 +29,12 @@ function outfit(se) {
   const bySlot = {}; se.items.filter(k => k.startsWith('acc:')).forEach(k => { const a = A.ACC[k.slice(4)]; if (a && !bySlot[a.slot]) bySlot[a.slot] = k.slice(4); });
   return Object.values(bySlot);
 }
-const modelOf = se => (S.seModel || {})[se.id] || (se.model && se.model !== 'active' ? se.model : activePet());
+const seasonPets = se => (se.petsIds || []).filter(k => A.ANCH[k]);
+const modelOf = se => { const sp = seasonPets(se), pick = (S.seModel || {})[se.id]; if (pick && (sp.includes(pick) || !sp.length)) return pick; if (se.model && se.model !== 'active' && A.ANCH[se.model]) return se.model; return sp[0] || activePet(); };
 
 function seasonCard(se) {
   const [c1, c2, c3] = colorsOf(se); const days = daysLeft(se); const pet = modelOf(se); const worn = outfit(se); const tried = (S.seTry || {})[se.id] || {};
-  const pets = Object.keys(A.ANCH).filter(k => !A.petOwns || A.petOwns(k) || k === pet);
+  const sp = seasonPets(se); const pets = sp.length ? sp : Object.keys(A.ANCH).filter(k => !A.petOwns || A.petOwns(k) || k === pet);
   const toBuy = worn.filter(id => A.ACC[id] && !ownedAcc(id) && !A.ACC[id].plus);
   const total = toBuy.reduce((t, id) => t + (A.ACC[id].price || 0), 0);
   const item = k => {
@@ -50,7 +51,7 @@ ${se.nomodel ? '' : `<div class="sx-stage" style="--mz:${size}px"><span class="s
 ${toBuy.length ? `<div class="sx-buy"><span>Lleva puesto: <b>${toBuy.map(id => esc(A.ACC[id].name)).join(', ')}</b></span>${toBuy.map(id => `<button class="btn sm pink" data-act="shopItem" data-id="${id}" ${bal() < A.ACC[id].price ? 'disabled' : ''}>${esc(A.ACC[id].name)} · ${A.ACC[id].price}</button>`).join('')}</div>` : ''}
 ${Object.keys(tried).length ? `<button class="btn sm sx-clear" data-act="seTryClear" data-se="${esc(se.id)}">Quitar lo probado</button>` : ''}`}
 <div class="sx-shelf">${se.items.map(item).join('')}</div>
-<div class="sx-hint">Toca una prenda para probársela a ${esc(((A.ANCH[pet] || {}).name) || 'tu mascota')} ›</div></section>`;
+<div class="sx-hint">Toca una prenda para probársela a ${esc(((A.ANCH[pet] || {}).name) || 'la mascota')} ›</div></section>`;
 }
 ACT.seTry = a => { S.seTry = S.seTry || {}; const t = S.seTry[a.dataset.se] = S.seTry[a.dataset.se] || {}; const ac = A.ACC[a.dataset.id]; if (!ac) return; t[ac.slot] === a.dataset.id ? delete t[ac.slot] : (t[ac.slot] = a.dataset.id); A.render(); };
 ACT.seTryClear = a => { (S.seTry = S.seTry || {})[a.dataset.se] = {}; A.render(); };
@@ -125,7 +126,7 @@ ACT.seStyle = a => {
 <label class="f">Texto debajo del nombre<input class="in" id="ssSub" maxlength="50" value="${esc(se.sub || '')}" placeholder="Solo por esta temporada"></label>
 <div class="row" style="gap:10px"><label class="f" style="flex:1">Fuerte<input type="color" class="in" id="ssC1" value="${c1}" style="height:44px;padding:2px"></label><label class="f" style="flex:1">Suave<input type="color" class="in" id="ssC2" value="${c2}" style="height:44px;padding:2px"></label><label class="f" style="flex:1">Claro<input type="color" class="in" id="ssC3" value="${c3}" style="height:44px;padding:2px"></label></div>
 <div class="row" style="gap:10px"><label class="f" style="flex:1">Fondo<select class="in" id="ssPat">${[['puntos', 'Puntitos'], ['rayas', 'Rayas'], ['estrellas', 'Estrellas'], ['liso', 'Liso']].map(([v, l]) => opt(v, l, se.pat)).join('')}</select></label><label class="f" style="flex:1">Tamaño del modelo<select class="in" id="ssSize">${[['s', 'Chico'], ['m', 'Mediano'], ['l', 'Grande']].map(([v, l]) => opt(v, l, se.size)).join('')}</select></label></div>
-<label class="f">Quién modela<select class="in" id="ssModel">${opt('active', 'La mascota de cada usuario', se.model)}${pk.map(([k, an]) => opt(k, an.name, se.model)).join('')}</select></label>
+<label class="f">Quién modela<select class="in" id="ssModel">${opt('active', 'La mascota de la temporada (o la del usuario si no hay)', se.model)}${pk.map(([k, an]) => opt(k, an.name, se.model)).join('')}</select></label>
 <label class="check"><input type="checkbox" id="ssNoModel" ${se.nomodel ? 'checked' : ''}> No mostrar mascota modelo (solo las cosas)</label>
 ${raw ? `<div class="row" style="gap:10px"><label class="f" style="flex:1">Desde<input class="in" id="ssFrom" type="date" value="${new Date().getFullYear()}-${raw.from}"></label><label class="f" style="flex:1">Hasta<input class="in" id="ssTo" type="date" value="${new Date().getFullYear()}-${raw.to}"></label></div>` : ''}
 <p class="faint" style="margin:0">Todo lo que agregues con "Qué temporada" = esta colección (ropa, muebles y personajes) sale solo en su tarjeta, y la mascota lo modela sola. Cuando llegan las fechas, la colección se abre sola.</p>
