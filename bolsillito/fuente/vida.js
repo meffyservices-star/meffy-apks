@@ -2,7 +2,7 @@
 (function () {
 const A = App, S = A.S, { esc, toast } = A;
 const ACT = A.ACTIONS;
-const state = () => { const v = S.settings.vida = S.settings.vida || {}; if (v.day !== A.today()) { S.settings.vida = { day: A.today(), seen: {}, claimed: {}, bonus: false, streak: v.streak || 0, last: v.last || '' }; } return S.settings.vida; };
+const state = () => { const v = S.settings.vida = S.settings.vida || {}; if (v.day !== A.today()) { S.settings.vida = { day: A.today(), seen: {}, claimed: {}, bonus: false, vis: 0, streak: v.streak || 0, last: v.last || '' }; } return S.settings.vida; };
 const MISSIONS = [
   { id: 'anotar', t: 'Anota un gasto o ingreso', hint: 'Cualquier movimiento de hoy cuenta', auto: () => S.tx.some(x => x.date === A.today() && x.type !== 'loan_out' && x.type !== 'loan_in') },
   { id: 'mimar', t: 'Dale cariño a tu mascota', hint: 'Tócala en el cuarto', auto: () => !!state().seen.mimar },
@@ -38,4 +38,99 @@ document.addEventListener('click', e => { const pt = e.target.closest('.rm-pet[d
 const mark = () => { const v = state(), r = S.route; let ch = false; if (r === 'tienda' && !v.seen.tienda) { v.seen.tienda = 1; ch = true; } if (['amigos', 'visitas', 'compartidas'].includes(r) && !v.seen.amistad) { v.seen.amistad = 1; ch = true; } if (ch) A.saveSettings(); };
 const r0 = A.render; A.render = function () { try { mark(); } catch (e) { } return r0.apply(this, arguments); };
 const c0 = A.screens.cuarto; A.screens.cuarto = function () { const h = c0.apply(this, arguments); const k = '<div class="seg"><button data-act="rmTab"'; const i = h.indexOf(k); return i < 0 || S.roomEdit ? h : h.slice(0, i) + card() + h.slice(i); };
+
+// ---------- Vida en el cuarto: mascotas que pasean, visitas sorpresa, reacciones y muebles que responden ----------
+const roomEl = () => { if (!['rincon', 'cuarto'].includes(S.route)) return null; const r = document.querySelector('.room:not(.editing)'); return r && r.offsetParent ? r : null; };
+const rnd = (a, b) => a + Math.random() * (b - a);
+const float = (room, html, x, y, cls) => { const e = document.createElement('span'); e.className = 'vd-fl ' + (cls || ''); e.innerHTML = html; e.style.left = x + '%'; e.style.top = y + '%'; room.appendChild(e); setTimeout(() => e.remove(), 1700); };
+// 1) las mascotas despiertas pasean por el piso
+const wander = () => { const room = roomEl(); if (!room || document.hidden) return; room.querySelectorAll('.rm-pet:not(.sleep)').forEach((p, i) => { if (Math.random() < .35) return; const top = parseFloat(p.style.top) || 60; p.style.transition = 'left 3.2s ease-in-out, top 3.2s ease-in-out'; p.style.left = rnd(8, 74).toFixed(1) + '%'; p.style.top = Math.max(52, Math.min(80, top + rnd(-7, 7))).toFixed(1) + '%'; }); };
+// 2) visitas sorpresa que se recogen tocándolas
+const VIS = [['🦋', 1, 'Una mariposa te trajo una estrellita'], ['🐞', 1, 'Una mariquita te trajo una estrellita'], ['🐦', 1, 'Un pajarito te dejó una estrellita'], ['💌', 2, 'Te llegó una cartita con estrellitas']];
+const visit = () => { const room = roomEl(); if (!room || document.hidden) return; const v = state(); if ((v.vis || 0) >= 5 || room.querySelector('.vd-vis')) return; const t = VIS[Math.floor(Math.random() * (Math.random() < .15 ? VIS.length : VIS.length - 1))];
+  const e = document.createElement('button'); e.type = 'button'; e.className = 'vd-vis'; e.textContent = t[0]; e.style.top = rnd(18, 70).toFixed(0) + '%'; e.style.setProperty('--dx', rnd(-30, 30).toFixed(0) + 'px'); room.appendChild(e);
+  const bye = setTimeout(() => e.remove(), 14000);
+  e.onclick = ev => { ev.stopPropagation(); clearTimeout(bye); const v2 = state(); v2.vis = (v2.vis || 0) + 1; A.giveStars(t[1]); A.saveSettings(); const r = e.getBoundingClientRect(), rr = room.getBoundingClientRect(); float(room, '+' + t[1] + ' ✦', ((r.left - rr.left) / rr.width * 100), ((r.top - rr.top) / rr.height * 100)); e.remove(); toast(t[2] + ' ✦'); };
+};
+// 3) la mascota reacciona a cómo vas con tu dinero
+const mes = () => { const k = A.today().slice(0, 7); let inc = 0, exp = 0; S.tx.forEach(x => { if (x.date.slice(0, 7) !== k) return; if (x.type === 'income') inc += +x.amount || 0; else if (x.type === 'expense') exp += +x.amount || 0; }); return { inc, exp }; };
+const mood = () => { const { inc, exp } = mes(), hoy = S.tx.filter(x => x.date === A.today() && x.type === 'expense').length;
+  if (!inc && !exp) return ['¡Anotemos algo hoy!', '🌷'];
+  if (inc && exp > inc) return ['Uy, este mes va gastado… pero tú puedes', '💦'];
+  if (inc && exp < inc * .5) return ['¡Vas ahorrando muy bien!', '🎉'];
+  if (!hoy) return ['Hoy no has gastado nada, ¡qué bien!', '✨'];
+  return ['Vamos paso a paso, tú puedes', '💗']; };
+document.addEventListener('click', e => {
+  const room = roomEl(); if (!room) return;
+  const pet = e.target.closest('.rm-pet[data-pk]');
+  if (pet && !pet.classList.contains('sleep')) { room.querySelectorAll('.vd-bub').forEach(x => x.remove()); const [msg, em] = mood(); const b = document.createElement('div'); b.className = 'vd-bub'; b.textContent = em + ' ' + msg; const rr = room.getBoundingClientRect(), pr = pet.getBoundingClientRect(); b.style.left = Math.max(4, Math.min(52, (pr.left - rr.left) / rr.width * 100 - 6)) + '%'; b.style.top = Math.max(2, (pr.top - rr.top) / rr.height * 100 - 14) + '%'; room.appendChild(b); setTimeout(() => b.remove(), 3200); return; }
+  const it = e.target.closest('.rm-it'); if (it) { const n = (it.alt || '').toLowerCase(); const rr = room.getBoundingClientRect(), r = it.getBoundingClientRect(); const x = (r.left - rr.left + r.width / 2) / rr.width * 100, y = (r.top - rr.top) / rr.height * 100;
+    it.classList.remove('vd-pop'); void it.offsetWidth; it.classList.add('vd-pop'); setTimeout(() => it.classList.remove('vd-pop'), 700);
+    const em = /l[aá]mpara|vela|luz|farol/.test(n) ? '💡' : /tele|tv|pantalla/.test(n) ? '📺' : /radio|tocadisco|bocina|piano|guitarra|m[uú]sica/.test(n) ? '🎵' : /planta|flor|maceta|cactus|jard/.test(n) ? '🌿' : /cama|sof[aá]|sill|puff|coj[ií]n/.test(n) ? '💤' : /libro|librero|escritorio/.test(n) ? '📖' : /espejo/.test(n) ? '✨' : /cocina|mesa|caf|t[eé]/.test(n) ? '🍵' : '💗';
+    float(room, em, x, y); }
+});
+setInterval(wander, 7000); setInterval(() => { if (Math.random() < .5) visit(); }, 22000); setTimeout(visit, 6000);
+})();
+
+// ---------- Vida en el cuarto: mascotas que pasean, mariposas, burbujas y muebles que reaccionan ----------
+(function () {
+const A = App, S = A.S, { toast } = A;
+const st = () => { const v = S.settings.vida; return v; };
+let timers = [];
+const stop = () => { timers.forEach(clearInterval); timers.forEach(clearTimeout); timers = []; };
+const pnum = s => parseFloat(String(s)) || 0;
+const BUB = {
+  rico: ['¡Este mes vas ganando!', 'Qué bien se siente ahorrar', 'Guardaste más de lo que gastaste'],
+  justo: ['Vamos con calma este mes', 'Cuidemos juntas el presupuesto', 'Un día a la vez'],
+  hoy: ['¡Anotaste hoy, qué orgullo!', 'Gracias por anotar hoy'],
+  nada: ['¿Anotamos algo hoy?', 'Te extrañaba', 'Aquí estoy contigo'],
+  noche: ['Qué sueño…', 'Hora de descansar']
+};
+const pick = a => a[Math.floor(Math.random() * a.length)];
+function mood() {
+  const hoy = S.tx.some(x => x.date === A.today() && x.type !== 'loan_out' && x.type !== 'loan_in');
+  const m = A.today().slice(0, 7); let inc = 0, exp = 0; S.tx.forEach(x => { if (x.date.slice(0, 7) !== m) return; if (x.type === 'income') inc += +x.amount || 0; else if (x.type === 'expense') exp += +x.amount || 0; });
+  if (new Date().getHours() >= 22) return pick(BUB.noche);
+  if (inc > 0 && inc > exp * 1.15) return pick(BUB.rico);
+  if (exp > 0 && inc > 0) return pick(BUB.justo);
+  return hoy ? pick(BUB.hoy) : pick(BUB.nada);
+}
+function bubble(box, anchor, txt) {
+  box.querySelectorAll('.vd-bub').forEach(b => b.remove());
+  const b = document.createElement('div'); b.className = 'vd-bub'; b.textContent = txt;
+  const x = Math.max(8, Math.min(62, pnum(anchor.style.left) - 10)); b.style.left = x + '%'; b.style.top = Math.max(2, pnum(anchor.style.top) - 16) + '%'; box.appendChild(b); setTimeout(() => b.remove(), 2800);
+}
+function floatEmoji(box, x, y, e) { const s = document.createElement('span'); s.className = 'vd-fl'; s.textContent = e; s.style.left = x + '%'; s.style.top = y + '%'; box.appendChild(s); setTimeout(() => s.remove(), 1400); }
+const FEMO = [[/tele|tv|pantalla|compu/, '📺'], [/lamp|luz|vela|farol/, '💡'], [/radio|tocadisc|music|piano|bocina/, '🎵'], [/planta|maceta|flor|jard/, '🌱'], [/cama|sofa|sillon|puff|cojin/, '💤'], [/libro|estante|librero/, '📖'], [/pastel|cocina|mesa|taza|cafe/, '☕']];
+function wander(box) {
+  const pets = [...box.querySelectorAll('.rm-pet:not(.sleep):not(.guest)')].filter(p => { const n = p.nextElementSibling; return !(n && /rm-(note|food)/.test(n.className)); });
+  pets.forEach(p => { if (!p.dataset.hx) { p.dataset.hx = pnum(p.style.left); p.dataset.hy = pnum(p.style.top); p.style.transition = 'left 2.6s ease-in-out, top 2.6s ease-in-out'; } });
+  const go = () => { if (!box.isConnected) return stop(); pets.forEach(p => {
+    if (Math.random() < .35) return; const hx = +p.dataset.hx, hy = +p.dataset.hy; const nx = Math.max(4, Math.min(76, hx + (Math.random() * 30 - 15))), ny = Math.max(38, Math.min(82, hy + (Math.random() * 10 - 5)));
+    const dir = nx < pnum(p.style.left) ? -1 : 1; p.querySelectorAll('img').forEach(i => i.style.transform = dir < 0 ? 'scaleX(-1)' : ''); p.style.left = nx + '%'; p.style.top = ny + '%';
+  }); };
+  timers.push(setInterval(go, 5200)); timers.push(setTimeout(go, 900));
+}
+function butterflies(box) {
+  const spawn = () => {
+    if (!box.isConnected) return stop(); const v = S.settings.vida; if (!v) return; const left = 5 - (v.bf || 0); if (left <= 0 || document.hidden) return;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'vd-bf'; b.setAttribute('aria-label', 'Mariposa'); b.textContent = pick(['🦋', '🐝', '🐞']); b.style.top = (25 + Math.random() * 40) + '%';
+    b.onclick = e => { e.stopPropagation(); b.remove(); const vv = S.settings.vida; vv.bf = (vv.bf || 0) + 1; A.giveStars(1); A.saveSettings(); floatEmoji(box, pnum(b.style.left) || 50, pnum(b.style.top), '+1 ✦'); };
+    box.appendChild(b); setTimeout(() => b.remove(), 9000);
+  };
+  timers.push(setInterval(spawn, 32000)); timers.push(setTimeout(spawn, 9000));
+}
+const a0 = A.after.cuarto;
+A.after.cuarto = function (el) {
+  a0 && a0.apply(this, arguments); stop();
+  const box = el.querySelector('#roomBox'); if (!box || S.roomEdit || box.dataset.vida) return; box.dataset.vida = 1; if (S.settings.vida) { const v = state2(); }
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  wander(box); butterflies(box);
+  box.addEventListener('click', e => {
+    const pet = e.target.closest('.rm-pet:not(.guest)'); if (pet && !pet.classList.contains('sleep')) { bubble(box, pet, mood()); return; }
+    const it = e.target.closest('.rm-it'); if (!it) return; it.classList.remove('vd-wig'); void it.offsetWidth; it.classList.add('vd-wig');
+    const k = (it.alt || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); const e0 = (FEMO.find(([r]) => r.test(k)) || [0, '✨'])[1]; floatEmoji(box, pnum(it.style.left) + 4, pnum(it.style.top) - 4, e0);
+  });
+};
+function state2() { return S.settings.vida; }
 })();

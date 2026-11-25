@@ -2222,3 +2222,25 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .vd-m.on .vd-ck { background: #7fcf98; border-color: #7fcf98; }
 .vd-tx { flex: 1; display: flex; flex-direction: column; } .vd-tx small { color: #8a7a8a; }
 .vd-bonus { text-align: center; font-weight: 700; color: #3f9a5f; }
+/* Cuarto con vida: paseos, visitas, globos */
+.room .rm-pet { will-change: left, top; }
+.vd-fl { position: absolute; z-index: 900; font-size: 18px; pointer-events: none; animation: vdUp 1.6s ease-out forwards; text-shadow: 0 1px 0 #fff; font-weight: 700; color: #b0558a; }
+@keyframes vdUp { from { transform: translateY(0) scale(.7); opacity: 0; } 20% { opacity: 1; } to { transform: translateY(-34px) scale(1.15); opacity: 0; } }
+.vd-vis { position: absolute; z-index: 950; left: -8%; font-size: 26px; background: none; border: 0; padding: 4px; cursor: pointer; animation: vdFly 13s linear forwards, vdBob 1s ease-in-out infinite; }
+@keyframes vdFly { to { left: 100%; } }
+@keyframes vdBob { 50% { transform: translateY(var(--dx, 10px)); } }
+.vd-bub { position: absolute; z-index: 960; max-width: 46%; background: #fff; border: 2px solid #f3b9cc; border-radius: 14px; padding: 6px 10px; font-size: 12px; line-height: 1.25; box-shadow: 0 2px 0 #f3b9cc; pointer-events: none; animation: vdPop .25s ease-out; }
+@keyframes vdPop { from { transform: scale(.6); opacity: 0; } }
+.rm-it.vd-pop { animation: vdPopIt .6s ease; }
+@keyframes vdPopIt { 30% { transform: translateY(-5%) scale(1.08); } 60% { transform: translateY(0) scale(.97); } }
+@media (prefers-reduced-motion: reduce) { .vd-vis, .vd-fl { animation: none !important; } }
+.room .vd-bub { position: absolute; z-index: 200; max-width: 46%; background: #fff; border: 2px solid #f3b6cb; border-radius: 12px; padding: 4px 8px; font-size: 11px; line-height: 1.2; pointer-events: none; box-shadow: 0 2px 0 rgba(0,0,0,.1); animation: vdpop .25s ease-out; }
+.room .vd-fl { position: absolute; z-index: 210; pointer-events: none; font-size: 16px; animation: vdup 1.3s ease-out forwards; }
+.room .vd-bf { position: absolute; z-index: 190; left: -8%; font-size: 22px; background: none; border: 0; padding: 6px; animation: vdfly 8.5s linear forwards; }
+.room .rm-it.vd-wig { animation: vdwig .45s ease; }
+.room .rm-pet img { transition: transform .3s; }
+@keyframes vdpop { from { transform: scale(.6); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+@keyframes vdup { from { transform: translateY(0); opacity: 1 } to { transform: translateY(-26px); opacity: 0 } }
+@keyframes vdfly { 0% { left: -8%; transform: translateY(0) } 25% { transform: translateY(-14px) } 50% { transform: translateY(8px) } 75% { transform: translateY(-10px) } 100% { left: 100%; transform: translateY(0) } }
+@keyframes vdwig { 0%,100% { transform: translateY(0) rotate(0) } 30% { transform: translateY(-4px) rotate(-3deg) } 60% { transform: translateY(0) rotate(3deg) } }
+@media (prefers-reduced-motion: reduce) { .room .vd-bf { display: none } }
