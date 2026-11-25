@@ -294,10 +294,10 @@ function syncLinks() {
   const n = N(), L = n.link; if (!L || (!(L.cats || []).length && !(L.accts || []).length)) return;
   const hit = t => (t.type === 'income' || t.type === 'expense') && t.date >= (L.since || '0000') && ((L.cats || []).includes(t.cat) || (L.accts || []).includes(t.acct));
   const live = new Map(S.tx.filter(hit).map(t => [t.id, t])); let ch = false;
-  n.sales = n.sales.filter(x => { if (!x.tx) return true; const t = live.get(x.tx); if (!t || t.type !== 'income') { ch = true; return false; } if (x.total !== t.amount) { x.total = x.paid = t.amount; x.items[0].pr = t.amount; ch = true; } return true; });
+  n.sales = n.sales.filter(x => { if (!x.tx) return true; const t = live.get(x.tx); if (!t || t.type !== 'income') { ch = true; return false; } if (x.total !== t.amount) { x.total = x.paid = t.amount; x.items[0].pr = t.amount; ch = true; } const nn = (t.note || '').trim() || 'Ingreso de ' + ((A.cat(t.cat) || {}).name || 'la tienda'); if (x.items[0].n !== nn) { x.items[0].n = nn; ch = true; } return true; });
   n.exps = n.exps.filter(x => { if (!x.tx) return true; const t = live.get(x.tx); if (!t || t.type !== 'expense') { ch = true; return false; } if (x.amt !== t.amount) { x.amt = t.amount; ch = true; } return true; });
   const have = new Set([...n.sales, ...n.exps].filter(x => x.tx).map(x => x.tx));
-  live.forEach(t => { if (have.has(t.id)) return; const nm = (t.note || '').trim() || (A.cat(t.cat) || {}).name || 'Movimiento'; if (t.type === 'income') n.sales.push({ id: id(), d: t.date, items: [{ p: null, n: nm, q: 1, pr: t.amount, c: 0 }], total: t.amount, paid: t.amount, cli: '', tx: t.id }); else n.exps.push({ id: id(), d: t.date, amt: t.amount, n: nm, cat: (A.cat(t.cat) || {}).name || 'Otros', tx: t.id }); ch = true; });
+  live.forEach(t => { if (have.has(t.id)) return; const nm = (t.note || '').trim() || (t.type === 'income' ? 'Ingreso de ' + ((A.cat(t.cat) || {}).name || 'la tienda') : (A.cat(t.cat) || {}).name || 'Movimiento'); if (t.type === 'income') n.sales.push({ id: id(), d: t.date, items: [{ p: null, n: nm, q: 1, pr: t.amount, c: 0 }], total: t.amount, paid: t.amount, cli: '', tx: t.id }); else n.exps.push({ id: id(), d: t.date, amt: t.amount, n: nm, cat: (A.cat(t.cat) || {}).name || 'Otros', tx: t.id }); ch = true; });
   if (ch) save();
 }
 let VK = null;
