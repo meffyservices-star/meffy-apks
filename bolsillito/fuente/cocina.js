@@ -54,11 +54,11 @@ D('ck_enceb', 20, 20, p => layered(p, q => { q.e(10, 13.6, 9, 5.4, 'l'); q.r(3, 
 D('ck_cupcake', 20, 20, p => { for (let y = 11; y < 19; y++) { const w = 13 - Math.floor((y - 11) * .4); p.r(10 - Math.floor(w / 2), y, w, 1, 'P'); } for (let x = 5; x < 16; x += 3) p.r(x, 11, 1, 8, 'p'); p.e(10, 10.5, 6.6, 2.6, 'C'); p.e(10, 8, 5.6, 2.4, 'w'); p.e(10, 5.6, 4, 2.2, 'p'); p.e(10, 3.4, 2.4, 1.8, 'w'); p.px(10, 1, 'R'); p.px(10, 2, 'R'); p.px(9, 2, 'R'); p.px(7, 8, 'V'); p.px(12, 7, 'Y'); p.px(9, 5, 'G'); p.px(12, 5, 'P'); });
 
 // ---------------- Recetas ----------------
-const BASE_ING = { masa: 'ckh_masa', miel: 'ckh_miel', fresa: 'ckh_fresa', taza: 'ckh_taza', te: 'ckh_te', boba: 'ckh_boba', cono: 'ckh_cono', bola: 'ckh_bola', chispas: 'ckh_chispas', crema: 'ckh_crema', pan: 'ckh_pan', panb: 'ckh_panb', pant: 'ckh_pant', carne: 'ckh_carne', carneh: 'ckh_carneh', salchicha: 'ckh_salchicha', queso: 'ckh_queso', quesoh: 'ckh_quesoh', arroz: 'ckh_arroz', menestra: 'ckh_menestra', platano: 'ckh_platano', pescado: 'ckh_pescado', cebolla: 'ckh_cebolla', yuca: 'ckh_yuca', pollo: 'ckh_pollo', matcha: 'ckh_matcha', chocolate: 'ckh_chocolate', menta: 'ckh_menta', aceite: 'ckh_aceite', harina: 'ckh_harina', huevos: 'ckh_huevos', leche: 'ckh_leche', mantequilla: 'ckh_mantequilla', azucar: 'ckh_azucar', sal: 'ckh_sal', lechuga: 'ckh_lechuga', tomate: 'ckh_tomate', mostaza: 'ckh_mostaza', limon: 'ckh_limon' };
+const BASE_ING = { papa: 'ckh_papa', masa: 'ckh_masa', miel: 'ckh_miel', fresa: 'ckh_fresa', taza: 'ckh_taza', te: 'ckh_te', boba: 'ckh_boba', cono: 'ckh_cono', bola: 'ckh_bola', chispas: 'ckh_chispas', crema: 'ckh_crema', pan: 'ckh_pan', panb: 'ckh_panb', pant: 'ckh_pant', carne: 'ckh_carne', carneh: 'ckh_carneh', salchicha: 'ckh_salchicha', queso: 'ckh_queso', quesoh: 'ckh_quesoh', arroz: 'ckh_arroz', menestra: 'ckh_menestra', platano: 'ckh_platano', pescado: 'ckh_pescado', cebolla: 'ckh_cebolla', yuca: 'ckh_yuca', pollo: 'ckh_pollo', matcha: 'ckh_matcha', chocolate: 'ckh_chocolate', menta: 'ckh_menta', aceite: 'ckh_aceite', harina: 'ckh_harina', huevos: 'ckh_huevos', leche: 'ckh_leche', mantequilla: 'ckh_mantequilla', azucar: 'ckh_azucar', sal: 'ckh_sal', lechuga: 'ckh_lechuga', tomate: 'ckh_tomate', mostaza: 'ckh_mostaza', limon: 'ckh_limon' };
 let ING = BASE_ING;
-const BASE_COOK = ['masa', 'carne', 'carneh', 'salchicha', 'platano', 'pollo']; let COOKERS = BASE_COOK;
+const BASE_COOK = ['masa', 'papa', 'carne', 'carneh', 'salchicha', 'platano', 'pollo']; let COOKERS = BASE_COOK;
 const BASE_D = ['masa', 'miel', 'fresa', 'crema', 'chispas', 'taza', 'te', 'boba', 'cono', 'bola', 'matcha', 'chocolate', 'menta'];
-const BASE_S = ['pan', 'panb', 'salchicha', 'carne', 'carneh', 'queso', 'arroz', 'menestra', 'platano', 'pescado', 'yuca', 'pollo'];
+const BASE_S = ['pan', 'panb', 'papa', 'salchicha', 'carne', 'carneh', 'queso', 'arroz', 'menestra', 'platano', 'pescado', 'yuca', 'pollo'];
 const BASE_P = ['harina', 'huevos', 'leche', 'mantequilla', 'azucar', 'aceite', 'sal', 'lechuga', 'tomate', 'mostaza', 'limon', 'cebolla'];
 let ORD_D = BASE_D, ORD_S = BASE_S, ORD_P = BASE_P;
 let STN = 'dulce', SHOWN = null; const order = () => (STN === 'dulce' ? ORD_D : STN === 'despensa' ? ORD_P : ORD_S).filter(k => !SHOWN || SHOWN.has(k));
@@ -77,13 +77,14 @@ const BASE_REC = [
   { id: 'pastelf', name: 'Pastel de fresa', steps: ['harina', 'huevos', 'cook', 'crema', 'fresa'], art: 'ckh_r_pastelf', price: 15, lvl: 6 },
   { id: 'hotdog', name: 'Hot dog', steps: ['pan', 'salchicha', 'cook', 'mostaza'], art: 'ckh_r_hotdog', price: 8, lvl: 1 },
   { id: 'bolon', name: 'Bolón', steps: ['platano', 'cook', 'queso'], art: 'ckh_r_bolon', price: 8, lvl: 2 },
+  { id: 'salchipapa', name: 'Salchipapa', steps: ['papa', 'salchicha', 'cook', 'mostaza', 'tomate'], art: 'ckh_r_salchipapa', price: 11, lvl: 3 },
   { id: 'burger', name: 'Hamburguesa', steps: ['panb', 'carneh', 'cook', 'queso', 'panb'], art: 'ckh_r_burger', price: 13, lvl: 3 },
   { id: 'arroz', name: 'Arroz con menestra', steps: ['arroz', 'menestra', 'carne', 'cook'], art: 'ckh_r_arroz', price: 12, lvl: 4 },
   { id: 'kfc', name: 'Pollito KFC', steps: ['pollo', 'aceite', 'cook'], art: 'ckh_r_kfc', price: 13, lvl: 4 },
   { id: 'enceb', name: 'Encebollado', steps: ['pescado', 'yuca', 'cebolla'], art: 'ckh_r_enceb', price: 14, lvl: 5 }
 ];
 let RECIPES = BASE_REC;
-const ING_NAME = { masa: 'Masa', miel: 'Miel', fresa: 'Fresa', taza: 'Taza', te: 'Té', boba: 'Boba', cono: 'Cono', bola: 'Bola de helado', chispas: 'Chispas', crema: 'Crema', pan: 'Pan de hot dog', panb: 'Pan de abajo', pant: 'Pan de arriba', carne: 'Carne', carneh: 'Carne de hamburguesa', salchicha: 'Salchicha', queso: 'Queso manaba', quesoh: 'Queso de hamburguesa', arroz: 'Arroz', menestra: 'Menestra', platano: 'Verde', pescado: 'Albacora', cebolla: 'Cebolla', yuca: 'Yuca', pollo: 'Pollo', matcha: 'Matcha', chocolate: 'Chocolate', menta: 'Menta', aceite: 'Aceite', harina: 'Harina', huevos: 'Huevos', leche: 'Leche', mantequilla: 'Mantequilla', azucar: 'Azúcar', sal: 'Sal', lechuga: 'Lechuga', tomate: 'Salsa de tomate', mostaza: 'Mostaza', limon: 'Limón' };
+const ING_NAME = { papa: 'Papa', masa: 'Masa', miel: 'Miel', fresa: 'Fresa', taza: 'Taza', te: 'Té', boba: 'Boba', cono: 'Cono', bola: 'Bola de helado', chispas: 'Chispas', crema: 'Crema', pan: 'Pan de hot dog', panb: 'Pan de abajo', pant: 'Pan de arriba', carne: 'Carne', carneh: 'Carne de hamburguesa', salchicha: 'Salchicha', queso: 'Queso manaba', quesoh: 'Queso de hamburguesa', arroz: 'Arroz', menestra: 'Menestra', platano: 'Verde', pescado: 'Albacora', cebolla: 'Cebolla', yuca: 'Yuca', pollo: 'Pollo', matcha: 'Matcha', chocolate: 'Chocolate', menta: 'Menta', aceite: 'Aceite', harina: 'Harina', huevos: 'Huevos', leche: 'Leche', mantequilla: 'Mantequilla', azucar: 'Azúcar', sal: 'Sal', lechuga: 'Lechuga', tomate: 'Salsa de tomate', mostaza: 'Mostaza', limon: 'Limón' };
 // lo que la dueña agrega, edita o quita desde el panel
 const catC = () => ((A.CFG && A.CFG.catalog) || {});
 const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');

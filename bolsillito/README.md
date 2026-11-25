@@ -32,6 +32,7 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
   - **v64**: "Borrar ejemplos" ahora también quita los saldos y presupuestos de ejemplo que no hayas editado (también para quien ya los había borrado).
   - **v65**: se quitaron los Retos; Tarrito compartido rediseñado (tarritos de cristal con monedas, etiquetas, repisa) y Cuentas como recibo; fotos de perfil de tus amistades en ambos.
   - **v66 – Personalizar** (`config.js`): nueva pantalla en Más para mostrar u ocultar secciones del menú, cada juego, las cosas del cuarto (misiones, paseos, mariposas, burbujas) y la guía "Primeros pasitos".
+- v120: Cafecito: receta nueva Salchipapa e ingrediente Papa.
 - v119: Cafecito: ingredientes nuevos de Mefi (miel, taza, tetera, menta, bola, cono, arroz, chispas, panes, carnes, salchicha, queso, menestra, verde, albacora). Un solo pan de hamburguesa y un solo queso.
 - v118: Cafecito: nuevo dibujo del encebollado y del bolón.
 - v117: Cafecito: recetas nuevas de Mefi (encebollado, bolón, hot dog, cupcake, pastel de fresa, bubble tea, matcha, helados, hotcakes, arroz con menestra) en su dibujo original.
