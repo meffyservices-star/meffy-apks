@@ -2348,3 +2348,19 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .mk-pick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .mk-pk{display:flex;flex-direction:column;align-items:center;gap:4px;padding:0;font:inherit;color:inherit;cursor:pointer;background:none}
 .mk-pk img{image-rendering:pixelated;max-height:44px;max-width:60px}.mk-pk small{font-size:11px;text-align:center}
+
+/* ===== Botones al visitar a una amistad ===== */
+.vs-acts{gap:9px}
+.vs-acts .vs-a{min-height:98px;border:3px solid #5a3a3a;border-radius:18px;box-shadow:0 5px 0 #5a3a3a;padding:10px 2px 8px;gap:2px;position:relative;overflow:hidden;background:linear-gradient(#fff6e6,#ffe9d0)}
+.vs-acts .vs-a::before{display:none}
+.vs-acts .vs-a:nth-child(n){background:linear-gradient(#fff6e6,#ffe9d0)}
+.vs-acts .vs-a.heart{background:linear-gradient(#ffd6e3,#ffb3cb)}
+.vs-acts .vs-a.shop{background:linear-gradient(#d9f3c8,#b8e6a0)}
+.vs-acts .vs-a:nth-child(2){background:linear-gradient(#e6dcff,#cdbdf7)}
+.vs-acts .vs-a:nth-child(3){background:linear-gradient(#cfeaff,#a9d6f6)}
+.vs-acts .vs-ic{width:46px;height:46px;border-radius:50%;background:#fffaf0;border:3px solid #5a3a3a;display:grid;place-items:center;box-shadow:0 3px 0 rgba(90,58,58,.35)}
+.vs-acts .vs-ic img{width:30px !important;height:30px !important;padding:0 !important;background:none !important;box-shadow:none !important;border-radius:0 !important;image-rendering:pixelated}
+.vs-acts .vs-a b{font:800 13px var(--f-display);color:#5a3238;margin-top:4px}
+.vs-acts .vs-a small{font-size:10.5px;color:#7a5a5a;opacity:.85}
+.vs-acts .vs-a:active{transform:translateY(4px);box-shadow:0 1px 0 #5a3a3a}
+.vs-acts .vs-a.heart .vs-ic img{animation:vdBob 1.3s ease-in-out infinite}

@@ -19,7 +19,7 @@ function adapt(root) {
 }
 A.adaptText = adapt;
 let tm = null;
-const run = () => { clearTimeout(tm); tm = setTimeout(() => adapt(document.body), 30); };
+const run = () => { adapt(document.body); }; // sin demora: así nunca se ve primero "amistades" y luego "amigas"
 const st0 = A.start;
 A.start = async () => {
   await st0();
