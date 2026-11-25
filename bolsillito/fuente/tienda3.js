@@ -5,7 +5,7 @@ const sc = A.screens, ACT = A.ACTIONS;
 const spr = (n, k) => Pix.sprite(n, k || 3);
 const ST = s => `<img class="pixel" alt="" src="${spr('estrellita', 3)}" style="width:${s}px;height:auto;vertical-align:-3px">`;
 const ico = (n, fb) => (Pix.has(n) ? n : fb);
-Object.values(A.PACKS || {}).forEach(p => { if (p.map && !p.map.tarrito) p.map.tarrito = 's:' + ico('alcancia', 'estrellita'); if (p.map && !p.map.cuentas) p.map.cuentas = 's:' + ico('moneda', 'estrellita'); if (p.map && !p.map.retos) p.map.retos = 's:' + ico('trofeo', 'estrellita'); });
+Object.values(A.PACKS || {}).forEach(p => { if (p.map && !p.map.tarrito) p.map.tarrito = 's:' + ico('alcancia', 'estrellita'); if (p.map && !p.map.cuentas) p.map.cuentas = 's:' + ico('moneda', 'estrellita'); });
 const owned = id => A.isPlus() || ((S.settings.rincon || {}).owned || []).includes('acc:' + id);
 
 // ---------- ofertas del día (cambian solas cada día, para todos) ----------

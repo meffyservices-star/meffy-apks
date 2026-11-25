@@ -30,6 +30,7 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
   - **v62 – Cuarto con vida** (`vida.js`): las mascotas despiertas pasean por el cuarto, llegan mariposas que dan +1 estrellita (máx. 5 al día), la mascota te habla según tu mes al tocarla y los muebles reaccionan al tocarlos. Amistades viejas (por código) ya se reconocen en tarrito, cuentas y retos.
   - **v63**: arreglado que no dejaba crear tarritos, cuentas ni retos (permisos); amistades viejas por código ya pueden entrar a grupos.
   - **v64**: "Borrar ejemplos" ahora también quita los saldos y presupuestos de ejemplo que no hayas editado (también para quien ya los había borrado).
+  - **v65**: se quitaron los Retos; Tarrito compartido rediseñado (tarritos de cristal con monedas, etiquetas, repisa) y Cuentas como recibo; fotos de perfil de tus amistades en ambos.
 
   - Lenguaje neutro (amistades, personas), menú Más en grupos con descripción y con Juegos/Jardín/Tablero/Páginas compartidas, **Carreritas** con pista en relieve, sombras y profundidad, **Tiendita** con vitrina (saldo, destacado del día, lista de deseos con corazón, atajos; módulo `tienda2.js`). Caché `bolsillito-v47`.
 

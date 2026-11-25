@@ -83,7 +83,7 @@ const FEATS = [
   ['x_carrito_super', 'Lista de compras compartida', 'Armen juntas el súper o repartan gastos. Lo que una marca, la otra lo ve al instante.', 'compras'],
   ['trofeo', 'Carreritas', 'Compite con las mascotas de tus amistades en los minijuegos.', 'juegos']
 ];
-const IDEAS = ['Retos entre amistades: quién anota más días seguidos en la semana', 'Meta de ahorro en pareja o en grupo (alcancía compartida)', 'Dividir una cuenta (salida, cumpleaños) y saber quién debe a quién', 'Intercambio de pegatinas y mascotas repetidas', 'Tablero de las más constantes del mes'];
+const IDEAS = ['Meta de ahorro en pareja o en grupo (alcancía compartida)', 'Dividir una cuenta (salida, cumpleaños) y saber quién debe a quién', 'Intercambio de pegatinas y mascotas repetidas', 'Tablero de las más constantes del mes'];
 
 function reqCard(r) {
   const me = Store.uid;

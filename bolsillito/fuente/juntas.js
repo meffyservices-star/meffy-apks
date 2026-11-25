@@ -1,10 +1,10 @@
-// ================= Hacer cosas entre amistades: Tarrito compartido, Cuentas y Retos =================
+// ================= Hacer cosas entre amistades: Tarrito compartido y Cuentas =================
 (function () {
 const A = App, S = A.S, { $, $$, esc, money, toast, openSheet, closeSheet } = A;
 const sc = A.screens, ACT = A.ACTIONS;
 const spr = (n, k) => Pix.sprite(n, k || 3);
 const px = (n, w) => `<img class="pixel" alt="" src="${spr(Pix.has(n) ? n : 'estrellita', 4)}" style="width:${w}px;height:auto">`;
-A.PAGES.tarrito = 'Tarrito compartido'; A.PAGES.cuentas = 'Cuentas entre amistades'; A.PAGES.retos = 'Retos';
+A.PAGES.tarrito = 'Tarrito compartido'; A.PAGES.cuentas = 'Cuentas entre amistades'; ;
 const online = () => Store.mode === 'supa' && Store.sb && navigator.onLine !== false && !!Store.uid;
 const me = () => (S.settings.name || '').trim() || 'Yo';
 const friends = () => (A.friendUsers ? A.friendUsers() : []);
@@ -12,7 +12,19 @@ const num = v => { const n = parseFloat(String(v).replace(',', '.')); return isF
 const initials = n => (String(n).trim()[0] || '?').toUpperCase();
 const COLORS = ['#f27ea1', '#7fb7e8', '#8fcf9f', '#f2b45e', '#b79ae8', '#f09a7a'];
 const colorOf = id => { let h = 0; String(id).split('').forEach(c => h = (h * 31 + c.charCodeAt(0)) >>> 0); return COLORS[h % COLORS.length]; };
-const dot = (id, name, sz) => `<span class="jt-dot" style="background:${colorOf(id)};${sz ? 'width:' + sz + 'px;height:' + sz + 'px' : ''}" title="${esc(name)}">${esc(initials(name))}</span>`;
+const PR = {};
+const dot = (id, name, sz) => { const p = PR[id] && PR[id].photo, st = sz ? 'width:' + sz + 'px;height:' + sz + 'px;' : ''; return p ? `<img class="jt-dot jt-ph" alt="${esc(name)}" title="${esc(name)}" src="${esc(p)}" style="${st}">` : `<span class="jt-dot" style="background:${colorOf(id)};${st}" title="${esc(name)}">${esc(initials(name))}</span>`; };
+let pubDone = false;
+async function profiles(ids) {
+  if (!online()) return;
+  try {
+    if (!pubDone) { pubDone = true; await Store.sb.from('profiles_pub').upsert({ user_id: Store.uid, name: me(), photo: S.settings.photo || null, updated_at: new Date().toISOString() }); }
+    const need = [...new Set(ids)].filter(x => x && !PR[x] && x !== Store.uid); if (S.settings.photo) PR[Store.uid] = { photo: S.settings.photo };
+    if (!need.length) return; const { data } = await Store.sb.from('profiles_pub').select('user_id,photo').in('user_id', need);
+    let ch = false; (data || []).forEach(r => { if (r.photo) { PR[r.user_id] = { photo: r.photo }; ch = true; } else PR[r.user_id] = { photo: null }; });
+    if (ch && ['tarrito', 'cuentas'].includes(S.route)) A.render();
+  } catch (e) { console.warn(e); }
+}
 const offline = () => `<div class="card jt-off">${px('nube', 28)}<div><b>Necesitas conexión y tu cuenta</b><div class="faint">Esto se comparte con tus amistades, así que se guarda en la nube. Entra con tu cuenta y vuelve a intentar.</div></div></div>`;
 const noFriends = () => `<div class="card jt-off">${px('gochi', 28)}<div><b>Primero agrega a una amistad</b><div class="faint">Cuando alguien acepte tu solicitud, podrán hacer esto juntas. Ve a Amistades para agregarla.</div></div><button class="btn sm pink" data-go="amigos">Amistades</button></div>`;
 const ensureFriends = () => { if (online() && A.friendsLoaded && !A.friendsLoaded() && A.loadFriendReqs) A.loadFriendReqs().then(() => A.render()); };
@@ -30,22 +42,37 @@ async function loadJars() {
   try {
     const [a, b, c] = await Promise.all([Store.sb.from('jars').select('*').order('created_at', { ascending: false }), Store.sb.from('jar_members').select('*'), Store.sb.from('jar_deposits').select('*').order('created_at', { ascending: false }).limit(600)]);
     if (a.error) throw a.error; J.jars = a.data || []; J.members = {}; J.deps = {};
-    (b.data || []).forEach(m => (J.members[m.jar_id] = J.members[m.jar_id] || []).push(m)); (c.data || []).forEach(d => (J.deps[d.jar_id] = J.deps[d.jar_id] || []).push(d)); J.loaded = true;
+    (b.data || []).forEach(m => (J.members[m.jar_id] = J.members[m.jar_id] || []).push(m)); (c.data || []).forEach(d => (J.deps[d.jar_id] = J.deps[d.jar_id] || []).push(d)); J.loaded = true; profiles(Object.values(J.members).flat().map(m => m.user_id)); profiles(Object.values(J.members).flat().map(m => m.user_id));
   } catch (e) { console.warn(e); toast('No pude cargar tus tarritos. Revisa tu conexión.'); } finally { J.loading = false; }
   if (S.route === 'tarrito') A.render();
 }
 const jarTotal = id => (J.deps[id] || []).reduce((s, d) => s + (+d.amount || 0), 0);
+const JT = [['#fff0c9', '#ffd36b'], ['#ffe3ee', '#ff9fc0'], ['#e3f1ff', '#8ec5ff'], ['#e7f7e4', '#9ad7a0'], ['#efe6ff', '#c3a6f5']];
+const jtOf = id => { let h = 0; String(id).split('').forEach(c => h = (h * 31 + c.charCodeAt(0)) >>> 0); return JT[h % JT.length]; };
+function jarSVG(p, id, big) {
+  const [bg, fill] = jtOf(id), cid = 'jc' + String(id).replace(/\W/g, '').slice(0, 8) + (big ? 'b' : ''), y = 116 - (Math.max(p, 4) / 100) * 78;
+  let coins = ''; const n = Math.round(p / 7); for (let k = 0; k < n; k++) { const cx = 20 + ((k * 37) % 60), cy = 112 - Math.floor(k / 4) * 9 - (k % 2) * 3; if (cy > y + 4) coins += `<circle cx="${cx}" cy="${cy}" r="6" fill="#ffe28a" stroke="#c9902e" stroke-width="1.6"/><path d="M${cx - 2} ${cy - 2} h4" stroke="#fff8d6" stroke-width="1.6" stroke-linecap="round"/>`; }
+  const spark = p >= 100 ? '<path d="M8 22l2 5 5 2-5 2-2 5-2-5-5-2 5-2z M92 14l1.6 4 4 1.6-4 1.6-1.6 4-1.6-4-4-1.6 4-1.6z" fill="#ffd36b" stroke="#c9902e" stroke-width="1"/>' : '';
+  return `<svg class="jr-svg${big ? ' big' : ''}" viewBox="0 0 100 124" role="img" aria-label="Tarrito al ${p}%"><defs><clipPath id="${cid}"><path d="M22 34 Q10 40 10 58 L10 100 Q10 116 26 116 L74 116 Q90 116 90 100 L90 58 Q90 40 78 34 Z"/></clipPath></defs>
+<path d="M22 34 Q10 40 10 58 L10 100 Q10 116 26 116 L74 116 Q90 116 90 100 L90 58 Q90 40 78 34 Z" fill="rgba(255,255,255,.55)"/>
+<g clip-path="url(#${cid})"><rect x="0" y="${y}" width="100" height="124" fill="${fill}"/><path d="M0 ${y} q12 -7 25 0 t25 0 t25 0 t25 0 V${y + 10} H0z" fill="${fill}"/><path d="M0 ${y + 2} q12 -7 25 0 t25 0 t25 0 t25 0" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2"/>${coins}</g>
+<path d="M22 34 Q10 40 10 58 L10 100 Q10 116 26 116 L74 116 Q90 116 90 100 L90 58 Q90 40 78 34 Z" fill="none" stroke="#7a5468" stroke-width="3" stroke-linejoin="round"/>
+<path d="M17 62 v28" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".85"/><path d="M17 96 v3" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".85"/>
+<rect x="24" y="24" width="52" height="12" rx="5" fill="#fff7fb" stroke="#7a5468" stroke-width="3"/>
+<rect x="18" y="6" width="64" height="20" rx="8" fill="#f6a5be" stroke="#7a5468" stroke-width="3"/><path d="M50 21 l-6 -6 a3.6 3.6 0 0 1 6 -4 a3.6 3.6 0 0 1 6 4z" fill="#fff" stroke="#7a5468" stroke-width="1.4" stroke-linejoin="round"/>${spark}</svg>`;
+}
+const avs = (ms, sz) => `<span class="jt-ppl ov">${ms.slice(0, 6).map(m => dot(m.user_id, m.name, sz || 26)).join('')}${ms.length > 6 ? `<span class="jt-dot more" style="width:${sz || 26}px;height:${sz || 26}px">+${ms.length - 6}</span>` : ''}</span>`;
 sc.tarrito = () => {
   if (!online()) return H('tarrito') + offline();
   ensureFriends(); if (!J.loaded && !J.loading) loadJars();
   return `${H('tarrito')}
-<div class="card jt-intro">${px('alcancia', 40)}<div><b>Un tarrito para ahorrar juntas</b><div class="faint">Con tu pareja, una amiga o tu familia. Cada quien pone lo suyo y el tarrito se va llenando.</div></div></div>
-<button class="btn pink" data-act="jarNew" style="justify-content:center;width:100%;padding:12px">+ Crear un tarrito</button>
-${!J.loaded ? '<div class="faint" style="text-align:center;padding:16px">Cargando tus tarritos…</div>' : J.jars.length ? J.jars.map(jarCard).join('') : '<div class="an-empty">' + px('alcancia', 48) + '<b>Aún no tienes tarritos</b><span>Crea uno, elige con quién y pongan una meta bonita: un viaje, un regalo, el depa.</span></div>'}`;
+<div class="jt-hero"><div class="jt-hero-jar">${jarSVG(62, 'hero')}</div><div><b>Tarritos compartidos</b><span>Ahorren juntas para eso que sueñan: un viaje, un regalo, el depa. Cada moneda cuenta ✦</span></div></div>
+<button class="btn pink jt-new" data-act="jarNew">+ Nuevo tarrito</button>
+${!J.loaded ? '<div class="faint" style="text-align:center;padding:16px">Cargando tus tarritos…</div>' : J.jars.length ? '<div class="jt-shelf">' + J.jars.map(jarCard).join('') + '</div>' : '<div class="an-empty">' + jarSVG(0, 'vacio', true) + '<b>Tu repisa está vacía</b><span>Crea tu primer tarrito, elige con quién y pongan una meta bonita.</span></div>'}`;
 };
 function jarCard(j) {
-  const t = jarTotal(j.id), p = Math.min(100, Math.round(t / j.goal * 100)), ms = J.members[j.id] || [];
-  return `<button class="jt-card" data-act="jarOpen" data-id="${j.id}"><div class="jr-jar" style="--p:${p}"><span class="jr-lid"></span><span class="jr-glass"><i class="jr-fill"></i><b class="jr-pct">${p}%</b></span></div><div class="jt-tx"><b>${esc(j.name)}</b><span class="jt-amt">${money(t)} <small>de ${money(j.goal)}</small></span><span class="jt-ppl">${ms.map(m => dot(m.user_id, m.name, 22)).join('')}</span>${p >= 100 ? '<span class="jt-done">¡Meta lograda!</span>' : `<span class="faint">Faltan ${money(Math.max(0, j.goal - t))}</span>`}</div></button>`;
+  const t = jarTotal(j.id), p = Math.min(100, Math.round(t / j.goal * 100)), ms = J.members[j.id] || [], [bg] = jtOf(j.id);
+  return `<button class="jt-jar" data-act="jarOpen" data-id="${j.id}" style="--bg:${bg}"><span class="jt-tag">${esc(j.name)}</span>${jarSVG(p, j.id)}<span class="jt-pct">${p >= 100 ? '¡Meta! ✦' : p + '%'}</span><span class="jt-amt">${money(t)}</span><small>de ${money(j.goal)}</small>${avs(ms, 22)}</button>`;
 }
 ACT.jarNew = () => {
   if (!friends().length) return toast('Primero agrega a una amistad en Amistades.');
@@ -66,13 +93,13 @@ ACT.jarNew = () => {
 };
 ACT.jarOpen = a => {
   const j = J.jars.find(x => x.id === a.dataset.id); if (!j) return;
-  const t = jarTotal(j.id), p = Math.min(100, Math.round(t / j.goal * 100)), ms = J.members[j.id] || [], deps = J.deps[j.id] || [];
+  const t = jarTotal(j.id), p = Math.min(100, Math.round(t / j.goal * 100)), ms = J.members[j.id] || [], deps = J.deps[j.id] || [], [bg] = jtOf(j.id);
   const per = ms.map(m => ({ m, sum: deps.filter(d => d.user_id === m.user_id).reduce((s, d) => s + +d.amount, 0) })).sort((x, y) => y.sum - x.sum);
   const mine = j.owner === Store.uid;
-  openSheet(j.name, `<div class="stack"><div class="jt-big"><div class="jr-jar big" style="--p:${p}"><span class="jr-lid"></span><span class="jr-glass"><i class="jr-fill"></i><b class="jr-pct">${p}%</b></span></div><div><div class="an-big" style="font-size:28px">${money(t)}</div><div class="faint">de ${money(j.goal)}${p >= 100 ? ' · ¡meta lograda!' : ' · faltan ' + money(Math.max(0, j.goal - t))}</div></div></div>
-<button class="btn pink" id="jDep" style="justify-content:center;padding:12px">Poner dinero en el tarrito</button>
-<div class="an-h" style="margin:4px">Quién ha puesto</div>${per.map(x => `<div class="li"><span class="ic">${dot(x.m.user_id, x.m.name, 30)}</span><span class="tx-main"><b>${esc(x.m.name)}${x.m.user_id === Store.uid ? ' (tú)' : ''}</b></span><span class="amt num">${money(x.sum)}</span></div>`).join('')}
-${deps.length ? `<div class="an-h" style="margin:4px">Movimientos</div>${deps.slice(0, 15).map(d => `<div class="li"><span class="ic">${dot(d.user_id, d.name, 30)}</span><span class="tx-main"><b>${esc(d.name)} puso</b><span>${fmtDay(d.created_at.slice(0, 10))}${d.note ? ' · ' + esc(d.note) : ''}</span></span><span class="amt num pos">+${money(d.amount)}</span></div>`).join('')}` : ''}
+  openSheet(j.name, `<div class="stack"><div class="jt-stage" style="--bg:${bg}">${jarSVG(p, j.id, true)}<div class="jt-stage-tx"><div class="an-big" style="font-size:30px">${money(t)}</div><div class="faint">de ${money(j.goal)}</div><div class="jt-bar2"><i style="width:${p}%"></i></div><div class="jt-note">${p >= 100 ? '¡Lo lograron! ✦' : 'Faltan ' + money(Math.max(0, j.goal - t))}</div></div></div>
+<button class="btn pink jt-new" id="jDep">Poner una moneda ✦</button>
+<div class="an-h" style="margin:6px 4px 0">Quién ha puesto</div><div class="jt-who">${per.map(x => `<div class="jt-wp">${dot(x.m.user_id, x.m.name, 44)}<b>${esc(x.m.name.split(' ')[0])}${x.m.user_id === Store.uid ? ' (tú)' : ''}</b><span class="num">${money(x.sum)}</span><span class="jt-wbar"><i style="width:${t ? Math.round(x.sum / t * 100) : 0}%;background:${colorOf(x.m.user_id)}"></i></span></div>`).join('')}</div>
+${deps.length ? `<div class="an-h" style="margin:6px 4px 0">Últimas monedas</div>${deps.slice(0, 15).map(d => `<div class="jt-coin">${dot(d.user_id, d.name, 30)}<span class="tx-main"><b>${esc(d.name)} puso</b><span>${fmtDay(d.created_at.slice(0, 10))}${d.note ? ' · ' + esc(d.note) : ''}</span></span><span class="amt num pos">+${money(d.amount)}</span></div>`).join('')}` : ''}
 <button class="btn ghost sm" id="jOut" style="justify-content:center">${mine ? 'Borrar el tarrito' : 'Salir del tarrito'}</button></div>`, sh => {
     $('#jDep', sh).onclick = () => { closeSheet(); setTimeout(() => jarDeposit(j), 80); };
     $('#jOut', sh).onclick = async () => { if (!confirm(mine ? '¿Borrar este tarrito para todas? No se puede deshacer.' : '¿Salir de este tarrito?')) return; const r = mine ? await Store.sb.from('jars').delete().eq('id', j.id) : await Store.sb.from('jar_members').delete().eq('jar_id', j.id).eq('user_id', Store.uid); if (r.error) return toast('No se pudo.'); closeSheet(); J.loaded = false; loadJars(); };
@@ -97,7 +124,7 @@ async function loadQ() {
   try {
     const [a, b, c, d] = await Promise.all([Store.sb.from('split_groups').select('*').order('created_at', { ascending: false }), Store.sb.from('split_members').select('*'), Store.sb.from('split_expenses').select('*').order('created_at', { ascending: false }).limit(800), Store.sb.from('split_settlements').select('*').limit(800)]);
     if (a.error) throw a.error; Q.groups = a.data || []; Q.members = {}; Q.exps = {}; Q.sets = {};
-    (b.data || []).forEach(m => (Q.members[m.group_id] = Q.members[m.group_id] || []).push(m)); (c.data || []).forEach(x => (Q.exps[x.group_id] = Q.exps[x.group_id] || []).push(x)); (d.data || []).forEach(x => (Q.sets[x.group_id] = Q.sets[x.group_id] || []).push(x)); Q.loaded = true;
+    (b.data || []).forEach(m => (Q.members[m.group_id] = Q.members[m.group_id] || []).push(m)); (c.data || []).forEach(x => (Q.exps[x.group_id] = Q.exps[x.group_id] || []).push(x)); (d.data || []).forEach(x => (Q.sets[x.group_id] = Q.sets[x.group_id] || []).push(x)); Q.loaded = true; profiles(Object.values(Q.members).flat().map(m => m.user_id));
   } catch (e) { console.warn(e); toast('No pude cargar tus cuentas. Revisa tu conexión.'); } finally { Q.loading = false; }
   if (S.route === 'cuentas') A.render();
 }
@@ -113,13 +140,14 @@ function transfers(net) {
   return out;
 }
 const mname = (gid, id) => ((Q.members[gid] || []).find(m => m.user_id === id) || {}).name || 'Alguien';
+const gTotal = gid => (Q.exps[gid] || []).reduce((s, x) => s + +x.amount, 0);
 sc.cuentas = () => {
   if (!online()) return H('cuentas') + offline();
   ensureFriends(); if (!Q.loaded && !Q.loading) loadQ();
   return `${H('cuentas')}
-<div class="card jt-intro">${px('moneda', 40)}<div><b>Dividan gastos sin enredos</b><div class="faint">Crea un grupo con tus amistades, anota quién pagó qué y la app te dice quién le debe a quién.</div></div></div>
-<button class="btn pink" data-act="qNew" style="justify-content:center;width:100%;padding:12px">+ Crear un grupo</button>
-${!Q.loaded ? '<div class="faint" style="text-align:center;padding:16px">Cargando tus grupos…</div>' : Q.groups.length ? Q.groups.map(g => { const net = balances(g.id), my = Math.round((net[Store.uid] || 0) * 100) / 100, ms = Q.members[g.id] || []; return `<button class="jt-card" data-act="qOpen" data-id="${g.id}"><span class="jt-ic">${px('moneda', 30)}</span><div class="jt-tx"><b>${esc(g.name)}</b><span class="jt-ppl">${ms.map(m => dot(m.user_id, m.name, 22)).join('')}</span><span class="${my > 0.004 ? 'pos' : my < -0.004 ? 'neg' : 'faint'} jt-bal">${my > 0.004 ? 'Te deben ' + money(my) : my < -0.004 ? 'Debes ' + money(-my) : 'Están a mano'}</span></div></button>`; }).join('') : '<div class="an-empty">' + px('moneda', 48) + '<b>Aún no tienes grupos</b><span>Crea uno para una salida, un viaje o la casa que comparten.</span></div>'}`;
+<div class="jt-hero rc"><div class="jt-hero-jar rcico"><span>$</span></div><div><b>Cuentas entre amistades</b><span>Dividan gastos sin enredos: anotan quién pagó y el recibo les dice quién le debe a quién.</span></div></div>
+<button class="btn pink jt-new" data-act="qNew">+ Nuevo grupo</button>
+${!Q.loaded ? '<div class="faint" style="text-align:center;padding:16px">Cargando tus grupos…</div>' : Q.groups.length ? Q.groups.map(g => { const net = balances(g.id), my = Math.round((net[Store.uid] || 0) * 100) / 100, ms = Q.members[g.id] || []; return `<button class="rc-mini" data-act="qOpen" data-id="${g.id}"><span class="rc-top"><b>${esc(g.name)}</b><span>${money(gTotal(g.id))}</span></span><span class="rc-dash"></span><span class="rc-row">${avs(ms, 24)}<span class="rc-st ${my > 0.004 ? 'pos' : my < -0.004 ? 'neg' : ''}">${my > 0.004 ? 'Te deben ' + money(my) : my < -0.004 ? 'Debes ' + money(-my) : 'A mano ✓'}</span></span></button>`; }).join('') : '<div class="an-empty"><div class="jt-hero-jar rcico"><span>$</span></div><b>Aún no tienes grupos</b><span>Crea uno para una salida, un viaje o la casa que comparten.</span></div>'}`;
 };
 ACT.qNew = () => {
   if (!friends().length) return toast('Primero agrega a una amistad en Amistades.');
@@ -136,11 +164,19 @@ ACT.qNew = () => {
   });
 };
 ACT.qOpen = a => {
-  const g = Q.groups.find(x => x.id === a.dataset.id); if (!g) return; const ms = Q.members[g.id] || [], net = balances(g.id), tr = transfers(net), exps = Q.exps[g.id] || [], mine = g.owner === Store.uid;
-  openSheet(g.name, `<div class="stack"><div class="jt-ppl" style="gap:6px">${ms.map(m => `<span class="chip" style="pointer-events:none">${dot(m.user_id, m.name, 20)} ${esc(m.name)}</span>`).join('')}</div>
-<button class="btn pink" id="qAdd" style="justify-content:center;padding:12px">+ Anotar un gasto</button>
-<div class="an-h" style="margin:4px">Cómo van</div>${tr.length ? tr.map((t, i) => `<div class="li"><span class="ic">${dot(t.from, mname(g.id, t.from), 30)}</span><span class="tx-main"><b>${t.from === Store.uid ? 'Tú le debes a ' + esc(mname(g.id, t.to)) : esc(mname(g.id, t.from)) + ' le debe a ' + (t.to === Store.uid ? 'ti' : esc(mname(g.id, t.to)))}</b></span><span class="amt num ${t.to === Store.uid ? 'pos' : ''}">${money(t.amount)}</span></div>${t.from === Store.uid ? `<button class="btn sm" data-pay="${i}" style="justify-content:center;margin:-2px 0 6px">Ya le pagué</button>` : ''}`).join('') : '<div class="faint">Están a mano. ¡Todo parejo!</div>'}
-${exps.length ? `<div class="an-h" style="margin:4px">Gastos</div>${exps.slice(0, 20).map(x => `<div class="li"><span class="ic">${dot(x.paid_by, x.paid_name, 30)}</span><span class="tx-main"><b>${esc(x.note || 'Gasto')}</b><span>Pagó ${x.paid_by === Store.uid ? 'tú' : esc(x.paid_name)} · entre ${(x.participants || []).length || ms.length} · ${fmtDay(x.created_at.slice(0, 10))}</span></span><span class="amt num">${money(x.amount)}</span></div>`).join('')}` : ''}
+  const g = Q.groups.find(x => x.id === a.dataset.id); if (!g) return; const ms = Q.members[g.id] || [], net = balances(g.id), tr = transfers(net), exps = Q.exps[g.id] || [], mine = g.owner === Store.uid, tot = gTotal(g.id);
+  const d0 = new Date().toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' });
+  openSheet(g.name, `<div class="stack"><div class="rc-paper"><div class="rc-head"><span class="rc-star">✦ BOLSILLITO ✦</span><b>${esc(g.name)}</b><small>${d0} · ${ms.length} personas</small></div>
+<div class="rc-dash"></div>
+${exps.length ? exps.slice(0, 20).map(x => `<div class="rc-line"><span class="rc-who">${dot(x.paid_by, x.paid_name, 20)}</span><span class="rc-n"><b>${esc(x.note || 'Gasto')}</b><small>pagó ${x.paid_by === Store.uid ? 'tú' : esc(x.paid_name)} · ${fmtDay(x.created_at.slice(0, 10))}</small></span><span class="rc-dots"></span><span class="num">${money(x.amount)}</span></div>`).join('') : '<div class="rc-empty">Aún no hay gastos en este recibo</div>'}
+<div class="rc-dash"></div>
+<div class="rc-line tot"><b>TOTAL</b><span class="rc-dots"></span><b class="num">${money(tot)}</b></div>
+<div class="rc-line"><span>Por persona</span><span class="rc-dots"></span><span class="num">${money(ms.length ? tot / ms.length : 0)}</span></div>
+<div class="rc-dash"></div>
+<div class="rc-sec">CÓMO VAN</div>
+${tr.length ? tr.map((t, i) => `<div class="rc-line pay"><span class="rc-who">${dot(t.from, mname(g.id, t.from), 22)}</span><span class="rc-n"><b>${t.from === Store.uid ? 'Tú' : esc(mname(g.id, t.from))} → ${t.to === Store.uid ? 'ti' : esc(mname(g.id, t.to))}</b></span><span class="rc-dots"></span><b class="num ${t.to === Store.uid ? 'pos' : 'neg'}">${money(t.amount)}</b></div>${t.from === Store.uid ? `<button class="btn sm pink rc-pay" data-pay="${i}">Ya le pagué</button>` : ''}`).join('') : '<div class="rc-ok">A MANO ✓<small>¡Todo parejo!</small></div>'}
+<div class="rc-bar"></div><div class="rc-thanks">¡Gracias por cuidar sus cuentas! ♡</div></div>
+<button class="btn pink jt-new" id="qAdd">+ Anotar un gasto</button>
 <button class="btn ghost sm" id="qOut" style="justify-content:center">${mine ? 'Borrar el grupo' : 'Salir del grupo'}</button></div>`, sh => {
     $('#qAdd', sh).onclick = () => { closeSheet(); setTimeout(() => qExpense(g), 80); };
     $$('[data-pay]', sh).forEach(b => b.onclick = async () => { const t = tr[+b.dataset.pay]; b.disabled = true; const r = await Store.sb.from('split_settlements').insert({ group_id: g.id, to_user: t.to, amount: t.amount }); if (r.error) { b.disabled = false; return toast('No se pudo guardar.'); } closeSheet(); toast('Anotado. ¡Gracias por pagar!'); Q.loaded = false; loadQ(); });
@@ -168,67 +204,4 @@ A.qAddExpense = async (gid, amount, note) => {
   if (error) { console.warn(error); return false; } Q.loaded = false; loadQ(); return true;
 };
 
-// ============================== RETOS ==============================
-const R = { list: [], members: {}, checks: {}, loaded: false, loading: false };
-const PRESETS = [['Anotar mis gastos todos los días', 'anotar'], ['Día sin gastos hormiga', 'hormiga'], ['Ahorrar un poquito cada día', 'ahorrar']];
-async function loadR() {
-  if (!online() || R.loading) return; R.loading = true;
-  try {
-    const [a, b, c] = await Promise.all([Store.sb.from('challenges').select('*').order('created_at', { ascending: false }), Store.sb.from('challenge_members').select('*'), Store.sb.from('challenge_checkins').select('*').limit(3000)]);
-    if (a.error) throw a.error; R.list = a.data || []; R.members = {}; R.checks = {};
-    (b.data || []).forEach(m => (R.members[m.challenge_id] = R.members[m.challenge_id] || []).push(m)); (c.data || []).forEach(x => (R.checks[x.challenge_id] = R.checks[x.challenge_id] || []).push(x)); R.loaded = true;
-  } catch (e) { console.warn(e); toast('No pude cargar tus retos. Revisa tu conexión.'); } finally { R.loading = false; }
-  if (S.route === 'retos') { payRetos(); A.render(); }
-}
-const days = c => Math.round((A.parseYmd(c.end_day) - A.parseYmd(c.start_day)) / 864e5) + 1;
-const doneBy = (c, u) => (R.checks[c.id] || []).filter(x => x.user_id === u).length;
-function payRetos() { // +10 estrellitas, una sola vez, al terminar un reto con todos los días cumplidos
-  const paid = S.settings.retoPaid = S.settings.retoPaid || {}; let n = 0;
-  R.list.forEach(c => { if (c.end_day < A.today() && !paid[c.id] && doneBy(c, Store.uid) >= days(c)) { paid[c.id] = 1; n += 10; } });
-  if (n && A.giveStars) { A.giveStars(n); A.saveSettings(); setTimeout(() => toast(`¡Cumpliste un reto! +${n} estrellitas ✦`), 400); }
-}
-sc.retos = () => {
-  if (!online()) return H('retos') + offline();
-  ensureFriends(); if (!R.loaded && !R.loading) loadR();
-  const today = A.today(); const act = R.list.filter(c => c.end_day >= today), old = R.list.filter(c => c.end_day < today);
-  return `${H('retos')}
-<div class="card jt-intro">${px('trofeo', 40)}<div><b>Retos con tus amistades</b><div class="faint">Elijan un hábito, marquen cada día que lo cumplen y vean quién va primera. ¡Cumplirlo completo da 10 estrellitas!</div></div></div>
-<button class="btn pink" data-act="rNew" style="justify-content:center;width:100%;padding:12px">+ Crear un reto</button>
-${!R.loaded ? '<div class="faint" style="text-align:center;padding:16px">Cargando tus retos…</div>' : act.length ? act.map(retoCard).join('') : '<div class="an-empty">' + px('trofeo', 48) + '<b>No hay retos activos</b><span>Invita a una amistad a un reto de 7 días y vean quién lo cumple.</span></div>'}
-${old.length ? `<details class="card an-hist"><summary><b>Retos terminados</b> <span class="faint">${old.length}</span></summary>${old.slice(0, 10).map(c => { const ms = R.members[c.id] || []; const top = ms.map(m => ({ m, n: doneBy(c, m.user_id) })).sort((a, b) => b.n - a.n)[0]; return `<div class="li"><span class="ic">${px('trofeo', 22)}</span><span class="tx-main"><b>${esc(c.name)}</b><span>${top ? 'Ganó ' + esc(top.m.name) + ' · ' + top.n + ' de ' + days(c) + ' días' : ''}</span></span></div>`; }).join('')}</details>` : ''}`;
-};
-function retoCard(c) {
-  const ms = R.members[c.id] || [], today = A.today(), total = days(c), checked = (R.checks[c.id] || []).some(x => x.user_id === Store.uid && x.day === today), started = c.start_day <= today;
-  const left = Math.round((A.parseYmd(c.end_day) - A.parseYmd(today)) / 864e5) + 1;
-  const rows = ms.map(m => ({ m, n: doneBy(c, m.user_id) })).sort((a, b) => b.n - a.n);
-  return `<div class="jt-reto"><div class="row between"><b>${esc(c.name)}</b><span class="faint">${started ? (left === 1 ? 'Último día' : 'Quedan ' + left + ' días') : 'Empieza ' + fmtDay(c.start_day)}</span></div>
-${rows.map((r, i) => `<div class="jt-rank">${i === 0 && r.n ? px('trofeo', 18) : `<span class="jt-pos">${i + 1}</span>`}${dot(r.m.user_id, r.m.name, 26)}<span class="jt-rn">${esc(r.m.name)}${r.m.user_id === Store.uid ? ' (tú)' : ''}</span><span class="cp-bar jt-bar"><i style="width:${Math.round(r.n / total * 100)}%;background:${colorOf(r.m.user_id)}"></i></span><b class="num">${r.n}/${total}</b></div>`).join('')}
-${started ? `<button class="btn ${checked ? '' : 'pink'}" data-act="rCheck" data-id="${c.id}" style="justify-content:center;margin-top:8px">${checked ? '✓ Hoy ya cumpliste (toca para deshacer)' : '¡Hoy cumplí!'}</button>` : ''}</div>`;
-}
-ACT.rCheck = async a => {
-  const id = a.dataset.id, today = A.today(), done = (R.checks[id] || []).some(x => x.user_id === Store.uid && x.day === today); a.disabled = true;
-  const r = done ? await Store.sb.from('challenge_checkins').delete().eq('challenge_id', id).eq('user_id', Store.uid).eq('day', today) : await Store.sb.from('challenge_checkins').insert({ challenge_id: id, day: today });
-  if (r.error) { a.disabled = false; return toast('No se pudo guardar. Revisa tu conexión.'); }
-  if (!done) toast('¡Muy bien! Un día más ✦'); R.loaded = false; loadR();
-};
-ACT.rNew = () => {
-  if (!friends().length) return toast('Primero agrega a una amistad en Amistades.');
-  const sel = new Set(); const st = { name: PRESETS[0][0], len: 7 };
-  openSheet('Nuevo reto', `<div class="stack"><div class="f">¿Qué reto es?<div class="chips">${PRESETS.map(([n], i) => `<button type="button" class="chip" data-rp="${i}" aria-pressed="${i === 0}">${esc(n)}</button>`).join('')}</div></div><label class="f">O ponle tu propio nombre<input class="in" id="rN" maxlength="50" placeholder="Ej. Cero delivery"></label><div class="f">¿Cuántos días?<div class="seg">${[7, 14, 30].map(d => `<button type="button" data-rl="${d}" aria-pressed="${d === 7}">${d} días</button>`).join('')}</div></div><div class="f">¿Con quién?${pickChips(sel, 'rq')}</div><button class="btn pink" id="rOk" style="justify-content:center;padding:12px">Empezar reto</button></div>`, sh => {
-    sh.addEventListener('click', e => {
-      if (togglePick(sh, 'rq', sel, e)) return;
-      const p = e.target.closest('[data-rp]'); if (p) { st.name = PRESETS[+p.dataset.rp][0]; $('#rN', sh).value = ''; $$('[data-rp]', sh).forEach(b => b.setAttribute('aria-pressed', b === p)); }
-      const l = e.target.closest('[data-rl]'); if (l) { st.len = +l.dataset.rl; $$('[data-rl]', sh).forEach(b => b.setAttribute('aria-pressed', b === l)); }
-    });
-    sh.addEventListener('input', e => { if (e.target.id === 'rN' && e.target.value) $$('[data-rp]', sh).forEach(b => b.setAttribute('aria-pressed', 'false')); });
-    $('#rOk', sh).onclick = async () => {
-      const name = ($('#rN', sh).value.trim() || st.name); if (!sel.size) return toast('Elige al menos a una amistad');
-      const start = A.today(), end = (() => { const d = A.parseYmd(start); d.setDate(d.getDate() + st.len - 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })();
-      const b = $('#rOk', sh); b.disabled = true; const { data, error } = await Store.sb.from('challenges').insert({ name, start_day: start, end_day: end }).select().single();
-      if (error) { b.disabled = false; console.warn(error); return toast('No se pudo crear el reto.'); }
-      await A.ensureFriendRows([...sel]); const r = await Store.sb.from('challenge_members').insert([{ challenge_id: data.id, user_id: Store.uid, name: me() }].concat([...sel].map(id => ({ challenge_id: data.id, user_id: id, name: nameOfFriend(id) })))); if (r.error) { console.warn(r.error); toast('El grupo se creó, pero no pude agregar a todas.'); }
-      closeSheet(); toast('¡Reto creado! A cumplirlo'); R.loaded = false; loadR();
-    };
-  });
-};
 })();
