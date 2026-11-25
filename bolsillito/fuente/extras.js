@@ -190,6 +190,7 @@ const markSeen = k => { if (S.settings && !(S.settings.seen || {})[k]) { S.setti
 function openFromUrl(u) {
   if (/cajita=1/.test(u)) { if (A.openCajita) A.openCajita(); else A.go('visitas'); return true; }
   if (/visitas=1/.test(u)) { A.go('visitas'); return true; }
+  if (/tienda=1/.test(u)) { S.shopTab = 'col'; A.go('tienda'); return true; }
   return false;
 }
 const st0 = A.start;

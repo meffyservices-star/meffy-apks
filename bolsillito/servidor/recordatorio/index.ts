@@ -4,6 +4,8 @@
 // 3) Avisos de amistades: cuando te dejan algo en la cajita y cuando te dan las gracias (tabla gifts, payload.avisado).
 // 4) Avisos del admin (tabla admin_avisos): a una usuaria o a todas las que tienen notificaciones activadas.
 // 5) Solicitudes de amistad (tabla friend_requests): cuando te mandan una y cuando aceptan la tuya.
+// 6) Aviso cuando abre una temporada (se crea un aviso del admin para todas, una sola vez).
+// 7) Resumen de la semana: los domingos a las 7 pm, con lo que anotó en los últimos 7 días.
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4';
 import webpush from 'npm:web-push@3.6.7';
 
@@ -17,7 +19,7 @@ const FRASES = [
   'Hoy también cuenta. Anota tus gastos con {pet}.'
 ];
 
-type Sub = { endpoint: string; user_id: string; p256dh: string; auth: string; hour: number; tz: string; pet: string; enabled: boolean; daily: boolean; last_log: string; last_sent: string };
+type Sub = { endpoint: string; user_id: string; p256dh: string; auth: string; hour: number; tz: string; pet: string; enabled: boolean; daily: boolean; last_log: string; last_sent: string; last_weekly?: string };
 type Rem = { user_id: string; id: string; title: string; note: string | null; kind: string; repeat: string; date: string | null; dom: number | null; wdays: number[] | null; month: number | null; hour: number; minute: number; before: number[]; tz: string; sound: string | null; sent: string[] };
 
 function localNow(tz: string): { date: string; hour: number; min: number } {
@@ -124,6 +126,25 @@ Deno.serve(async (req: Request) => {
     await sb.from('gifts').update({ payload: { ...pl0, avisado: true } }).eq('id', g.id);
   }
 
+  // 6) Temporadas: el día que abre una colección (9 am de Ecuador) se crea un aviso para todas, una sola vez
+  try {
+    const ahora = localNow('America/Guayaquil');
+    if (ahora.hour === 9) {
+      const { data: cfg } = await sb.from('app_config').select('body').eq('id', 1).single();
+      const cat = ((cfg?.body as Record<string, any>) || {}).catalog || {};
+      const st = cat.seStyle || {};
+      const BASE = [{ id: 'halloween', name: 'Noche de brujas', from: '10-15' }, { id: 'navidad', name: 'Navidad', from: '12-01' }, { id: 'valentin', name: 'San Valentín', from: '02-01' }];
+      const custom = (cat.seasons || []).filter((x: any) => (cat.clothes || []).concat(cat.furn || [], cat.pets || []).some((i: any) => i.how === 'temporada' && i.season === x.id && !i.off));
+      for (const se of BASE.concat(custom)) {
+        if (se.from !== ahora.date.slice(5)) continue;
+        const nombre = (st[se.id] || {}).name || se.name;
+        const title = `¡Llegó ${nombre}!`;
+        const { data: ya } = await sb.from('admin_avisos').select('id').eq('title', title).gte('created_at', new Date(Date.now() - 3 * 86400000).toISOString()).limit(1);
+        if (!ya || !ya.length) await sb.from('admin_avisos').insert({ to_user: null, title, body: 'Ya abrió la colección en la Tiendita. Entra a ver con qué sale la mascota.', url: '/?tienda=1', sent: false });
+      }
+    }
+  } catch (e) { console.error('temporadas', String(e)); }
+
   // 4) Avisos del admin: a una usuaria (to_user) o a todas (to_user vacío). Solo los de las últimas 24 horas, una sola vez.
   let avisos = 0;
   const hace24 = new Date(Date.now() - 24 * 3600000).toISOString();
@@ -156,5 +177,24 @@ Deno.serve(async (req: Request) => {
       await sb.from('friend_requests').update({ notified: true, notified_reply: true }).eq('id', f.id);
     }
   }
-  return new Response(JSON.stringify({ sent, gone, rems, amistades, avisos, solicitudes }), { headers: { 'Content-Type': 'application/json' } });
+  // 7) Resumen de la semana (domingo 7 pm hora de cada quien)
+  let resumenes = 0;
+  const diasAtras = (s: string, n: number) => plusDays(s, -n);
+  for (const [uid, L] of byUser) {
+    const s0 = L[0]; const now = localNow(s0.tz || 'America/Guayaquil');
+    if (now.hour !== 19 || parse(now.date).getUTCDay() !== 0 || L.every(x => x.last_weekly === now.date)) continue;
+    const desde = diasAtras(now.date, 6); const ms = [now.date.slice(0, 7), diasAtras(now.date, 6).slice(0, 7)];
+    const { data: docs } = await sb.from('user_docs').select('doc_id, body').eq('user_id', uid).in('doc_id', [...new Set(ms)].map(m => 'tx-' + m));
+    let gasto = 0, ingreso = 0, n = 0;
+    for (const d of docs || []) for (const t of ((d.body as { items?: Record<string, unknown>[] })?.items || [])) {
+      const f = String(t.date || ''); if (f < desde || f > now.date || t.example) continue;
+      const a = Number(t.amount) || 0; n++; if (t.type === 'expense') gasto += a; else if (t.type === 'income') ingreso += a;
+    }
+    const pet = (L.find(x => x.pet) || { pet: '' }).pet || 'Tu mascota';
+    const m = (x: number) => '$' + x.toFixed(2).replace(/\.00$/, '');
+    const body = n ? `Esta semana anotaste ${n} ${n === 1 ? 'movimiento' : 'movimientos'}: gastaste ${m(gasto)} y entraron ${m(ingreso)}. ${gasto <= ingreso ? '¡Vas cuidando tu bolsillito!' : 'La semana que viene lo equilibramos con calma.'}` : `${pet} no vio movimientos esta semana. Hoy es buen día para retomar.`;
+    let ok = false; for (const s of L) ok = (await push(s, { title: `Tu semana con ${pet}`, body, url: '/', tag: 'resumen' }, 12 * 3600)) || ok;
+    if (ok) { resumenes++; for (const s of L) await sb.from('push_subs').update({ last_weekly: now.date }).eq('endpoint', s.endpoint); }
+  }
+  return new Response(JSON.stringify({ sent, gone, rems, amistades, avisos, solicitudes, resumenes }), { headers: { 'Content-Type': 'application/json' } });
 });
