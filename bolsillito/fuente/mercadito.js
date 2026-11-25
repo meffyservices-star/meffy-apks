@@ -8,7 +8,7 @@ const ST = n => `<img class="pixel" alt="" src="${spr('estrellita', 2)}" style="
 const sheet = (t, h) => openSheet(t, h, sh => sh.addEventListener('click', ev => { const b = ev.target.closest('[data-act]'); if (b && ACT[b.dataset.act]) ACT[b.dataset.act](b); }));
 const BOXES = 3, SLOTS = 10;
 const M = { loaded: false, loading: false, friends: [], stalls: {}, mine: { name: '', items: [] }, owed: [], tab: 'ver' };
-const online = () => Store.mode === 'cloud' && Store.sb && Store.uid;
+const online = () => Store.mode === 'supa' && Store.sb && !!Store.uid && navigator.onLine !== false;
 const cfg = () => S.settings.market = S.settings.market || { name: '' };
 const myName = () => (cfg().name || '').trim() || ('Puestito de ' + (S.settings.name || 'ti').split(' ')[0]);
 const R = () => A.roomState();
@@ -37,6 +37,7 @@ function stallHTML(name, items, mode) {
 async function load(force) {
   if (!online() || M.loading) return; if (M.loaded && !force) return; M.loading = true;
   try {
+    if (A.loadFriendReqs && !(A.friendsLoaded && A.friendsLoaded())) { try { await A.loadFriendReqs(); } catch (x) {} }
     M.friends = A.friendUsers ? A.friendUsers() : [];
     const ids = M.friends.map(f => f.id).concat([Store.uid]);
     const [a, s] = await Promise.all([Store.sb.from('market_stalls').select('user_id,name,items').in('user_id', ids), Store.sb.from('market_sales').select('id,price,item_name,buyer_name').eq('seller', Store.uid).eq('claimed', false)]);
@@ -67,11 +68,12 @@ function giveItem(it) {
   if (A.registerCatalog) try { A.studioReg(); } catch (e) {}
 }
 
+const hero = () => `<div class="mk-hero"><span class="mk-sky"><img class="pixel mk-c1" alt="" src="${spr('nube', 3)}"><img class="pixel mk-c2" alt="" src="${spr('nube', 2)}"><img class="pixel mk-st" alt="" src="${spr('estrellita', 2)}"></span><img class="pixel mk-shop-ic" alt="" src="${spr('mercadito', 7)}"><div class="mk-hero-t"><b>Mercadito</b><span>Compra y vende cositas con tus amistades</span><em>${ST(13)} ${A.rinconBalance ? A.rinconBalance() : 0}</em></div></div>`;
 // ---------- pantalla ----------
 sc.mercadito = () => {
   const tab = M.tab;
-  const head = `${A.header('mercadito')}<div class="chips mk-tabs"><button class="chip" data-act="mkTab" data-t="ver" aria-pressed="${tab === 'ver'}">Pasear por los puestitos</button><button class="chip" data-act="mkTab" data-t="mio" aria-pressed="${tab === 'mio'}">Mi puestito</button></div>`;
-  if (!online()) return head + `<div class="card" style="text-align:center"><h3>El Mercadito necesita internet y tu cuenta</h3><p class="faint">Entra con tu cuenta para abrir tu puestito y ver los de tus amistades.</p></div>`;
+  const head = `${A.header('mercadito')}${hero()}<div class="mk-tabs"><button data-act="mkTab" data-t="ver" aria-pressed="${tab === 'ver'}">Pasear</button><button data-act="mkTab" data-t="mio" aria-pressed="${tab === 'mio'}">Mi puestito${M.owed.length ? ' <i>' + M.owed.length + '</i>' : ''}</button></div>`;
+  if (!online()) return head + `<div class="card" style="text-align:center"><h3>Sin conexión por ahora</h3><p class="faint">El Mercadito se abre cuando tengas internet.</p></div>`;
   if (!M.loaded) { load(); return head + `<p class="faint" style="text-align:center;margin:24px">Abriendo el mercadito…</p>`; }
   if (tab === 'mio') {
     const owed = M.owed.reduce((s2, r) => s2 + (+r.price || 0), 0);
