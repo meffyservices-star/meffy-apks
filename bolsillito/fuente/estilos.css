@@ -2703,3 +2703,4 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .ngx .pos-tile{border:0;box-shadow:0 0 0 2px var(--ng-l)}.ngx .pos-tile>span:not(.pos-img){color:var(--ng-pi)}
 .ngx .ng-ic{flex:none!important;width:44px}.ngx .ng-por .ng-ic{flex:none}
 .ng-nav{gap:4px}.ng-nav button{padding:6px 10px;font-size:12.5px}
+.ng-mods{display:flex;flex-direction:column;gap:8px}.ng-mod{display:flex;flex-direction:column;align-items:flex-start;gap:1px;border:2px solid var(--ng-l);background:#fff;border-radius:16px;padding:10px 14px;font:inherit;color:var(--ng-ink);text-align:left;cursor:pointer}.ng-mod small{font-size:12px;color:#a27b8d;font-weight:700}.ng-mod[aria-pressed="true"]{background:#fff0f5;border-color:var(--ng-p)}.ng-mod[aria-pressed="true"] b::after{content:" ✓";color:var(--ng-p)}
