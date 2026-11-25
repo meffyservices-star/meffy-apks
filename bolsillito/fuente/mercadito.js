@@ -133,6 +133,11 @@ function giveItem(it) {
   try { A.studioReg(); } catch (e) {}
 }
 
+function vitrina(c, mine) {
+  const L = c.items.slice().sort((a, b) => a.b - b.b || a.s - b.s);
+  const body = L.length ? `<div class="vt-grid">${L.map(l => `<button class="vt-it pn pn-slot" data-act="${mine ? 'mkSlot' : 'mkLookV'}" data-b="${l.b}" data-s="${l.s}" data-id="${l.id}"><span class="vt-img">${imgOf(l, 2)}</span><b>${esc(l.nm)}</b><span class="vt-pr pn pn-tag">${ST(10)}${l.price}</span></button>`).join('')}</div>` : `<div class="vt-empty"><img class="pixel" alt="" src="${spr('regalo_abierto', 4)}"><b>${mine ? 'Tu puestito está vacío' : 'Todavía no vende nada'}</b><span>${mine ? 'Toca una cajita de arriba y pon tu primera cosita.' : 'Vuelve pronto, a lo mejor ya puso algo.'}</span></div>`;
+  return `<div class="vt-board"><div class="vt-head pn pn-wood"><span>${mine ? 'Lo que tienes a la venta' : 'Todo lo que vende'}</span><em>${L.length} ${L.length === 1 ? 'cosita' : 'cositas'}</em></div><div class="vt-body pn pn-cream">${body}</div></div>`;
+}
 // ---------- pantalla del puestito ----------
 const cur = () => { const v = M.view; if (!v) return null; return v.mine ? { name: myName(), items: M.mine.items, pet: myPet(), mine: true } : { name: (M.stalls[v.u] && M.stalls[v.u].name) || ('Puestito de ' + v.n), items: (M.stalls[v.u] && M.stalls[v.u].items) || [], pet: (M.stalls[v.u] && M.stalls[v.u].pet) || null, mine: false }; };
 sc.puestito = () => {
@@ -145,6 +150,7 @@ sc.puestito = () => {
 <div class="pz-sign pn pn-wood"><b>${esc(c.name)}</b></div>
 ${Array.from({ length: BOXES }, (_, i) => { const L = c.items.filter(x => x.b === i), n = L.length; return `<button class="pz-crate" data-act="mkCrate" data-b="${i}" style="left:${(32 + i * 33) / W * 100}%" aria-label="Cajita ${i + 1}">${L.slice(0, 3).map((l, j) => `<img class="pz-it pixel" alt="" data-x="${j}" src="${spr(spriteOf(l), 1)}">`).join('')}</button><span class="pz-tag pn pn-tag" style="left:${(32 + i * 33) / W * 100}%">${v.mine && !n ? '+ Poner' : n + ' de ' + SLOTS}</span>`; }).join('')}
 </div>
+${vitrina(c, v.mine)}
 ${v.mine ? `<div class="pz-info">${owed ? `<button class="btn pink" data-act="mkCollect" style="width:100%;justify-content:center">Recoger ${owed} estrellitas de tus ventas</button>` : ''}<label class="f">Nombre de tu puestito<input class="in" id="mkName" maxlength="22" placeholder="${esc(myName())}" value="${esc(cfg().name || '')}"></label><p class="faint" style="margin:0 2px;font-size:12px">Toca una cajita para poner cosas. Tus amistades te ven cuando visitan tu cuarto.</p></div>` : `<p class="faint" style="text-align:center;margin:10px 8px">Toca una cajita para ver lo que vende. Tienes ${ST(13)} ${A.rinconBalance ? A.rinconBalance() : 0}</p>`}`;
 };
 A.after.puestito = el => {
@@ -176,6 +182,7 @@ ACT.mkLook = a => {
   const c = cur(), l = c.items.find(x => x.id === a.dataset.id); if (!l) return;
   sheet(l.nm, `<div class="mk-look"><div class="mk-look-img pn pn-cream">${imgOf(l, 5)}</div><b>${esc(l.nm)}</b><span class="faint">${l.t === 'furn' ? 'Mueble para tu cuarto' : 'Ropita para tus mascotas'}</span><button class="btn pink" data-act="mkBuy" data-id="${l.id}" style="justify-content:center;width:100%">Comprar por ${l.price} ${ST(14)}</button><button class="btn" data-act="mkBack" style="justify-content:center;width:100%">Volver a la cajita</button></div>`);
 };
+ACT.mkLookV = a => { M.box = +a.dataset.b; ACT.mkLook(a); };
 ACT.mkBack = () => sheet(`Cajita ${M.box + 1}`, crateHTML(M.box));
 ACT.mkBuy = async a => {
   const v = M.view, st = M.stalls[v.u], l = ((st && st.items) || []).find(x => x.id === a.dataset.id); if (!l || a.dataset.busy) return;
