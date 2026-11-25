@@ -9,7 +9,7 @@ const bal = () => (A.rinconBalance ? A.rinconBalance() : 0);
 const starsPill = () => `<span class="pill sm" style="background:#fff09a;color:#6b4d12">${ST(18)} ${bal()}</span>`;
 const sub = A.subHeader;
 const pageIcon = (k, n) => Object.values(A.PACKS).forEach(pk => { pk.map[k] = pk.map[k] || ('s:' + n + (pk.map.home && pk.map.home.includes('~') ? '~' + pk.map.home.split('~')[1] : '')); });
-Object.assign(A.PAGES, { juegos: 'Juegos', jardin: 'Mi jardín', tablero: 'Tablero de sueños', visitas: 'Visitas' });
+Object.assign(A.PAGES, { juegos: 'Juegos', jardin: 'Mi jardín', tablero: 'Vision boards', visitas: 'Visitas' });
 pageIcon('juegos', 'game'); pageIcon('jardin', 'brote'); pageIcon('tablero', 'pic'); pageIcon('visitas', 'casita');
 const activePet = () => (A.petActive && A.petActive()) || 'gochi';
 const petSprite = () => (A.petInfo ? A.petInfo(activePet()).sprite : 'gochi');

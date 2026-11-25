@@ -1593,7 +1593,7 @@ if (existing) { updateTx(existing.id, rec); toast('Cambios guardados'); }
 else if (t.type === 'expense' && t.grp && window.App.qAddExpense) {
 const G = window.App.qGroups(), g = G.find(x => x.id === t.grp), n = Math.max(2, (g || {}).n || t.split.n), share = Math.round(amount / n * 100) / 100, mine = Math.round((amount - share * (n - 1)) * 100) / 100;
 window.App.qAddExpense(t.grp, amount, rec.note || ((cat(rec.cat) || {}).name || '')).then(ok => { if (!ok) toast('No se pudo guardar en el grupo, pero sí en tu cuenta.'); });
-rec.amount = mine; addTx(rec); if (rec.acct) addTx({ type: 'loan_out', amount: Math.round((amount - mine) * 100) / 100, acct: rec.acct, date: rec.date, note: 'Parte de tus amistades en ' + ((g || {}).name || 'el grupo') });
+rec.amount = mine; addTx(rec); if (rec.acct) addTx({ type: 'loan_out', amount: Math.round((amount - mine) * 100) / 100, acct: rec.acct, date: rec.date, note: 'Parte de tus amistades en ' + ((g || {}).name || 'el grupo'), qgrp: t.grp });
 saveFin(); toast(`Anotado ✦ Se dividió en ${(g || {}).name || 'el grupo'}: te toca ${money(mine)}`);
 }
 else if (t.type === 'expense' && t.split.n > 1) {
@@ -1628,7 +1628,7 @@ document.addEventListener('click', e => { const f = e.target.closest('[data-f]')
 const ACTIONS = {
 privacy: () => { S.priv = !S.priv; try { localStorage.setItem('bolsillito:priv', S.priv ? '1' : '0'); } catch (e) {} render(); },
 quickadd: () => quickAdd(),
-edittx: a => { const t = S.tx.find(x => x.id === a.dataset.id); if (t && /^loan_/.test(t.type)) return go('loans'); quickAdd(t); },
+edittx: a => { const t = S.tx.find(x => x.id === a.dataset.id); if (t && t.qgrp) { go('cuentas'); const op = n => { const f = window.App.ACTIONS.qOpen; try { f && f({ dataset: { id: t.qgrp } }); } catch (e) { } }; return setTimeout(op, 500); } if (t && /^loan_/.test(t.type)) return go('loans'); quickAdd(t); },
 banner: a => pickBanner(a.dataset.k),
 pageicon: a => pickIcon(pageIcon(a.dataset.k), v => { S.settings.navIcons[a.dataset.k] = v; saveSettings(); renderNav(); render(); }, { title: 'Icono de ' + PAGES[a.dataset.k] }),
 assetsToggle: a => { S.settings.assetsInNet = a.dataset.v === '1'; saveSettings(); render(); },
@@ -2896,7 +2896,7 @@ ${tools.filter(([id]) => !hidden.includes(id)).map(([id, ic, lbl, c]) => `<butto
 <button class="tb c1" id="tbUndo" aria-label="Deshacer" title="Deshacer">↶</button><button class="tb c1" id="tbRedo" aria-label="Rehacer" title="Rehacer">↷</button>
 <button class="tb c6" id="tbNight" aria-label="Papel de noche" title="Papel de noche">${pxi('ui_luna', 24)}</button><button class="tb c1" id="tbCfg" aria-label="Elegir qué herramientas ver" title="Elegir qué herramientas ver">${pxi('gear', 22)}</button>
 </div>
-<div class="jr-links"><button class="jr-dreams" data-go="tablero">${pxi('pic', 22)}<span>Mis sueños</span><span class="faint">›</span></button><button class="jr-dreams" data-go="jardin">${pxi('girasol', 22)}<span>Mi jardín</span><span class="faint">›</span></button><button class="jr-dreams" data-go="compartidas">${pxi('heart', 22)}<span>Con amistades</span><span class="faint">›</span></button></div>
+<div class="jr-links"><button class="jr-dreams" data-go="tablero">${pxi('pic', 22)}<span>Vision boards</span><span class="faint">›</span></button><button class="jr-dreams" data-go="jardin">${pxi('girasol', 22)}<span>Mi jardín</span><span class="faint">›</span></button><button class="jr-dreams" data-go="compartidas">${pxi('heart', 22)}<span>Con amistades</span><span class="faint">›</span></button></div>
 <div id="jHint" class="faint" style="text-align:center;min-height:18px"></div>
 <div class="book-wrap" id="bookWrap"></div>
 <div class="jr-dots" id="jDots"></div>

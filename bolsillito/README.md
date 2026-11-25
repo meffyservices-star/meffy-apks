@@ -32,6 +32,7 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
   - **v64**: "Borrar ejemplos" ahora también quita los saldos y presupuestos de ejemplo que no hayas editado (también para quien ya los había borrado).
   - **v65**: se quitaron los Retos; Tarrito compartido rediseñado (tarritos de cristal con monedas, etiquetas, repisa) y Cuentas como recibo; fotos de perfil de tus amistades en ambos.
   - **v66 – Personalizar** (`config.js`): nueva pantalla en Más para mostrar u ocultar secciones del menú, cada juego, las cosas del cuarto (misiones, paseos, mariposas, burbujas) y la guía "Primeros pasitos".
+- v79: Vision boards (collage con fotos, marcos, letras recortadas, cintas, stickers, fondos, plantillas, guardar imagen), Planes y Me deben/Debo rediseñados, cuentas entre amigas abren su grupo.
 - v78: carga más rápida (código desde el celular, fuentes sin bloquear), sobres en cajón con más detalle, icono nuevo, Páginas compartidas fuera de Más.
 - v77: Planes (deudas, viajes/eventos, deseos), gastos hormiga en Movimientos y Foto del mes.
 - v76: Sobres de presupuesto (sobrecitos pixel por categoría, pasar plata entre sobres).

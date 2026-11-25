@@ -4,7 +4,7 @@ const A = App, S = A.S, { esc, money, toast, openSheet, closeSheet } = A;
 const sc = A.screens, ACT = A.ACTIONS;
 A.PAGES.sobres = 'Sobres';
 const spr = (n, k) => Pix.sprite(n, k || 3);
-const sheet = (t, h) => openSheet(t, h, sh => sh.addEventListener('click', ev => { const b = ev.target.closest('[data-act]'); if (b && ACT[b.dataset.act]) ACT[b.dataset.act](b); }));
+const sheet = (t, h) => openSheet(t, h, sh => sh.addEventListener('click', ev => { const b = ev.target.closest('[data-act]'); if (b && ACT[b.dataset.act]) { ev.stopPropagation(); ACT[b.dataset.act](b); } }));
 const MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const KRAFT = [['#f6d9a8', '#e3bd82', '#fff0cf'], ['#ffd1de', '#f0a5bd', '#ffe9f0'], ['#cfeedd', '#9fd5b8', '#e8f8ef'], ['#cfe6fb', '#9cc8ee', '#e6f2fd'], ['#e2d8fb', '#bcaaf0', '#f1ecfd'], ['#ffe3b8', '#f5c283', '#fff2da']];
 const OUT = '#5a3a3a';

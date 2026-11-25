@@ -5,7 +5,7 @@ const sc = A.screens, ACT = A.ACTIONS;
 A.PAGES.puestito = 'Puestito';
 const spr = (n, s) => Pix.sprite(n, s || 3);
 const ST = n => `<img class="pixel" alt="" src="${spr('estrellita', 2)}" style="width:${n || 14}px;height:${n || 14}px;vertical-align:-2px">`;
-const sheet = (t, h) => openSheet(t, h, sh => sh.addEventListener('click', ev => { const b = ev.target.closest('[data-act]'); if (b && ACT[b.dataset.act]) ACT[b.dataset.act](b); }));
+const sheet = (t, h) => openSheet(t, h, sh => sh.addEventListener('click', ev => { const b = ev.target.closest('[data-act]'); if (b && ACT[b.dataset.act]) { ev.stopPropagation(); ACT[b.dataset.act](b); } }));
 const BOXES = 3, SLOTS = 10;
 const M = { loaded: false, loading: false, friends: [], stalls: {}, mine: { name: '', items: [] }, owed: [], view: null };
 const online = () => Store.mode === 'supa' && Store.sb && !!Store.uid && navigator.onLine !== false;

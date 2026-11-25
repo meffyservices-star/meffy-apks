@@ -4,7 +4,7 @@ const A = App, S = A.S, { esc, money, toast, openSheet, closeSheet } = A;
 const sc = A.screens, ACT = A.ACTIONS;
 A.PAGES.planes = 'Planes'; A.PAGES.viaje = 'Viaje';
 const spr = (n, k) => Pix.sprite(n, k || 3);
-const sheet = (t, h) => openSheet(t, h, sh => sh.addEventListener('click', ev => { const b = ev.target.closest('[data-act]'); if (b && ACT[b.dataset.act]) ACT[b.dataset.act](b); }));
+const sheet = (t, h) => openSheet(t, h, sh => sh.addEventListener('click', ev => { const b = ev.target.closest('[data-act]'); if (b && ACT[b.dataset.act]) { ev.stopPropagation(); ACT[b.dataset.act](b); } }));
 const MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const P = () => (S.settings.planes = S.settings.planes || { debts: [], trips: [], wishes: [] });
 const save = () => A.saveSettings();
@@ -52,11 +52,11 @@ ACT.hmTh = () => form('Tope de gasto hormiga', [{ k: 'v', l: '¿Hasta cuánto cu
 let tab = 'deudas';
 sc.planes = () => {
   if (A.pnStyles) A.pnStyles();
-  const T = [['deudas', 'Deudas'], ['viajes', 'Viajes'], ['deseos', 'Deseos']];
-  return `${A.header('planes')}<div class="pl-tabs">${T.map(([k, n]) => `<button class="pl-tab pn ${tab === k ? 'pn-pink' : 'pn-slot'}" data-act="plTab" data-v="${k}">${n}</button>`).join('')}</div>${tab === 'deudas' ? deudasHTML() : tab === 'viajes' ? viajesHTML() : deseosHTML()}`;
+  const T = [['deudas', 'Deudas', 'billetera'], ['viajes', 'Viajes', 'regalo_cerrado'], ['deseos', 'Deseos', 'estrellita']];
+  return `${A.header('planes')}<div class="pl-tabs">${T.map(([k, n, ic]) => `<button class="pl-tab ${tab === k ? 'on' : ''}" data-act="plTab" data-v="${k}"><img class="pixel" alt="" src="${spr(ic, 2)}"><span>${n}</span></button>`).join('')}</div>${tab === 'deudas' ? deudasHTML() : tab === 'viajes' ? viajesHTML() : deseosHTML()}`;
 };
 ACT.plTab = a => { tab = a.dataset.v; A.render(); };
-const empty = (t, s) => `<div class="sb-empty"><img class="pixel" alt="" src="${spr('plan_ic', 5)}"><b>${t}</b><span>${s}</span></div>`;
+const empty = (t, s) => `<div class="pl-empty"><img class="pixel" alt="" src="${spr('plan_ic', 6)}"><b>${t}</b><span>${s}</span></div>`;
 // ====================== DEUDAS ======================
 const left = d => Math.max(0, d.total - (d.paid || 0));
 function sim(list, mode) {
@@ -72,14 +72,17 @@ function sim(list, mode) {
 }
 function deudasHTML() {
   const L = P().debts, mode = S.settings.debtMode || 'nieve', open = L.filter(d => left(d) > 0), done = L.filter(d => left(d) <= 0);
-  if (!L.length) return empty('Sin deudas anotadas', 'Anota lo que debes (tarjeta, préstamo, crédito) y te armo un plan para quedar libre.') + `<button class="sb-act pn pn-pink pl-add" data-act="dNew">Anotar una deuda</button>`;
-  const r = sim(L, mode === 'nieve' ? 'ni' : 'av'), tl = open.reduce((a, d) => a + left(d), 0), tc = open.reduce((a, d) => a + (+d.cuota || 0), 0);
+  if (!L.length) return empty('Sin deudas anotadas', 'Anota lo que debes (tarjeta, préstamo, crédito) y te armo un camino para quedar libre.') + `<button class="pl-btn" data-act="dNew">Anotar una deuda</button>`;
+  const r = sim(L, mode === 'nieve' ? 'ni' : 'av'), tl = open.reduce((a, d) => a + left(d), 0), tc = open.reduce((a, d) => a + (+d.cuota || 0), 0), all = L.reduce((a, d) => a + d.total, 0), pd = all ? 1 - tl / all : 0;
   const ord = open.slice().sort((a, b) => mode === 'nieve' ? left(a) - left(b) : (+b.rate || 0) - (+a.rate || 0));
-  return `<div class="pl-hero pn pn-cream"><img class="pixel" alt="" src="${spr('fuego', 4)}"><div><small>Te falta pagar</small><b>${money(tl)}</b><span>${r.months ? `Libre en <b>${when(r.months)}</b> · ${r.months} ${r.months === 1 ? 'mes' : 'meses'}` : open.length ? 'Pon una cuota mensual para calcular tu fecha' : '¡Sin deudas!'}</span></div></div>
-${open.length ? `<div class="pl-seg"><button class="pl-sg pn ${mode === 'nieve' ? 'pn-pink' : 'pn-slot'}" data-act="dMode" data-v="nieve">Bola de nieve<small>la más chica primero</small></button><button class="pl-sg pn ${mode === 'av' ? 'pn-pink' : 'pn-slot'}" data-act="dMode" data-v="av">Avalancha<small>la de más interés primero</small></button></div><div class="pl-note">Pagas ${money(tc)} al mes en total. Cuando una termina, su cuota pasa a la siguiente.</div>` : ''}
-${ord.map((d, i) => `<button class="pl-card pn pn-slot" data-act="dOpen" data-id="${d.id}"><div class="pl-row"><b>${i === 0 ? '<i class="pl-first">Primero</i>' : ''}${esc(d.name)}</b><em>${money(left(d))}</em></div>${bar((d.paid || 0) / d.total, '#6bbf5a')}<small>${money(d.paid || 0)} de ${money(d.total)}${d.cuota ? ` · cuota ${money(d.cuota)}` : ''}${r.fin[d.id] ? ` · termina ${when(r.fin[d.id])}` : ''}</small></button>`).join('')}
-${done.length ? `<div class="sb-lbl">Ya pagadas</div>${done.map(d => `<div class="pl-done"><span>${esc(d.name)}</span><b>${money(d.total)}</b></div>`).join('')}` : ''}
-<button class="sb-act pn pn-pink pl-add" data-act="dNew">Anotar otra deuda</button>`;
+  let pet = 'gochi'; try { pet = A.petInfo(A.petActive ? A.petActive() : 'gochi').sprite; } catch (e) { }
+  return `<div class="pl-road"><div class="pl-road-top"><small>Te falta pagar</small><b>${money(tl)}</b><span>${r.months ? `Libre en <i>${when(r.months)}</i>` : open.length ? 'Pon una cuota mensual para ver tu fecha' : '¡Sin deudas!'}</span></div>
+<div class="pl-track"><div class="pl-path"></div><div class="pl-done" style="width:${Math.round(pd * 100)}%"></div><img class="pixel pl-walker" alt="" style="left:${Math.min(88, Math.max(0, pd * 100))}%" src="${spr(pet, 3)}"><img class="pixel pl-flag" alt="" src="${spr('casita', 3)}"></div>
+<div class="pl-road-bot"><span>${Math.round(pd * 100)}% pagado</span>${tc ? `<span>${money(tc)} al mes</span>` : ''}</div></div>
+${open.length ? `<div class="pl-seg"><button class="pl-sg ${mode === 'nieve' ? 'on' : ''}" data-act="dMode" data-v="nieve"><b>Bola de nieve</b><small>la más chica primero</small></button><button class="pl-sg ${mode === 'av' ? 'on' : ''}" data-act="dMode" data-v="av"><b>Avalancha</b><small>la de más interés primero</small></button></div>` : ''}
+<div class="pl-notes">${ord.map((d, i) => `<button class="pl-note" style="--r:${[-1.2, .9, -.6, 1.2][i % 4]}deg" data-act="dOpen" data-id="${d.id}"><i class="pl-tape"></i>${i === 0 ? '<span class="pl-stamp">Sigue esta</span>' : ''}<b>${esc(d.name)}</b><em>${money(left(d))}</em>${bar((d.paid || 0) / d.total, '#78c15a')}<small>${money(d.paid || 0)} de ${money(d.total)}${d.cuota ? ` · cuota ${money(d.cuota)}` : ''}</small>${r.fin[d.id] ? `<small class="pl-end">Termina en ${when(r.fin[d.id])}</small>` : ''}</button>`).join('')}</div>
+${done.length ? `<div class="sb-lbl">Ya pagadas</div>${done.map(d => `<div class="pl-paid"><span>${esc(d.name)}</span><b>${money(d.total)}</b></div>`).join('')}` : ''}
+<button class="pl-btn" data-act="dNew">Anotar otra deuda</button>`;
 }
 ACT.dMode = a => { S.settings.debtMode = a.dataset.v; save(); A.render(); };
 const dF = d => [{ k: 'name', l: 'Nombre', v: d.name, p: 'Ej. Tarjeta Visa' }, { k: 'total', l: 'Cuánto debes en total', t: 'number', v: d.total }, { k: 'paid', l: 'Cuánto ya pagaste', t: 'number', v: d.paid || '' }, { k: 'cuota', l: 'Cuota mensual', t: 'number', v: d.cuota || '' }, { k: 'rate', l: 'Interés anual % (opcional)', t: 'number', v: d.rate || '' }];
@@ -92,9 +95,11 @@ ACT.dDel = a => { P().debts = P().debts.filter(x => x.id !== a.dataset.id); save
 const SECS = [['Transporte', .3], ['Hospedaje', .3], ['Comida', .2], ['Actividades', .15], ['Otros', .05]];
 const tSpent = (t, s) => (t.gastos || []).filter(g => !s || g.sec === s).reduce((a, g) => a + g.amount, 0);
 const tBud = t => t.secs.reduce((a, s) => a + s.b, 0);
+const TK = [['#ffd6e3', '#ff8fb3'], ['#d6ecff', '#7cb8ee'], ['#d9f3df', '#78c98f'], ['#ffe8c2', '#f0b45a'], ['#e6dcff', '#a58ae8']];
 function viajesHTML() {
-  const L = P().trips; if (!L.length) return empty('Sin viajes ni eventos', 'Crea un plan con su propio presupuesto y sobrecitos: viaje, cumpleaños, boda, graduación…') + `<button class="sb-act pn pn-pink pl-add" data-act="vNew">Crear un plan</button>`;
-  return L.map(t => { const b = tBud(t), s = tSpent(t), dl = t.date ? Math.ceil((new Date(t.date + 'T00:00') - new Date()) / 864e5) : null; return `<button class="pl-card pn pn-slot" data-act="vOpen" data-id="${t.id}"><div class="pl-row"><b>${esc(t.name)}</b><em>${money(Math.max(0, b - s))}</em></div>${bar(b ? s / b : 0, s > b ? '#e0617a' : '#e0709a')}<small>${money(s)} gastado de ${money(b)}${dl != null ? ` · ${dl > 0 ? 'faltan ' + dl + ' días' : dl === 0 ? '¡es hoy!' : 'ya pasó'}` : ''}</small></button>`; }).join('') + `<button class="sb-act pn pn-pink pl-add" data-act="vNew">Crear otro plan</button>`;
+  const L = P().trips; if (!L.length) return empty('Sin viajes ni eventos', 'Crea un plan con su propio presupuesto y sobrecitos: viaje, cumpleaños, boda, graduación…') + `<button class="pl-btn" data-act="vNew">Crear un plan</button>`;
+  return L.map((t, i) => { const b = tBud(t), s = tSpent(t), dl = t.date ? Math.ceil((new Date(t.date + 'T00:00') - new Date()) / 864e5) : null, d = t.date ? new Date(t.date + 'T00:00') : null, c = TK[i % TK.length];
+    return `<button class="pl-ticket" style="--bg:${c[0]};--ac:${c[1]}" data-act="vOpen" data-id="${t.id}"><div class="pl-stub">${d ? `<b>${d.getDate()}</b><span>${MES[d.getMonth()].slice(0, 3)}</span>` : `<img class="pixel" alt="" src="${spr('regalo_cerrado', 3)}">`}</div><div class="pl-main"><small>${dl == null ? 'Plan' : dl > 0 ? 'Faltan ' + dl + ' días' : dl === 0 ? '¡Es hoy!' : 'Ya pasó'}</small><b>${esc(t.name)}</b><div class="pl-mrow"><em>${money(Math.max(0, b - s))}</em><span>de ${money(b)}</span></div>${bar(b ? s / b : 0, s > b ? '#e0617a' : c[1])}</div></button>`; }).join('') + `<button class="pl-btn" data-act="vNew">Crear otro plan</button>`;
 }
 ACT.vNew = () => form('Nuevo plan', [{ k: 'name', l: 'Nombre', p: 'Ej. Viaje a Cuenca' }, { k: 'date', l: 'Fecha', t: 'date' }, { k: 'total', l: 'Presupuesto total', t: 'number' }], 'Crear', v => { if (!v.name) { toast('Ponle un nombre'); return false; } const t = { id: id(), name: v.name, date: v.date, secs: SECS.map(([n, w]) => ({ id: id(), name: n, b: Math.round(v.total * w * 100) / 100 })), gastos: [] }; P().trips.push(t); save(); S.trip = t.id; A.go('viaje'); return false; });
 ACT.vOpen = a => { S.trip = a.dataset.id; A.go('viaje'); };
@@ -105,9 +110,9 @@ sc.viaje = () => {
   return `<div class="ph"><div class="ph-left"><button class="navarrow" data-go="planes" aria-label="Volver">‹</button><span class="pill">${esc(t.name)}</span></div></div>
 <div class="pl-hero pn pn-cream"><img class="pixel" alt="" src="${spr('regalo_cerrado', 4)}"><div><small>Te queda</small><b>${money(b - s)}</b><span>${money(s)} de ${money(b)}${dl != null && dl > 0 ? ` · faltan ${dl} días` : ''}</span></div></div>
 <div class="sb-grid">${t.secs.map((x, i) => { const sp = tSpent(t, x.id), lf = x.b - sp, st = A.sobreState({ b: x.b, left: lf, pct: x.b ? Math.max(0, lf / x.b) : 0 }); return `<button class="sb-card" data-act="vSec" data-id="${x.id}"><canvas class="sb-cv" data-i="${i}" data-s="${x.id}"></canvas><span class="sb-tag pn pn-tag"><b>${esc(x.name)}</b></span><span class="sb-left ${lf < 0 ? 'neg' : ''}">${lf < 0 ? '−' + money(-lf) : money(lf)}</span><small>de ${money(x.b)}</small></button>`; }).join('')}</div>
-<button class="sb-act pn pn-pink pl-add" data-act="vGasto">Anotar un gasto</button>
+<button class="pl-btn" data-act="vGasto">Anotar un gasto</button>
 <div class="sb-lbl">Gastos del plan</div>${(t.gastos || []).length ? `<div class="sb-hist">${t.gastos.slice().reverse().map(g => `<div><span>${esc((t.secs.find(x => x.id === g.sec) || {}).name || '')}</span><em>${esc(g.note || '')}</em><b>${money(g.amount)}</b><button class="pl-x" data-act="vGDel" data-id="${g.id}" aria-label="Quitar">×</button></div>`).join('')}</div>` : '<p class="faint" style="text-align:center">Todavía no hay gastos.</p>'}
-<button class="sb-act pn pn-slot pl-add" data-act="vDel">Borrar este plan</button>`;
+<button class="pl-btn ghost" data-act="vDel">Borrar este plan</button>`;
 };
 A.after.viaje = el => { const t = trip(); if (!t) return; el.querySelectorAll('.sb-cv[data-s]').forEach(cv => { const x = t.secs.find(y => y.id === cv.dataset.s), sp = tSpent(t, x.id), lf = x.b - sp; A.sobreDraw(cv, { b: x.b, s: sp, left: lf, pct: x.b ? Math.max(0, Math.min(1, lf / x.b)) : 0 }, +cv.dataset.i); }); };
 ACT.vSec = a => { const t = trip(), x = t.secs.find(y => y.id === a.dataset.id); form('Tope de ' + x.name, [{ k: 'b', l: 'Cuánto tienes para esto', t: 'number', v: x.b }], 'Guardar', v => { x.b = v.b; save(); }); };
@@ -117,10 +122,22 @@ ACT.vGDel = a => { const t = trip(); t.gastos = t.gastos.filter(g => g.id !== a.
 ACT.vDel = () => { P().trips = P().trips.filter(t => t.id !== S.trip); save(); A.go('planes'); };
 // ====================== DESEOS / COMPRAS GRANDES ======================
 const wl = w => Math.max(0, w.price - (w.saved || 0));
-function deseosHTML() {
-  const L = P().wishes; if (!L.length) return empty('Sin deseos todavía', 'Anota algo que quieres comprar, cuánto cuesta y cuánto puedes apartar al mes. Te digo cuándo lo logras.') + `<button class="sb-act pn pn-pink pl-add" data-act="wNew">Anotar un deseo</button>`;
-  return L.map(w => { const m = wl(w) <= 0 ? 0 : w.monthly ? Math.ceil(wl(w) / w.monthly) : null; return `<button class="pl-card pn pn-slot" data-act="wOpen" data-id="${w.id}"><div class="pl-row"><b>${esc(w.name)}</b><em>${money(w.price)}</em></div>${bar((w.saved || 0) / w.price, '#f0b84a')}<small>${money(w.saved || 0)} apartado · ${wl(w) <= 0 ? '¡Ya lo puedes comprar!' : m ? `lo logras en ${when(m)}` : 'pon cuánto apartas al mes'}</small></button>`; }).join('') + `<button class="sb-act pn pn-pink pl-add" data-act="wNew">Anotar otro deseo</button>`;
+function jar(cv, pct, col) {
+  const W = 40, H = 48; cv.width = W; cv.height = H; const g = cv.getContext('2d'); const R = (c, x, y, w, h) => { g.fillStyle = c; g.fillRect(x, y, w, h); }, O = '#5a3a3a';
+  R('rgba(90,58,58,.16)', 6, 45, 28, 2);
+  R(O, 9, 2, 22, 5); R('#f5c9a0', 10, 3, 20, 3); R('#fff0dc', 10, 3, 20, 1);
+  R(O, 11, 7, 18, 2); R(O, 6, 9, 28, 36); R('#f4fbff', 7, 10, 26, 34); R('#dff1fb', 7, 10, 3, 34); R('#fff', 28, 12, 2, 10);
+  const lv = Math.round(Math.max(0, Math.min(1, pct)) * 30), top = 43 - lv;
+  for (let y = top; y < 43; y++) for (let x = 8; x < 32; x++) { R(col, x, y, 1, 1); if (y === top) R('rgba(255,255,255,.55)', x, y, 1, 1); }
+  for (let r = 0; r < 6; r++) for (let q = 0; q < 4; q++) { const cx = 9 + q * 6 + (r % 2) * 3, cy = 39 - r * 5; if (cy > top + 1 && cx < 28) { R('#d9951c', cx, cy, 4, 4); R('#ffd75e', cx, cy, 3, 3); R('#fff2a8', cx, cy, 1, 1); } }
+  R(O, 6, 44, 28, 1);
+  if (pct >= 1) { R('#fff6a8', 2, 12, 1, 3); R('#fff6a8', 1, 13, 3, 1); R('#fff6a8', 36, 22, 1, 3); R('#fff6a8', 35, 23, 3, 1); }
 }
+function deseosHTML() {
+  const L = P().wishes; if (!L.length) return empty('Sin deseos todavía', 'Anota algo que quieres comprar y cuánto puedes apartar al mes. Cada deseo vive en su frasco y se va llenando de monedas.') + `<button class="pl-btn" data-act="wNew">Anotar un deseo</button>`;
+  return `<div class="pl-shelf">${L.map((w, i) => { const m = wl(w) <= 0 ? 0 : w.monthly ? Math.ceil(wl(w) / w.monthly) : null; return `<button class="pl-jar" data-act="wOpen" data-id="${w.id}"><canvas class="pl-jcv" data-pct="${Math.min(1, (w.saved || 0) / w.price)}" data-i="${i}"></canvas><span class="pl-jtag">${esc(w.name)}</span><b>${money(w.price)}</b><small>${wl(w) <= 0 ? '¡Ya lo puedes comprar!' : m ? 'Lo logras en ' + when(m) : 'Pon cuánto apartas'}</small></button>`; }).join('')}</div><button class="pl-btn" data-act="wNew">Anotar otro deseo</button>`;
+}
+A.after.planes = el => { const C = ['#ffb3c9', '#a9d8f5', '#b9e4a8', '#d9c3f7', '#ffd08a']; el.querySelectorAll('.pl-jcv').forEach(cv => jar(cv, +cv.dataset.pct, C[+cv.dataset.i % 5])); };
 const wF = w => [{ k: 'name', l: 'Qué quieres', v: w.name, p: 'Ej. Laptop' }, { k: 'price', l: 'Cuánto cuesta', t: 'number', v: w.price }, { k: 'monthly', l: 'Cuánto apartas al mes', t: 'number', v: w.monthly || '' }];
 ACT.wNew = () => form('Nuevo deseo', wF({}), 'Guardar', v => { if (!v.name || !v.price) { toast('Pon nombre y precio'); return false; } P().wishes.push({ id: id(), saved: 0, ...v }); save(); });
 ACT.wOpen = a => { const w = P().wishes.find(x => x.id === a.dataset.id); if (!w) return; sheet(w.name, `<div class="sb-form"><div class="sb-big pn pn-cream"><b class="sb-bigleft">${money(wl(w))}</b><span>te falta de ${money(w.price)}</span>${bar((w.saved || 0) / w.price, '#f0b84a')}</div><div class="sb-acts"><button class="sb-act pn pn-pink" data-act="wAdd" data-id="${w.id}">Apartar plata</button><button class="sb-act pn pn-wood" data-act="wEdit" data-id="${w.id}">Editar</button></div><button class="sb-act pn pn-slot" data-act="wDel" data-id="${w.id}">${wl(w) <= 0 ? 'Ya lo compré' : 'Quitar este deseo'}</button></div>`); };
@@ -155,4 +172,19 @@ ACT.fotoOpen = a => {
 };
 ACT.fotoSave = a => { S.settings.fotos = S.settings.fotos || {}; S.settings.fotos[a.dataset.k] = stats(a.dataset.k); save(); toast('Foto guardada en tu álbum'); closeSheet(); };
 ACT.fotoDl = () => { const c = document.getElementById('fotoCv'); if (!c) return; const l = document.createElement('a'); l.download = 'foto-del-mes.png'; l.href = c.toDataURL('image/png'); l.click(); };
+
+// ====================== ME DEBEN / DEBO (rediseño) ======================
+const avC = n => { let h = 0; for (const ch of String(n || '?')) h = (h * 31 + ch.charCodeAt(0)) % 360; return [`hsl(${h} 80% 82%)`, `hsl(${h} 60% 62%)`]; };
+const ini = n => String(n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '?';
+const lft = l => Math.max(0, (+l.amount || 0) - (+l.paid || 0));
+sc.loans = () => {
+  if (A.pnStyles) A.pnStyles();
+  const tab = S.loanTab || 'in', all = S.fin.loans || [], mine = all.filter(l => l.dir === tab).sort((a, b) => (lft(b) > 0) - (lft(a) > 0) || (b.date || '').localeCompare(a.date || ''));
+  const tot = d => all.filter(l => l.dir === d).reduce((a, l) => a + lft(l), 0), cnt = d => all.filter(l => l.dir === d && lft(l) > 0).length;
+  const tile = (d, ttl, ic, cl) => `<button class="ld-tile ${cl} ${tab === d ? 'on' : ''}" data-act="loanTab" data-v="${d}"><img class="pixel" alt="" src="${spr(ic, 3)}"><small>${ttl}</small><b>${money(tot(d))}</b><span>${cnt(d)} ${cnt(d) === 1 ? 'persona' : 'personas'}</span></button>`;
+  return `<div class="ph"><div class="ph-left"><button class="navarrow" data-go="wallet" aria-label="Volver a Billetera">‹</button><span class="pill">Me deben / Debo</span></div>${A.privBtn ? A.privBtn() : ''}</div>
+<div class="ld-tiles">${tile('in', 'Me deben', 'corazon_rosa', 'in')}${tile('out', 'Debo', 'billetera', 'out')}</div>
+${mine.length ? `<div class="ld-list">${mine.map(l => { const r = lft(l), done = r <= 0, pc = l.amount ? Math.min(1, (l.paid || 0) / l.amount) : 0, c = avC(l.who); return `<div class="ld-card ${done ? 'done' : ''}"><button class="ld-main" data-act="loanOpen" data-id="${l.id}"><span class="ld-av" style="background:linear-gradient(${c[0]},${c[1]})">${esc(ini(l.who))}</span><span class="ld-who"><b>${esc(l.who)}</b><small>${esc(l.note || (tab === 'in' ? 'Le presté' : 'Me prestó'))}${l.date ? ' · ' + (A.fmtDate ? A.fmtDate(l.date) : l.date) : ''}</small></span><span class="ld-amt">${done ? '<i>Pagado</i>' : `<em>${money(r)}</em><small>de ${money(l.amount)}</small>`}</span></button>${bar(pc, tab === 'in' ? '#78c15a' : '#e0709a')}${done ? '' : `<div class="ld-acts"><button class="ld-pay" data-act="loanPay" data-id="${l.id}">${tab === 'in' ? 'Me abonó' : 'Abonar'}</button><button class="ld-open" data-act="loanOpen" data-id="${l.id}">Ver detalle</button></div>`}</div>`; }).join('')}</div>` : `<div class="pl-empty"><img class="pixel" alt="" src="${spr(tab === 'in' ? 'corazon_rosa' : 'billetera', 6)}"><b>${tab === 'in' ? 'Nadie te debe nada' : 'No le debes a nadie'}</b><span>${tab === 'in' ? 'Aquí anotas lo que le prestas a alguien para no olvidarte.' : 'Aquí anotas lo que te prestaron para saber cuánto devolver.'}</span></div>`}
+<button class="pl-btn" data-act="loanNew" data-dir="${tab}">${tab === 'in' ? 'Anotar algo que presté' : 'Anotar algo que me prestaron'}</button>`;
+};
 })();
