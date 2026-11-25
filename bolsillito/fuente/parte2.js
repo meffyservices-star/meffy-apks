@@ -651,6 +651,7 @@ function roomHTML(rmIn, opts) {
   opts = opts || {}; const edit = opts.edit; const rm = Object.assign({ wall: 'rosa', floor: 'madera', items: [] }, rmIn || {});
   const part = opts.part || dayPart(); const night = part === 'noche';
   const photos = opts.photos || boardPhotos(); let ph = 0;
+  rm.items.forEach(it => { if (A.studioEnsure) A.studioEnsure(it); });
   const items = rm.items.filter(it => FURN[it.k]).map(it => ({ it, f: FURN[it.k] })).sort((a, b) => (a.f.flat ? 0 : a.f.wall ? 1 : 2) - (b.f.flat ? 0 : b.f.wall ? 1 : 2) || (a.it.y + a.f.h) - (b.it.y + b.f.h));
   // cada mascota con su ropa: la tuya con lo que le pusiste, la de tu amistad con lo que le puso ella
   const myEq = (S.settings.rincon || {}).equip || {};
@@ -716,7 +717,7 @@ ACT.rmBuyRoom = a => {
 ACT.rmEdit = () => { if (S.roomEdit) A.saveSettings(); S.roomEdit = !S.roomEdit; S.roomSel = null; A.render(); };
 ACT.rmRemove = () => { const rm = curRoom(); rm.items = rm.items.filter(i => i.u !== S.roomSel); S.roomSel = null; A.saveSettings(); A.render(); };
 ACT.rmFlip = () => { const it = curRoom().items.find(i => i.u === S.roomSel); if (it) { it.fl = !it.fl; A.saveSettings(); A.render(); } };
-function placeFurn(k) { const f = FURN[k]; if (!f || cnt(k) - placedN(k) < 1) return false; const rm = curRoom(); const n = rm.items.filter(i => i.k === k).length; rm.items.push({ u: uid(), k, x: Math.min(RW - f.w, f.x + n * 6), y: Math.min(RH - f.h, f.y + n * 4) }); return true; }
+function placeFurn(k) { const f = FURN[k]; if (!f || cnt(k) - placedN(k) < 1) return false; const rm = curRoom(); const n = rm.items.filter(i => i.k === k).length; rm.items.push(Object.assign({ u: uid(), k, x: Math.min(RW - f.w, f.x + n * 6), y: Math.min(RH - f.h, f.y + n * 4) }, f.sp ? { sp: f.sp } : {})); return true; }
 A.placeFurn = placeFurn;
 A.giveFurn = (k, n) => addInv(k, n || 1);
 // ---- Probador de la Tiendita: lo decora la dueña desde el admin y lo ven todas ----
