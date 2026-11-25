@@ -32,6 +32,7 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
   - **v64**: "Borrar ejemplos" ahora también quita los saldos y presupuestos de ejemplo que no hayas editado (también para quien ya los había borrado).
   - **v65**: se quitaron los Retos; Tarrito compartido rediseñado (tarritos de cristal con monedas, etiquetas, repisa) y Cuentas como recibo; fotos de perfil de tus amistades en ambos.
   - **v66 – Personalizar** (`config.js`): nueva pantalla en Más para mostrar u ocultar secciones del menú, cada juego, las cosas del cuarto (misiones, paseos, mariposas, burbujas) y la guía "Primeros pasitos".
+- v84: Negocio se vincula con tu plata personal (categorías/cuentas -> ventas y gastos del negocio).
 - v83: Bolsillito Negocio (activable por la admin): pestaña abajo, ventas, productos y stock, clientas con fiados, gastos, ganancia real, sueldo al personal.
 - v82: se quita el chat con IA (queda guardado en fuente/ia.js y la función mascota-ia por si se retoma).
 - v80: Vision boards v2: fotos pixel de ejemplo, papeles rasgados, blondas, dibujitos, letra a mano, medalla, plantillas llenas.

@@ -68,7 +68,7 @@ const empty = (t, s, b) => `<div class="ng-empty"><img class="pixel" alt="" src=
 sc.negocio = () => {
   if (A.pnStyles) A.pnStyles();
   if (!okAcceso()) return lockedHTML();
-  const n = N(); if (!n.tipo) return setupHTML();
+  const n = N(); if (!n.tipo) return setupHTML(); syncLinks();
   const body = { resumen, ventas, productos, clientes, gastos }[TAB]();
   return `${A.header('negocio', '<button class="round-btn" data-act="negAjustes" aria-label="Ajustes del negocio"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></button>')}
 <div class="ng-name"><img class="pixel" alt="" src="${spr(T().s, 3)}"><b>${esc(n.name || 'Mi negocio')}</b><span>${esc(T().n)}</span></div>
@@ -117,7 +117,7 @@ const dayLbl = d => { const t = A.today(); if (d === t) return 'Hoy'; const x = 
 function ventas() {
   const st = stats(mk()), by = {}; st.ss.slice().sort((a, b) => b.d < a.d ? -1 : 1).forEach(s => (by[s.d] = by[s.d] || []).push(s));
   const ks = Object.keys(by);
-  return `<button class="pl-btn" data-act="negVenta" style="margin-top:2px">Nueva venta</button>${ks.length ? ks.map(d => `<p class="ng-day">${dayLbl(d)} · <b>${money(by[d].reduce((a, s) => a + s.total, 0))}</b></p>${by[d].map(s => `<button class="ng-sale" data-act="negSaleOpen" data-id="${s.id}"><span><b>${esc(s.items.map(i => (i.q > 1 ? i.q + ' ' : '') + i.n).join(', '))}</b><small>${esc(cliName(s.cli) || 'Sin clienta')}${debe(s) > 0 ? ' · debe ' + money(debe(s)) : ''}</small></span><em class="${debe(s) > 0 ? 'deb' : ''}">${money(s.total)}</em></button>`).join('')}`).join('') : empty('Aún no hay ventas este mes', 'Cuando vendas algo, anótalo aquí en segunditos.')}`;
+  return `<button class="pl-btn" data-act="negVenta" style="margin-top:2px">Nueva venta</button>${ks.length ? ks.map(d => `<p class="ng-day">${dayLbl(d)} · <b>${money(by[d].reduce((a, s) => a + s.total, 0))}</b></p>${by[d].map(s => `<button class="ng-sale" data-act="negSaleOpen" data-id="${s.id}"><span><b>${esc(s.items.map(i => (i.q > 1 ? i.q + ' ' : '') + i.n).join(', '))}</b><small>${s.tx ? 'De tu plata' : esc(cliName(s.cli) || 'Sin clienta')}${debe(s) > 0 ? ' · debe ' + money(debe(s)) : ''}</small></span><em class="${debe(s) > 0 ? 'deb' : ''}">${money(s.total)}</em></button>`).join('')}`).join('') : empty('Aún no hay ventas este mes', 'Cuando vendas algo, anótalo aquí en segunditos.')}`;
 }
 ACT.negVenta = () => { CART = { items: {}, cli: '', pago: 'todo', ab: '', otro: '' }; ventaSheet(); };
 function ventaSheet() {
@@ -187,7 +187,7 @@ ACT.negCliDel = a => { const n = N(); n.clients = n.clients.filter(x => x.id !==
 // ---- gastos ----
 function gastos() {
   const st = stats(mk()), by = {}; st.ee.forEach(e => { by[e.cat] = (by[e.cat] || 0) + e.amt; });
-  return `<button class="pl-btn" data-act="negGasto" style="margin-top:2px">Anotar gasto del negocio</button>${st.ee.length ? `<div class="pn pn-cream ng-sec"><b>En qué se va · ${money(st.gastos)}</b>${Object.entries(by).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<div class="ng-row"><span>${esc(k)}</span><b>${money(v)}</b></div>`).join('')}</div>${st.ee.slice().sort((a, b) => b.d < a.d ? -1 : 1).map(e => `<button class="ng-sale" data-act="negGastoOpen" data-id="${e.id}"><span><b>${esc(e.n || e.cat)}</b><small>${dayLbl(e.d)} · ${esc(e.cat)}</small></span><em>${money(e.amt)}</em></button>`).join('')}` : empty('Sin gastos este mes', 'Anota lo que compras para tu negocio: materiales, empaques, publicidad.')}`;
+  return `<button class="pl-btn" data-act="negGasto" style="margin-top:2px">Anotar gasto del negocio</button>${st.ee.length ? `<div class="pn pn-cream ng-sec"><b>En qué se va · ${money(st.gastos)}</b>${Object.entries(by).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<div class="ng-row"><span>${esc(k)}</span><b>${money(v)}</b></div>`).join('')}</div>${st.ee.slice().sort((a, b) => b.d < a.d ? -1 : 1).map(e => `<button class="ng-sale" data-act="negGastoOpen" data-id="${e.id}"><span><b>${esc(e.n || e.cat)}</b><small>${dayLbl(e.d)} · ${esc(e.cat)}${e.tx ? ' · de tu plata' : ''}</small></span><em>${money(e.amt)}</em></button>`).join('')}` : empty('Sin gastos este mes', 'Anota lo que compras para tu negocio: materiales, empaques, publicidad.')}`;
 }
 let GC = '';
 ACT.negGasto = () => { GC = T().exp[0]; sheet('Gasto del negocio', `<div class="sb-form"><label class="f">Cuánto<input class="in" id="ngeA" inputmode="decimal" placeholder="0.00"></label><label class="f">En qué (opcional)<input class="in" id="ngeN" maxlength="40" placeholder="Ej. cajitas"></label><div class="ng-seg wrap">${T().exp.map(c => `<button class="ng-sg ${c === GC ? 'on' : ''}" data-act="negGCat" data-k="${esc(c)}">${esc(c)}</button>`).join('')}</div><button class="sb-act pn pn-pink" data-act="negGastoOk">Guardar</button></div>`); };
@@ -195,8 +195,33 @@ ACT.negGCat = a => { GC = a.dataset.k; document.querySelectorAll('.ng-sg').forEa
 ACT.negGastoOk = () => { const v = num(gid('ngeA').value); if (!v) return toast('Pon un monto'); N().exps.push({ id: id(), d: A.today(), amt: v, n: gid('ngeN').value.trim(), cat: GC || 'Otros' }); save(); closeSheet(); A.render(); };
 ACT.negGastoOpen = a => sheet('Gasto', `<div class="sb-form"><button class="sb-act pn pn-cream" data-act="negGastoDel" data-id="${a.dataset.id}">Borrar este gasto</button></div>`);
 ACT.negGastoDel = a => { const n = N(); n.exps = n.exps.filter(x => x.id !== a.dataset.id); save(); closeSheet(); A.render(); };
+
+// ---------- vincular con mi plata personal ----------
+function syncLinks() {
+  const n = N(), L = n.link; if (!L || (!(L.cats || []).length && !(L.accts || []).length)) return;
+  const hit = t => (t.type === 'income' || t.type === 'expense') && t.date >= (L.since || '0000') && ((L.cats || []).includes(t.cat) || (L.accts || []).includes(t.acct));
+  const live = new Map(S.tx.filter(hit).map(t => [t.id, t])); let ch = false;
+  n.sales = n.sales.filter(x => { if (!x.tx) return true; const t = live.get(x.tx); if (!t || t.type !== 'income') { ch = true; return false; } if (x.total !== t.amount) { x.total = x.paid = t.amount; x.items[0].pr = t.amount; ch = true; } return true; });
+  n.exps = n.exps.filter(x => { if (!x.tx) return true; const t = live.get(x.tx); if (!t || t.type !== 'expense') { ch = true; return false; } if (x.amt !== t.amount) { x.amt = t.amount; ch = true; } return true; });
+  const have = new Set([...n.sales, ...n.exps].filter(x => x.tx).map(x => x.tx));
+  live.forEach(t => { if (have.has(t.id)) return; const nm = (t.note || '').trim() || (A.cat(t.cat) || {}).name || 'Movimiento'; if (t.type === 'income') n.sales.push({ id: id(), d: t.date, items: [{ p: null, n: nm, q: 1, pr: t.amount, c: 0 }], total: t.amount, paid: t.amount, cli: '', tx: t.id }); else n.exps.push({ id: id(), d: t.date, amt: t.amount, n: nm, cat: (A.cat(t.cat) || {}).name || 'Otros', tx: t.id }); ch = true; });
+  if (ch) save();
+}
+let VK = null;
+ACT.negVinc = () => {
+  const n = N(), L = n.link || {}; VK = { cats: new Set(L.cats || []), accts: new Set(L.accts || []), since: L.since || A.ym(A.today()) + '-01' };
+  const cats = S.fin.categories.filter(c => !A.isSaving(c)), accts = S.fin.accounts;
+  sheet('Vincular con mi plata', `<div class="sb-form"><p class="faint">Elige qué categorías o cuentas de tu plata personal son de tu negocio. Lo que anotes ahí pasa solo al negocio: los gastos como gastos y los ingresos como ventas.</p>
+<b style="color:#5a3a3a;font-size:13px">Categorías</b><div class="ng-seg wrap">${cats.map(c => `<button class="ng-sg ${VK.cats.has(c.id) ? 'on' : ''}" data-act="negVk" data-w="cats" data-k="${esc(c.id)}">${esc(c.name)}</button>`).join('')}</div>
+<b style="color:#5a3a3a;font-size:13px">Cuentas</b><div class="ng-seg wrap">${accts.map(c => `<button class="ng-sg ${VK.accts.has(c.id) ? 'on' : ''}" data-act="negVk" data-w="accts" data-k="${esc(c.id)}">${esc(c.name)}</button>`).join('')}</div>
+<label class="f">Traer movimientos desde<input class="in" id="ngSince" type="date" value="${VK.since}"></label>
+<button class="sb-act pn pn-pink" data-act="negVincOk">Guardar vínculo</button>${(L.cats || L.accts) ? '<button class="sb-act pn pn-cream" data-act="negVincQuitar">Quitar vínculo</button>' : ''}</div>`);
+};
+ACT.negVk = a => { const s = VK[a.dataset.w], k = a.dataset.k; if (s.has(k)) s.delete(k); else s.add(k); a.classList.toggle('on', s.has(k)); };
+ACT.negVincOk = () => { N().link = { cats: [...VK.cats], accts: [...VK.accts], since: (gid('ngSince') || {}).value || VK.since }; syncLinks(); save(); closeSheet(); toast('Vinculado'); A.render(); };
+ACT.negVincQuitar = () => { const n = N(); n.sales = n.sales.filter(x => !x.tx); n.exps = n.exps.filter(x => !x.tx); n.link = null; save(); closeSheet(); toast('Vínculo quitado'); A.render(); };
 // ---- ajustes ----
-ACT.negAjustes = () => { const n = N(); sheet('Tu negocio', `<div class="sb-form"><label class="f">Nombre<input class="in" id="naN" maxlength="30" value="${esc(n.name)}"></label><label class="f">Meta de ventas del mes (opcional)<input class="in" id="naG" inputmode="decimal" value="${n.goal || ''}" placeholder="0.00"></label><label class="f">Tipo de negocio<select class="in" id="naT">${Object.entries(TIPOS).map(([k, t]) => `<option value="${k}" ${n.tipo === k ? 'selected' : ''}>${t.n}</option>`).join('')}</select></label><button class="sb-act pn pn-pink" data-act="negAjOk">Guardar</button></div>`); };
+ACT.negAjustes = () => { const n = N(); sheet('Tu negocio', `<div class="sb-form"><label class="f">Nombre<input class="in" id="naN" maxlength="30" value="${esc(n.name)}"></label><label class="f">Meta de ventas del mes (opcional)<input class="in" id="naG" inputmode="decimal" value="${n.goal || ''}" placeholder="0.00"></label><label class="f">Tipo de negocio<select class="in" id="naT">${Object.entries(TIPOS).map(([k, t]) => `<option value="${k}" ${n.tipo === k ? 'selected' : ''}>${t.n}</option>`).join('')}</select></label><button class="sb-act pn pn-pink" data-act="negAjOk">Guardar</button><button class="sb-act pn pn-cream" data-act="negVinc">Vincular con mi plata</button></div>`); };
 ACT.negAjOk = () => { const n = N(); n.name = gid('naN').value.trim() || n.name; n.goal = num(gid('naG').value); n.tipo = gid('naT').value; save(); closeSheet(); A.render(); };
 // ---------- invitación en Más ----------
 sc.more = ((m0) => () => { const h = m0(); if (okAcceso() || S.settings.negPromo || NEG.estado === 'pausado' || Store.mode !== 'supa') return h; const pend = NEG.estado === 'pendiente'; return `<div class="ng-promo"><img class="pixel" alt="" src="${spr('negocio_ic', 5)}"><span><b>¿Tienes un negocio?</b><small>${pend ? 'Ya pediste acceso. Te avisamos cuando esté listo.' : 'Prueba Bolsillito Negocio: ventas, costos y ganancia real.'}</small></span>${pend ? '' : '<button data-act="negPedir">Pedir acceso</button>'}<button class="x" data-act="negCerrarPromo" aria-label="Cerrar">×</button></div>` + h; })(sc.more);
