@@ -37,6 +37,7 @@ const INFO = {
   logros: ['Tus trofeos', 'logros trofeos medallas'],
   juegos: ['Saltar, atrapar monedas, cruzar la calle', 'juegos jugar saltar monedas estrellitas cruzar calle minijuegos'],
   jardin: ['Tus hábitos como plantitas', 'jardin habitos plantas regar'],
+  negocio: ['Ventas, costos y ganancia de tu negocio', 'negocio emprendedora ventas clientes productos inventario fiado ganancia'],
   tablero: ['Tu moodboard del año', 'tablero suenos moodboard manifestar fotos stickers'],
   amigos: ['Agregar amistades y solicitudes', 'amigos amistades solicitudes agregar codigo aceptar rechazar compartir ultima vez en linea'],
   visitas: ['Tus amistades, tu cajita y tus cartas', 'visitas amistades cajita regalos cartas codigo libro de visitas barrio gracias'],
