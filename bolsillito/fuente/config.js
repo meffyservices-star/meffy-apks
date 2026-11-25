@@ -8,7 +8,7 @@ const cfg = () => S.settings.cfg = S.settings.cfg || {};
 const on = k => cfg()[k] !== false;
 const hid = k => (S.settings.hidden || []).includes(k);
 const GAMES = [['calle', 'Cruzar la calle'], ['saltar', 'Saltar hasta las nubes'], ['monedas', 'Ahorra monedas, no antojos'], ['carrera', 'Carreritas'], ['cocina', 'Cafecito kawaii']];
-const MENUS = ['rincon', 'logros', 'tienda', 'juegos', 'jardin', 'amigos', 'visitas', 'tarrito', 'cuentas', 'tablero', 'estudio', 'sobres', 'planes', 'compras', 'shey', 'suscripciones', 'recordatorio', 'year', 'goals', 'recurring', 'projections', 'rules'];
+const MENUS = ['rincon', 'logros', 'tienda', 'juegos', 'jardin', 'amigos', 'visitas', 'tarrito', 'cuentas', 'tablero', 'estudio', 'sobres', 'planes', 'ia', 'compras', 'shey', 'suscripciones', 'recordatorio', 'year', 'goals', 'recurring', 'projections', 'rules'];
 const LABEL = { shey: 'Antojos', recordatorio: 'Avisos', rincon: 'Mi mascota y cuarto', logros: 'Logros', tienda: 'Tiendita' };
 const CUARTO = [['misiones', 'Misiones de hoy', 'La tarjeta con tareas del día en tu cuarto'], ['paseo', 'Mascotas que pasean', 'Se mueven solas por el cuarto'], ['mariposas', 'Mariposas y bichitos', 'Pasan de vez en cuando y dan estrellitas'], ['reacciones', 'Burbujitas y muebles que reaccionan', 'Al tocar a tu mascota o un mueble']];
 const row = (label, sub, attrs, checked) => `<div class="setrow"><span>${esc(label)}${sub ? `<small class="faint" style="display:block">${esc(sub)}</small>` : ''}</span><span class="toggle"><input type="checkbox" ${attrs} ${checked ? 'checked' : ''}><span></span></span></div>`;

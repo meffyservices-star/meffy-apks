@@ -37,6 +37,7 @@ const INFO = {
   logros: ['Tus trofeos', 'logros trofeos medallas'],
   juegos: ['Saltar, atrapar monedas, cruzar la calle', 'juegos jugar saltar monedas estrellitas cruzar calle minijuegos'],
   jardin: ['Tus hábitos como plantitas', 'jardin habitos plantas regar'],
+  ia: ['Pregúntale lo que quieras de tu plata', 'ia inteligencia artificial mascota preguntar asistente chat consejos'],
   tablero: ['Tu moodboard del año', 'tablero suenos moodboard manifestar fotos stickers'],
   amigos: ['Agregar amistades y solicitudes', 'amigos amistades solicitudes agregar codigo aceptar rechazar compartir ultima vez en linea'],
   visitas: ['Tus amistades, tu cajita y tus cartas', 'visitas amistades cajita regalos cartas codigo libro de visitas barrio gracias'],
