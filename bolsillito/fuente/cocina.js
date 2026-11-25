@@ -95,7 +95,7 @@ async function cookGame() {
   const I = await loadImgs(map);
   // pixel-art nítido: sin bordes suaves, colores en pocos tonos y contorno oscuro
   // 1) reescala x2 con EPX (bordes diagonales limpios, sin difuminar) 2) alfa nítido 3) contorno solo donde el dibujo no trae uno oscuro
-  const epx = im => { const w = im.width, h = im.height, W2 = w * 2, H2 = h * 2;
+  const epx = im => { const w = im.width, h = im.height, F = Math.max(w, h) <= 24 ? 2 : 1, W2 = w * F, H2 = h * F;
     // 1) paleta propia del dibujo (k-means, 11 colores) 2) reescala suave x2 y pinta cada pixel con el color de paleta más cercano 3) filtro de moda para quitar manchitas
     const s = document.createElement('canvas'); s.width = w; s.height = h; const sx = s.getContext('2d'); sx.drawImage(im, 0, 0); const src = sx.getImageData(0, 0, w, h).data;
     const px = []; for (let i = 0; i < w * h; i++) if (src[i * 4 + 3] > 150) px.push([src[i * 4], src[i * 4 + 1], src[i * 4 + 2]]);
@@ -109,7 +109,8 @@ async function cookGame() {
     const o = document.createElement('canvas'); o.width = W2; o.height = H2; const ox = o.getContext('2d'), od = ox.createImageData(W2, H2), dd = od.data;
     for (let i = 0; i < W2 * H2; i++) if (out[i] >= 0) { const q = pal[out[i]]; dd[i * 4] = q[0]; dd[i * 4 + 1] = q[1]; dd[i * 4 + 2] = q[2]; dd[i * 4 + 3] = 255; }
     ox.putImageData(od, 0, 0); return o; };
-  const crisp = (im0, line) => { if (!im0 || !im0.width) return im0; const im = epx(im0); const w = im.width + 2, h = im.height + 2, c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(im, 1, 1); const d = x.getImageData(0, 0, w, h), a = d.data, solid = new Uint8Array(w * h);
+  const fit = im => { const m = Math.max(im.width, im.height); if (m <= 44) return im; const k = 44 / m, c = document.createElement('canvas'); c.width = Math.max(1, Math.round(im.width * k)); c.height = Math.max(1, Math.round(im.height * k)); const x = c.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high'; x.drawImage(im, 0, 0, c.width, c.height); return c; };
+  const crisp = (im0, line) => { if (!im0 || !im0.width) return im0; const im = epx(fit(im0)); const w = im.width + 2, h = im.height + 2, c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(im, 1, 1); const d = x.getImageData(0, 0, w, h), a = d.data, solid = new Uint8Array(w * h);
     for (let i = 0; i < w * h; i++) { const o = i * 4; if (a[o + 3] > 110) { solid[i] = 1; a[o + 3] = 255; } else a[o + 3] = 0; }
     const dark = i => { const o = i * 4; return a[o] * .3 + a[o + 1] * .59 + a[o + 2] * .11 < 120; };
     const lc = [122, 74, 82], add = []; for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const i = yy * w + xx; if (solid[i]) continue; const nb = [xx > 0 && i - 1, xx < w - 1 && i + 1, yy > 0 && i - w, yy < h - 1 && i + w].filter(n => n !== false && solid[n]); if (nb.length && !nb.every(dark)) add.push(i); }

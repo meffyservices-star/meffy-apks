@@ -2399,7 +2399,7 @@ if (rec && rec.closed) return `<button class="card row" data-act="aleOpen" style
 if (h < 17) return '';
 return `<button class="card row" data-act="aleOpen" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer;background:#fff6c4;border-color:#f6e3a3">${A.mascotImg(48, 3)}<div style="flex:1"><b>¿Cerramos el día?</b> ${A.px('moon', 18)}<div class="faint">${esc(A.conMascota('{nombre} tiene tu resumen de hoy listo'))}</div></div><span class="faint">›</span></button>`;
 };
-window.BOLS_V = 'v99';
+window.BOLS_V = 'v100';
 A.ACTIONS.forceUpdate = async () => { A.toast('Buscando…'); try { const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(r => r.unregister())); const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); } catch (e) {} location.reload(); };
 A.ACTIONS.aleOpen = () => summary();
 const tipFn = A.ACTIONS.mascot;
