@@ -32,6 +32,7 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
   - **v64**: "Borrar ejemplos" ahora también quita los saldos y presupuestos de ejemplo que no hayas editado (también para quien ya los había borrado).
   - **v65**: se quitaron los Retos; Tarrito compartido rediseñado (tarritos de cristal con monedas, etiquetas, repisa) y Cuentas como recibo; fotos de perfil de tus amistades en ambos.
   - **v66 – Personalizar** (`config.js`): nueva pantalla en Más para mostrar u ocultar secciones del menú, cada juego, las cosas del cuarto (misiones, paseos, mariposas, burbujas) y la guía "Primeros pasitos".
+- v92: panel de Negocio más profesional (fondo liso, tarjetas planas, pestañas subrayadas) y las ventas traídas ya no salen como producto.
 - v91: Negocio se adapta a cada tipo (servicios, suscripciones, comida...): pedidos, inventario y renovaciones se activan según lo que necesite.
 - v90: Negocio rediseñado estilo panel profesional (paleta rosa/celeste): KPIs, gráfica de ventas y gastos, atención, ranking, estado de resultados, clientas con renovación.
 - v89: Vincular Negocio: ingresos y gastos se eligen por separado (solo categorías), sin cuentas.

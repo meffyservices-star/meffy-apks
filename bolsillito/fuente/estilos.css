@@ -2704,3 +2704,20 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .ngx .ng-ic{flex:none!important;width:44px}.ngx .ng-por .ng-ic{flex:none}
 .ng-nav{gap:4px}.ng-nav button{padding:6px 10px;font-size:12.5px}
 .ng-mods{display:flex;flex-direction:column;gap:8px}.ng-mod{display:flex;flex-direction:column;align-items:flex-start;gap:1px;border:2px solid var(--ng-l);background:#fff;border-radius:16px;padding:10px 14px;font:inherit;color:var(--ng-ink);text-align:left;cursor:pointer}.ng-mod small{font-size:12px;color:#a27b8d;font-weight:700}.ng-mod[aria-pressed="true"]{background:#fff0f5;border-color:var(--ng-p)}.ng-mod[aria-pressed="true"] b::after{content:" ✓";color:var(--ng-p)}
+
+/* Negocio: panel profesional */
+body:has(.ngx){background:#f3f4f8!important;background-image:none!important}body:has(.ngx) #sky{display:none}
+.ngx{--ng-l:#e4e6ee;--ng-ink:#2b2f45;--ng-pi:#d6578f;--ng-s:#e9eefb;--ng-ss:#f3f6fd;--ng-si:#3d5a9e}
+.ngx .card{box-shadow:0 1px 2px rgba(30,40,80,.06),0 0 0 1px var(--ng-l);border-radius:14px}
+.ngx .card h3{color:#6a6f88;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.ng-nav{gap:0;border-bottom:1px solid var(--ng-l);padding:8px 0 0;margin-bottom:4px}
+.ng-nav button,.ng-nav button:nth-child(even){border:0!important;background:none!important;border-radius:0;padding:10px 12px;font-size:13px;color:#7b8099;border-bottom:3px solid transparent!important}
+.ng-nav button[aria-pressed="true"],.ng-nav button.on,.ng-nav button[aria-current="true"]{color:var(--ng-pi);border-bottom-color:var(--ng-pi)!important}
+.ng-act,.ng-act.sky{border:1px solid var(--ng-l);border-radius:12px;background:#fff;color:var(--ng-ink)}
+.ng-act:first-child{background:var(--ng-p);border-color:var(--ng-p);color:#fff}
+.ng-chips button{border:1px solid var(--ng-l);border-radius:8px;padding:5px 12px;color:#6a6f88}
+.ng-k,.ng-k.sky{background:#fff;box-shadow:0 1px 2px rgba(30,40,80,.06),0 0 0 1px var(--ng-l);border-radius:14px;padding:14px}
+.ng-k span{color:#7b8099;font-weight:700}.ng-k b,.ng-k.sky b{color:var(--ng-ink);font:700 24px var(--f-body)}
+.ng-k b.neg{color:#d4546e}
+.ngx .li,.ngx .li:nth-child(even){background:#fff;box-shadow:0 0 0 1px var(--ng-l)}
+.ngx .in{border:1px solid var(--ng-l);border-radius:10px}
