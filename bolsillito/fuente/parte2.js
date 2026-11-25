@@ -1358,6 +1358,7 @@ async function importMany(files) {
 ACT.edDetail = a => { if (!edImg || !ed.cell) return; const r = A.pixFit(edImg, MAXN[ed.kind] || 64, ed.cell * (+a.dataset.v > 0 ? 0.85 : 1.18)); if (r && +a.dataset.v > 0 && Math.max(r.w, r.h) >= (MAXN[ed.kind] || 64) * .98 && r.cell >= ed.cell * .99) return toast('Ya está con el máximo detalle'); applyPix(r, true); };
 async function saveCatalog() {
   A.CFG.catalog = Object.assign({ pets: [], furn: [], clothes: [], food: [] }, A.CFG.catalog || {});
+  if (latestCatalog) { const now = Date.now(); ['pets', 'furn', 'clothes', 'food', 'walls', 'floors', 'boxes'].forEach(k => { const old = new Set((latestCatalog[k] || []).map(x => x.id)); (A.CFG.catalog[k] || []).forEach(x => { if (x && !x.added && !old.has(x.id)) x.added = now; }); }); }
   latestCatalog = JSON.parse(JSON.stringify(A.CFG.catalog));
   try { await Store.saveConfig(A.CFG); registerCatalog(); toast('Guardado. Ya les aparece a todas.'); } catch (e) { toast('No se pudo guardar. Revisa tu conexión.'); }
   A.render();
