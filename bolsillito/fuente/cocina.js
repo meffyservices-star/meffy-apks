@@ -17,6 +17,16 @@ D('ck_cono', 16, 16, p => { for (let y = 3; y < 16; y++) { const w = Math.max(1,
 D('ck_bola', 16, 16, p => { p.e(8, 8, 6.4, 5.8, 'p'); p.e(7, 6.5, 3.6, 2.8, 'w'); p.r(2, 11, 12, 3, 'P'); [2, 5, 8, 11].forEach(x => p.e(x + 1.5, 13.5, 1.8, 1.4, 'P')); p.px(5, 5, 'w'); p.px(6, 5, 'w'); p.px(11, 9, 'R'); p.px(5, 10, 'R'); });
 D('ck_chispas', 16, 16, p => { p.map(4, 3, ['llllllll', 'lwwwwwwl', 'lwwwwwwl', 'lwwwwwwl', 'lwwwwwwl', 'lwwwwwwl', 'lwwwwwwl', 'lwwwwwwl', 'lwwwwwwl', 'lwwwwwwl', 'lllllllll']); p.r(3, 1, 10, 2, 'P'); [[6, 6, 'P'], [9, 5, 'Y'], [7, 9, 'G'], [10, 8, 'h'], [6, 12, 'Y'], [9, 12, 'P'], [8, 7, 'V'], [6, 9, 'R']].forEach(([x, y, c]) => { p.px(x, y, c); p.px(x + 1, y, c); }); p.r(5, 4, 1, 8, 'w'); });
 D('ck_crema', 16, 16, p => { p.e(8, 12.4, 6.6, 2.8, 'w'); p.e(8, 9.2, 5, 2.6, 'w'); p.e(8, 6.2, 3.4, 2.3, 'w'); p.r(7, 2, 2, 3, 'w'); p.px(8, 1, 'w'); p.r(3, 13, 10, 1, 'l'); p.r(5, 10, 6, 1, 'l'); p.r(6, 7, 4, 1, 'l'); p.px(6, 5, 'p'); p.px(10, 12, 'p'); });
+// dibujo por capas con contorno automático (cada capa nueva queda delimitada por una línea oscura)
+const layered = (p, fn) => { const g = [], ly = []; for (let i = 0; i < 400; i++) { g.push('.'); ly.push(0); } let L = 0;
+  const api = { e(cx, cy, rx, ry, c) { L++; for (let y = 0; y < 20; y++) for (let x = 0; x < 20; x++) { if (((x + .5 - cx) / rx) ** 2 + ((y + .5 - cy) / ry) ** 2 <= 1) { g[y * 20 + x] = c; ly[y * 20 + x] = L; } } },
+    r(x0, y0, w, h, c) { L++; for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) if (x >= 0 && y >= 0 && x < 20 && y < 20) { g[y * 20 + x] = c; ly[y * 20 + x] = L; } },
+    px(x, y, c) { if (x >= 0 && y >= 0 && x < 20 && y < 20) g[y * 20 + x] = c; } };
+  fn(api); const out = g.slice(); const N = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  for (let y = 0; y < 20; y++) for (let x = 0; x < 20; x++) { const i = y * 20 + x; if (!ly[i]) { if (N.some(([dx, dy]) => { const xx = x + dx, yy = y + dy; return xx >= 0 && yy >= 0 && xx < 20 && yy < 20 && ly[yy * 20 + xx]; })) out[i] = 'k'; } }
+  out.forEach((c, i) => { if (c !== '.') p.px(i % 20, Math.floor(i / 20), c); }); };
+const oe = (p, x, y, rx, ry, c) => { p.e(x, y, rx, ry, 'k'); p.e(x, y, rx - 1, ry - 1, c); };
+const plateO = p => { oe(p, 10, 16.6, 9.4, 2.2, 'w'); p.e(10, 16.4, 7.4, 1.1, 'l'); };
 const plate = p => { p.e(10, 15.5, 9.5, 2.8, 'w'); p.e(10, 15, 8, 2, 'c'); p.r(3, 16, 14, 1, 'L'); };
 D('ck_hotcakes', 20, 20, p => { plate(p); [0, 1, 2].forEach(i => { p.e(10, 14 - i * 3.2, 7, 2.5, 'a'); p.e(10, 13.2 - i * 3.2, 6.6, 1.9, 'o'); }); p.e(10, 6.6, 5.4, 2, 'A'); p.px(5, 9, 'A'); p.px(6, 10, 'A'); p.px(14, 9, 'A'); p.px(15, 10, 'A'); p.px(10, 10, 'A'); p.r(8, 3, 4, 3, 'y'); p.r(8, 3, 4, 1, 'w'); });
 D('ck_hotcakes_fresa', 20, 20, p => { plate(p); [0, 1, 2].forEach(i => { p.e(10, 14 - i * 3.2, 7, 2.5, 'a'); p.e(10, 13.2 - i * 3.2, 6.6, 1.9, 'o'); }); p.e(10, 6.8, 5.4, 2, 'A'); p.px(5, 9, 'A'); p.px(15, 9, 'A'); [[7, 3], [12, 3]].forEach(([x, y]) => { p.e(x, y + 1, 2.8, 2.7, 'R'); p.e(x, y + .6, 2.2, 2, 'P'); p.px(x - 1, y - 2, 'G'); p.px(x, y - 2, 'G'); p.px(x + 1, y - 2, 'G'); p.px(x, y + 1, 'y'); }); p.r(9, 2, 2, 2, 'y'); });
@@ -36,11 +46,11 @@ D('ck_platano', 16, 16, p => { p.e(4.5, 11, 3.4, 2.2, 'G'); p.e(8, 8.5, 3.6, 2.2
 D('ck_pescado', 16, 16, p => { p.e(7, 8, 5.4, 3.6, 'B'); p.e(7, 7, 4.6, 2, 'l'); p.r(11, 5, 3, 6, 'V'); p.r(13, 4, 1, 8, 'V'); p.px(4, 7, 'N'); p.px(8, 9, 'L'); p.px(6, 9, 'L'); });
 D('ck_cebolla', 16, 16, p => { p.e(8, 9.5, 5.6, 4.6, 'q'); p.e(8, 9.5, 3.8, 3.4, 'h'); p.e(8, 9.5, 1.8, 2, 'q'); p.r(7, 2, 2, 3, 'G'); p.px(7, 1, 'g'); });
 D('ck_yuca', 16, 16, p => { p.e(4.5, 11, 3.6, 2.2, 'n'); p.e(8, 8.5, 3.6, 2.2, 'n'); p.e(11.5, 6, 3.6, 2.2, 'n'); p.px(13, 5, 'c'); p.px(14, 5, 'c'); p.px(3, 12, 'c'); p.px(7, 8, 'N'); });
-D('ck_hotdog', 20, 20, p => { plate(p); p.e(10, 12.6, 8, 3.2, 'o'); p.e(10, 11.4, 8.4, 2.4, 'a'); p.e(10, 10.8, 7.8, 1.8, 'R'); p.e(10, 10.2, 7, 1, 'r'); [[5, 10], [8, 9], [11, 10], [14, 9]].forEach(q => p.px(q[0], q[1], 'Y')); });
-D('ck_bolon', 20, 20, p => { plate(p); p.e(10, 10.6, 6.6, 5.4, 'Y'); p.e(10, 9.4, 5.6, 4.2, 'y'); [[7, 8], [11, 7], [9, 11], [13, 10], [7, 12]].forEach(q => p.px(q[0], q[1], 'a')); p.px(8, 7, 'w'); });
-D('ck_burger', 20, 20, p => { plate(p); p.e(10, 6.6, 7.2, 3.8, 'a'); p.e(10, 5.8, 6, 2.4, 'o'); [[7, 5], [10, 4], [13, 5], [9, 7]].forEach(q => p.px(q[0], q[1], 'y')); p.r(3, 9, 14, 1, 'G'); p.r(4, 10, 12, 1, 'Y'); p.r(4, 11, 12, 2, 'N'); p.r(3, 13, 14, 2, 'o'); p.r(4, 15, 12, 1, 'a'); });
-D('ck_arroz_men', 20, 20, p => { plate(p); p.e(6.2, 11, 4.6, 3.4, 'w'); [[5, 9], [7, 10], [5, 12]].forEach(q => p.px(q[0], q[1], 'C')); p.e(13, 11.5, 5, 3, 'N'); p.e(13, 10.8, 4.2, 2, 'n'); p.e(14.5, 7.5, 3.6, 2.2, 'n'); p.px(14, 7, 'a'); p.px(16, 8, 'N'); p.px(10, 8, 'Y'); p.px(11, 7, 'Y'); p.px(9, 9, 'Y'); });
-D('ck_enceb', 20, 20, p => { p.e(10, 14, 8.6, 5, 'w'); p.e(10, 11.4, 8, 3, 'a'); p.e(10, 11, 6.8, 2.2, 'o'); [[7, 10], [11, 10], [9, 12]].forEach(q => p.e(q[0], q[1], 1.6, 1.2, 'B')); [[13, 11], [6, 12], [10, 9]].forEach(q => p.px(q[0], q[1], 'q')); p.r(15, 8, 3, 1, 'Y'); p.r(16, 7, 2, 1, 'Y'); p.px(7, 6, 'w'); p.px(8, 5, 'w'); p.px(12, 5, 'w'); p.px(13, 4, 'w'); p.r(3, 16, 14, 1, 'L'); });
+D('ck_hotdog', 20, 20, p => layered(p, q => { q.e(10, 16.6, 9.4, 2.2, 'w'); q.e(10, 16.6, 7.4, 1, 'l'); q.e(10, 11.4, 8, 3.4, 'a'); q.e(10, 10.2, 9.6, 2, 'N'); q.r(3, 9, 8, 1, 'n'); [[4, 10], [6, 9], [8, 10], [10, 9], [12, 10], [14, 9], [16, 10]].forEach(a => q.px(a[0], a[1], 'Y')); q.e(10, 13.6, 7.8, 2.6, 'o'); q.r(4, 14, 12, 1, 'a'); q.r(5, 12, 4, 1, 'c'); }));
+D('ck_bolon', 20, 20, p => layered(p, q => { q.e(10, 16.6, 9.4, 2.2, 'w'); q.e(10, 16.6, 7.4, 1, 'l'); q.e(10, 10.6, 6.8, 6, 'Y'); q.e(10, 12.4, 6, 4, 'a'); q.e(7.6, 7.4, 2.4, 1.4, 'y'); [[12, 9], [13, 12], [8, 13], [10, 11], [6, 11], [11, 14]].forEach(a => q.px(a[0], a[1], 'A')); }));
+D('ck_burger', 20, 20, p => layered(p, q => { q.e(10, 16.6, 9.4, 2.2, 'w'); q.e(10, 16.6, 7.4, 1, 'l'); q.e(10, 14.3, 7, 2.2, 'o'); q.e(10, 12.2, 7.8, 1.6, 'N'); q.r(5, 11, 6, 1, 'n'); q.e(10, 10.4, 7.4, 1.2, 'Y'); q.r(13, 10, 3, 3, 'Y'); q.e(10, 8.8, 8.6, 1.4, 'G'); q.e(10, 5.8, 7, 3.6, 'a'); q.e(10, 5.2, 6, 2.8, 'o'); [[7, 3], [10, 2], [13, 3], [9, 5], [12, 5]].forEach(a => q.px(a[0], a[1], 'y')); }));
+D('ck_arroz_men', 20, 20, p => layered(p, q => { q.e(10, 15.6, 9.6, 3.2, 'w'); q.e(10, 15.4, 7.6, 1.8, 'l'); q.e(6.4, 11.6, 4.8, 3.6, 'w'); [[4, 9], [6, 8], [8, 10], [5, 12], [7, 13]].forEach(a => q.px(a[0], a[1], 'C')); q.e(13.6, 12.2, 4.6, 3.2, 'N'); q.e(13.6, 11.4, 3.6, 1.8, 'n'); [[12, 12], [15, 12], [14, 14]].forEach(a => q.px(a[0], a[1], 'a')); q.e(12.6, 8.2, 3.6, 2.4, 'a'); q.e(12.2, 7.6, 2.2, 1.2, 'o'); q.e(17, 9.6, 2, 1.6, 'Y'); }));
+D('ck_enceb', 20, 20, p => layered(p, q => { q.e(10, 13.6, 9, 5.4, 'l'); q.r(3, 15, 14, 1, 'L'); q.e(10, 18, 5, 1.2, 'L'); q.e(10, 11.6, 8.6, 3, 'a'); q.e(10, 11.2, 7.4, 1.9, 'o'); [[6, 10], [10, 10], [13, 11]].forEach(a => q.e(a[0], a[1], 2, 1.3, 'r')); [[8, 12], [12, 12]].forEach(a => { q.px(a[0], a[1], 'q'); q.px(a[0] + 1, a[1], 'Q'); }); [[5, 12], [14, 9], [9, 9]].forEach(a => q.px(a[0], a[1], 'G')); q.px(7, 5, 's'); q.px(8, 4, 's'); q.px(7, 3, 's'); q.px(12, 5, 's'); q.px(13, 4, 's'); q.px(12, 3, 's'); }));
 D('ck_cupcake', 20, 20, p => { for (let y = 11; y < 19; y++) { const w = 13 - Math.floor((y - 11) * .4); p.r(10 - Math.floor(w / 2), y, w, 1, 'P'); } for (let x = 5; x < 16; x += 3) p.r(x, 11, 1, 8, 'p'); p.e(10, 10.5, 6.6, 2.6, 'C'); p.e(10, 8, 5.6, 2.4, 'w'); p.e(10, 5.6, 4, 2.2, 'p'); p.e(10, 3.4, 2.4, 1.8, 'w'); p.px(10, 1, 'R'); p.px(10, 2, 'R'); p.px(9, 2, 'R'); p.px(7, 8, 'V'); p.px(12, 7, 'Y'); p.px(9, 5, 'G'); p.px(12, 5, 'P'); });
 
 // ---------------- Recetas ----------------
@@ -80,12 +90,30 @@ async function cookGame() {
   const reset0 = () => { lo.width = LW; lo.height = LH; L.imageSmoothingEnabled = false; };
   reset0();
   const names = Object.keys(ING).map(k => ING[k]).concat(RECIPES.map(r => r.art)); const map = {}; names.forEach(n => map[n] = spr(n, 1));
-  const pets = [...new Set(Object.values(A.ANCH || {}).map(a => a.sprite).concat(['gochi', 'shey', 'pudin']))].filter(k => k && Pix.has(k)); pets.forEach(k => map['p_' + k] = spr(k, 1)); map.me = spr(petSprite(), 1); map.heart = spr('heart', 1); map.heartE = spr('heartS', 1); map.star = spr('estrellita', 1); map.coin = spr(Pix.has('moneda') ? 'moneda' : 'estrellita', 1);
+  const petKeys = (() => { const all = A.allPets ? A.allPets() : {}, own = A.petState ? A.petState().owned : [], base = ['gochi', 'yaki', 'shey', 'ale']; return Object.keys(A.ANCH || {}).filter(k => (A.allPets ? all[k] : true) && (base.includes(k) || k.startsWith('cp_') || own.includes(k))); })();
+  const pets = [...new Set(petKeys.map(k => A.ANCH[k].sprite))].filter(k => k && Pix.has(k)); pets.forEach(k => map['p_' + k] = spr(k, 1)); map.me = spr(petSprite(), 1); map.heart = spr('heart', 1); map.heartE = spr('heartS', 1); map.star = spr('estrellita', 1); map.coin = spr(Pix.has('moneda') ? 'moneda' : 'estrellita', 1);
   const I = await loadImgs(map);
   // pixel-art nítido: sin bordes suaves, colores en pocos tonos y contorno oscuro
-  const crisp = (im, line) => { if (!im || !im.width) return im; const w = im.width + 2, h = im.height + 2, c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(im, 1, 1); const d = x.getImageData(0, 0, w, h), a = d.data, solid = new Uint8Array(w * h);
+  // 1) reescala x2 con EPX (bordes diagonales limpios, sin difuminar) 2) alfa nítido 3) contorno solo donde el dibujo no trae uno oscuro
+  const epx = im => { const w = im.width, h = im.height, W2 = w * 2, H2 = h * 2;
+    // 1) paleta propia del dibujo (k-means, 11 colores) 2) reescala suave x2 y pinta cada pixel con el color de paleta más cercano 3) filtro de moda para quitar manchitas
+    const s = document.createElement('canvas'); s.width = w; s.height = h; const sx = s.getContext('2d'); sx.drawImage(im, 0, 0); const src = sx.getImageData(0, 0, w, h).data;
+    const px = []; for (let i = 0; i < w * h; i++) if (src[i * 4 + 3] > 150) px.push([src[i * 4], src[i * 4 + 1], src[i * 4 + 2]]);
+    const dist = (p, q) => (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 + (p[2] - q[2]) ** 2; let pal = [];
+    if (px.length) { pal = [px[0]]; while (pal.length < Math.min(11, px.length)) { let bi = 0, bd = -1; px.forEach((p, i) => { const dm = Math.min(...pal.map(q => dist(p, q))); if (dm > bd) { bd = dm; bi = i; } }); pal.push(px[bi]); }
+      for (let it = 0; it < 6; it++) { const sum = pal.map(() => [0, 0, 0, 0]); px.forEach(p => { let bi = 0, bd = 1e9; pal.forEach((q, i) => { const dd = dist(p, q); if (dd < bd) { bd = dd; bi = i; } }); const t = sum[bi]; t[0] += p[0]; t[1] += p[1]; t[2] += p[2]; t[3]++; }); pal = pal.map((q, i) => sum[i][3] ? [sum[i][0] / sum[i][3], sum[i][1] / sum[i][3], sum[i][2] / sum[i][3]] : q); } }
+    const big = document.createElement('canvas'); big.width = W2; big.height = H2; const bx = big.getContext('2d'); bx.imageSmoothingEnabled = true; bx.imageSmoothingQuality = 'high'; bx.drawImage(im, 0, 0, W2, H2); const bd = bx.getImageData(0, 0, W2, H2).data;
+    const lab = new Int16Array(W2 * H2).fill(-1);
+    for (let i = 0; i < W2 * H2; i++) { if (bd[i * 4 + 3] < 120) continue; const p = [bd[i * 4], bd[i * 4 + 1], bd[i * 4 + 2]]; let bi = 0, bdd = 1e9; pal.forEach((q, k) => { const dd = dist(p, q); if (dd < bdd) { bdd = dd; bi = k; } }); lab[i] = bi; }
+    const out = new Int16Array(lab); for (let y = 0; y < H2; y++) for (let x = 0; x < W2; x++) { const i = y * W2 + x; if (lab[i] < 0) continue; const cnt = {}; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= W2 || yy >= H2) continue; const l = lab[yy * W2 + xx]; if (l >= 0) cnt[l] = (cnt[l] || 0) + 1; } let best = lab[i], bc = cnt[best] || 0; for (const l in cnt) if (cnt[l] > bc + 1) { bc = cnt[l]; best = +l; } out[i] = best; }
+    const o = document.createElement('canvas'); o.width = W2; o.height = H2; const ox = o.getContext('2d'), od = ox.createImageData(W2, H2), dd = od.data;
+    for (let i = 0; i < W2 * H2; i++) if (out[i] >= 0) { const q = pal[out[i]]; dd[i * 4] = q[0]; dd[i * 4 + 1] = q[1]; dd[i * 4 + 2] = q[2]; dd[i * 4 + 3] = 255; }
+    ox.putImageData(od, 0, 0); return o; };
+  const crisp = (im0, line) => { if (!im0 || !im0.width) return im0; const im = epx(im0); const w = im.width + 2, h = im.height + 2, c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(im, 1, 1); const d = x.getImageData(0, 0, w, h), a = d.data, solid = new Uint8Array(w * h);
     for (let i = 0; i < w * h; i++) { const o = i * 4; if (a[o + 3] > 110) { solid[i] = 1; a[o + 3] = 255; } else a[o + 3] = 0; }
-    const lc = [122, 74, 82]; for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const i = yy * w + xx; if (solid[i]) continue; if ((xx > 0 && solid[i - 1]) || (xx < w - 1 && solid[i + 1]) || (yy > 0 && solid[i - w]) || (yy < h - 1 && solid[i + w])) { const o = i * 4; a[o] = lc[0]; a[o + 1] = lc[1]; a[o + 2] = lc[2]; a[o + 3] = 255; } }
+    const dark = i => { const o = i * 4; return a[o] * .3 + a[o + 1] * .59 + a[o + 2] * .11 < 120; };
+    const lc = [122, 74, 82], add = []; for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const i = yy * w + xx; if (solid[i]) continue; const nb = [xx > 0 && i - 1, xx < w - 1 && i + 1, yy > 0 && i - w, yy < h - 1 && i + w].filter(n => n !== false && solid[n]); if (nb.length && !nb.every(dark)) add.push(i); }
+    add.forEach(i => { const o = i * 4; a[o] = lc[0]; a[o + 1] = lc[1]; a[o + 2] = lc[2]; a[o + 3] = 255; });
     x.putImageData(d, 0, 0); return c; };
   Object.keys(I).filter(k => k.startsWith('p_') || k === 'me').forEach(k => { I[k] = crisp(I[k]); });
   const U = unlocked(); const lvl = cookLvl();
@@ -184,7 +212,7 @@ async function cookGame() {
   function drawCust(c, i) {
     const x = slotX[i]; let dy = 0, a = 1; const bounce = Math.sin(Date.now() / 260 + i) * 1;
     if (c.st === 'in') dy = Math.max(0, 28 - c.t * 56); if (c.st === 'out') { a = Math.max(0, 1 - c.t); dy = c.out === 'happy' ? -Math.sin(Math.min(1, c.t) * Math.PI) * 6 : 0; }
-    L.globalAlpha = a; const im = I['p_' + c.pet]; if (im && im.width) { const k2 = Math.max(1, Math.round(40 / Math.max(im.width, im.height))), iw = im.width * k2, ih = im.height * k2; L.drawImage(im, Math.round(x - iw / 2), Math.round(counterY - ih + dy + (c.st === 'wait' ? bounce : 0)), iw, ih); }
+    L.globalAlpha = a; const im = I['p_' + c.pet]; if (im && im.width) { const k2 = Math.max(1, Math.round(44 / Math.max(im.width, im.height))), iw = im.width * k2, ih = im.height * k2; L.drawImage(im, Math.round(x - iw / 2), Math.round(counterY - ih + dy + (c.st === 'wait' ? bounce : 0)), iw, ih); }
     // sombrita del mostrador
     L.globalAlpha = 1;
     if (c.st === 'wait' || c.st === 'in') {
