@@ -58,7 +58,9 @@ window.__offline = function (Store) {
   // otro celular cambió algo mientras esta app estaba abierta: no subimos encima; se recarga apenas no estés escribiendo
   Store.holdUploads = false;
   function busy() { var a = document.activeElement; var sc = document.getElementById('scrim'); return (sc && !sc.hidden) || document.body.classList.contains('gaming') || (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)); }
-  Store.reloadSoon = function (msg) {
+  // ya no se recarga la app sola: lo nuevo de otro celular se ve al abrirla otra vez
+  Store.reloadSoon = function () {};
+  Store._reloadSoonOld = function (msg) {
     Store.holdUploads = true;
     if (Store._reloadT) return;
     var n = document.querySelector('.statusbar'); if (n) { n.textContent = msg || 'Trayendo los cambios de tu otro celular…'; n.style.opacity = 1; }
@@ -80,7 +82,7 @@ window.__offline = function (Store) {
     var b = this.base()[id];
     var cur = await withTimeout(this.sb.from('user_docs').select('updated_at').eq('user_id', this.uid).eq('doc_id', id).maybeSingle(), 8000);
     if (cur.error) throw cur.error;
-    if (cur.data && (!b || at(cur.data.updated_at) !== b.at)) { this.reloadSoon(); return 'hold'; }
+    /* sin recargar: lo que guardas aquí manda */
     var body = JSON.parse(JSON.stringify(this.docs[id] || {})); var when = new Date().toISOString();
     var r = await withTimeout(this.sb.from('user_docs').upsert({ user_id: this.uid, doc_id: id, body: body, updated_at: when }), 12000);
     if (r.error) throw r.error;
