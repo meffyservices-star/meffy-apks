@@ -3,7 +3,7 @@
 const A = App, S = A.S, { esc, money, toast, openSheet, closeSheet } = A, sc = A.screens, ACT = A.ACTIONS;
 A.PAGES.negocio = 'Negocio';
 const spr = (n, k) => Pix.sprite(n, k || 3);
-const sheet = (t, h) => openSheet(t, h, sh => (sh.classList.add('nvx'), sh.addEventListener('click', ev => { const b = ev.target.closest('[data-act]'); if (b && ACT[b.dataset.act]) { ev.stopPropagation(); ACT[b.dataset.act](b); } })));
+const sheet = (t, h) => openSheet(t, h, sh => (sh.classList.add('nvx'), sh.addEventListener('change', ev => { if (ev.target.id === 'npF') pickImg(ev.target); }), sh.addEventListener('click', ev => { const b = ev.target.closest('[data-act]'); if (b && ACT[b.dataset.act]) { ev.stopPropagation(); ACT[b.dataset.act](b); } })));
 const id = () => Math.random().toString(36).slice(2, 9);
 const num = v => Math.max(0, Math.round((+String(v).replace(',', '.') || 0) * 100) / 100);
 const gid = x => document.getElementById(x);
@@ -75,7 +75,7 @@ const porCobrar = () => N().sales.filter(s => debe(s) > 0.001);
 const cliName = i => { const c = N().clients.find(c => c.id === i); return c ? c.n : ''; };
 // ---------- pantalla ----------
 let TAB = 'resumen';
-const tabs = [['resumen', 'Resumen'], ['ventas', 'Ventas'], ['productos', 'Productos'], ['clientes', 'Clientas'], ['gastos', 'Gastos']];
+const tabs = [['resumen', 'Inicio'], ['ventas', 'Ventas'], ['pedidos', 'Pedidos'], ['productos', 'Productos'], ['clientes', 'Clientas']];
 const pet = () => { try { return A.petInfo(A.petActive ? A.petActive() : 'gochi').sprite; } catch (e) { return 'gochi'; } };
 const ic = (n, z, bg) => `<span class="ng-ic" style="${bg ? 'background:' + bg : ''}"><img class="pixel" alt="" src="${spr(Pix.has(n) ? n : 'moneda', 3)}" style="width:${z || 28}px;height:${z || 28}px"></span>`;
 const empty = (t, s) => `<div class="card ng-empty"><img class="pixel" alt="" src="${spr('negocio_ic', 6)}"><b>${t}</b><span class="faint">${s}</span></div>`;
@@ -84,7 +84,7 @@ sc.negocio = () => {
   if (!okAcceso()) return lockedHTML();
   const n = N(); if (!n.tipo) return setupHTML();
   syncLinks();
-  const body = { resumen, ventas, productos, clientes, gastos }[TAB]();
+  const body = { resumen, ventas, pedidos, productos, clientes }[TAB]();
   return `<div class="ph"><div class="ph-left"><span class="pill">${esc(n.name || 'Negocio')}</span><button class="ph-icon" data-act="pageicon" data-k="negocio" aria-label="Cambiar icono">${A.iconHTML(A.pageIcon('negocio'), 34)}</button></div><button class="round-btn" data-act="negAjustes" aria-label="Ajustes del negocio"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg></button></div>
 <div class="seg ng-seg5">${tabs.map(([k, t]) => `<button data-act="negTab" data-k="${k}" aria-pressed="${TAB === k}">${t}</button>`).join('')}</div><div class="stack ng-body">${body}</div>`;
 };
@@ -105,85 +105,138 @@ ACT.negTipo = a => { const n = N(), v = (gid('ngNom') || {}).value || ''; n.tipo
 ACT.negTab = a => { TAB = a.dataset.k; A.render(); };
 // ---- resumen ----
 function evs(name, icn, bg, v, m, col) { return `<div class="evs"><span class="evs-ic" style="background:${bg}">${A.px(Pix.has(icn) ? icn : 'moneda', 26)}</span><div class="evs-b"><div class="evs-t"><b>${name}</b><span class="num"><b>${money(v)}</b></span></div><div class="evs-track"><i class="real" style="width:${m ? Math.max(2, v / m * 100) : 0}%;background:${col}"></i></div></div></div>`; }
+const iso = d => new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+const addD = (t, n) => { const d = new Date(t + 'T12:00'); d.setDate(d.getDate() + n); return iso(d); };
+let PER = 'mes';
+const PL = { hoy: 'de hoy', semana: 'de la semana', mes: 'del mes' };
+function rng(per) { const t = A.today(); if (per === 'hoy') return [t, t, addD(t, -1), addD(t, -1)]; if (per === 'semana') return [addD(t, -6), t, addD(t, -13), addD(t, -7)]; const k = A.ym(t), pd = new Date(+k.slice(0, 4), +k.slice(5) - 2, 1), pk = iso(pd).slice(0, 7); return [k + '-01', t, pk + '-01', pk + '-31']; }
+function statsR(a, b) { const n = N(), ss = n.sales.filter(s => s.d >= a && s.d <= b), ee = n.exps.filter(e => e.d >= a && e.d <= b); const ventas = r2(ss.reduce((x, s) => x + s.total, 0)), costo = r2(ss.reduce((x, s) => x + saleCost(s), 0)), gastos = r2(ee.reduce((x, e) => x + e.amt, 0)); const por = {}; ss.forEach(s => s.items.forEach(i => { const o = por[i.n] = por[i.n] || { n: i.n, p: i.p, q: 0, g: 0 }; o.q += i.q; o.g += i.q * (i.pr - (i.c || 0)); })); return { ss, ee, ventas, costo, gastos, ganancia: r2(ventas - costo - gastos), top: Object.values(por).sort((x, y) => y.q - x.q).slice(0, 4) }; }
+const img = (p, cls) => p && p.img ? `<img class="${cls || 'ng-pimg'}" alt="" src="${esc(p.img)}">` : `<span class="${cls || 'ng-pimg'} ng-pph" style="background:${PAST[(p && p.n ? p.n.charCodeAt(0) : 0) % PAST.length]}">${esc(((p && p.n) || '?')[0].toUpperCase())}</span>`;
+const PAST = ['linear-gradient(135deg,#ffd6e3,#ffb4cc)', 'linear-gradient(135deg,#dff3e3,#bfe5c8)', 'linear-gradient(135deg,#fff1c2,#ffe08a)', 'linear-gradient(135deg,#e1effb,#bcd9f2)', 'linear-gradient(135deg,#ece6fd,#d3c8f5)', 'linear-gradient(135deg,#ffe6d6,#ffc9a8)'];
+function spark(vals) { const w = 300, h = 70, mx = Math.max(1, ...vals), st = w / Math.max(1, vals.length - 1); const pts = vals.map((v, i) => [i * st, h - 6 - (v / mx) * (h - 16)]); const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' '); return `<svg class="ng-spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path d="${d} L${w},${h} L0,${h} Z" fill="rgba(255,255,255,.22)"/><path d="${d}" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${pts.length ? `<circle cx="${pts[pts.length - 1][0]}" cy="${pts[pts.length - 1][1]}" r="4.5" fill="#fff"/>` : ''}</svg>`; }
 function resumen() {
-  const n = N(), k = mk(), st = stats(k), cur = k === A.ym(A.today()), pc = porCobrar(), deb = r2(pc.reduce((a, s) => a + debe(s), 0));
-  const gan = st.ganancia, sin = !st.ss.length && !st.ee.length, mx = Math.max(st.ventas, st.costo, st.gastos, 1);
-  const msg = sin ? 'Aún no hay movimientos este mes' : gan > 0 ? `Por cada $1 vendido te quedan ${(gan / Math.max(st.ventas, 1) * 100).toFixed(0)} centavos` : gan === 0 ? 'Quedaste en cero: lo que entró se fue' : 'Por ahora solo moviste plata: gastaste más de lo que ganaste';
-  const d7 = Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - 6 + i); const lt = new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); return { l: DIA[d.getDay()], v: n.sales.filter(x => x.d === lt).reduce((a, x) => a + x.total, 0) }; });
-  const m7 = Math.max(1, ...d7.map(x => x.v)), low = n.prods.filter(p => p.stock != null && p.stock <= 3), pagado = r2(n.pays.filter(p => ym(p.d) === k).reduce((a, p) => a + p.amt, 0));
-  const mes = MES[+k.slice(5) - 1];
-  return `<div class="ng-mes"><button class="navarrow" data-act="negMes" data-d="-1" aria-label="Mes anterior">‹</button><span class="pill">${mes[0].toUpperCase() + mes.slice(1)} ${k.slice(0, 4)}</span><button class="navarrow" data-act="negMes" data-d="1" ${cur ? 'disabled' : ''} aria-label="Mes siguiente">›</button></div>
-<div class="card ng-gan"><span class="ng-gi">${A.px('alcancia', 44)}</span><div><b class="big ${gan < 0 ? 'ng-neg' : 'ng-pos'}">${money(gan)}</b><div class="faint">Tu ganancia real</div></div></div>
-<p class="faint ng-msg">${msg}</p>
-${cta('negVenta', 'Anotar una venta')}
-<div class="card"><h3>De dónde sale</h3>${evs('Vendiste', 'alcancia', '#e3f3df', st.ventas, mx, '#7cc29a')}${evs('Costo de lo vendido', 'bolsa', '#fde3ea', st.costo, mx, '#f27ea1')}${evs('Gastos del negocio', 'ticket', '#fff4c2', st.gastos, mx, '#f2b45a')}</div>
-${n.goal > 0 ? `<div class="card"><h3>Meta del mes</h3><div class="row" style="justify-content:space-between;margin-bottom:6px"><b class="num">${money(st.ventas)} <span class="faint">de ${money(n.goal)}</span></b><b style="color:#f27ea1">${Math.min(100, Math.round(st.ventas / n.goal * 100))}%</b></div><div class="evs-track"><i class="real" style="width:${Math.min(100, st.ventas / n.goal * 100)}%;background:#f27ea1"></i></div></div>` : ''}
+  const n = N(), [a, b, pa, pb] = rng(PER), st = statsR(a, b), pv = statsR(pa, pb), pc = porCobrar(), deb = r2(pc.reduce((x, s) => x + debe(s), 0));
+  const delta = pv.ventas > 0 ? Math.round((st.ventas - pv.ventas) / pv.ventas * 100) : null;
+  const days = PER === 'mes' ? 30 : 7; const vals = Array.from({ length: days }, (_, i) => { const d = addD(A.today(), -(days - 1 - i)); return n.sales.filter(x => x.d === d).reduce((x, s) => x + s.total, 0); });
+  const tk = st.ss.length ? st.ventas / st.ss.length : 0, pend = (n.orders || []).filter(o => o.estado !== 'entregado').sort((x, y) => (x.fecha || '9') < (y.fecha || '9') ? -1 : 1);
+  const low = n.prods.filter(p => p.stock != null && p.stock <= 3), pagado = r2(n.pays.filter(p => ym(p.d) === A.ym(A.today())).reduce((x, p) => x + p.amt, 0));
+  const meta = n.goal > 0 ? stats(A.ym(A.today())).ventas : 0;
+  return `<div class="seg ng-per">${['hoy', 'semana', 'mes'].map(k => `<button data-act="negPer" data-k="${k}" aria-pressed="${PER === k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join('')}</div>
+<div class="ng-hero2"><div class="ng-h-top"><span>Ventas ${PL[PER]}</span>${delta == null ? '' : `<em class="ng-delta ${delta >= 0 ? 'up' : 'dn'}">${delta >= 0 ? '▲' : '▼'} ${Math.abs(delta)}%</em>`}</div><b class="ng-h-big">${money(st.ventas)}</b><small>${delta == null ? 'Aún sin comparación' : 'vs. ' + (PER === 'hoy' ? 'ayer' : PER === 'semana' ? 'la semana pasada' : 'el mes pasado')}</small>${spark(vals)}</div>
+<div class="ng-kpis"><div class="card"><small class="faint">Ganancia</small><b class="${st.ganancia < 0 ? 'ng-neg' : 'ng-pos'}">${money(st.ganancia)}</b></div><div class="card"><small class="faint">Ventas</small><b>${st.ss.length}</b></div><div class="card"><small class="faint">Ticket medio</small><b>${money(tk)}</b></div></div>
+<div class="ng-quick">${[['posGo', 'Vender', 'ticket', '#e3f3df'], ['negPedido', 'Pedido', 'gift', '#ece6fd'], ['negProd', 'Producto', 'bolsa', '#fde3ea'], ['negGasto', 'Gasto', 'alcancia', '#fff4c2']].map(q => `<button data-act="${q[0]}"><span style="background:${q[3]}">${A.px(Pix.has(q[2]) ? q[2] : 'moneda', 30)}</span>${q[1]}</button>`).join('')}</div>
+${pend.length ? `<div class="card"><h3>Pedidos por entregar</h3><div class="list">${pend.slice(0, 3).map(o => ordRow(o)).join('')}</div>${pend.length > 3 ? `<button class="btn ng-cta" style="margin-top:10px" data-act="negTab" data-k="pedidos">Ver los ${pend.length}</button>` : ''}</div>` : ''}
 ${deb > 0 ? `<button class="card ng-por" data-act="negTab" data-k="clientes">${ic('gochi', 28, '#fde3ea')}<span><b>Te deben ${money(deb)}</b><small class="faint">${new Set(pc.map(s => s.cli || s.id)).size} por cobrar · toca para verlos</small></span><i>›</i></button>` : ''}
-<div class="card"><h3>Últimos 7 días</h3><div class="ng-chart">${d7.map(x => `<div><small class="num">${x.v ? Math.round(x.v) : ''}</small><i style="height:${Math.max(4, Math.round(x.v / m7 * 64))}px" class="${x.v ? 'on' : ''}"></i><em>${x.l}</em></div>`).join('')}</div></div>
-${st.top.length ? `<div class="card"><h3>Lo que más te deja</h3><div class="list">${st.top.map((t, i) => `<div class="li income"><span class="ic"><b>${i + 1}</b></span><span class="tx-main"><b>${esc(t.n)}</b><span>${t.q} vendido${t.q === 1 ? '' : 's'}</span></span><span class="amt">${money(t.g)}</span></div>`).join('')}</div></div>` : ''}
+${st.top.length ? `<div class="card"><h3>Lo más vendido</h3><div class="ng-topg">${st.top.map(t => { const p = n.prods.find(x => x.id === t.p) || { n: t.n }; return `<div class="ng-top">${img(p)}<b>${esc(t.n)}</b><small class="faint">${t.q} vendido${t.q === 1 ? '' : 's'}</small></div>`; }).join('')}</div></div>` : ''}
+${n.goal > 0 ? `<div class="card"><h3>Meta del mes</h3><div class="row" style="justify-content:space-between;margin-bottom:6px"><b class="num">${money(meta)} <span class="faint">de ${money(n.goal)}</span></b><b style="color:#f27ea1">${Math.min(100, Math.round(meta / n.goal * 100))}%</b></div><div class="evs-track"><i class="real" style="width:${Math.min(100, meta / n.goal * 100)}%;background:#f27ea1"></i></div></div>` : ''}
+<div class="card"><h3>De dónde sale</h3>${(() => { const mx = Math.max(st.ventas, st.costo, st.gastos, 1); return evs('Vendiste', 'alcancia', '#e3f3df', st.ventas, mx, '#7cc29a') + evs('Costo de lo vendido', 'bolsa', '#fde3ea', st.costo, mx, '#f27ea1') + evs('Gastos del negocio', 'ticket', '#fff4c2', st.gastos, mx, '#f2b45a'); })()}<div class="evs-foot"><span>${st.ventas ? 'Por cada $1 vendido te quedan <b>' + Math.round(st.ganancia / st.ventas * 100) + ' centavos</b>' : 'Aún sin ventas'}</span></div></div>
 ${low.length ? `<div class="card"><h3>Se te están acabando</h3><div class="list">${low.map(p => `<div class="li"><span class="ic">${A.px('bolsa', 24)}</span><span class="tx-main"><b>${esc(p.n)}</b><span>${p.stock === 0 ? 'Se acabó' : 'Quedan ' + p.stock}</span></span></div>`).join('')}</div></div>` : ''}
 <div class="card"><h3>Pagarte un sueldo</h3><p class="faint" style="margin:0 0 10px">Pasa plata del negocio a tus ingresos personales.${pagado ? ' Este mes ya te pagaste ' + money(pagado) + '.' : ''}</p><button class="btn ng-cta" data-act="negSueldo">Pagarme</button></div>`;
 }
+ACT.negPer = a => { PER = a.dataset.k; A.render(); };
 ACT.negMes = a => { const [y, m] = mk().split('-').map(Number), d = new Date(y, m - 1 + (+a.dataset.d), 1); const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); if (k <= A.ym(A.today())) { A._negM = k; A.render(); } };
 ACT.negSueldo = () => sheet('Pagarme mi sueldo', `<div class="stack"><p class="faint">Se anota como ingreso en tu plata personal y queda registrado en el negocio.</p><label class="f">Cuánto<input class="in" id="ngPay" inputmode="decimal" placeholder="0.00" value="${Math.max(0, stats(A.ym(A.today())).ganancia) || ''}"></label><button class="btn pink ng-cta" data-act="negSueldoOk">Pagarme</button></div>`);
 ACT.negSueldoOk = () => { const v = num(gid('ngPay').value); if (!v) return toast('Pon un monto'); const inc = S.fin.categories.find(c => c.type === 'income'); A.addTx({ type: 'income', amount: v, cat: inc ? inc.id : null, acct: S.settings.defaultAcct || (S.fin.accounts[0] || {}).id, date: A.today(), note: 'Sueldo de ' + (N().name || 'mi negocio') }); N().pays.push({ id: id(), d: A.today(), amt: v }); save(); closeSheet(); toast('Listo, ya está en tus ingresos'); A.render(); };
 // ---- ventas ----
-let CART = null;
 const dayLbl = d => { const t = A.today(); if (d === t) return 'Hoy'; const x = new Date(d + 'T12:00'); return `${DIA[x.getDay()]} ${x.getDate()} de ${MES[x.getMonth()]}`; };
+let SUB = 'v';
 function ventas() {
-  const st = stats(mk()), by = {}; st.ss.slice().sort((a, b) => b.d < a.d ? -1 : 1).forEach(s => (by[s.d] = by[s.d] || []).push(s));
-  const ks = Object.keys(by);
-  return `${cta('negVenta', 'Anotar una venta')}${ks.length ? ks.map(d => `<div class="card"><h3>${dayLbl(d)} · ${money(by[d].reduce((a, s) => a + s.total, 0))}</h3><div class="list">${by[d].map(s => `<button class="li ${debe(s) > 0 ? '' : 'income'}" data-act="negSaleOpen" data-id="${s.id}"><span class="ic">${A.px('ticket', 24)}</span><span class="tx-main"><b>${esc(s.items.map(i => (i.q > 1 ? i.q + ' ' : '') + i.n).join(', '))}</b><span>${s.tx ? 'De tu plata' : esc(cliName(s.cli) || 'Sin clienta')}${debe(s) > 0 ? ' · debe ' + money(debe(s)) : ''}</span></span><span class="amt">${money(s.total)}</span></button>`).join('')}</div></div>`).join('') : empty('Aún no hay ventas este mes', 'Cuando vendas algo, anótalo aquí en segunditos.')}`;
+  const st = stats(mk()), by = {}, src = SUB === 'v' ? st.ss : st.ee; src.slice().sort((a, b) => b.d < a.d ? -1 : 1).forEach(s => (by[s.d] = by[s.d] || []).push(s));
+  const ks = Object.keys(by), mes = MES[+mk().slice(5) - 1];
+  const head = `<div class="seg"><button data-act="negSub" data-k="v" aria-pressed="${SUB === 'v'}">Ventas</button><button data-act="negSub" data-k="g" aria-pressed="${SUB === 'g'}">Gastos</button></div><div class="ng-mes"><button class="navarrow" data-act="negMes" data-d="-1" aria-label="Mes anterior">‹</button><span class="pill">${mes[0].toUpperCase() + mes.slice(1)} ${mk().slice(0, 4)}</span><button class="navarrow" data-act="negMes" data-d="1" ${mk() >= A.ym(A.today()) ? 'disabled' : ''} aria-label="Mes siguiente">›</button></div>`;
+  if (SUB === 'g') return `${head}${cta('negGasto', 'Anotar un gasto del negocio')}${ks.length ? ks.map(d => `<div class="card"><h3>${dayLbl(d)} · ${money(by[d].reduce((a, s) => a + s.amt, 0))}</h3><div class="list">${by[d].map(e => `<button class="li" data-act="negGastoOpen" data-id="${e.id}"><span class="ic">${A.px('bolsa', 24)}</span><span class="tx-main"><b>${esc(e.n || e.cat)}</b><span>${esc(e.cat)}${e.tx ? ' · de tu plata' : ''}</span></span><span class="amt">${money(e.amt)}</span></button>`).join('')}</div></div>`).join('') : empty('Sin gastos este mes', 'Anota lo que compras para tu negocio: materiales, empaques, publicidad.')}`;
+  return `${head}${cta('posGo', 'Vender')}${ks.length ? ks.map(d => `<div class="card"><h3>${dayLbl(d)} · ${money(by[d].reduce((a, s) => a + s.total, 0))}</h3><div class="list">${by[d].map(s => `<button class="li ${debe(s) > 0 ? '' : 'income'}" data-act="negSaleOpen" data-id="${s.id}"><span class="ic">${A.px('ticket', 24)}</span><span class="tx-main"><b>${esc(s.items.map(i => (i.q > 1 ? i.q + ' ' : '') + i.n).join(', '))}</b><span>${s.tx ? 'De tu plata' : esc(cliName(s.cli) || 'Sin clienta')}${s.met ? ' · ' + esc(s.met) : ''}${debe(s) > 0 ? ' · debe ' + money(debe(s)) : ''}</span></span><span class="amt">${money(s.total)}</span></button>`).join('')}</div></div>`).join('') : empty('Aún no hay ventas este mes', 'Cuando vendas algo, anótalo aquí en segunditos.')}`;
 }
-ACT.negVenta = () => { CART = { items: {}, cli: '', pago: 'todo', ab: '', otro: '' }; ventaSheet(); };
-function ventaSheet() {
-  const n = N(), c = CART, tot = cartTotal();
-  openSheet('Nueva venta', `<div class="stack ng-f ng-vf">
-${n.prods.length ? `<div class="ng-pick">${n.prods.map(p => { const q = c.items[p.id] || 0; return `<div class="ng-pk ${q ? 'on' : ''}"><div><b>${esc(p.n)}</b><small>${money(p.price)}${p.stock != null ? ' · quedan ' + p.stock : ''}</small></div><div class="ng-step"><button data-act="negQ" data-p="${p.id}" data-d="-1">−</button><span>${q}</span><button data-act="negQ" data-p="${p.id}" data-d="1">+</button></div></div>`; }).join('')}</div>` : '<p class="faint">Aún no tienes productos. Puedes anotar una venta suelta aquí abajo.</p>'}
-<div class="ng-otro"><input class="in" id="ngOn" placeholder="Venta suelta: qué fue" value="${esc(c.on || '')}"><input class="in" id="ngOp" inputmode="decimal" placeholder="$" value="${esc(c.op || '')}"></div>
-<label class="f">Clienta<select class="in" id="ngCli"><option value="">Sin clienta</option>${n.clients.map(x => `<option value="${x.id}" ${c.cli === x.id ? 'selected' : ''}>${esc(x.n)}</option>`).join('')}<option value="+">+ Clienta nueva</option></select></label>
+ACT.negSub = a => { SUB = a.dataset.k; A.render(); };
+// ---- punto de venta ----
+A.PAGES.vender = 'Vender';
+let CART = { items: {}, extra: [], cli: '', pago: 'todo', met: 'Efectivo', ab: '' }, PQ = '';
+const cartN = () => Object.values(CART.items).reduce((a, q) => a + q, 0) + CART.extra.length;
+const cartTotal = () => r2(N().prods.reduce((t, p) => t + (CART.items[p.id] || 0) * p.price, 0) + CART.extra.reduce((t, e) => t + e.pr, 0));
+ACT.posGo = () => { A.go('vender'); };
+function posBar() { const n = cartN(), t = cartTotal(); return n ? `<button class="pos-pay" data-act="posCobrar"><span><b>${n}</b> ${n === 1 ? 'producto' : 'productos'}</span><em>Cobrar ${money(t)}</em></button>` : '<div class="pos-hint">Toca un producto para agregarlo</div>'; }
+sc.vender = () => {
+  const n = N(), P = n.prods;
+  return `<div class="ph"><div class="ph-left"><button class="navarrow" data-act="posBack" aria-label="Volver">‹</button><span class="pill">Vender</span></div><button class="btn sm" data-act="posOtro">+ Otro monto</button></div>
+${P.length ? `<input class="in pos-q" id="posQ" type="search" placeholder="Buscar producto" value="${esc(PQ)}"><div class="pos-grid">${P.map(p => `<button class="pos-tile" data-act="posAdd" data-p="${p.id}" data-n="${esc(p.n.toLowerCase())}">${img(p, 'pos-img')}<b>${esc(p.n)}</b><span>${money(p.price)}</span><i class="pos-badge" ${CART.items[p.id] ? '' : 'hidden'}>${CART.items[p.id] || 0}</i><u class="pos-minus" data-act="posSub" data-p="${p.id}" ${CART.items[p.id] ? '' : 'hidden'}>−</u></button>`).join('')}</div>` : `<div class="card ng-empty"><img class="pixel" alt="" src="${spr('negocio_ic', 6)}"><b>Primero agrega productos</b><span class="faint">Así vender será tocar y cobrar. También puedes usar “Otro monto”.</span>${cta('negProd', 'Agregar producto')}</div>`}
+<div class="pos-dock" id="posDock">${posBar()}</div>`;
+};
+A.after.vender = el => { const q = el.querySelector('#posQ'); if (q) q.oninput = () => { PQ = q.value; const v = PQ.trim().toLowerCase(); el.querySelectorAll('.pos-tile').forEach(t => { t.style.display = !v || t.dataset.n.includes(v) ? '' : 'none'; }); }; };
+const posRef = (p) => { const t = document.querySelector(`.pos-tile[data-p="${p}"]`), q = CART.items[p] || 0; if (t) { const b = t.querySelector('.pos-badge'), m = t.querySelector('.pos-minus'); b.textContent = q; b.hidden = !q; m.hidden = !q; } const d = gid('posDock'); if (d) d.innerHTML = posBar(); };
+ACT.posAdd = a => { const p = a.dataset.p; CART.items[p] = (CART.items[p] || 0) + 1; posRef(p); };
+ACT.posSub = a => { const p = a.dataset.p; if (CART.items[p] > 1) CART.items[p]--; else delete CART.items[p]; posRef(p); };
+ACT.posBack = () => { A.go('negocio'); };
+ACT.posOtro = () => sheet('Otro monto', `<div class="stack ng-f"><label class="f">Qué fue<input class="in" id="poN" maxlength="30" placeholder="Ej. Pedido especial"></label><label class="f">Cuánto<input class="in" id="poP" inputmode="decimal" placeholder="0.00"></label><button class="btn pink ng-cta" data-act="posOtroOk">Agregar</button></div>`);
+ACT.posOtroOk = () => { const v = num(gid('poP').value); if (!v) return toast('Pon un monto'); CART.extra.push({ n: (gid('poN').value || '').trim() || 'Venta suelta', pr: v }); closeSheet(); A.render(); };
+ACT.posCobrar = () => { if (!cartN()) return; pullCart(); checkout(); };
+function pullCart() { const g = x => (gid(x) || {}).value; if (g('ngCli') != null && g('ngCli') !== '+') CART.cli = g('ngCli'); if (g('ngAb') != null) CART.ab = g('ngAb'); }
+function checkout() {
+  const n = N(), c = CART, tot = cartTotal(), lines = [...n.prods.filter(p => c.items[p.id]).map(p => [c.items[p.id] + ' × ' + p.n, c.items[p.id] * p.price]), ...c.extra.map(e => [e.n, e.pr])];
+  sheet('Cobrar', `<div class="stack ng-f"><div class="card flat">${lines.map(l => `<div class="ng-row"><span>${esc(l[0])}</span><b>${money(l[1])}</b></div>`).join('')}<div class="ng-total" style="margin-top:8px"><span>Total</span><b>${money(tot)}</b></div></div>
+<label class="f">Clienta<select class="in" id="ngCli" data-act-change="1"><option value="">Sin clienta</option>${n.clients.map(x => `<option value="${x.id}" ${c.cli === x.id ? 'selected' : ''}>${esc(x.n)}</option>`).join('')}<option value="+">+ Clienta nueva</option></select></label>
+<div class="chips">${['Efectivo', 'Transferencia', 'Tarjeta'].map(m => `<button class="chip" aria-pressed="${c.met === m}" data-act="posMet" data-k="${m}">${m}</button>`).join('')}</div>
 <div class="seg">${[['todo', 'Pagó todo'], ['fiado', 'Fiado'], ['abono', 'Abono']].map(([k, t]) => `<button data-act="negPago" data-k="${k}" aria-pressed="${c.pago === k}">${t}</button>`).join('')}</div>
 ${c.pago === 'abono' ? `<label class="f">Cuánto abonó<input class="in" id="ngAb" inputmode="decimal" placeholder="0.00" value="${esc(c.ab || '')}"></label>` : ''}
-<div class="ng-total"><span>Total</span><b id="ngTot">${money(tot)}</b></div>
-<button class="btn pink ng-cta" data-act="negVentaOk">Guardar venta</button></div>`, sh => {
-    if (sh._ng) return; sh._ng = 1;
-    sh.addEventListener('click', ev => { const b = ev.target.closest('[data-act]'); if (b && ACT[b.dataset.act]) { ev.stopPropagation(); ACT[b.dataset.act](b); } });
-    sh.addEventListener('input', ev => { if (ev.target.id === 'ngOp' || ev.target.id === 'ngOn') { const t = gid('ngTot'); CART.op = (gid('ngOp') || {}).value; CART.on = (gid('ngOn') || {}).value; if (t) t.textContent = money(cartTotal()); } });
-    sh.addEventListener('change', ev => { if (ev.target.id === 'ngCli') { const v = ev.target.value; if (v === '+') { pullCart(); closeSheet(); ACT.negCliNew(null, true); } else CART.cli = v; } });
-  });
+<button class="btn pink ng-cta" data-act="negVentaOk">Cobrar ${money(tot)}</button></div>`);
+  const sel = gid('ngCli'); if (sel) sel.onchange = () => { if (sel.value === '+') { closeSheet(); ACT.negCliNew(null, true); } else CART.cli = sel.value; };
 }
-function pullCart() { const c = CART; if (!c) return; const g = x => (gid(x) || {}).value; if (g('ngOn') != null) c.on = g('ngOn'); if (g('ngOp') != null) c.op = g('ngOp'); if (g('ngCli') != null && g('ngCli') !== '+') c.cli = g('ngCli'); if (g('ngAb') != null) c.ab = g('ngAb'); }
-function cartTotal() { const c = CART, n = N(); let t = 0; n.prods.forEach(p => { t += (c.items[p.id] || 0) * p.price; }); return r2(t + num(c.op || 0)); }
-ACT.negQ = a => { pullCart(); const p = a.dataset.p, v = Math.max(0, (CART.items[p] || 0) + (+a.dataset.d)); if (v) CART.items[p] = v; else delete CART.items[p]; ventaSheet(); };
-ACT.negPago = a => { pullCart(); CART.pago = a.dataset.k; ventaSheet(); };
+ACT.posMet = a => { pullCart(); CART.met = a.dataset.k; checkout(); };
+ACT.negPago = a => { pullCart(); CART.pago = a.dataset.k; checkout(); };
+let LAST = null;
 ACT.negVentaOk = () => {
   pullCart(); const n = N(), c = CART, items = [];
   n.prods.forEach(p => { const q = c.items[p.id]; if (q) items.push({ p: p.id, n: p.n, q, pr: p.price, c: p.cost || 0 }); });
-  if (num(c.op) > 0) items.push({ p: null, n: (c.on || '').trim() || 'Venta suelta', q: 1, pr: num(c.op), c: 0 });
-  if (!items.length) return toast('Elige qué vendiste');
+  c.extra.forEach(e => items.push({ p: null, n: e.n, q: 1, pr: e.pr, c: 0 }));
+  if (!items.length) return;
   const total = r2(items.reduce((a, i) => a + i.q * i.pr, 0));
   let paid = total; if (c.pago === 'fiado') paid = 0; if (c.pago === 'abono') paid = Math.min(total, num(c.ab));
   if (paid < total && !c.cli) return toast('Para fiar elige a la clienta');
   items.forEach(i => { const p = n.prods.find(x => x.id === i.p); if (p && p.stock != null) p.stock = Math.max(0, p.stock - i.q); });
-  n.sales.push({ id: id(), d: A.today(), items, total, paid, cli: c.cli || '' }); save(); CART = null; closeSheet(); toast('Venta anotada'); A.render();
+  const sale = { id: id(), d: A.today(), items, total, paid, cli: c.cli || '', met: c.met }; n.sales.push(sale); save(); LAST = sale;
+  CART = { items: {}, extra: [], cli: '', pago: 'todo', met: 'Efectivo', ab: '' }; closeSheet(); done(sale);
 };
+const receipt = s => { const n = N(); return `${n.name || 'Mi negocio'}\nComprobante de venta · ${dayLbl(s.d)}\n\n${s.items.map(i => `${i.q} × ${i.n}  ${money(i.q * i.pr)}`).join('\n')}\n\nTotal: ${money(s.total)}${debe(s) > 0 ? `\nPagado: ${money(s.paid)} · Saldo: ${money(debe(s))}` : '\nPagado'}\n\n¡Gracias por tu compra!`; };
+function done(s) { sheet('Venta lista', `<div class="stack ng-f ng-done"><span class="ng-okk">${A.px('moneda', 44)}</span><b class="big">${money(s.total)}</b><span class="faint">${debe(s) > 0 ? 'Quedó por cobrar ' + money(debe(s)) : 'Cobrada. ¡Qué bien!'}</span><button class="btn pink ng-cta" data-act="negShare" data-id="${s.id}">Compartir comprobante</button><button class="btn ng-cta" data-act="posNueva">Nueva venta</button><button class="btn ghost ng-cta" data-act="posFin">Listo</button></div>`); }
+ACT.negShare = a => { const s = N().sales.find(x => x.id === a.dataset.id) || LAST; if (!s) return; const t = receipt(s); if (navigator.share) navigator.share({ text: t }).catch(() => { }); else window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank'); };
+ACT.posNueva = () => { closeSheet(); A.render(); };
+ACT.posFin = () => { closeSheet(); A.go('negocio'); };
 ACT.negSaleOpen = a => {
   const s = N().sales.find(x => x.id === a.dataset.id); if (!s) return;
-  sheet('Venta', `<div class="stack ng-f"><div class="ng-total"><span>${dayLbl(s.d)}</span><b>${money(s.total)}</b></div>${s.items.map(i => `<div class="ng-row"><span>${i.q} × ${esc(i.n)}</span><b>${money(i.q * i.pr)}</b></div>`).join('')}<p class="faint">${esc(cliName(s.cli) || 'Sin clienta')} · ${debe(s) > 0 ? 'Debe ' + money(debe(s)) : 'Pagada'}</p>${debe(s) > 0 ? `<button class="btn pink ng-cta" data-act="negCobrar" data-id="${s.id}">Marcar como pagada</button>` : ''}<button class="btn ng-cta" data-act="negSaleDel" data-id="${s.id}">Borrar venta</button></div>`);
+  sheet('Venta', `<div class="stack ng-f"><div class="ng-total"><span>${dayLbl(s.d)}</span><b>${money(s.total)}</b></div>${s.items.map(i => `<div class="ng-row"><span>${i.q} × ${esc(i.n)}</span><b>${money(i.q * i.pr)}</b></div>`).join('')}<p class="faint">${esc(cliName(s.cli) || 'Sin clienta')} · ${debe(s) > 0 ? 'Debe ' + money(debe(s)) : 'Pagada'}</p>${debe(s) > 0 ? `<button class="btn pink ng-cta" data-act="negCobrar" data-id="${s.id}">Marcar como pagada</button>` : ''}<button class="btn ng-cta" data-act="negShare" data-id="${s.id}">Compartir comprobante</button><button class="btn ng-cta" data-act="negSaleDel" data-id="${s.id}">Borrar venta</button></div>`);
 };
 ACT.negCobrar = a => { const s = N().sales.find(x => x.id === a.dataset.id); if (s) { s.paid = s.total; save(); closeSheet(); toast('Cobrada'); A.render(); } };
 ACT.negSaleDel = a => { const n = N(), s = n.sales.find(x => x.id === a.dataset.id); if (!s) return; s.items.forEach(i => { const p = n.prods.find(x => x.id === i.p); if (p && p.stock != null) p.stock += i.q; }); n.sales = n.sales.filter(x => x !== s); save(); closeSheet(); A.render(); };
 // ---- productos ----
 function productos() {
   const n = N();
-  return `${cta('negProd', 'Agregar producto')}${n.prods.length ? `<div class="ng-prods">${n.prods.map(p => { const m = p.price > 0 ? Math.round((p.price - (p.cost || 0)) / p.price * 100) : 0; return `<button class="card ng-prod" data-act="negProd" data-id="${p.id}"><b>${esc(p.n)}</b><span class="mid">${money(p.price)}</span><small class="faint">Te cuesta ${money(p.cost || 0)} · te deja ${money(p.price - (p.cost || 0))}</small><span class="ng-tags"><em class="${m < 25 ? 'lo' : 'ok'}">${m}% margen</em>${p.stock != null ? `<em class="${p.stock <= 3 ? 'lo' : 'st'}">${p.stock} en stock</em>` : ''}</span></button>`; }).join('')}</div>` : empty('Aún no tienes productos', `Agrega los que vendes, por ejemplo: ${T().ej.join(' o ')}.`)}`;
+  return `${cta('negProd', 'Agregar producto')}${n.prods.length ? `<div class="ng-prods">${n.prods.map(p => { const m = p.price > 0 ? Math.round((p.price - (p.cost || 0)) / p.price * 100) : 0; return `<button class="card ng-prod" data-act="negProd" data-id="${p.id}">${img(p, 'ng-pcover')}<b>${esc(p.n)}</b><span class="mid">${money(p.price)}</span><span class="ng-tags"><em class="${m < 25 ? 'lo' : 'ok'}">${m}% margen</em>${p.stock != null ? `<em class="${p.stock <= 3 ? 'lo' : 'st'}">${p.stock} en stock</em>` : ''}</span></button>`; }).join('')}</div>` : empty('Aún no tienes productos', `Agrega los que vendes, por ejemplo: ${T().ej.join(' o ')}. Puedes ponerles foto.`)}`;
 }
+let PIMG = null;
+async function pickImg(inp) { const f = inp.files && inp.files[0]; if (!f) return; toast('Subiendo foto…'); try { const r = await Store.saveImage(f, 420); PIMG = r.src; const pv = gid('npPrev'); if (pv) { pv.innerHTML = `<img class="ng-pcover" alt="" src="${esc(PIMG)}">`; } } catch (e) { toast('No se pudo subir la foto'); } }
 ACT.negProd = a => {
-  const p = a && a.dataset && a.dataset.id ? N().prods.find(x => x.id === a.dataset.id) : null;
-  sheet(p ? 'Editar producto' : 'Nuevo producto', `<div class="stack ng-f" data-pid="${p ? p.id : ''}"><label class="f">Nombre<input class="in" id="npN" maxlength="30" value="${esc(p ? p.n : '')}" placeholder="${esc(T().ej[0])}"></label><div class="grid2"><label class="f">Precio de venta<input class="in" id="npP" inputmode="decimal" value="${p ? p.price : ''}" placeholder="0.00"></label><label class="f">Cuánto te cuesta<input class="in" id="npC" inputmode="decimal" value="${p ? p.cost || '' : ''}" placeholder="0.00"></label></div><label class="f">Stock (opcional)<input class="in" id="npS" inputmode="numeric" value="${p && p.stock != null ? p.stock : ''}" placeholder="Cuántas tienes"></label><button class="btn pink ng-cta" data-act="negProdOk" data-id="${p ? p.id : ''}">Guardar</button>${p ? `<button class="btn ng-cta" data-act="negProdDel" data-id="${p.id}">Borrar producto</button>` : ''}</div>`);
+  const p = a && a.dataset && a.dataset.id ? N().prods.find(x => x.id === a.dataset.id) : null; PIMG = null;
+  sheet(p ? 'Editar producto' : 'Nuevo producto', `<div class="stack ng-f"><div id="npPrev" class="ng-prev">${p ? img(p, 'ng-pcover') : ''}</div><label class="btn ng-cta" style="cursor:pointer">${A.px('gift', 20)} Foto del producto<input type="file" accept="image/*" id="npF" hidden></label><label class="f">Nombre<input class="in" id="npN" maxlength="30" value="${esc(p ? p.n : '')}" placeholder="${esc(T().ej[0])}"></label><div class="grid2"><label class="f">Precio de venta<input class="in" id="npP" inputmode="decimal" value="${p ? p.price : ''}" placeholder="0.00"></label><label class="f">Cuánto te cuesta<input class="in" id="npC" inputmode="decimal" value="${p ? p.cost || '' : ''}" placeholder="0.00"></label></div><label class="f">Stock (opcional)<input class="in" id="npS" inputmode="numeric" value="${p && p.stock != null ? p.stock : ''}" placeholder="Cuántas tienes"></label><button class="btn pink ng-cta" data-act="negProdOk" data-id="${p ? p.id : ''}">Guardar</button>${p ? `<button class="btn ng-cta" data-act="negProdDel" data-id="${p.id}">Borrar producto</button>` : ''}</div>`);
 };
-ACT.negProdOk = a => { const n = N(), nm = gid('npN').value.trim(), pr = num(gid('npP').value); if (!nm || !pr) return toast('Falta el nombre o el precio'); const sv = gid('npS').value.trim(), o = { n: nm, price: pr, cost: num(gid('npC').value), stock: sv === '' ? null : Math.max(0, Math.round(+sv || 0)) }; const p = a.dataset.id && n.prods.find(x => x.id === a.dataset.id); if (p) Object.assign(p, o); else n.prods.push({ id: id(), ...o }); save(); closeSheet(); A.render(); };
+ACT.negProdOk = a => { const n = N(), nm = gid('npN').value.trim(), pr = num(gid('npP').value); if (!nm || !pr) return toast('Falta el nombre o el precio'); const sv = gid('npS').value.trim(), o = { n: nm, price: pr, cost: num(gid('npC').value), stock: sv === '' ? null : Math.max(0, Math.round(+sv || 0)) }; if (PIMG) o.img = PIMG; const p = a.dataset.id && n.prods.find(x => x.id === a.dataset.id); if (p) Object.assign(p, o); else n.prods.push({ id: id(), ...o }); save(); closeSheet(); A.render(); };
 ACT.negProdDel = a => { const n = N(); n.prods = n.prods.filter(x => x.id !== a.dataset.id); save(); closeSheet(); A.render(); };
+// ---- pedidos (encargos) ----
+const ESTL = { pendiente: 'Por hacer', listo: 'Listo para entregar', entregado: 'Entregado' };
+const fechaChip = f => { if (!f) return '<span class="ng-fch"><b>—</b><small>sin fecha</small></span>'; const d = new Date(f + 'T12:00'); return `<span class="ng-fch"><b>${d.getDate()}</b><small>${MES[d.getMonth()].slice(0, 3)}</small></span>`; };
+function ordRow(o) { return `<button class="li ${o.estado === 'listo' ? 'income' : ''}" data-act="negPedOpen" data-id="${o.id}">${fechaChip(o.fecha)}<span class="tx-main"><b>${esc(o.desc)}</b><span>${esc(cliName(o.cli) || 'Sin clienta')} · ${ESTL[o.estado]}${o.anticipo ? ' · anticipo ' + money(o.anticipo) : ''}</span></span><span class="amt">${money(o.total)}</span></button>`; }
+function pedidos() {
+  const n = N(), O = n.orders || [], g = k => O.filter(o => o.estado === k).sort((a, b) => (a.fecha || '9') < (b.fecha || '9') ? -1 : 1);
+  return `${cta('negPedido', 'Nuevo pedido')}${O.length ? ['pendiente', 'listo', 'entregado'].map(k => { const L = g(k).slice(0, k === 'entregado' ? 5 : 50); return L.length ? `<div class="card"><h3>${ESTL[k]} · ${g(k).length}</h3><div class="list">${L.map(ordRow).join('')}</div></div>` : ''; }).join('') : empty('Aún no tienes pedidos', 'Anota los encargos de tus clientas con fecha de entrega y anticipo, y no se te olvida ninguno.')}`;
+}
+ACT.negPedido = () => { const n = N(); sheet('Nuevo pedido', `<div class="stack ng-f"><label class="f">Qué te pidieron<input class="in" id="opD" maxlength="60" placeholder="Ej. Torta de cumpleaños"></label><label class="f">Clienta<select class="in" id="opC"><option value="">Sin clienta</option>${n.clients.map(x => `<option value="${x.id}">${esc(x.n)}</option>`).join('')}</select></label><div class="grid2"><label class="f">Total<input class="in" id="opT" inputmode="decimal" placeholder="0.00"></label><label class="f">Anticipo<input class="in" id="opA" inputmode="decimal" placeholder="0.00"></label></div><label class="f">Fecha de entrega<input class="in" id="opF" type="date"></label><button class="btn pink ng-cta" data-act="negPedOk">Guardar pedido</button></div>`); };
+ACT.negPedOk = () => { const d = gid('opD').value.trim(), t = num(gid('opT').value); if (!d || !t) return toast('Falta qué es y el total'); const n = N(); (n.orders = n.orders || []).push({ id: id(), desc: d, cli: gid('opC').value, total: t, anticipo: Math.min(t, num(gid('opA').value)), fecha: gid('opF').value, estado: 'pendiente' }); save(); closeSheet(); TAB = 'pedidos'; A.render(); };
+ACT.negPedOpen = a => {
+  const n = N(), o = (n.orders || []).find(x => x.id === a.dataset.id); if (!o) return; const c = n.clients.find(x => x.id === o.cli);
+  const wa = c && c.tel ? 'https://wa.me/' + (c.tel.startsWith('0') ? '593' + c.tel.slice(1) : c.tel) + '?text=' + encodeURIComponent(`Hola ${c.n}, tu pedido (${o.desc}) de ${n.name || 'mi negocio'} ya está listo. ¡Gracias!`) : '';
+  sheet('Pedido', `<div class="stack ng-f"><div class="ng-total"><span>${esc(o.desc)}</span><b>${money(o.total)}</b></div><p class="faint">${esc(cliName(o.cli) || 'Sin clienta')} · ${ESTL[o.estado]}${o.fecha ? ' · entrega ' + dayLbl(o.fecha) : ''}${o.anticipo ? ' · anticipo ' + money(o.anticipo) + ', falta ' + money(o.total - o.anticipo) : ''}</p>
+${o.estado === 'pendiente' ? `<button class="btn pink ng-cta" data-act="negPedEst" data-id="${o.id}" data-e="listo">Marcar como listo</button>` : ''}${o.estado === 'listo' && wa ? `<a class="btn ng-cta" style="text-decoration:none" href="${wa}" target="_blank" rel="noopener">Avisarle por WhatsApp</a>` : ''}${o.estado !== 'entregado' ? `<button class="btn pink ng-cta" data-act="negPedEst" data-id="${o.id}" data-e="entregado">Entregado y cobrado</button>` : ''}<button class="btn ng-cta" data-act="negPedDel" data-id="${o.id}">Borrar pedido</button></div>`);
+};
+ACT.negPedEst = a => { const n = N(), o = n.orders.find(x => x.id === a.dataset.id); if (!o) return; o.estado = a.dataset.e; if (o.estado === 'entregado' && !o.venta) { const sale = { id: id(), d: A.today(), items: [{ p: null, n: o.desc, q: 1, pr: o.total, c: 0 }], total: o.total, paid: o.total, cli: o.cli || '', met: 'Pedido' }; n.sales.push(sale); o.venta = sale.id; toast('Pedido cobrado y anotado como venta'); } save(); closeSheet(); A.render(); };
+ACT.negPedDel = a => { const n = N(); n.orders = n.orders.filter(x => x.id !== a.dataset.id); save(); closeSheet(); A.render(); };
 // ---- clientas ----
 function clientes() {
   const n = N();
@@ -191,7 +244,7 @@ function clientes() {
   return `${cta('negCliNew', 'Agregar clienta')}${rows.length ? `<div class="card"><div class="list">${rows.map(r => `<button class="li ${r.deb > 0 ? '' : 'income'}" data-act="negCliOpen" data-id="${r.c.id}"><span class="ic ng-av">${esc(r.c.n[0].toUpperCase())}</span><span class="tx-main"><b>${esc(r.c.n)}</b><span>${r.n} compra${r.n === 1 ? '' : 's'} · ${money(r.tot)}</span></span>${r.deb > 0 ? `<span class="amt" style="color:#d4546e">Debe ${money(r.deb)}</span>` : ''}</button>`).join('')}</div></div>` : empty('Aún no tienes clientas', 'Guárdalas para saber quién te compra más y quién te debe.')}`;
 }
 ACT.negCliNew = (a, fromSale) => sheet('Nueva clienta', `<div class="stack ng-f"><label class="f">Nombre<input class="in" id="ncN" maxlength="30" placeholder="Nombre"></label><label class="f">WhatsApp (opcional)<input class="in" id="ncT" inputmode="tel" placeholder="09XXXXXXXX"></label><button class="btn pink ng-cta" data-act="negCliOk" data-sale="${fromSale ? 1 : ''}">Guardar</button></div>`);
-ACT.negCliOk = a => { const nm = gid('ncN').value.trim(); if (!nm) return toast('Pon un nombre'); const c = { id: id(), n: nm, tel: gid('ncT').value.replace(/\D/g, '') }; N().clients.push(c); save(); closeSheet(); if (a.dataset.sale && CART) { CART.cli = c.id; ventaSheet(); } else A.render(); };
+ACT.negCliOk = a => { const nm = gid('ncN').value.trim(); if (!nm) return toast('Pon un nombre'); const c = { id: id(), n: nm, tel: gid('ncT').value.replace(/\D/g, '') }; N().clients.push(c); save(); closeSheet(); if (a.dataset.sale && CART) { CART.cli = c.id; checkout(); } else A.render(); };
 ACT.negCliOpen = a => {
   const n = N(), c = n.clients.find(x => x.id === a.dataset.id); if (!c) return; const ss = n.sales.filter(s => s.cli === c.id).sort((x, y) => y.d < x.d ? -1 : 1), deb = r2(ss.reduce((t, s) => t + Math.max(0, debe(s)), 0));
   const wa = c.tel ? 'https://wa.me/' + (c.tel.startsWith('0') ? '593' + c.tel.slice(1) : c.tel) + '?text=' + encodeURIComponent(`Hola ${c.n}, te escribo de ${n.name || 'mi negocio'}. Te recuerdo que tienes un saldo pendiente de ${money(deb)}. ¡Gracias!`) : '';

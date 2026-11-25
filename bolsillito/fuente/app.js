@@ -1210,7 +1210,7 @@ const NAV = ['home', 'wallet', 'add', 'month', 'journal', 'more'];
 function renderNav() {
 const NV = NAV.slice(); if (window.App && App.negNav && App.negNav()) NV.splice(5, 0, 'negocio'); $('#navIn').classList.toggle('n7', NV.length > 6); $('#navIn').innerHTML = NV.map(k => k === 'add'
 ? `<button class="fab" data-act="quickadd" aria-label="Registrar movimiento"><span class="ni">${iconHTML(pageIcon('add'), 30)}</span><span>Anotar</span></button>`
-: `<button data-go="${k}" ${S.route === k || (k === 'wallet' && ['acctd', 'loans'].includes(S.route)) || (k === 'more' && !NV.includes(S.route) && !['acctd', 'loans'].includes(S.route)) ? 'aria-current="page"' : ''}><span class="ni">${iconHTML(pageIcon(k), 32)}${window.App && App.navDot && App.navDot(k) ? '<i class="nav-dot"></i>' : ''}</span><span>${PAGES[k]}</span></button>`).join('');
+: `<button data-go="${k}" ${S.route === k || (k === 'negocio' && S.route === 'vender') || (k === 'wallet' && ['acctd', 'loans'].includes(S.route)) || (k === 'more' && !NV.includes(S.route) && S.route !== 'vender' && !['acctd', 'loans'].includes(S.route)) ? 'aria-current="page"' : ''}><span class="ni">${iconHTML(pageIcon(k), 32)}${window.App && App.navDot && App.navDot(k) ? '<i class="nav-dot"></i>' : ''}</span><span>${PAGES[k]}</span></button>`).join('');
 }
 const NAVSTACK = [];
 function go(route, fromPop) {
