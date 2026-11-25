@@ -26,11 +26,28 @@ D('ck_helado', 20, 20, p => { for (let y = 10; y < 20; y++) { const w = Math.max
 D('ck_crepa', 20, 20, p => { plate(p); p.e(10, 12, 8, 4, 'a'); p.e(10, 11.2, 7.4, 3.2, 'o'); p.e(10, 10.6, 5.4, 1.6, 'a'); p.r(6, 8, 8, 1, 'w'); p.e(8, 8, 1.8, 1.4, 'R'); p.e(12.5, 8, 1.8, 1.4, 'R'); p.px(10, 6, 'w'); p.px(9, 7, 'w'); p.px(11, 7, 'w'); });
 D('ck_helado2', 20, 20, p => { for (let y = 11; y < 20; y++) { const w = Math.max(1, 8 - Math.floor((y - 11) * .9)); p.r(10 - Math.floor(w / 2), y, w, 1, (y + 1) % 3 ? 'a' : 'o'); } p.e(10, 9.2, 5.2, 3, 'p'); p.e(10, 5.4, 4.4, 2.8, 'w'); p.px(8, 4, 'w'); p.px(9, 8, 'w'); p.px(8, 5, 'R'); p.px(11, 6, 'y'); p.px(10, 3, 'R'); });
 D('ck_tefresa', 20, 20, p => { p.map(4, 4, ['wwwwwwwwwwww', 'wppppppppppw', '.wppppppppw.', '.wppppppppw.', '.wppppppppw.', '..wpppppppw.', '..wpppppppw.', '..wppppppp..', '...wwwwwww..']); p.r(3, 3, 14, 1, 'w'); p.r(11, 0, 2, 4, 'R'); p.e(8, 12, 1.4, 1.4, 'R'); p.e(11, 13, 1.4, 1.4, 'R'); p.e(9, 15, 1.4, 1.4, 'R'); p.px(7, 8, 'R'); });
+D('ck_pan', 16, 16, p => { p.e(8, 10.5, 6.6, 3.4, 'o'); p.e(8, 7.6, 6.4, 4.4, 'a'); p.e(8, 6.6, 5.2, 3, 'o'); [[5, 5], [8, 4], [11, 5], [7, 7], [10, 7]].forEach(q => p.px(q[0], q[1], 'y')); p.r(2, 11, 12, 2, 'A'); });
+D('ck_carne', 16, 16, p => { p.e(8, 9, 7, 4, 'N'); p.e(8, 8.2, 6.2, 3.2, 'n'); [4, 7, 10].forEach(x => p.line(x, 6, x + 2, 10, 'N')); p.px(5, 7, 'a'); });
+D('ck_salchicha', 16, 16, p => { p.e(8, 8.5, 7.2, 3.2, 'R'); p.e(8, 7.6, 6.2, 1.6, 'r'); p.px(3, 9, 'P'); p.px(12, 9, 'P'); });
+D('ck_queso', 16, 16, p => { for (let y = 4; y < 13; y++) p.r(2, y, 12 - Math.floor((y - 4) * 0.2), 1, 'Y'); p.r(2, 4, 12, 2, 'y'); p.px(5, 8, 'a'); p.px(9, 10, 'a'); p.px(10, 7, 'a'); p.px(4, 11, 'a'); });
+D('ck_arroz', 16, 16, p => { p.e(8, 11, 6.6, 3.4, 'l'); p.e(8, 7.4, 5.6, 4.4, 'w'); [[6, 5], [9, 6], [7, 8], [10, 9], [5, 9]].forEach(q => p.px(q[0], q[1], 'C')); p.r(2, 10, 12, 1, 'L'); });
+D('ck_menestra', 16, 16, p => { p.e(8, 11, 6.6, 3.4, 'P'); p.e(8, 8.4, 5.4, 3.4, 'N'); p.e(8, 7.8, 4.6, 2.4, 'n'); [[6, 7], [9, 8], [7, 9]].forEach(q => p.px(q[0], q[1], 'a')); });
+D('ck_platano', 16, 16, p => { p.e(4.5, 11, 3.4, 2.2, 'G'); p.e(8, 8.5, 3.6, 2.2, 'G'); p.e(11.5, 6, 3.4, 2.2, 'G'); p.px(4, 10, 'g'); p.px(8, 7, 'g'); p.px(11, 5, 'g'); p.px(1, 12, 'D'); p.px(14, 5, 'D'); });
+D('ck_pescado', 16, 16, p => { p.e(7, 8, 5.4, 3.6, 'B'); p.e(7, 7, 4.6, 2, 'l'); p.r(11, 5, 3, 6, 'V'); p.r(13, 4, 1, 8, 'V'); p.px(4, 7, 'N'); p.px(8, 9, 'L'); p.px(6, 9, 'L'); });
+D('ck_cebolla', 16, 16, p => { p.e(8, 9.5, 5.6, 4.6, 'q'); p.e(8, 9.5, 3.8, 3.4, 'h'); p.e(8, 9.5, 1.8, 2, 'q'); p.r(7, 2, 2, 3, 'G'); p.px(7, 1, 'g'); });
+D('ck_yuca', 16, 16, p => { p.e(4.5, 11, 3.6, 2.2, 'n'); p.e(8, 8.5, 3.6, 2.2, 'n'); p.e(11.5, 6, 3.6, 2.2, 'n'); p.px(13, 5, 'c'); p.px(14, 5, 'c'); p.px(3, 12, 'c'); p.px(7, 8, 'N'); });
+D('ck_hotdog', 20, 20, p => { plate(p); p.e(10, 12.6, 8, 3.2, 'o'); p.e(10, 11.4, 8.4, 2.4, 'a'); p.e(10, 10.8, 7.8, 1.8, 'R'); p.e(10, 10.2, 7, 1, 'r'); [[5, 10], [8, 9], [11, 10], [14, 9]].forEach(q => p.px(q[0], q[1], 'Y')); });
+D('ck_bolon', 20, 20, p => { plate(p); p.e(10, 10.6, 6.6, 5.4, 'Y'); p.e(10, 9.4, 5.6, 4.2, 'y'); [[7, 8], [11, 7], [9, 11], [13, 10], [7, 12]].forEach(q => p.px(q[0], q[1], 'a')); p.px(8, 7, 'w'); });
+D('ck_burger', 20, 20, p => { plate(p); p.e(10, 6.6, 7.2, 3.8, 'a'); p.e(10, 5.8, 6, 2.4, 'o'); [[7, 5], [10, 4], [13, 5], [9, 7]].forEach(q => p.px(q[0], q[1], 'y')); p.r(3, 9, 14, 1, 'G'); p.r(4, 10, 12, 1, 'Y'); p.r(4, 11, 12, 2, 'N'); p.r(3, 13, 14, 2, 'o'); p.r(4, 15, 12, 1, 'a'); });
+D('ck_arroz_men', 20, 20, p => { plate(p); p.e(6.2, 11, 4.6, 3.4, 'w'); [[5, 9], [7, 10], [5, 12]].forEach(q => p.px(q[0], q[1], 'C')); p.e(13, 11.5, 5, 3, 'N'); p.e(13, 10.8, 4.2, 2, 'n'); p.e(14.5, 7.5, 3.6, 2.2, 'n'); p.px(14, 7, 'a'); p.px(16, 8, 'N'); p.px(10, 8, 'Y'); p.px(11, 7, 'Y'); p.px(9, 9, 'Y'); });
+D('ck_enceb', 20, 20, p => { p.e(10, 14, 8.6, 5, 'w'); p.e(10, 11.4, 8, 3, 'a'); p.e(10, 11, 6.8, 2.2, 'o'); [[7, 10], [11, 10], [9, 12]].forEach(q => p.e(q[0], q[1], 1.6, 1.2, 'B')); [[13, 11], [6, 12], [10, 9]].forEach(q => p.px(q[0], q[1], 'q')); p.r(15, 8, 3, 1, 'Y'); p.r(16, 7, 2, 1, 'Y'); p.px(7, 6, 'w'); p.px(8, 5, 'w'); p.px(12, 5, 'w'); p.px(13, 4, 'w'); p.r(3, 16, 14, 1, 'L'); });
 D('ck_cupcake', 20, 20, p => { for (let y = 11; y < 19; y++) { const w = 13 - Math.floor((y - 11) * .4); p.r(10 - Math.floor(w / 2), y, w, 1, 'P'); } for (let x = 5; x < 16; x += 3) p.r(x, 11, 1, 8, 'p'); p.e(10, 10.5, 6.6, 2.6, 'C'); p.e(10, 8, 5.6, 2.4, 'w'); p.e(10, 5.6, 4, 2.2, 'p'); p.e(10, 3.4, 2.4, 1.8, 'w'); p.px(10, 1, 'R'); p.px(10, 2, 'R'); p.px(9, 2, 'R'); p.px(7, 8, 'V'); p.px(12, 7, 'Y'); p.px(9, 5, 'G'); p.px(12, 5, 'P'); });
 
 // ---------------- Recetas ----------------
-const ING = { masa: 'ck_masa', miel: 'ck_miel', fresa: 'fresa', taza: 'ck_taza', te: 'ck_te', boba: 'ck_boba', cono: 'ck_cono', bola: 'ck_bola', chispas: 'ck_chispas', crema: 'ck_crema' };
-const ORDER = ['masa', 'miel', 'fresa', 'crema', 'chispas', 'taza', 'te', 'boba', 'cono', 'bola'];
+const ING = { masa: 'ck_masa', miel: 'ck_miel', fresa: 'fresa', taza: 'ck_taza', te: 'ck_te', boba: 'ck_boba', cono: 'ck_cono', bola: 'ck_bola', chispas: 'ck_chispas', crema: 'ck_crema', pan: 'ck_pan', carne: 'ck_carne', salchicha: 'ck_salchicha', queso: 'ck_queso', arroz: 'ck_arroz', menestra: 'ck_menestra', platano: 'ck_platano', pescado: 'ck_pescado', cebolla: 'ck_cebolla', yuca: 'ck_yuca' };
+const COOKERS = ['masa', 'carne', 'salchicha', 'platano'];
+const ORD_D = ['masa', 'miel', 'fresa', 'crema', 'chispas', 'taza', 'te', 'boba', 'cono', 'bola'], ORD_S = ['pan', 'carne', 'salchicha', 'queso', 'arroz', 'menestra', 'platano', 'pescado', 'cebolla', 'yuca'];
+let STN = 'dulce'; const order = () => STN === 'dulce' ? ORD_D : ORD_S;
 const RECIPES = [
   { id: 'hot', name: 'Hotcakes', steps: ['masa', 'cook', 'miel'], art: 'ck_hotcakes', price: 6, lvl: 1 },
   { id: 'boba', name: 'Té de burbujas', steps: ['taza', 'te', 'boba'], art: 'ck_boba_dish', price: 7, lvl: 1 },
@@ -40,7 +57,12 @@ const RECIPES = [
   { id: 'bobac', name: 'Té con crema', steps: ['taza', 'te', 'crema', 'boba'], art: 'ck_boba_crema', price: 10, lvl: 4 },
   { id: 'crepa', name: 'Crepa de fresa', steps: ['masa', 'cook', 'fresa', 'crema'], art: 'ck_crepa', price: 11, lvl: 5 },
   { id: 'helado2', name: 'Helado doble', steps: ['cono', 'bola', 'bola', 'chispas'], art: 'ck_helado2', price: 11, lvl: 5 },
-  { id: 'tefresa', name: 'Té de fresa', steps: ['taza', 'te', 'fresa', 'boba'], art: 'ck_tefresa', price: 12, lvl: 6 }
+  { id: 'tefresa', name: 'Té de fresa', steps: ['taza', 'te', 'fresa', 'boba'], art: 'ck_tefresa', price: 12, lvl: 6 },
+  { id: 'hotdog', name: 'Hot dog', steps: ['pan', 'salchicha', 'cook', 'queso'], art: 'ck_hotdog', price: 8, lvl: 1 },
+  { id: 'bolon', name: 'Bolón', steps: ['platano', 'cook', 'queso'], art: 'ck_bolon', price: 8, lvl: 2 },
+  { id: 'burger', name: 'Hamburguesa', steps: ['pan', 'carne', 'cook', 'queso'], art: 'ck_burger', price: 11, lvl: 3 },
+  { id: 'arroz', name: 'Arroz con menestra', steps: ['arroz', 'menestra', 'carne', 'cook'], art: 'ck_arroz_men', price: 12, lvl: 4 },
+  { id: 'enceb', name: 'Encebollado', steps: ['pescado', 'yuca', 'cebolla'], art: 'ck_enceb', price: 13, lvl: 5 }
 ];
 const CK = () => { const g = GM(); g.cook = g.cook || { served: 0 }; return g.cook; };
 const lvlOf = served => Math.min(6, 1 + Math.floor(served / 8));
@@ -91,9 +113,8 @@ async function cookGame() {
     if (pan && pan.on) { flash = { t: 12, txt: 'espera' }; pop(LW / 2, counterY + 6, '¡Cuida la plancha!', '#7d5fc4'); return; }
     if (tray.done) { tray = { steps: [], done: null }; }
     const ns = tray.steps.concat(item);
-    const need = item === 'masa' ? ns.concat('cook') : ns; // masa siempre pide plancha
-    if (!prefixOK(item === 'masa' ? ns : ns)) { gsfx('bonk'); shake = 14; pop(LW / 2, counterY + 24, '¡Esa no va!', '#c44a72'); tray = { steps: [], done: null }; combo = 0; return; }
-    if (item === 'masa') { tray.steps = ns; pan = { on: true, p: 0, item: 'masa' }; gsfx('blup'); return; }
+    if (!prefixOK(ns)) { gsfx('bonk'); shake = 14; pop(LW / 2, counterY + 24, '¡Esa no va!', '#c44a72'); tray = { steps: [], done: null }; combo = 0; return; }
+    if (COOKERS.includes(item) && U.some(r => { const k = r.steps.indexOf(item); return k >= 0 && r.steps[k + 1] === 'cook'; }) && prefixOK(ns.concat('cook'))) { tray.steps = ns; pan = { on: true, p: 0, item }; gsfx('blup'); return; }
     tray.steps = ns; gsfx('blup'); addFx(LW / 2, counterY + 34);
     const r = complete(ns); if (r) { tray.done = r; gsfx('coin'); }
   }
@@ -151,6 +172,7 @@ async function cookGame() {
     for (let y = counterY + 8; y < btnY0 - 4; y += 7) px(0, y, LW, 1, '#f3d8b0');
     // barra de ingredientes
     px(0, btnY0 - 6, LW, LH - btnY0 + 6, '#ffc4d6'); for (let x = 0; x < LW; x += 8) { px(x, btnY0 - 9, 4, 3, '#ffc4d6'); } px(0, btnY0 - 6, LW, 1, '#fff');
+    [['dulce', 4, '#f27ea1'], ['salado', Math.round(LW / 2) + 2, '#e8a04a']].forEach(([k, x0, col]) => { const on = STN === k, w = Math.round(LW / 2) - 6; px(x0, btnY0 - 18, w, 12, on ? col : '#ffd9e5'); px(x0, btnY0 - 18, w, 1, on ? '#fff' : '#f3c1d2'); const cx = x0 + Math.round(w / 2) - 5; if (k === 'dulce') { px(cx, btnY0 - 14, 10, 3, on ? '#fff' : '#d98aa7'); px(cx + 1, btnY0 - 11, 8, 3, on ? '#ffd9e5' : '#e7a4bb'); px(cx + 4, btnY0 - 16, 2, 2, on ? '#fff' : '#d98aa7'); } else { px(cx, btnY0 - 15, 10, 2, on ? '#fff' : '#d9a066'); px(cx, btnY0 - 13, 10, 1, on ? '#c2e08a' : '#b5c88a'); px(cx, btnY0 - 12, 10, 1, on ? '#7a4a30' : '#a98068'); px(cx, btnY0 - 11, 10, 2, on ? '#fff' : '#d9a066'); } });
   }
   const btnPos = i => { const per = 5, bw = btnH, sp = (LW - per * bw) / (per + 1); const col = i % per, row = Math.floor(i / per); return { x: Math.round(sp + col * (bw + sp)), y: btnY0 + gap + row * (btnH + gap), w: bw, h: btnH }; };
   const trayRect = () => ({ x: Math.round(LW / 2 - 21 + 8), y: counterY + 14, w: 42, h: 30 });
@@ -202,7 +224,7 @@ async function cookGame() {
     // mostrador por delante de las mascotitas
     px(0, counterY, LW, 4, '#e7b987'); px(0, counterY, LW, 1, '#f6d6ac');
     drawPan(); drawTray(); drawBin(); drawRecipe();
-    U.forEach((_, i) => 0); const ings = ORDER; ings.forEach((k, i) => { const b = btnPos(i); const used = (pan && pan.on) ? 0 : 1; px(b.x, b.y + 2, b.w, b.h, 'rgba(120,70,100,.18)'); px(b.x, b.y, b.w, b.h, '#fff'); px(b.x + 1, b.y + 1, b.w - 2, b.h - 2, '#fff7fb'); px(b.x, b.y, b.w, 1, '#f9a8c4'); spr1(ING[k], b.x + 4, b.y + 4, 1); const need = (() => { const c = focusOrder(); if (!c || tray.done) return false; const nx = c.r.steps[tray.steps.length]; return nx === k; })(); if (need) { px(b.x, b.y + b.h - 2, b.w, 2, '#f27ea1'); } });
+    U.forEach((_, i) => 0); const ings = order(); ings.forEach((k, i) => { const b = btnPos(i); const used = (pan && pan.on) ? 0 : 1; px(b.x, b.y + 2, b.w, b.h, 'rgba(120,70,100,.18)'); px(b.x, b.y, b.w, b.h, '#fff'); px(b.x + 1, b.y + 1, b.w - 2, b.h - 2, '#fff7fb'); px(b.x, b.y, b.w, 1, '#f9a8c4'); spr1(ING[k], b.x + 4, b.y + 4, 1); const need = (() => { const c = focusOrder(); if (!c || tray.done) return false; const nx = c.r.steps[tray.steps.length]; return nx === k; })(); if (need) { px(b.x, b.y + b.h - 2, b.w, 2, '#f27ea1'); } });
     fx.forEach(f => { L.globalAlpha = Math.min(1, f.t / 14); const im = I[f.k === 'heart' ? 'heart' : 'star']; if (im) L.drawImage(im, Math.round(f.x), Math.round(f.y), im.width, im.height); }); L.globalAlpha = 1;
     const g = sh.g; g.imageSmoothingEnabled = false; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, sh.cv.width, sh.cv.height); g.drawImage(lo, 0, 0, LW * KP, LH * KP); g.setTransform(KP / SC, 0, 0, KP / SC, 0, 0);
     pops.forEach(p => { g.globalAlpha = Math.min(1, p.t / 20); g.font = '800 16px Nunito, sans-serif'; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#fff'; g.strokeText(p.txt, p.x, p.y - (50 - p.t) * .6); g.fillStyle = p.col; g.fillText(p.txt, p.x, p.y - (50 - p.t) * .6); g.globalAlpha = 1; });
@@ -221,7 +243,8 @@ async function cookGame() {
   const hit = (r, x, y) => x >= r.x - 3 && x <= r.x + r.w + 3 && y >= r.y - 3 && y <= r.y + r.h + 3;
   sh.cv.addEventListener('pointerdown', e => {
     if (paused) return; const rc = sh.cv.getBoundingClientRect(); const x = (e.clientX - rc.left) * LW / rc.width, y = (e.clientY - rc.top) * LH / rc.height;
-    for (let i = 0; i < ORDER.length; i++) if (hit(btnPos(i), x, y)) return tapIngredient(ORDER[i]);
+    if (y >= btnY0 - 20 && y < btnY0 - 7) { const t2 = x < LW / 2 ? 'dulce' : 'salado'; if (t2 !== STN) { STN = t2; gsfx('tick'); } return; }
+    for (let i = 0; i < order().length; i++) if (hit(btnPos(i), x, y)) return tapIngredient(order()[i]);
     if (hit(panRect(), x, y)) return tapPan();
     if (hit(binRect(), x, y)) return tapBin();
     for (let i = 0; i < 3; i++) if (cust[i] && Math.abs(x - slotX[i]) < 22 && y > counterY - 84 && y < counterY + 2) return serve(i);
@@ -230,7 +253,7 @@ async function cookGame() {
   const kd = e => { if (e.key === 'Escape') sh.close(); }; addEventListener('keydown', kd);
   $('.gm-pause', sh.ov).onclick = () => { paused = !paused; gsfx('tick'); paused ? A.gameMusic.pause() : A.gameMusic.resume(); const m = $('.gm-msg', sh.ov); if (paused) { m.hidden = false; m.innerHTML = `<div class="gm-end"><div class="gm-k">PAUSA</div><div class="row" style="gap:8px;margin-top:10px"><button class="btn" data-x="out" style="flex:1;justify-content:center">Salir</button><button class="btn pink" data-x="go" style="flex:1;justify-content:center">Seguir</button></div></div>`; m.onclick = e => { const b = e.target.closest('[data-x]'); if (!b) return; if (b.dataset.x === 'out') sh.close(); else { paused = false; m.hidden = true; A.gameMusic.resume(); } }; } };
   sh.close = () => { A.gameMusic.stop(); run = false; cancelAnimationFrame(raf); removeEventListener('keydown', kd); sh.ov.remove(); document.body.classList.remove('gaming'); if (S.route === 'juegos' || S.route === 'rincon') A.render(); };
-  sh.ov.__ck = { tapIngredient, tapPan, serve, st: () => ({ cust, tray, pan, money, lives, served }), skip: s => { time -= s; } };
+  sh.ov.__ck = { stn: v => { STN = v; }, tapIngredient, tapPan, serve, st: () => ({ cust, tray, pan, money, lives, served }), skip: s => { time -= s; } };
   reset(); const m = $('.gm-msg', sh.ov); m.hidden = false;
   m.innerHTML = `<div class="gm-end"><div class="gm-k">CAFECITO KAWAII</div><div class="gm-legend"><span>${img('ck_hotcakes', 30)}Mira el pedido</span><span>${img('ck_masa', 30)}Toca en orden</span><span>${img('ck_cupcake', 30)}Sirve rápido</span></div><div class="faint">Atiende antes de que se enojen. Con la masa, toca la plancha cuando esté dorada. Nivel ${lvl}.</div><button class="btn pink" data-x="go" style="justify-content:center;width:100%;margin-top:10px">¡Abrir el café!</button></div>`;
   m.onclick = e => { if (e.target.closest('[data-x]')) { m.hidden = true; paused = false; gsfx('start'); A.gameMusic.start(MUS); } };
