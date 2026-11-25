@@ -2399,7 +2399,16 @@ if (rec && rec.closed) return `<button class="card row" data-act="aleOpen" style
 if (h < 17) return '';
 return `<button class="card row" data-act="aleOpen" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer;background:#fff6c4;border-color:#f6e3a3">${A.mascotImg(48, 3)}<div style="flex:1"><b>¿Cerramos el día?</b> ${A.px('moon', 18)}<div class="faint">${esc(A.conMascota('{nombre} tiene tu resumen de hoy listo'))}</div></div><span class="faint">›</span></button>`;
 };
-window.BOLS_V = 'v105';
+// confirmación dentro de la app (en vez del cuadro del navegador)
+A.ask = (msg, ok, danger) => new Promise(res => {
+  const ov = document.createElement('div'); ov.setAttribute('role', 'alertdialog'); ov.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(90,50,70,.38);backdrop-filter:blur(2px)';
+  ov.innerHTML = `<div style="background:#fff9fb;border:3px solid #fff;border-radius:22px;box-shadow:0 10px 30px rgba(120,60,90,.28);padding:20px 18px 16px;max-width:320px;width:100%;text-align:center;font-family:inherit"><p style="margin:0 0 16px;font-weight:700;line-height:1.35;color:#6b3f55">${esc(msg)}</p><div style="display:flex;gap:8px"><button class="btn" data-n style="flex:1;justify-content:center">Cancelar</button><button class="btn ${danger === false ? 'pink' : 'danger'}" data-y style="flex:1;justify-content:center">${esc(ok || 'Sí, borrar')}</button></div></div>`;
+  const done = v => { ov.remove(); removeEventListener('keydown', key, true); res(v); };
+  const key = e => { if (e.key === 'Escape') { e.stopPropagation(); done(false); } };
+  ov.onclick = e => { if (e.target === ov) done(false); }; ov.querySelector('[data-n]').onclick = () => done(false); ov.querySelector('[data-y]').onclick = () => done(true);
+  addEventListener('keydown', key, true); document.body.appendChild(ov); ov.querySelector('[data-n]').focus();
+});
+window.BOLS_V = 'v106';
 A.ACTIONS.forceUpdate = async () => { A.toast('Buscando…'); try { const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(r => r.unregister())); const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); } catch (e) {} location.reload(); };
 A.ACTIONS.aleOpen = () => summary();
 const tipFn = A.ACTIONS.mascot;

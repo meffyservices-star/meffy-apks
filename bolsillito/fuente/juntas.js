@@ -102,7 +102,7 @@ ACT.jarOpen = a => {
 ${deps.length ? `<div class="an-h" style="margin:6px 4px 0">Últimas monedas</div>${deps.slice(0, 15).map(d => `<div class="jt-coin">${dot(d.user_id, d.name, 30)}<span class="tx-main"><b>${esc(d.name)} puso</b><span>${fmtDay(d.created_at.slice(0, 10))}${d.note ? ' · ' + esc(d.note) : ''}</span></span><span class="amt num pos">+${money(d.amount)}</span></div>`).join('')}` : ''}
 <button class="btn ghost sm" id="jOut" style="justify-content:center">${mine ? 'Borrar el tarrito' : 'Salir del tarrito'}</button></div>`, sh => {
     $('#jDep', sh).onclick = () => { closeSheet(); setTimeout(() => jarDeposit(j), 80); };
-    $('#jOut', sh).onclick = async () => { if (!confirm(mine ? '¿Borrar este tarrito para todas? No se puede deshacer.' : '¿Salir de este tarrito?')) return; const r = mine ? await Store.sb.from('jars').delete().eq('id', j.id) : await Store.sb.from('jar_members').delete().eq('jar_id', j.id).eq('user_id', Store.uid); if (r.error) return toast('No se pudo.'); closeSheet(); J.loaded = false; loadJars(); };
+    $('#jOut', sh).onclick = async () => { if (!(await A.ask(mine ? '¿Borrar este tarrito para todas? No se puede deshacer.' : '¿Salir de este tarrito?', mine ? 'Sí, borrar' : 'Sí, salir'))) return; const r = mine ? await Store.sb.from('jars').delete().eq('id', j.id) : await Store.sb.from('jar_members').delete().eq('jar_id', j.id).eq('user_id', Store.uid); if (r.error) return toast('No se pudo.'); closeSheet(); J.loaded = false; loadJars(); };
   });
 };
 function jarDeposit(j) {
@@ -180,7 +180,7 @@ ${tr.length ? tr.map((t, i) => `<div class="rc-line pay"><span class="rc-who">${
 <button class="btn ghost sm" id="qOut" style="justify-content:center">${mine ? 'Borrar el grupo' : 'Salir del grupo'}</button></div>`, sh => {
     $('#qAdd', sh).onclick = () => { closeSheet(); setTimeout(() => qExpense(g), 80); };
     $$('[data-pay]', sh).forEach(b => b.onclick = async () => { const t = tr[+b.dataset.pay]; b.disabled = true; const r = await Store.sb.from('split_settlements').insert({ group_id: g.id, to_user: t.to, amount: t.amount }); if (r.error) { b.disabled = false; return toast('No se pudo guardar.'); } closeSheet(); toast('Anotado. ¡Gracias por pagar!'); Q.loaded = false; loadQ(); });
-    $('#qOut', sh).onclick = async () => { if (!confirm(mine ? '¿Borrar este grupo para todas?' : '¿Salir de este grupo?')) return; const r = mine ? await Store.sb.from('split_groups').delete().eq('id', g.id) : await Store.sb.from('split_members').delete().eq('group_id', g.id).eq('user_id', Store.uid); if (r.error) return toast('No se pudo.'); closeSheet(); Q.loaded = false; loadQ(); };
+    $('#qOut', sh).onclick = async () => { if (!(await A.ask(mine ? '¿Borrar este grupo para todas?' : '¿Salir de este grupo?', mine ? 'Sí, borrar' : 'Sí, salir'))) return; const r = mine ? await Store.sb.from('split_groups').delete().eq('id', g.id) : await Store.sb.from('split_members').delete().eq('group_id', g.id).eq('user_id', Store.uid); if (r.error) return toast('No se pudo.'); closeSheet(); Q.loaded = false; loadQ(); };
   });
 };
 function qExpense(g) {

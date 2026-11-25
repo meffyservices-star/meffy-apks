@@ -160,7 +160,7 @@ ACT.frNo = a => answer(Number(a.dataset.id), false);
 ACT.frCancel = async a => { await Store.sb.from('friend_requests').delete().eq('id', Number(a.dataset.id)); await loadReqs(); A.render(); };
 ACT.frDel = async a => {
   const c = a.dataset.c, fr = S.settings.friends || [], f = fr.find(x => x.code === c); if (!f) return;
-  if (!confirm(`¿Quitar a ${f.name || c} de tus amistades? Tendrías que mandar otra solicitud para volver a verla.`)) return;
+  if (!(await A.ask(`¿Quitar a ${f.name || c} de tus amistades? Tendrías que mandar otra solicitud para volver a verla.`, 'Sí, quitar'))) return;
   if (f.rid) { await Store.sb.from('friend_requests').delete().eq('id', f.rid); }
   S.settings.friends = fr.filter(x => x.code !== c); A.saveSettings(); await loadReqs(); A.render();
 };

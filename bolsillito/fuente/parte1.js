@@ -83,7 +83,7 @@ function cuotaDetail(id) {
 <div class="faint">${nx ? 'Próxima cuota: ' + A.fmtDate(nx) + ' · te faltan ' + money(left(c)) : '¡Ya la terminaste de pagar!'}</div>
 <button class="btn danger" id="cuDel" style="justify-content:center">Borrar compra</button>
 <p class="faint" style="margin:0">Al borrarla, las cuotas que ya se anotaron se quedan en tus movimientos.</p></div>`, sh => {
-    $('#cuDel', sh).onclick = () => { if (!confirm('¿Borrar esta compra a cuotas? Ya no se anotarán más cuotas.')) return; S.fin.installments = insts().filter(x => x.id !== id); A.saveFin(); closeSheet(); A.render(); };
+    $('#cuDel', sh).onclick = async () => { if (!(await A.ask('¿Borrar esta compra a cuotas? Ya no se anotarán más cuotas.'))) return; S.fin.installments = insts().filter(x => x.id !== id); A.saveFin(); closeSheet(); A.render(); };
   });
 }
 ACT.cuotaNew = a => cuotaSheet(a.dataset.acct);
@@ -191,8 +191,8 @@ function loanDetail(id) {
 ${(l.pays || []).length ? `<div class="list">${l.pays.map(p => `<div class="li"><span class="tx-main"><b>${money(p.amount)}</b><span>${A.fmtDate(p.date)}${p.acct && A.acct(p.acct) ? ' · ' + esc(A.acct(p.acct).name) : ''}</span></span></div>`).join('')}</div>` : ''}
 <button class="btn danger" id="loDel" style="justify-content:center">Borrar</button>
 <p class="faint" style="margin:0">Al borrarlo también se quitan los movimientos que se anotaron en tus cuentas.</p></div>`, sh => {
-    $('#loDel', sh).onclick = () => {
-      if (!confirm('¿Borrar este préstamo?')) return;
+    $('#loDel', sh).onclick = async () => {
+      if (!(await A.ask('¿Borrar este préstamo?'))) return;
       const months = S.tx.filter(t => t.loan === id).map(t => ym(t.date)); S.tx = S.tx.filter(t => t.loan !== id); A.saveTxMonths(months);
       S.fin.loans = loans().filter(x => x.id !== id); A.saveFin(); closeSheet(); A.render();
     };
