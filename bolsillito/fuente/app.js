@@ -1644,11 +1644,20 @@ newacct: () => App.editAccount(null),
 newasset: () => App.editAsset(null),
 editasset: a => App.editAsset(a.dataset.id)
 };
+const EX_ACC = { efectivo: ['Efectivo', 45], banco: ['Cuenta de ahorros', 640], tarjeta: ['Tarjeta de crédito', -120], cochinito: ['Cochinito', 300] };
+const EX_BUD = { sueldo: 950, extra: 80, arriendo: 320, servicios: 35, internet: 28, super: 170, transporte: 45, salud: 30, celular: 15, comida: 70, cafe: 25, compras: 60, belleza: 30, salidas: 40, subs: 12, regalos: 20, ahorro: 100, metas: 50 };
+// quita los saldos y presupuestos de ejemplo que no se hayan editado
+function scrubExampleFigures() {
+let n = 0;
+S.fin.accounts.forEach(a => { const e = EX_ACC[a.id]; if (e && a.name === e[0] && +a.start === e[1]) { a.start = 0; n++; } });
+S.fin.categories.forEach(c => { if (EX_BUD[c.id] != null && +c.budget === EX_BUD[c.id]) { c.budget = 0; n++; } });
+return n;
+}
 function clearExamples() {
 const months = S.tx.filter(t => t.example).map(t => ym(t.date));
 S.tx = S.tx.filter(t => !t.example); saveTxMonths(months);
 S.fin.goals = S.fin.goals.filter(g => !g.example); S.fin.recurring = S.fin.recurring.filter(r => !r.example); S.fin.assets = S.fin.assets.filter(a => !a.example);
-S.settings.examples = false; saveFin(); saveSettings(); toast('Ejemplos borrados. ¡Tu librito está listo!'); render();
+scrubExampleFigures(); S.settings.exFixed = true; S.settings.examples = false; saveFin(); saveSettings(); toast('Ejemplos borrados. ¡Tu librito está listo!'); render();
 }
 function runRecurring() {
 let n = 0; const td = today(); const touched = [];
@@ -1707,6 +1716,7 @@ S.settings.v = 3; saveSettings(); saveFin();
 if (!Store.get('settings')) { // first visit: seed examples
 saveSettings(); saveFin(); S.tx = d.tx; saveTxMonths(d.tx.map(t => ym(t.date)));
 } else loadTx();
+if (S.settings.examples === false && !S.settings.exFixed) { S.settings.exFixed = true; if (!S.tx.some(t => t.example) && scrubExampleFigures()) { saveFin(); } saveSettings(); }
 applyTheme();
 const n = runRecurring();
 $('#nav').hidden = false; renderNav(); render(); wireStatus();
