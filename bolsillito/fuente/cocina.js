@@ -70,7 +70,7 @@ const BASE_REC = [
   { id: 'cup', name: 'Cupcake', steps: ['masa', 'cook', 'crema', 'chispas'], art: 'ckh_r_cup', price: 10, lvl: 3 },
   { id: 'bobac', name: 'Té con crema', steps: ['taza', 'te', 'crema', 'boba'], art: 'ckh_r_boba', price: 10, lvl: 4 },
   { id: 'crepa', name: 'Crepa de fresa', steps: ['masa', 'cook', 'fresa', 'crema'], art: 'ckh_r_crepa', price: 11, lvl: 5 },
-  { id: 'helado2', name: 'Helado doble', steps: ['cono', 'bola', 'bola', 'chispas'], art: 'ckh_r_helado', price: 11, lvl: 5 },
+  { id: 'helado2', name: 'Helado doble', steps: ['cono', 'bola', 'bola', 'chispas'], art: 'ckh_r_helado2', price: 11, lvl: 5 },
   { id: 'tefresa', name: 'Té de fresa', steps: ['taza', 'te', 'fresa', 'boba'], art: 'ckh_r_boba', price: 12, lvl: 6 },
   { id: 'matcha', name: 'Matcha con crema', steps: ['taza', 'matcha', 'crema', 'boba'], art: 'ckh_r_matcha', price: 12, lvl: 4 },
   { id: 'pastel', name: 'Pastel', steps: ['harina', 'huevos', 'cook', 'fresa'], art: 'ckh_r_pastel', price: 12, lvl: 4 },
