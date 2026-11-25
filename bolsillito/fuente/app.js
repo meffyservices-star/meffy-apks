@@ -2485,7 +2485,7 @@ ${aleLocked ? '<button class="btn pink" data-go="plan" style="justify-content:ce
 ${sec === 'mas' ? (A.rcExtrasHTML ? A.rcExtrasHTML(bal) : '') : `<div class="shop-grid">${Object.entries(ACC).filter(([, a]) => a.slot === sec && !a.off).map(([id, a]) => tile(id, a)).join('')}</div>`}
 <p class="faint" style="margin:0">Gana estrellitas anotando tus gastos, resistiendo antojos con tu mascota y cerrando el día con tu mascota. Las cosas marcadas con Meffy+ vienen incluidas en el plan.</p>`;
 };
-// ===== Acomodar la ropa: cada persona usuaria mueve y agranda/achica lo que tiene puesto su mascota =====
+// ===== Acomodar la ropa: cada usuario mueve y agranda/achica lo que tiene puesto su mascota =====
 function fitPanel(who, worn) {
 const eq = R().equip[who]; const sl = S.fitSel; const id = eq[sl]; const f = (eq.fit && eq.fit[id]) || {};
 const pct = Math.round((+f.s || 1) * 100);
@@ -2671,7 +2671,7 @@ ${Object.keys(A.RC.BGS).map(k => row(`Fondo “${esc((Pix.BANNERS[k] || {}).name
 ${Object.entries(A.RC.UNLOCKS).map(([k, u]) => row(esc(u.name), num('unlocks.' + k, D.unlocks[k] != null ? D.unlocks[k] : ORIG.unlocks[k]))).join('')}</details>
 <details class="card"><summary><b>Logros</b></summary>${A.RC.ACH.map(a => row(`${A.px(a.ic, 18)} ${esc(a.name)}`, num('ach.' + a.id, D.ach[a.id] != null ? D.ach[a.id] : ORIG.ach[a.id]))).join('')}</details>
 <details class="card"><summary><b>Temas gratis</b></summary><div class="chips">${Object.entries(A.THEMES).map(([k, t]) => `<label class="chip"><input type="checkbox" data-theme-free="${k}" ${(D.freeThemes || []).includes(k) ? 'checked' : ''}> ${esc(t.name)}</label>`).join('')}</div></details>
-<details class="card"><summary><b>Frases de la noche</b></summary><p class="faint">Una frase por línea. Cada noche sale una al cerrar el día, dicha por la mascota de cada persona usuaria. Escribe {nombre} donde va el nombre de su mascota (si escribes Ale, también se cambia).</p><textarea class="in" data-cf-lines="phrases" style="min-height:160px">${esc((D.phrases || []).join('\n'))}</textarea></details>
+<details class="card"><summary><b>Frases de la noche</b></summary><p class="faint">Una frase por línea. Cada noche sale una al cerrar el día, dicha por la mascota de cada usuario. Escribe {nombre} donde va el nombre de su mascota (si escribes Ale, también se cambia).</p><textarea class="in" data-cf-lines="phrases" style="min-height:160px">${esc((D.phrases || []).join('\n'))}</textarea></details>
 <details class="card"><summary><b>Novedades en Inicio</b></summary>
 <div class="setrow"><span>Mostrar tarjeta de novedades</span><span class="toggle"><input type="checkbox" data-cf="news.on" ${D.news.on ? 'checked' : ''}><span></span></span></div>
 <label class="f">Título<input class="in" data-cf="news.title" value="${esc(D.news.title || '')}"></label>
@@ -2689,10 +2689,10 @@ const seenAt = u => u.last_seen || u.last_sign_in;
 const agoFull = s => { if (!s) return 'nunca'; const d = Math.floor((Date.now() - new Date(s)) / 864e5); const w = A.whenFull ? A.whenFull(s) : ''; return d <= 0 ? (w || 'hoy') : d === 1 ? (w || 'ayer') : (w ? w + ' · ' : '') + 'hace ' + d + ' días'; };
 const fmtPhone = p => p && p.startsWith('593') ? '0' + p.slice(3) : p;
 function usersHTML() {
-if (!USERS) { loadUsers(); return '<details class="card" open><summary><b>Personas</b></summary><div class="empty">Cargando…</div></details>'; }
+if (!USERS) { loadUsers(); return '<details class="card" open><summary><b>Usuarios</b></summary><div class="empty">Cargando…</div></details>'; }
 const q = uq.toLowerCase(); const list = USERS.slice().sort((a, b) => (seenAt(b) || '') < (seenAt(a) || '') ? -1 : 1).filter(u => !q || (u.name || '').toLowerCase().includes(q) || (u.phone || '').includes(q.replace(/\D/g, '')) || fmtPhone(u.phone).includes(q));
 const plus = USERS.filter(u => u.plan === 'plus').length; const week = USERS.filter(u => seenAt(u) && Date.now() - new Date(seenAt(u)) < 7 * 864e5).length;
-return `<details class="card" open><summary><b>Personas (${USERS.length})</b></summary>
+return `<details class="card" open><summary><b>Usuarios (${USERS.length})</b></summary>
 <div class="grid2" style="margin-bottom:10px"><div class="card flat"><h3>Con Meffy+</h3><div class="mid">${plus}</div></div><div class="card flat"><h3>Activas esta semana</h3><div class="mid">${week}</div></div></div>
 <div class="row" style="margin-bottom:8px"><input class="in" id="uSearch" placeholder="Buscar por nombre o número" value="${esc(uq)}" type="search"><button class="btn sm" data-act="usersReload">Actualizar</button></div>
 <div class="list">${list.map(u => `<button class="li" data-act="userOpen" data-id="${u.id}" style="${u.blocked ? 'opacity:.55' : ''}"><span class="ic">${A.px(u.role === 'admin' ? 'gem' : u.plan === 'plus' ? 'pudin' : 'gochi', 28)}</span><span class="tx-main"><b>${esc(u.name || 'Sin nombre')}</b><span>${esc(fmtPhone(u.phone))} · entró ${agoFull(seenAt(u))}${u.blocked ? ' · pausada' : ''}</span></span><span class="tag ${u.plan === 'plus' ? 'gold' : ''}">${u.plan === 'plus' ? 'Meffy+ ' + (u.plan_type || '') : 'Gratis'}</span></button>`).join('') || '<div class="empty">Nadie con ese nombre o número.</div>'}</div></details>`;
@@ -2701,20 +2701,20 @@ function avisosHTML() {
 if (!USERS) return '';
 const act = USERS.filter(u => seenAt(u)).sort((a, b) => (seenAt(b) < seenAt(a) ? -1 : 1)).filter(u => Date.now() - new Date(seenAt(u)) < 7 * 864e5).slice(0, 3);
 return `<details class="card"><summary><b>Avisos y premios</b></summary>
-<p class="faint">Manda un aviso al celular de una persona o de todas. Solo les llega a quienes activaron las notificaciones; a las demás les aparece un recordatorio dentro de la app.</p>
-<label class="f">Para<select class="in" id="avTo"><option value="">Todas</option>${USERS.map(u => `<option value="${u.id}">${esc(u.name || fmtPhone(u.phone))}</option>`).join('')}</select></label>
+<p class="faint">Manda un aviso al celular de un usuario o de todos. Solo les llega a quienes activaron las notificaciones.</p>
+<label class="f">Para<select class="in" id="avTo"><option value="">Todos</option>${USERS.map(u => `<option value="${u.id}">${esc(u.name || fmtPhone(u.phone))}</option>`).join('')}</select></label>
 <label class="f">Título<input class="in" id="avTitle" maxlength="60" placeholder="Ej. ¡Novedades en Bolsillito!"></label>
 <label class="f">Mensaje<textarea class="in" id="avBody" maxlength="180" placeholder="Lo que quieres contarles"></textarea></label>
 <button class="btn pink" data-act="avSend" style="justify-content:center">Enviar aviso</button>
-<div class="card flat stack" style="margin-top:10px"><b>Premiar a las más activas</b><span class="faint">${act.length ? act.map(u => esc(u.name || 'Sin nombre') + ' (' + agoFull(seenAt(u)) + ')').join(' · ') : 'Todavía no hay actividad esta semana.'}</span>
-<button class="btn sm" data-act="avReward" ${act.length ? '' : 'disabled'}>Regalar 25 estrellitas a estas ${act.length}</button></div></details>`;
+<div class="card flat stack" style="margin-top:10px"><b>Premiar a los más activos</b><span class="faint">${act.length ? act.map(u => esc(u.name || 'Sin nombre') + ' (' + agoFull(seenAt(u)) + ')').join(' · ') : 'Todavía no hay actividad esta semana.'}</span>
+<button class="btn sm" data-act="avReward" ${act.length ? '' : 'disabled'}>Regalar 25 estrellitas a estos ${act.length}</button></div></details>`;
 }
 A.ACTIONS.avSend = async () => {
 const to = document.getElementById('avTo').value || null, title = document.getElementById('avTitle').value.trim(), body = document.getElementById('avBody').value.trim();
 if (!title || !body) return toast('Escribe el título y el mensaje');
 const { error } = await Store.sb.from('admin_avisos').insert({ to_user: to, title, body, url: '/' });
 if (error) { console.warn(error); return toast('No se pudo enviar el aviso'); }
-document.getElementById('avTitle').value = ''; document.getElementById('avBody').value = ''; toast(to ? 'Aviso enviado' : 'Aviso enviado a todas ✦');
+document.getElementById('avTitle').value = ''; document.getElementById('avBody').value = ''; toast(to ? 'Aviso enviado' : 'Aviso enviado a todos ✦');
 };
 A.ACTIONS.avReward = async () => {
 const act = USERS.filter(u => seenAt(u) && Date.now() - new Date(seenAt(u)) < 7 * 864e5).sort((a, b) => (seenAt(b) < seenAt(a) ? -1 : 1)).slice(0, 3);
@@ -2727,7 +2727,7 @@ A.ACTIONS.usersReload = () => { USERS = null; A.render(); };
 A.ACTIONS.userOpen = a => {
 const u = USERS.find(x => x.id === a.dataset.id); if (!u) return; const self = u.id === Store.uid;
 A.openSheet(u.name || fmtPhone(u.phone), `<div class="stack">
-<div class="card flat"><div class="row between"><span>Número</span><b style="user-select:all">${esc(fmtPhone(u.phone))}</b></div><div class="row between"><span>Se unió</span><b>${new Date(u.created_at).toLocaleDateString('es-EC')}</b></div><div class="row between"><span>Última vez en la app</span><b>${agoFull(seenAt(u))}</b></div><div class="row between"><span>Rol</span><b>${u.role === 'admin' ? 'Admin' : 'Usuario/a'}</b></div></div>
+<div class="card flat"><div class="row between"><span>Número</span><b style="user-select:all">${esc(fmtPhone(u.phone))}</b></div><div class="row between"><span>Se unió</span><b>${new Date(u.created_at).toLocaleDateString('es-EC')}</b></div><div class="row between"><span>Última vez en la app</span><b>${agoFull(seenAt(u))}</b></div><div class="row between"><span>Rol</span><b>${u.role === 'admin' ? 'Admin' : 'Usuario'}</b></div></div>
 <label class="f">Nombre<input class="in" id="usName" value="${esc(u.name || '')}"></label><button class="btn sm" data-u="name" style="align-self:flex-start">Guardar nombre</button>
 <div class="card flat stack"><b>¿Olvidó su contraseña?</b><p class="faint" style="margin:0">Por seguridad nadie puede ver las contraseñas, ni siquiera tú. Ponle una nueva, pásasela y que la cambie en su perfil.</p>
 <div class="row"><input class="in" id="usPw" placeholder="Nueva contraseña (mín. 6)" autocomplete="off"><button class="btn pink sm" data-u="pw">Cambiar</button></div></div>

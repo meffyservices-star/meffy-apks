@@ -119,7 +119,7 @@ function welcome() {
   if (document.getElementById('wl')) return;
   let step = 0; const name0 = S.settings.name || '';
   const slides = () => [
-    `<div class="wl-art">${ale(6)}</div><h2>¡Hola! Soy Ale</h2><p>Te voy a ayudar a cuidar tu dinerito. Y mientras tanto, cuidamos juntas a una mascota.</p><label class="f wl-name">¿Cómo te llamo?<input class="in" id="wlName" maxlength="30" value="${esc(name0)}" placeholder="Tu nombre" autocomplete="given-name"></label>`,
+    `<div class="wl-art">${ale(6)}</div><h2>¡Hola! Soy Ale</h2><p>Te voy a ayudar a cuidar tu dinerito. Y mientras tanto, cuidamos a una mascota.</p><label class="f wl-name">¿Cómo te llamo?<input class="in" id="wlName" maxlength="30" value="${esc(name0)}" placeholder="Tu nombre" autocomplete="given-name"></label><label class="f wl-name">¿Qué edad tienes?<input class="in" id="wlAge" type="number" inputmode="numeric" min="5" max="99" value="${esc(S.settings.age || '')}" placeholder="Tu edad"></label><div class="f wl-name" style="font-weight:800;color:#9c6670">¿Cómo prefieres que te hablemos?<div class="chips" style="margin-top:6px">${[['ella', 'Ella'], ['el', 'Él'], ['neutro', 'Sin preferencia']].map(([k, l]) => `<button class="chip" data-wl="pr:${k}" aria-pressed="${(S.settings.pronoun || '') === k}">${l}</button>`).join('')}</div></div>`,
     `<h2>Así funciona Bolsillito</h2><div class="wl-cards">
 <div class="wl-card"><span class="wl-ic" style="background:#ffe3ec">${A.iconHTML(A.pageIcon('add'), 34)}</span><span><b>Anota en dos toques</b><br>Cada gasto con el botón Anotar. Funciona aunque no tengas internet.</span></div>
 <div class="wl-card"><span class="wl-ic" style="background:#e3f3df">${img('heart', 30)}</span><span><b>Tu mascota crece contigo</b><br>Cuando cuidas tu dinero, ella está feliz. Báñala, aliméntala y decora su cuarto.</span></div>
@@ -133,10 +133,11 @@ function welcome() {
 <div class="wl-dots">${sl.map((_, i) => `<i class="${i === step ? 'on' : ''}"></i>`).join('')}</div>
 <div class="wl-btns">${step ? '<button class="btn" data-wl="back">Atrás</button>' : ''}<button class="btn pink" data-wl="${last ? 'done' : 'next'}">${last ? '¡Empezar!' : 'Siguiente'}</button></div></div>`;
   };
-  const keepName = () => { const n = $('#wlName', ov); if (n && n.value.trim()) { S.settings.name = n.value.trim().slice(0, 30); } };
+  const keepName = () => { const n = $('#wlName', ov); if (n && n.value.trim()) { S.settings.name = n.value.trim().slice(0, 30); } const ag = $('#wlAge', ov); if (ag) { const v = Math.round(+ag.value); if (v >= 5 && v <= 99) S.settings.age = v; } };
   const finish = tour => { keepName(); S.settings.welcomed = 1; if (tour) { S.settings.tour = Object.assign({ on: 1, paid: [] }, S.settings.tour || {}, { on: 1, hide: 0 }); } A.saveSettings(); ov.classList.add('out'); setTimeout(() => ov.remove(), 300); A.render(); };
   ov.addEventListener('click', e => {
     const b = e.target.closest('[data-wl]'); if (!b) return; const v = b.dataset.wl;
+    if (v.startsWith('pr:')) { keepName(); S.settings.pronoun = v.slice(3); A.saveSettings(); paint(); return; }
     if (v === 'next') { keepName(); step++; paint(); } if (v === 'back') { step--; paint(); }
     if (v === 'done') finish(true); if (v === 'skip') finish(true);
   });

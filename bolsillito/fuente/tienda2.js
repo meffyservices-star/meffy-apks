@@ -44,3 +44,41 @@ A.after.tienda = el => {
   });
 };
 })();
+
+// ================= Temporadas: diseño editable (nombre, texto, colores) y personajes de cada colección =================
+(function () {
+const A = App, S = A.S, { $, esc, toast } = A, ACT = A.ACTIONS;
+const as0 = A.allSeasons;
+A.allSeasons = () => {
+  const c = (A.CFG && A.CFG.catalog) || {}; const st = c.seStyle || {};
+  return as0().map(se => {
+    const pets = (c.pets || []).filter(x => x.how === 'temporada' && x.season === se.id && !x.off).map(x => 'pet:cp_' + x.id);
+    const o = st[se.id] || {};
+    return Object.assign({}, se, { items: se.items.concat(pets), petsIds: pets.map(k => k.slice(4)), name: o.name || se.name, sub: o.sub || '', c1: o.c1 || '', c2: o.c2 || '', c3: o.c3 || '' });
+  });
+};
+const DEF = { halloween: ['#5b4791', '#a27fd6', '#f6b07a'], navidad: ['#c8475f', '#e98a8f', '#5fa77a'], valentin: ['#e0577f', '#f7a6c0', '#ffd6e2'] };
+ACT.seStyle = a => {
+  const id = a.dataset.id; const se = A.allSeasons().find(x => x.id === id); if (!se) return;
+  const c1 = se.c1 || (DEF[id] || ['#8a6fd1'])[0], c2 = se.c2 || (DEF[id] || [0, '#bfaef0'])[1], c3 = se.c3 || (DEF[id] || [0, 0, '#efe9ff'])[2];
+  const raw = ((A.CFG.catalog || {}).seasons || []).find(x => x.id === id);
+  const prev = (a1, b1, d1, n, sb) => `<div class="se-mini" id="sePrev" style="--se1:${a1};--se2:${b1};--se3:${d1}"><div class="se-mini-h"><span class="se-mini-tx"><span class="se-k">Edición limitada</span><b>${esc(n)}</b></span><span class="se-price" style="padding:4px 10px;border-radius:99px">25</span></div><div class="faint" style="color:#fff">${esc(sb || 'Solo por esta temporada')}</div></div>`;
+  A.openSheet('Diseño de ' + se.name, `<div class="stack">${prev(c1, c2, c3, se.name, se.sub)}
+<label class="f">Nombre<input class="in" id="ssName" maxlength="30" value="${esc(se.name)}"></label>
+<label class="f">Texto debajo del nombre<input class="in" id="ssSub" maxlength="50" value="${esc(se.sub || '')}" placeholder="Solo por esta temporada"></label>
+<div class="row" style="gap:10px"><label class="f" style="flex:1">Color fuerte<input type="color" class="in" id="ssC1" value="${c1}" style="height:44px;padding:2px"></label><label class="f" style="flex:1">Color suave<input type="color" class="in" id="ssC2" value="${c2}" style="height:44px;padding:2px"></label><label class="f" style="flex:1">Color claro<input type="color" class="in" id="ssC3" value="${c3}" style="height:44px;padding:2px"></label></div>
+${raw ? `<div class="row" style="gap:10px"><label class="f" style="flex:1">Desde<input class="in" id="ssFrom" type="date" value="${new Date().getFullYear()}-${raw.from}"></label><label class="f" style="flex:1">Hasta<input class="in" id="ssTo" type="date" value="${new Date().getFullYear()}-${raw.to}"></label></div>` : ''}
+<p class="faint" style="margin:0">Las prendas, muebles y <b>personajes</b> que agregues con "Qué temporada" = esta colección salen solos en su tarjeta de la Tiendita.</p>
+<div class="row" style="gap:8px"><button class="btn" id="ssReset" style="flex:1;justify-content:center">Restablecer</button><button class="btn pink" id="ssSave" style="flex:1;justify-content:center">Guardar</button></div></div>`, sh => {
+    const upd = () => { const p = sh.querySelector('#sePrev'); if (!p) return; p.style.setProperty('--se1', $('#ssC1', sh).value); p.style.setProperty('--se2', $('#ssC2', sh).value); p.style.setProperty('--se3', $('#ssC3', sh).value); p.querySelector('b').textContent = $('#ssName', sh).value || se.name; p.querySelector('.faint').textContent = $('#ssSub', sh).value || 'Solo por esta temporada'; };
+    sh.addEventListener('input', upd);
+    $('#ssSave', sh).onclick = () => {
+      A.CFG.catalog = A.CFG.catalog || {}; const st = A.CFG.catalog.seStyle = A.CFG.catalog.seStyle || {};
+      st[id] = { name: $('#ssName', sh).value.trim(), sub: $('#ssSub', sh).value.trim(), c1: $('#ssC1', sh).value, c2: $('#ssC2', sh).value, c3: $('#ssC3', sh).value };
+      if (raw) { const f = $('#ssFrom', sh), t = $('#ssTo', sh); if (f && f.value) raw.from = f.value.slice(5); if (t && t.value) raw.to = t.value.slice(5); }
+      S.seasOpen = true; A.closeSheet(); A.saveCatalog();
+    };
+    $('#ssReset', sh).onclick = () => { if (A.CFG.catalog && A.CFG.catalog.seStyle) delete A.CFG.catalog.seStyle[id]; S.seasOpen = true; A.closeSheet(); A.saveCatalog(); };
+  });
+};
+})();

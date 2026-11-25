@@ -863,7 +863,7 @@ ${list.length ? `<div class="card"><h3>${KIND_PL[kind]} que ya agregaste</h3><di
 <div class="card stack" id="catForm">${formHTML()}</div>
 ${builtinHTML(kind)}
 <details class="card stack" ${S.seasOpen ? 'open' : ''}><summary><b>Temporadas</b> <span class="faint">(Noche de brujas, Navidad, San Valentín y las tuyas)</span></summary>
-<div class="list" style="margin:8px 0">${allSeasons().map(se => `<div class="li"><span class="tx-main"><b>${esc(se.name)}</b><span>${esc(se.when)}${inSeason(se.id) ? ' · <b>activa ahora</b>' : ''} · ${se.items.length} cosas</span></span>${se.custom ? `<button class="btn sm danger" data-act="seDel" data-id="${se.id}">Borrar</button>` : ''}</div>`).join('')}</div>
+<div class="list" style="margin:8px 0">${allSeasons().map(se => `<div class="li"><span class="tx-main"><b>${esc(se.name)}</b><span>${esc(se.when)}${inSeason(se.id) ? ' · <b>activa ahora</b>' : ''} · ${se.items.length} cosas</span></span><button class="btn sm" data-act="seStyle" data-id="${se.id}">Diseño</button>${se.custom ? `<button class="btn sm danger" data-act="seDel" data-id="${se.id}">Borrar</button>` : ''}</div>`).join('')}</div>
 <div class="formgrid"><label class="f full">Nueva temporada<input class="in" id="seName" placeholder="Ej. Día de la madre" maxlength="30"></label><label class="f">Desde<input class="in" id="seFrom" type="date"></label><label class="f">Hasta<input class="in" id="seTo" type="date"></label></div>
 <button class="btn" data-act="seAdd" style="justify-content:center">Agregar temporada</button>
 <p class="faint" style="margin:0">Se repite cada año en esas fechas. Luego, al agregar ropa o muebles, elige "Temporada" y escoge esta.</p></details>`;
@@ -926,7 +926,7 @@ ${ed.how === 'logro' ? `<label class="f">Qué logro<select class="in" data-ed="a
 ${ed.how === 'temporada' ? `<label class="f">Qué temporada<select class="in" data-ed="season">${allSeasons().map(s => `<option value="${s.id}" ${ed.season === s.id ? 'selected' : ''}>${esc(s.name)} (${esc(s.when)})</option>`).join('')}</select></label>` : ''}
 </div>`}
 <div class="row" style="gap:8px;flex-wrap:wrap">${ed.id ? `<button class="btn" data-act="edOff">${ed.off ? 'Mostrar otra vez' : 'Ocultar'}</button><button class="btn danger" data-act="edDel">Borrar</button><button class="btn" data-act="edNew">Nueva</button>` : ''}<button class="btn pink" data-act="edSave" style="flex:1;justify-content:center">Guardar y publicar</button></div>
-<p class="faint" style="margin:0">Lo que guardes aquí les aparece a todas las personas usuarias.</p>`;
+<p class="faint" style="margin:0">Lo que guardes aquí les aparece a todos tus usuarios.</p>`;
 }
 function palHTML() { return `<div class="ed-pal">${ed.pal.map((h, i) => `<button class="ed-sw ${ed.color === i.toString(36) ? 'on' : ''}" data-sw="${i.toString(36)}" style="background:${h}" aria-label="Color ${i + 1}"></button>`).join('')}<button class="ed-sw erase ${ed.color === '.' ? 'on' : ''}" data-sw="." aria-label="Borrador">×</button><label class="ed-sw add" aria-label="Agregar color">+<input type="color" id="edAddCol" value="#f27ea1"></label></div>`; }
 // ---- Pantalla grande: solo el dibujo, con las herramientas justas y zoom con dos dedos ----
