@@ -164,12 +164,15 @@ function tourCard() {
   done.forEach(s => { if (!T.paid.includes(s[0])) { T.paid.push(s[0]); paid += STEP_STARS; } });
   if (n === N && !T.paid.includes('todo')) { T.paid.push('todo'); paid += ALL_STARS; }
   if (paid && A.giveStars) { A.giveStars(paid); A.saveSettings(); setTimeout(() => toast(n === N ? `¡Completaste tus primeros pasitos! +${paid} estrellitas` : `¡Pasito cumplido! +${paid} estrellitas`), 300); }
+  if (n === N) { if (T.doneShown) { T.hide = 1; A.saveSettings(); return ''; } T.doneShown = 1; A.saveSettings(); }
   if (n === N) return `<div class="card tour-card done"><span class="tour-ale">${ale(3)}</span><span class="tour-tx"><b>¡Lo lograste!</b><span class="faint">Ya conoces lo más importante de Bolsillito.</span></span><button class="btn sm pink" data-act="tourHide">Lindo</button></div>`;
   const ic = s => s[4].startsWith('sp:') ? (Pix.has(s[4].slice(3)) ? img(s[4].slice(3), 22) : img('estrellita', 22)) : A.iconHTML(A.pageIcon(s[4]), 22);
   return `<div class="card tour-card"><div class="tour-h"><span class="tour-ale">${ale(3)}</span><span class="tour-tx"><b>Primeros pasitos</b><span class="faint">${n} de ${N} · cada uno te da ${STEP_STARS} estrellitas</span></span><button class="iconbtn sm" data-act="tourHide" aria-label="Ocultar los primeros pasitos">✕</button></div>
 <span class="cp-bar tour-bar"><i style="width:${Math.round(n / N * 100)}%"></i></span>
 <div class="tour-list">${STEPS.map(s => { const ok = s[3](); const [kind, arg] = s[2].split(':'); const at = kind === 'go' ? `data-go="${arg}"` : `data-act="${kind}"`; return `<button class="tour-step ${ok ? 'ok' : ''}" ${ok ? 'disabled' : at}><span class="tour-chk">${ok ? '✓' : ''}</span>${ic(s)}<span>${esc(s[1])}</span>${ok ? '' : '<span class="qs-chev">›</span>'}</button>`; }).join('')}</div></div>`;
 }
+// "¿Por dónde empiezo?" en Más: se quita cuando ya terminaste los primeros pasitos
+{ const m0 = A.screens.more; A.screens.more = () => { let h = m0(); const T = S.settings.tour || {}; let all = false; try { all = STEPS.every(x => x[3]()); } catch (e) {} if (all || T.doneShown) h = h.replace(/<button class="card row" data-act="tourOpen"[\s\S]*?<\/button>/, ''); return h; }; }
 ACT.tourHide = () => { const T = S.settings.tour = S.settings.tour || {}; T.hide = 1; A.saveSettings(); A.render(); };
 ACT.tourOpen = () => { S.settings.tour = Object.assign({ paid: [] }, S.settings.tour || {}, { on: 1, hide: 0 }); A.saveSettings(); S.qs = ''; A.go('home'); };
 const afterHome0 = A.after.home;
@@ -204,3 +207,4 @@ A.start = async () => {
   addEventListener('online', () => { if (S.route === 'more') setTimeout(A.render, 3000); });
 };
 })();
+

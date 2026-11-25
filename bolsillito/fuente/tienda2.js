@@ -74,7 +74,7 @@ const t0 = A.screens.tienda;
 A.screens.tienda = () => {
   const h = t0(); const aw = h.indexOf('<div class="awning"'); const si = h.indexOf('class="shop-sign"');
   if (aw < 0 || si < 0) return h;
-  const head = h.slice(0, aw); const rest = h.slice(h.indexOf('</div>', si) + 6);
+  const head = h.slice(0, aw); const front = h.slice(aw, h.indexOf('</div>', si) + 6); const rest = h.slice(h.indexOf('</div>', si) + 6);
   const s0 = rest.indexOf('<div class="seg" style="overflow-x:auto">'); if (s0 < 0) return h;
   const extras = rest.slice(0, s0), after = rest.slice(s0);
   const sS = after.lastIndexOf('<div class="seg">'); const probador = after.slice(0, sS), catalog = after.slice(sS);
@@ -88,7 +88,7 @@ A.screens.tienda = () => {
   else if (tab === 'ropa') body = probador + catalog;
   else if (tab === 'caj') body = boxes;
   else body = wishHTML() + destacado();
-  return `${head}<div class="seg shop-tabs">${tabs.map(([k, n]) => `<button data-act="shopTab" data-v="${k}" aria-pressed="${k === tab}">${esc(n)}</button>`).join('')}</div>${body}`;
+  return `${head}<div class="shopfront">${front}</div><div class="shop-in"><div class="shop-tabs">${tabs.map(([k, n]) => `<button data-act="shopTab" data-v="${k}" aria-pressed="${k === tab}">${esc(n)}</button>`).join('')}</div>${body}</div><div class="shop-floor"></div>`;
 };
 ACT.shopTab = a => { S.shopTab = a.dataset.v; A.render(); window.scrollTo(0, 0); };
 ACT.wishToggle = a => { const id = a.dataset.id, l = wish(), i = l.indexOf(id); if (i >= 0) l.splice(i, 1); else { if (l.length >= 12) return toast('Tu lista tiene espacio para 12 deseos'); l.push(id); toast('Guardado en tu lista de deseos'); } A.saveSettings(); A.render(); };
@@ -143,17 +143,4 @@ ${raw ? `<div class="row" style="gap:10px"><label class="f" style="flex:1">Desde
   });
 };
 
-// ---------- aviso automático en Inicio cuando se abre una colección ----------
-const h0 = A.after.home;
-A.after.home = el => {
-  if (h0) h0(el);
-  try {
-    const yr = new Date().getFullYear(); const seen = S.settings.seSeen = S.settings.seSeen || {};
-    const se = A.allSeasons().find(s => A.inSeason(s.id) && s.items.length && !seen[s.id + '_' + yr]); if (!se) return;
-    const [c1, c2] = colorsOf(se); const box = document.createElement('div');
-    box.innerHTML = `<button class="card row sx-news" data-act="seOpenNews" data-id="${esc(se.id)}" style="--se1:${c1};--se2:${c2}"><span class="sx-news-art">${modelArt(modelOf(se), outfit(se), 3)}</span><span><b>¡Llegó ${esc(se.name)}!</b><br><span class="faint" style="color:#fff">Mira la colección con tu mascota de modelo</span></span></button>`;
-    el.insertBefore(box.firstChild, el.children[1] || null);
-  } catch (e) {}
-};
-ACT.seOpenNews = a => { const yr = new Date().getFullYear(); (S.settings.seSeen = S.settings.seSeen || {})[a.dataset.id + '_' + yr] = 1; A.saveSettings(); S.shopTab = 'col'; A.go('tienda'); };
 })();

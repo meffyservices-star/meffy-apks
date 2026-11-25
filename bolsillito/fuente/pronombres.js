@@ -32,13 +32,5 @@ ACT.setPronoun = a => { S.settings.pronoun = a.dataset.v; A.saveSettings(); A.re
 ACT.setAge = () => { const i = document.getElementById('ageIn'); const v = Math.round(+(i && i.value)); if (v >= 5 && v <= 99) { S.settings.age = v; A.saveSettings(); toast('Edad guardada'); } else toast('Escribe una edad entre 5 y 99'); };
 const card = () => `<div class="card stack"><b>Cómo te hablamos</b><span class="faint">Así la app te dice amiga, amigo o amistad.</span>${chips()}<div class="row" style="gap:8px"><input class="in" id="ageIn" type="number" inputmode="numeric" min="5" max="99" placeholder="Tu edad" value="${esc(S.settings.age || '')}"><button class="btn sm" data-act="setAge">Guardar edad</button></div></div>`;
 const d0 = sc.data; if (d0) sc.data = () => d0() + card();
-// una sola vez en Inicio, para quien aún no ha elegido
-const h0 = A.after.home;
-A.after.home = el => {
-  if (h0) h0(el);
-  if (S.settings.pronoun || S.settings.pronAsked || !S.settings.welcomed) return;
-  const box = document.createElement('div'); box.innerHTML = `<div class="card stack"><div class="row between"><b>¿Cómo prefieres que te hablemos?</b><button class="iconbtn sm" data-act="pronLater" aria-label="Ahora no">✕</button></div>${chips()}</div>`;
-  el.insertBefore(box.firstChild, el.children[1] || null);
-};
 ACT.pronLater = () => { S.settings.pronAsked = 1; S.settings.pronoun = S.settings.pronoun || 'neutro'; A.saveSettings(); A.render(); };
 })();

@@ -2089,3 +2089,33 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .cp-cats { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 4px 0 10px; position: sticky; top: 0; z-index: 4; padding: 4px 0; }
 .cp-cats .chip { flex: none; white-space: nowrap; }
 .cp-pgrid { max-height: none; }
+
+/* Tiendita: se ve como una tienda de verdad */
+.shopfront { margin: 6px 0 0; text-align: center; }
+.shopfront .awning { margin: 0 -2px; height: 40px; }
+.shopfront .shop-sign { position: relative; margin-top: 18px; }
+.shop-in { margin: 14px -4px 0; padding: 14px 12px 18px; border-radius: 18px 18px 0 0; border: 5px solid #b07a5a; border-bottom: 0; background: linear-gradient(90deg, rgba(255,255,255,.35) 0 3px, transparent 3px) 0 0/34px 100%, linear-gradient(#fdeaf1, #fbdbe7); box-shadow: inset 0 8px 18px rgba(138,77,79,.18); }
+.shop-floor { height: 26px; margin: 0 -4px 10px; border: 5px solid #b07a5a; border-top: 0; border-radius: 0 0 14px 14px; background: repeating-linear-gradient(90deg, #d9a877 0 46px, #c9956f 46px 48px); box-shadow: 0 5px 0 #8a5a3c; }
+/* pestañas = letreritos de madera colgados */
+.shop-tabs { position: static; display: flex; gap: 8px; margin: 0 0 16px; overflow: visible; padding: 0; justify-content: center; flex-wrap: wrap; }
+.shop-tabs button { position: relative; border: 3px solid #8a5a3c; background: linear-gradient(#e7bf8f, #d39e69); color: #5a3320; font: 700 13px var(--f-body, inherit); padding: 7px 12px; border-radius: 10px; box-shadow: 0 4px 0 #8a5a3c; margin-top: 8px; text-shadow: 0 1px 0 rgba(255,255,255,.35); }
+.shop-tabs button::before { content: ""; position: absolute; top: -9px; left: 50%; width: 2px; height: 8px; background: #8a5a3c; }
+.shop-tabs button[aria-pressed="true"] { background: linear-gradient(#fff6d9, #ffe49a); transform: translateY(2px); box-shadow: 0 2px 0 #8a5a3c; }
+/* escaparate de la colección */
+.sx { border: 6px solid #b07a5a; border-radius: 16px; box-shadow: inset 0 0 0 3px #8a5a3c, 0 6px 0 #8a5a3c; padding: 12px 10px 0; }
+.sx::after { content: ""; position: absolute; left: -20%; top: -10%; width: 40%; height: 120%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.16), transparent); transform: rotate(12deg); pointer-events: none; }
+.sx-pod { width: 190px; height: 40px; background: radial-gradient(ellipse at 50% 40%, #fff 0, var(--se3) 45%, transparent 72%); border-bottom: 5px solid rgba(0,0,0,.16); border-radius: 50%; }
+.sx-shelf { margin: 6px -10px 0; padding: 12px 12px 22px; background: linear-gradient(#e7bf8f, #d9a877); border-top: 5px solid #8a5a3c; position: relative; }
+.sx-shelf::after { display: none; }
+.sx-it { position: relative; background: #fffaf0; border: 2px solid #b07a5a; box-shadow: 0 5px 0 #8a5a3c; border-radius: 12px; }
+.sx-it .se-price { background: #fff3d6; border: 2px solid #b07a5a; border-radius: 8px; padding: 1px 6px; color: #6b3b3f; }
+.sx-hint { padding: 8px 0 10px; background: #8a5a3c; margin: 0 -10px; color: #ffe9b8; }
+/* estantes de madera en la ropa */
+.shop-in .shop-grid { background: transparent; border: 0; box-shadow: none; padding: 6px 4px 0; row-gap: 0; }
+.shop-in .shop-tile { position: relative; background: transparent !important; border: 0 !important; box-shadow: none !important; padding-bottom: 22px; }
+.shop-in .shop-tile::after { content: ""; position: absolute; left: -6px; right: -6px; bottom: 0; height: 12px; background: linear-gradient(#d9a877, #b8845a); border-top: 3px solid #8a5a3c; border-radius: 3px; box-shadow: 0 3px 0 #8a5a3c; z-index: 0; }
+.shop-in .shop-tile > * { position: relative; z-index: 1; }
+.shop-in .vt-dest, .shop-in .vt-wish, .shop-in .card { background: #fffaf0; border: 3px solid #b07a5a; box-shadow: 0 4px 0 #8a5a3c; }
+.shop-tabs { flex-wrap: nowrap; gap: 6px; }
+.shop-tabs button { padding: 7px 9px; font-size: 12.5px; flex: 1 1 0; min-width: 0; white-space: nowrap; }
+.ph { flex-wrap: wrap; gap: 8px; }
