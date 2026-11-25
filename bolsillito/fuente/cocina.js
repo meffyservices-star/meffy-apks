@@ -116,7 +116,6 @@ async function cookGame() {
     const lc = [122, 74, 82], add = []; for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const i = yy * w + xx; if (solid[i]) continue; const nb = [xx > 0 && i - 1, xx < w - 1 && i + 1, yy > 0 && i - w, yy < h - 1 && i + w].filter(n => n !== false && solid[n]); if (nb.length && !nb.every(dark)) add.push(i); }
     add.forEach(i => { const o = i * 4; a[o] = lc[0]; a[o + 1] = lc[1]; a[o + 2] = lc[2]; a[o + 3] = 255; });
     x.putImageData(d, 0, 0); return c; };
-  Object.keys(I).filter(k => k.startsWith('p_') || k === 'me').forEach(k => { I[k] = crisp(I[k]); });
   const U = unlocked(); const lvl = cookLvl();
   // posiciones
   const hudH = 16, counterY = Math.max(96, Math.min(Math.round(LH * .47), LH - 150)), btnH = 24, btnRows = 2, gap = 2;
@@ -210,10 +209,18 @@ async function cookGame() {
   const trayRect = () => ({ x: Math.round(LW / 2 - 21 + 8), y: counterY + 14, w: 42, h: 30 });
   const panRect = () => ({ x: 8, y: counterY + 10, w: 38, h: 38 });
   const binRect = () => ({ x: LW - 30, y: counterY + 14, w: 24, h: 30 });
-  function drawCust(c, i) {
+  // la mascota se dibuja con su arte original a la resolución de la pantalla (sin procesarla)
+  function petDraw(c, i, g) {
     const x = slotX[i]; let dy = 0, a = 1; const bounce = Math.sin(Date.now() / 260 + i) * 1;
     if (c.st === 'in') dy = Math.max(0, 28 - c.t * 56); if (c.st === 'out') { a = Math.max(0, 1 - c.t); dy = c.out === 'happy' ? -Math.sin(Math.min(1, c.t) * Math.PI) * 6 : 0; }
-    L.globalAlpha = a; const im = I['p_' + c.pet]; if (im && im.width) { const k2 = Math.max(1, Math.round(44 / Math.max(im.width, im.height))), iw = im.width * k2, ih = im.height * k2; L.drawImage(im, Math.round(x - iw / 2), Math.round(counterY - ih + dy + (c.st === 'wait' ? bounce : 0)), iw, ih); }
+    const im = I['p_' + c.pet]; if (!im || !im.width) return;
+    const B = 44 * KP, m = Math.max(im.width, im.height); let s = B / m; const small = m <= 32; if (small) s = Math.max(1, Math.floor(s));
+    const iw = Math.round(im.width * s), ih = Math.round(im.height * s);
+    g.save(); g.globalAlpha = a; g.imageSmoothingEnabled = !small; g.imageSmoothingQuality = 'high';
+    g.drawImage(im, Math.round(x * KP - iw / 2), Math.round((counterY + dy + (c.st === 'wait' ? bounce : 0)) * KP - ih), iw, ih); g.restore();
+  }
+  function drawCust(c, i) {
+    const x = slotX[i]; let dy = 0, a = 1;
     // sombrita del mostrador
     L.globalAlpha = 1;
     if (c.st === 'wait' || c.st === 'in') {
@@ -252,13 +259,16 @@ async function cookGame() {
   function drawBin() { const r = binRect(); px(r.x + 3, r.y + 28, r.w - 6, 2, 'rgba(120,80,60,.15)'); px(r.x + 2, r.y + 4, r.w - 4, 24, '#cfc0e8'); px(r.x + 3, r.y + 5, r.w - 6, 22, '#e3d8f5'); px(r.x, r.y + 1, r.w, 4, '#b79ae8'); px(r.x + 8, r.y - 1, 8, 2, '#b79ae8'); [8, 12, 16].forEach(v => px(r.x + v - 3, r.y + 9, 2, 14, '#b79ae8')); px(r.x + 6, r.y + 24, 12, 1, '#b79ae8'); }
   function draw() {
     const tm = Date.now(); L.globalAlpha = 1; scene(tm);
+    const g = sh.g; g.imageSmoothingEnabled = false; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, sh.cv.width, sh.cv.height); g.drawImage(lo, 0, 0, LW * KP, LH * KP);
+    cust.forEach((c, i) => c && petDraw(c, i, g));
+    L.clearRect(0, 0, LW, LH); L.globalAlpha = 1;
     cust.forEach((c, i) => c && drawCust(c, i));
     // mostrador por delante de las mascotitas
     px(0, counterY, LW, 4, '#e7b987'); px(0, counterY, LW, 1, '#f6d6ac');
     drawPan(); drawTray(); drawBin(); drawRecipe(); drawTabs();
     U.forEach((_, i) => 0); const ings = order(); ings.forEach((k, i) => { const b = btnPos(i); const used = (pan && pan.on) ? 0 : 1; px(b.x, b.y + 2, b.w, b.h, 'rgba(120,70,100,.18)'); px(b.x, b.y, b.w, b.h, '#fff'); px(b.x + 1, b.y + 1, b.w - 2, b.h - 2, '#fff7fb'); px(b.x, b.y, b.w, 1, '#f9a8c4'); spr1(ING[k], b.x + 4, b.y + 4, 1); const need = (() => { const c = focusOrder(); if (!c || tray.done) return false; const nx = c.r.steps[tray.steps.length]; return nx === k; })(); if (need) { px(b.x, b.y + b.h - 2, b.w, 2, '#f27ea1'); } });
     fx.forEach(f => { L.globalAlpha = Math.min(1, f.t / 14); const im = I[f.k === 'heart' ? 'heart' : 'star']; if (im) L.drawImage(im, Math.round(f.x), Math.round(f.y), im.width, im.height); }); L.globalAlpha = 1;
-    const g = sh.g; g.imageSmoothingEnabled = false; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, sh.cv.width, sh.cv.height); g.drawImage(lo, 0, 0, LW * KP, LH * KP); g.setTransform(KP / SC, 0, 0, KP / SC, 0, 0);
+    g.imageSmoothingEnabled = false; g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(lo, 0, 0, LW * KP, LH * KP); g.setTransform(KP / SC, 0, 0, KP / SC, 0, 0);
     tabs().forEach(t => { g.font = '800 13px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = STN === t.k ? '#fff' : '#b86a86'; g.fillText(t.t, (t.x + t.w / 2) * SC, (t.y + t.h / 2 + 1) * SC); g.textBaseline = 'alphabetic'; });
     pops.forEach(p => { g.globalAlpha = Math.min(1, p.t / 20); g.font = '800 16px Nunito, sans-serif'; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#fff'; g.strokeText(p.txt, p.x, p.y - (50 - p.t) * .6); g.fillStyle = p.col; g.fillText(p.txt, p.x, p.y - (50 - p.t) * .6); g.globalAlpha = 1; });
     { const tt = Math.max(0, time); $('#gmA', sh.ov).textContent = Math.floor(tt / 60) + ':' + String(Math.ceil(tt % 60) % 60).padStart(2, '0'); }
