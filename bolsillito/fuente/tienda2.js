@@ -34,7 +34,7 @@ const modelOf = se => { const sp = seasonPets(se), pick = (S.seModel || {})[se.i
 
 function seasonCard(se) {
   const [c1, c2, c3] = colorsOf(se); const days = daysLeft(se); const pet = modelOf(se); const worn = outfit(se); const tried = (S.seTry || {})[se.id] || {};
-  const sp = seasonPets(se); const pets = sp.length ? sp : Object.keys(A.ANCH).filter(k => !A.petOwns || A.petOwns(k) || k === pet);
+  const sp = seasonPets(se); const pets = sp;
   const toBuy = worn.filter(id => A.ACC[id] && !ownedAcc(id) && !A.ACC[id].plus);
   const total = toBuy.reduce((t, id) => t + (A.ACC[id].price || 0), 0);
   const item = k => {
@@ -43,7 +43,7 @@ function seasonCard(se) {
     const a = A.ACC[id]; if (!a) return ''; const own = ownedAcc(id); const on = tried[a.slot] === id;
     return `<button class="se-item sx-it ${on ? 'on' : ''}" data-act="seTry" data-se="${esc(se.id)}" data-id="${id}"><img class="pixel" alt="" src="${spr('acc_' + id, 4)}" style="width:${Math.min(52, a.w * 4)}px"><b>${esc(a.name)}</b>${own ? '<span class="tag">Tuyo</span>' : `<span class="se-price">${ST(12)} ${a.price}</span>`}</button>`;
   };
-  const size = { s: 120, m: 150, l: 190 }[se.size || 'm'];
+  const size = { s: 96, m: 120, l: 150 }[se.size || 'm'];
   return `<section class="sx sx-p-${se.pat || 'puntos'}" style="--se1:${c1};--se2:${c2};--se3:${c3}">
 <div class="sx-top"><span class="sx-badge">${esc(se.badge || 'Edición limitada')}${days ? ' · ' + (days === 1 ? 'último día' : days + ' días') : ''}</span><div class="sx-name">${esc(se.name)}</div><div class="sx-sub">${esc(se.sub || se.when || '')}</div></div>
 ${se.nomodel ? '' : `<div class="sx-stage" style="--mz:${size}px"><span class="sx-pod"></span>${modelArt(pet, worn, 6)}</div>

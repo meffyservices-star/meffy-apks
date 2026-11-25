@@ -2127,3 +2127,10 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .shop-in .probador .pb-edit { right: 12px; left: auto; transform: none; font-size: 11px; padding: 4px 9px; }
 .shop-in > p.faint { background: #fffaf0; border: 2px dashed #b07a5a; border-radius: 14px; padding: 10px 12px !important; margin-top: 12px !important; color: #7a5a4a; font-size: 12.5px; }
 .shop-tabs button { flex: 1 1 auto; overflow: visible; text-overflow: clip; padding: 7px 8px; }
+.sx { padding-top: 10px; }
+.sx-name { font-size: 22px; margin-top: 4px; }
+.sx-stage { height: calc(var(--mz) + 16px); margin-top: 2px; }
+.sx-stage .mz { margin-bottom: 8px; }
+.sx-pod { width: 150px; height: 28px; }
+.sx-buy { padding: 6px 8px; font-size: 12px; flex-direction: row; justify-content: center; }
+.sx-hint { padding: 6px 0 8px; }
