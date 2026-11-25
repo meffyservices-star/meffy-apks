@@ -32,6 +32,7 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
   - **v64**: "Borrar ejemplos" ahora también quita los saldos y presupuestos de ejemplo que no hayas editado (también para quien ya los había borrado).
   - **v65**: se quitaron los Retos; Tarrito compartido rediseñado (tarritos de cristal con monedas, etiquetas, repisa) y Cuentas como recibo; fotos de perfil de tus amistades en ambos.
   - **v66 – Personalizar** (`config.js`): nueva pantalla en Más para mostrar u ocultar secciones del menú, cada juego, las cosas del cuarto (misiones, paseos, mariposas, burbujas) y la guía "Primeros pasitos".
+- v98: Cafecito: salen todos los personajes de la app (incluye los que se agreguen), pestañas Dulces/Comidas nuevas y la receta ya no estorba.
 - v97: botón "Buscar actualización" en Ajustes (limpia el caché y recarga) y muestra la versión instalada.
 - v96: Cafecito: pestaña de comidas saladas (hot dog, bolón, hamburguesa, arroz con menestra, encebollado) con 10 ingredientes nuevos.
 - v95: Cafecito: pantalla nítida, personajes con contorno, cocina con ventana y lucecitas, bote de basura, 3 recetas nuevas y 6 niveles.
