@@ -1743,7 +1743,7 @@ const sc = A.screens, after = A.after, ACT = A.ACTIONS;
 const rerender = () => { A.render(); };
 function avatarHTML(cls) { return S.settings.photo ? `<img class="avatar ${cls}" alt="Tu foto" src="${esc(S.settings.photo)}">` : `<img class="avatar ${cls} pixel" alt="" src="${Pix.sprite('pudin', 5)}" style="object-fit:contain;padding:8px">`; }
 A.avatarHTML = avatarHTML;
-const MENU = ['rincon', 'logros', 'tienda', 'juegos', 'jardin', 'amigos', 'visitas', 'compartidas', 'tarrito', 'cuentas', 'tablero', 'estudio', 'sobres', 'planes', 'compras', 'shey', 'suscripciones', 'recordatorio', 'year', 'goals', 'recurring', 'projections', 'rules', 'settings', 'appearance', 'personalizar', 'plan', 'data'];
+const MENU = ['rincon', 'logros', 'tienda', 'juegos', 'jardin', 'amigos', 'visitas', 'tarrito', 'cuentas', 'tablero', 'estudio', 'sobres', 'planes', 'compras', 'shey', 'suscripciones', 'recordatorio', 'year', 'goals', 'recurring', 'projections', 'rules', 'settings', 'appearance', 'personalizar', 'plan', 'data'];
 sc.more = () => `
 ${A.header('more')}${A.appCard ? A.appCard() : ''}
 <button class="card row" data-act="tourOpen" style="gap:12px;text-align:left;width:100%;color:inherit;font:inherit;cursor:pointer"><span class="ni" style="background:#fff4c2">${iconHTML('s:estrellita', 30)}</span><span><b>¿Por dónde empiezo?</b><br><span class="faint">Un recorrido corto con los primeros pasos</span></span></button>

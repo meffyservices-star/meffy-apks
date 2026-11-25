@@ -2467,3 +2467,16 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .foto-cv{width:250px;height:316px;image-rendering:auto;border-radius:4px;box-shadow:0 4px 0 rgba(90,58,58,.2)}
 .foto-al{display:flex;gap:8px;overflow-x:auto;width:100%;padding-bottom:6px}.foto-mini{width:80px;height:101px;flex:none;border-radius:3px}
 .pl-hero span b{font-size:inherit;display:inline;font-weight:900}
+/* sobres v2: cajón de madera */
+.sb-drawer{margin:6px 0 4px;border:4px solid #8a5a3c;border-radius:16px 16px 12px 12px;background:linear-gradient(#cf9a62,#e3b982 40%,#efcd9a);box-shadow:inset 0 10px 14px rgba(90,58,58,.28),0 5px 0 #6e4630;overflow:hidden;position:relative}
+.sb-drawer .sb-grid{padding:14px 8px 4px;gap:6px 4px}
+.sb-front{display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(#c58b55,#b07745);border-top:4px solid #8a5a3c;padding:8px;color:#fff3d6;font-weight:900;font-size:13px;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 1px 0 #6e4630}
+.sb-front i{width:26px;height:8px;border-radius:4px;background:#f3d79f;border:2px solid #6e4630;display:block}
+.sb-drawer .sb-cv{width:100%;max-width:168px;height:auto;aspect-ratio:56/50;animation:sbBob 3.6s ease-in-out infinite}
+.sb-drawer .sb-card:nth-child(2n) .sb-cv{animation-delay:-1.2s}.sb-drawer .sb-card:nth-child(3n) .sb-cv{animation-delay:-2.3s}
+@keyframes sbBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@media (prefers-reduced-motion:reduce){.sb-drawer .sb-cv{animation:none}}
+.sb-drawer .sb-left{color:#5a3a3a;text-shadow:0 1px 0 rgba(255,255,255,.5)}.sb-drawer .sb-left.neg{color:#c0344f}
+.sb-drawer .sb-card small{color:#7a4f36}
+.sb-drawer .sb-bar i{background:rgba(90,58,58,.18)}
+.sb-big .sb-cv{width:200px;height:auto;aspect-ratio:56/50;animation:sbBob 3.6s ease-in-out infinite}

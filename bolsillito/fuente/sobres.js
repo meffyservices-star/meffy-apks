@@ -19,32 +19,50 @@ function data() {
 const state = x => x.b <= 0 ? 'none' : x.left < 0 ? 'over' : x.left === 0 ? 'empty' : x.pct > .5 ? 'full' : x.pct > .2 ? 'mid' : 'low';
 
 // ---------- el sobre, dibujado píxel por píxel ----------
-const W = 48, H = 40;
+const W = 56, H = 50;
+const TAPE = ['#ffb3c9', '#fff2f6'];
 function drawEnv(cv, x, idx) {
   const col = KRAFT[idx % KRAFT.length], st = state(x); cv.width = W; cv.height = H; const g = cv.getContext('2d');
   const R = (c, a, b, w, h) => { g.fillStyle = c; g.fillRect(a, b, w, h); };
-  // sombrita en el suelo
-  R('rgba(90,58,58,.15)', 6, 37, 38, 2);
-  // fondo del sobre
-  R(OUT, 3, 9, 42, 29); R(col[1], 4, 10, 40, 27); R(col[0], 4, 10, 40, 2);
-  // billetes que asoman según lo que queda (4 = lleno)
-  const n = st === 'none' ? 0 : x.left <= 0 ? 0 : Math.max(1, Math.ceil(x.pct * 4));
-  for (let i = 0; i < n; i++) { const by = 13 - i * 3 - (i === n - 1 ? 0 : 0), bx = 9 + (i % 2) * 3;
-    R(OUT, bx - 1, by - 1, 30, 12); R('#a8e08a', bx, by, 28, 10); R('#c9f0b0', bx, by, 28, 1); R('#7cc45e', bx, by + 9, 28, 1); R('#7cc45e', bx + 11, by + 3, 6, 4); R('#c9f0b0', bx + 12, by + 4, 4, 2); R('#7cc45e', bx + 2, by + 2, 2, 2); R('#7cc45e', bx + 24, by + 6, 2, 2); }
-  // frente con la solapa en V
-  for (let xx = 4; xx < 44; xx++) { const top = 16 + Math.round((1 - Math.abs(xx - 23.5) / 19.5) * 9); R(OUT, xx, top - 1, 1, 1); R(col[0], xx, top, 1, 37 - top); R(col[2], xx, top, 1, 1); }
-  R(col[1], 4, 34, 40, 3); R(OUT, 4, 37, 40, 1); R(OUT, 3, 9, 1, 29); R(OUT, 44, 9, 1, 29);
-  for (let xx = 7; xx < 41; xx += 4) R(col[2], xx, 33, 2, 1); // costurita
-  // carita según cómo va el sobre
-  const f = '#5a3a3a', cx = 24, cy = 27;
-  if (st === 'over' || st === 'empty') { R(f, cx - 6, cy - 1, 3, 1); R(f, cx + 3, cy - 1, 3, 1); R(f, cx - 3, cy + 4, 6, 1); R(f, cx - 4, cy + 5, 1, 1); R(f, cx + 3, cy + 5, 1, 1); if (st === 'over') { R('#7cc9f5', cx + 7, cy + 1, 1, 3); R('#7cc9f5', cx + 7, cy + 4, 1, 1); } }
-  else if (st === 'low') { R(f, cx - 5, cy - 2, 2, 3); R(f, cx + 3, cy - 2, 2, 3); R(f, cx - 2, cy + 4, 4, 1); R(f, cx - 3, cy + 5, 1, 1); R(f, cx + 2, cy + 5, 1, 1); }
-  else if (st === 'mid') { R(f, cx - 5, cy - 2, 2, 3); R(f, cx + 3, cy - 2, 2, 3); R(f, cx - 2, cy + 4, 4, 1); }
-  else { R(f, cx - 5, cy - 2, 2, 3); R(f, cx + 3, cy - 2, 2, 3); R(f, cx - 3, cy + 3, 1, 1); R(f, cx - 2, cy + 4, 4, 1); R(f, cx + 2, cy + 3, 1, 1); }
-  if (st !== 'over' && st !== 'empty') { R('#ff9db8', cx - 8, cy + 2, 3, 2); R('#ff9db8', cx + 5, cy + 2, 3, 2); }
-  // destellitos cuando está lleno
-  if (st === 'full' && x.pct > .85) { R('#fff6a8', 3, 4, 1, 3); R('#fff6a8', 2, 5, 3, 1); R('#fff6a8', 43, 2, 1, 3); R('#fff6a8', 42, 3, 3, 1); }
-  if (st === 'over') { R(OUT, 36, 3, 9, 9); R('#ff8f8f', 37, 4, 7, 7); R('#fff', 40, 5, 1, 4); R('#fff', 40, 10, 1, 1); }
+  const open = st !== 'over' && st !== 'empty' && st !== 'none';
+  R('rgba(90,58,58,.18)', 7, 46, 42, 3); R('rgba(90,58,58,.1)', 4, 47, 48, 2);
+  // cuerpo trasero
+  R(OUT, 3, 15, 50, 31); R(col[1], 4, 16, 48, 29);
+  if (open) { // solapa abierta hacia arriba
+    for (let r = 0; r < 12; r++) { const half = Math.round(24 * (1 - r / 12)); R(OUT, 28 - half - 1, 15 - r, half * 2 + 2, 1); R(col[1], 28 - half, 15 - r, half * 2, 1); } R(col[2], 18, 13, 20, 1);
+  }
+  // billetes que asoman
+  const n = !open ? 0 : Math.max(1, Math.ceil(x.pct * 4));
+  for (let i = 0; i < n; i++) { const bx = 9 + (i % 2) * 5 - (i === 2 ? 2 : 0), by = 19 - i * 4;
+    R(OUT, bx - 1, by - 1, 38, 15); R('#a9e28c', bx, by, 36, 13); R('#cdf3b4', bx, by, 36, 1); R('#78c15a', bx, by + 12, 36, 1);
+    R('#78c15a', bx + 2, by + 2, 3, 3); R('#78c15a', bx + 31, by + 8, 3, 3);
+    R('#78c15a', bx + 13, by + 3, 10, 7); R('#cdf3b4', bx + 14, by + 4, 8, 5); R('#78c15a', bx + 17, by + 5, 2, 3); R('#78c15a', bx + 16, by + 5, 4, 1); R('#78c15a', bx + 16, by + 7, 4, 1); }
+  // frente: bolsillo con corte en V
+  const top = xx => 24 + Math.round((1 - Math.abs(xx - 27.5) / 23.5) * 9);
+  for (let xx = 4; xx < 52; xx++) { const t = top(xx); R(OUT, xx, t - 1, 1, 1); R(col[0], xx, t, 1, 45 - t); R(col[2], xx, t, 1, 1); }
+  // textura de papel
+  for (let k = 0; k < 40; k++) { const px = 6 + (k * 17) % 44, py = 28 + (k * 11) % 15; if (py > top(px) + 1) R(col[2], px, py, 1, 1); }
+  R(col[1], 4, 41, 48, 4); R(OUT, 4, 45, 48, 1); R(OUT, 3, 15, 1, 31); R(OUT, 52, 15, 1, 31);
+  for (let xx = 7; xx < 50; xx += 4) R(col[2], xx, 40, 2, 1);
+  if (!open) { // solapa cerrada
+    for (let r = 0; r < 11; r++) { const half = Math.round(24 * (1 - r / 11)); R(OUT, 28 - half - 1, 16 + r, half * 2 + 2, 1); R(col[0], 28 - half, 16 + r, half * 2, 1); } R(col[2], 6, 16, 44, 1);
+  }
+  // carita
+  const f = '#5a3a3a', cx = 28, cy = 35;
+  if (st === 'over' || st === 'empty') { R(f, cx - 7, cy - 1, 4, 1); R(f, cx + 3, cy - 1, 4, 1); R(f, cx - 3, cy + 4, 6, 1); R(f, cx - 4, cy + 5, 1, 1); R(f, cx + 3, cy + 5, 1, 1); if (st === 'over') { R('#7cc9f5', cx + 8, cy + 1, 1, 3); R('#7cc9f5', cx + 8, cy + 4, 1, 1); } }
+  else if (st === 'low') { R(f, cx - 6, cy - 2, 2, 3); R(f, cx + 4, cy - 2, 2, 3); R(f, cx - 2, cy + 4, 4, 1); R(f, cx - 3, cy + 5, 1, 1); R(f, cx + 2, cy + 5, 1, 1); }
+  else if (st === 'mid') { R(f, cx - 6, cy - 2, 2, 3); R(f, cx + 4, cy - 2, 2, 3); R(f, cx - 2, cy + 3, 4, 1); }
+  else { R(f, cx - 6, cy - 2, 2, 3); R('#fff', cx - 6, cy - 2, 1, 1); R(f, cx + 4, cy - 2, 2, 3); R('#fff', cx + 4, cy - 2, 1, 1); R(f, cx - 3, cy + 3, 1, 1); R(f, cx - 2, cy + 4, 4, 1); R(f, cx + 2, cy + 3, 1, 1); }
+  if (st !== 'over' && st !== 'empty') { R('#ff9db8', cx - 10, cy + 2, 3, 2); R('#ff9db8', cx + 7, cy + 2, 3, 2); }
+  // washi tape
+  R('rgba(255,179,201,.9)', 6, 21, 15, 6); R(OUT, 6, 21, 15, 1); R(OUT, 6, 26, 15, 1); for (let t = 0; t < 15; t += 4) R(TAPE[1], 6 + t, 22, 2, 4); R(OUT, 5, 22, 1, 1); R(OUT, 5, 24, 1, 1); R(OUT, 21, 23, 1, 1); R(OUT, 21, 25, 1, 1);
+  // sellito de estado
+  const sc2 = { full: '#7fd16a', mid: '#f5c14d', low: '#f59a6a', empty: '#c9c1c9', over: '#ec6a86', none: '#d9c9b9' }[st], hx = 40, hy = 27;
+  const H8 = ['.00.00.', '0110110', '0111110', '.01110.', '..010..'.slice(0, 7), '...0...'];
+  R(OUT, hx - 1, hy - 1, 9, 9); R(sc2, hx, hy, 7, 7); R('rgba(255,255,255,.55)', hx + 1, hy + 1, 2, 1);
+  if (st === 'over') { R('#fff', hx + 3, hy + 1, 1, 3); R('#fff', hx + 3, hy + 5, 1, 1); } else if (st === 'empty') { R('#fff', hx + 1, hy + 3, 5, 1); } else { R('#fff', hx + 2, hy + 2, 1, 2); R('#fff', hx + 4, hy + 2, 1, 2); R('#fff', hx + 2, hy + 4, 3, 1); }
+  // destellos
+  if (st === 'full') { [[2, 6], [50, 4], [47, 11]].forEach(([a, b]) => { R('#fff6a8', a, b, 1, 3); R('#fff6a8', a - 1, b + 1, 3, 1); }); }
 }
 const stateTxt = (x, st) => ({ full: 'Va tranquilo', mid: 'Ya a la mitad', low: 'Casi se acaba', empty: 'Se acabó justo', over: 'Te pasaste', none: 'Sin tope' })[st];
 const tone = st => ({ full: '#6bbf5a', mid: '#f0b84a', low: '#f08a6a', empty: '#a8a0a8', over: '#e0617a', none: '#c9b8a8' })[st];
@@ -63,7 +81,7 @@ sc.sobres = () => {
 <div class="sb-body pn pn-cream"><div class="sb-say"><img class="pixel" alt="" src="${spr(pet, 3)}"><span>${esc(say)}</span></div>
 <div class="sb-stats"><div><small>Repartido</small><b>${money(d.tot.b)}</b></div><div><small>Gastado</small><b>${money(d.tot.s)}</b></div><div class="${disp > 0 ? 'ok' : 'bad'}"><small>Te queda</small><b>${money(disp)}</b></div></div>
 ${disp > 0 && d.tot.b ? `<div class="sb-day">Puedes gastar unos <b>${money(disp / dl)}</b> al día</div>` : ''}</div></div>
-${d.withB.length ? `<div class="sb-grid">${d.withB.map(card).join('')}</div>` : `<div class="sb-empty"><canvas id="sbDemo" class="sb-cv"></canvas><b>Aún no tienes sobres</b><span>Elige una categoría de abajo, ponle cuánto quieres gastar al mes y nace su sobre.</span></div>`}
+${d.withB.length ? `<div class="sb-drawer"><div class="sb-grid">${d.withB.map(card).join('')}</div><div class="sb-front"><i></i><span>Mis sobres</span><i></i></div></div>` : `<div class="sb-empty"><canvas id="sbDemo" class="sb-cv"></canvas><b>Aún no tienes sobres</b><span>Elige una categoría de abajo, ponle cuánto quieres gastar al mes y nace su sobre.</span></div>`}
 ${(() => { const L = cats().filter(c => !(eff(c) > 0)); return L.length ? `<div class="sb-lbl">Categorías sin sobre</div><div class="sb-none">${L.map(c => `<button class="sb-ghost" data-act="sbTope" data-id="${c.id}">${A.iconHTML ? A.iconHTML(c.icon, 16) : ''}<span>${esc(c.name)}</span><i>+ sobre</i></button>`).join('')}</div>` : ''; })()}`;
 };
 A.sobreDraw = drawEnv; A.sobreState = state;
@@ -108,11 +126,13 @@ ACT.sbMoveOk = a => {
 };
 // icono del menú
 (function () {
-  const w = 16, h = 12, g = Array.from({ length: h }, () => Array(w).fill('.'));
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) g[y][x] = (x === 0 || y === h - 1 || x === w - 1 || y === 0) ? '0' : '2';
-  for (let x = 1; x < w - 1; x++) { const t = Math.round((1 - Math.abs(x - 7.5) / 7) * 6); for (let y = 1; y <= t; y++) g[y][x] = '1'; if (t >= 1) g[t + 1 < h ? t + 1 : t][x] = '0'; }
-  g[8][7] = '3'; g[8][8] = '3';
-  Pix.define('sobre_ic', { raw: g.map(r => r.join('')), pal: '#5a3a3a,#ffd6e3,#ff8fb3,#fff6e6' });
-  Object.values(A.PACKS || {}).forEach(p => { if (p.map) p.map.sobres = p === A.PACKS.pixel ? 's:sobre_ic' : 's:estudio'; });
+  const w = 16, h = 13, g = Array.from({ length: h }, () => Array(w).fill('.'));
+  const set = (x, y, c) => { if (x >= 0 && x < w && y >= 0 && y < h) g[y][x] = c; };
+  for (let x = 4; x < 12; x++) { set(x, 0, '0'); } for (let y = 1; y < 4; y++) { set(3, y, '0'); set(12, y, '0'); for (let x = 4; x < 12; x++) set(x, y, '1'); }
+  for (let y = 4; y < 12; y++) for (let x = 1; x < 15; x++) set(x, y, (x === 1 || x === 14 || y === 4 || y === 11) ? '0' : '2');
+  for (let x = 2; x < 14; x++) { const t = Math.round((1 - Math.abs(x - 7.5) / 6.5) * 5); for (let y = 5; y <= 5 + t; y++) set(x, y, '3'); set(x, 5 + t + 1, '0'); }
+  [[7, 7], [8, 7], [6, 8], [7, 8], [8, 8], [9, 8], [7, 9], [8, 9]].forEach(([x, y]) => set(x, y, '4')); set(6, 7, '4'); set(9, 7, '4');
+  Pix.define('sobre_ic', { raw: g.map(r => r.join('')), pal: '#5a3a3a,#9fdf80,#ffe0a8,#fff3d6,#ff6f9c' });
+  Object.values(A.PACKS || {}).forEach(p => { if (p.map) p.map.sobres = 's:sobre_ic'; });
 })();
 })();
