@@ -18,6 +18,7 @@ const noFriends = () => `<div class="card jt-off">${px('gochi', 28)}<div><b>Prim
 const ensureFriends = () => { if (online() && A.friendsLoaded && !A.friendsLoaded() && A.loadFriendReqs) A.loadFriendReqs().then(() => A.render()); };
 const pickChips = (sel, attr) => friends().length ? `<div class="chips jt-pick">${friends().map(f => `<button type="button" class="chip" data-${attr}="${f.id}" aria-pressed="${sel.has(f.id)}">${esc(f.name)}</button>`).join('')}</div>` : '<div class="faint">Aún no tienes amistades agregadas.</div>';
 const togglePick = (sh, attr, set, e) => { const b = e.target.closest(`[data-${attr}]`); if (!b) return false; const id = b.dataset[attr]; set.has(id) ? set.delete(id) : set.add(id); b.setAttribute('aria-pressed', set.has(id)); return true; };
+A.ensureFriendRows = async ids => { try { if (ids.length) await Store.sb.from('legacy_friends').upsert(ids.map(f => ({ friend_id: f })), { onConflict: 'user_id,friend_id', ignoreDuplicates: true }); } catch (e) { console.warn(e); } };
 const nameOfFriend = id => (friends().find(f => f.id === id) || {}).name || 'Amistad';
 const fmtDay = d => { const x = A.parseYmd ? A.parseYmd(d) : new Date(d); return x.toLocaleDateString('es', { day: 'numeric', month: 'short' }); };
 const H = (key) => A.header(key);
@@ -58,7 +59,7 @@ ACT.jarNew = () => {
       const { data, error } = await Store.sb.from('jars').insert({ name, goal }).select().single();
       if (error) { b.disabled = false; console.warn(error); return toast('No se pudo crear el tarrito.'); }
       const rows = [{ jar_id: data.id, user_id: Store.uid, name: me() }].concat([...sel].map(id => ({ jar_id: data.id, user_id: id, name: nameOfFriend(id) })));
-      const r = await Store.sb.from('jar_members').insert(rows); if (r.error) console.warn(r.error);
+      await A.ensureFriendRows([...sel]); const r = await Store.sb.from('jar_members').insert(rows); if (r.error) { console.warn(r.error); toast('El grupo se creó, pero no pude agregar a todas.'); }
       closeSheet(); toast('¡Tarrito creado!'); J.loaded = false; loadJars();
     };
   });
@@ -129,7 +130,7 @@ ACT.qNew = () => {
       const name = $('#qN', sh).value.trim(); if (!name) return toast('Ponle nombre al grupo'); if (!sel.size) return toast('Elige al menos a una amistad');
       const b = $('#qOk', sh); b.disabled = true; const { data, error } = await Store.sb.from('split_groups').insert({ name }).select().single();
       if (error) { b.disabled = false; return toast('No se pudo crear el grupo.'); }
-      const r = await Store.sb.from('split_members').insert([{ group_id: data.id, user_id: Store.uid, name: me() }].concat([...sel].map(id => ({ group_id: data.id, user_id: id, name: nameOfFriend(id) })))); if (r.error) console.warn(r.error);
+      await A.ensureFriendRows([...sel]); const r = await Store.sb.from('split_members').insert([{ group_id: data.id, user_id: Store.uid, name: me() }].concat([...sel].map(id => ({ group_id: data.id, user_id: id, name: nameOfFriend(id) })))); if (r.error) { console.warn(r.error); toast('El grupo se creó, pero no pude agregar a todas.'); }
       closeSheet(); toast('¡Grupo creado!'); Q.loaded = false; loadQ();
     };
   });
@@ -225,7 +226,7 @@ ACT.rNew = () => {
       const start = A.today(), end = (() => { const d = A.parseYmd(start); d.setDate(d.getDate() + st.len - 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })();
       const b = $('#rOk', sh); b.disabled = true; const { data, error } = await Store.sb.from('challenges').insert({ name, start_day: start, end_day: end }).select().single();
       if (error) { b.disabled = false; console.warn(error); return toast('No se pudo crear el reto.'); }
-      const r = await Store.sb.from('challenge_members').insert([{ challenge_id: data.id, user_id: Store.uid, name: me() }].concat([...sel].map(id => ({ challenge_id: data.id, user_id: id, name: nameOfFriend(id) })))); if (r.error) console.warn(r.error);
+      await A.ensureFriendRows([...sel]); const r = await Store.sb.from('challenge_members').insert([{ challenge_id: data.id, user_id: Store.uid, name: me() }].concat([...sel].map(id => ({ challenge_id: data.id, user_id: id, name: nameOfFriend(id) })))); if (r.error) { console.warn(r.error); toast('El grupo se creó, pero no pude agregar a todas.'); }
       closeSheet(); toast('¡Reto creado! A cumplirlo'); R.loaded = false; loadR();
     };
   });

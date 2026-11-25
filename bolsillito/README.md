@@ -28,6 +28,7 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
   - **v60 – Entre amistades** (`juntas.js`): Tarrito compartido (ahorran juntas, con pareja también), Cuentas entre amistades (grupos y quién le debe a quién) y Retos con amigas. Requieren sesión y amistades aceptadas.
   - **v61**: al anotar un gasto puedes dividirlo en un grupo de Cuentas entre amistades; el cuarto tiene **Misiones de hoy** con tu mascota (+2 estrellitas cada una, premio del día y racha) (`vida.js`).
   - **v62 – Cuarto con vida** (`vida.js`): las mascotas despiertas pasean por el cuarto, llegan mariposas que dan +1 estrellita (máx. 5 al día), la mascota te habla según tu mes al tocarla y los muebles reaccionan al tocarlos. Amistades viejas (por código) ya se reconocen en tarrito, cuentas y retos.
+  - **v63**: arreglado que no dejaba crear tarritos, cuentas ni retos (permisos); amistades viejas por código ya pueden entrar a grupos.
 
   - Lenguaje neutro (amistades, personas), menú Más en grupos con descripción y con Juegos/Jardín/Tablero/Páginas compartidas, **Carreritas** con pista en relieve, sombras y profundidad, **Tiendita** con vitrina (saldo, destacado del día, lista de deseos con corazón, atajos; módulo `tienda2.js`). Caché `bolsillito-v47`.
 
