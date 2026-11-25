@@ -2187,3 +2187,30 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .wish-h.on img { filter: none; opacity: 1; }
 .wish-h { color: inherit; }
 .qa-spfr { margin: 8px 0; } .qa-spfr .chips { margin-top: 4px; }
+/* Entre amistades: tarrito, cuentas, retos */
+.jt-intro { display: flex; gap: 12px; align-items: center; background: linear-gradient(135deg, #fff4c2, #ffe3ec); margin-bottom: 10px; }
+.jt-off { display: flex; gap: 12px; align-items: center; }
+.jt-card { display: flex; gap: 14px; align-items: center; width: 100%; text-align: left; background: #fff; border: 2px solid #f3d9e2; border-radius: 20px; padding: 12px; margin-top: 10px; box-shadow: 0 3px 0 #f3d9e2; color: inherit; font: inherit; }
+.jt-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.jt-tx b { font-size: 16px; } .jt-amt { font: 700 15px var(--f-body, inherit); } .jt-amt small { font-weight: 500; color: #8a7a8a; }
+.jt-ppl { display: flex; gap: 4px; flex-wrap: wrap; }
+.jt-dot { width: 22px; height: 22px; border-radius: 50%; color: #fff; display: inline-grid; place-items: center; font: 700 11px var(--f-body, inherit); border: 2px solid #fff; box-shadow: 0 1px 0 rgba(0,0,0,.15); flex: none; }
+.jt-done { color: #3f9a5f; font-weight: 700; font-size: 13px; }
+.jt-bal { font-weight: 700; font-size: 13.5px; } .jt-bal.pos { color: #3f9a5f; } .jt-bal.neg { color: #c44a72; }
+.jt-ic { width: 52px; height: 52px; border-radius: 16px; background: #fff4c2; display: grid; place-items: center; flex: none; }
+.jt-big { display: flex; gap: 16px; align-items: center; }
+/* el tarrito */
+.jr-jar { position: relative; width: 62px; flex: none; }
+.jr-jar.big { width: 84px; }
+.jr-lid { display: block; height: 10px; margin: 0 8px; border-radius: 6px 6px 2px 2px; background: linear-gradient(#f2b45e, #d9983e); box-shadow: 0 2px 0 rgba(0,0,0,.12); }
+.jr-glass { position: relative; display: block; height: 76px; margin-top: 2px; border-radius: 12px 12px 18px 18px; border: 3px solid #cfe6f6; background: rgba(235,247,255,.7); overflow: hidden; box-shadow: inset 0 0 0 2px rgba(255,255,255,.7); }
+.jr-jar.big .jr-glass { height: 100px; }
+.jr-fill { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--p) * 1%); background: repeating-linear-gradient(90deg, #ffd166 0 8px, #f9b84a 8px 16px); border-top: 3px solid #fff3b0; transition: height .6s ease; }
+.jr-pct { position: absolute; inset: 0; display: grid; place-items: center; font: 700 14px var(--f-pixel, inherit); color: #6b3b3f; text-shadow: 0 1px 0 #fff; }
+/* retos */
+.jt-reto { background: #fff; border: 2px solid #eadff8; border-radius: 20px; padding: 14px; margin-top: 10px; box-shadow: 0 3px 0 #eadff8; display: flex; flex-direction: column; gap: 8px; }
+.jt-rank { display: flex; align-items: center; gap: 8px; }
+.jt-pos { width: 18px; text-align: center; font-weight: 700; color: #a090b0; }
+.jt-rn { width: 74px; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jt-bar { flex: 1; } .jt-bar i { display: block; height: 100%; border-radius: 6px; }
+.jt-pick .chip[aria-pressed="true"] { background: #f27ea1; color: #fff; border-color: #f27ea1; }

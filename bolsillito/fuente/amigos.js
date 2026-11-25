@@ -8,6 +8,9 @@ const online = () => Store.mode === 'supa' && Store.sb && navigator.onLine !== f
 const FR = { list: [], loaded: false, loading: false, at: 0, code: '', found: null, busy: false };
 A.PAGES.amigos = 'Amistades';
 Object.values(A.PACKS || {}).forEach(p => { if (p.map && !p.map.amigos) p.map.amigos = 's:gochi'; if (p.map && !p.map.visitas) p.map.visitas = 's:casita'; });
+A.friendUsers = () => FR.list.filter(r => r.status === 'accepted').map(r => r.from_user === Store.uid ? { id: r.to_user, name: (r.to_name || '').trim() || 'Amistad' } : { id: r.from_user, name: (r.from_name || '').trim() || 'Amistad' });
+A.friendsLoaded = () => FR.loaded;
+A.loadFriendReqs = () => loadReqs();
 A.friendPending = () => FR.list.filter(r => r.status === 'pending' && r.to_user === Store.uid).length;
 
 // ---- fechas con día y hora ----
