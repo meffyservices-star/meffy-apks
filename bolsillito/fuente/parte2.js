@@ -363,7 +363,7 @@ A.screens.rincon = () => {
 </div>
 ${fridgeHTML()}
 <section class="stack"><div class="ph"><span class="pill sm">Más cositas</span><button class="btn sm" data-go="coleccion">Cambiar de mascota</button></div>
-<div class="pc-places">${PLACES().map(([go, ic, n, dot]) => `<button class="pc-place" data-go="${go}">${dot ? '<span class="pc-dot"></span>' : ''}${(S.settings.navIcons || {})[go] ? A.iconHTML(S.settings.navIcons[go], 38) : `<img class="pixel" alt="" src="${spr(ic, 3)}">`}${n}</button>`).join('')}</div></section>`;
+<div class="pc-places">${PLACES().map(([go, ic, n, dot]) => `<button class="pc-place" data-go="${go}">${dot ? '<span class="pc-dot"></span>' : ''}${(S.settings.navIcons || {})[go] ? A.iconHTML(S.settings.navIcons[go], 38) : `<img class="pixel" alt="" src="${spr(ic, 3)}">`}${n}</button>`).join('')}<button class="pc-place" data-act="mkMine"><img class="pixel" alt="" src="${spr('puestito_ic', 3)}">Mi puestito</button></div></section>`;
 };
 const decoOff = () => { if (!S.pcDeco) return; const r = room(); S.pcDeco = false; S.roomEdit = false; S.roomSel = null; r.cur = r.prevCur2 && r.rooms[r.prevCur2] && r.prevCur2 !== 'cuidar' ? r.prevCur2 : 'cuarto'; A.saveSettings(); };
 ACT.pcDecor = () => { S.pcTab = 'cuidar'; S.pcDeco = true; const r = room(); if (r.cur !== 'cuidar') r.prevCur2 = r.cur; r.cur = 'cuidar'; S.roomTab = 'muebles'; S.roomSel = null; S.roomEdit = true; A.saveSettings(); A.render(); window.scrollTo(0, 0); };

@@ -19,12 +19,15 @@ const say = (n, all) => {
   if (n === 1) return `${p} dice: ¡vamos bien!`;
   return `${p} está contenta, ya casi terminan`;
 };
+const MIC = { anotar: 'billetera', mimar: 'corazon_rosa', tienda: 'bolsa', amistad: 'casita' };
 function card() {
-  const v = state(), n = MISSIONS.filter(done).length, all = n === MISSIONS.length;
-  return `<div class="card vd-card"><div class="row between"><b>Misiones de hoy</b><span class="faint">${n}/${MISSIONS.length}${v.streak > 1 ? ' · racha ' + v.streak + ' días' : ''}</span></div>
-<div class="vd-say">${esc(say(n, all))}</div>
-${MISSIONS.map(m => { const d = done(m), c = v.claimed[m.id]; return `<div class="vd-m ${d ? 'on' : ''}"><span class="vd-ck">${d ? '✓' : ''}</span><span class="vd-tx"><b>${m.t}</b><small>${m.hint}</small></span>${c ? '<span class="faint">+2 ✦</span>' : d ? `<button class="btn sm pink" data-act="vidaClaim" data-id="${m.id}">Recoger +2</button>` : ''}</div>`; }).join('')}
-${all ? (v.bonus ? '<div class="vd-bonus">¡Premio del día recogido! ✦</div>' : '<button class="btn pink" data-act="vidaBonus" style="justify-content:center;width:100%">Premio del día +6 ✦</button>') : '<div class="faint" style="text-align:center">Completa las 4 para un premio extra</div>'}</div>`;
+  if (A.pnStyles) A.pnStyles();
+  const v = state(), n = MISSIONS.filter(done).length, all = n === MISSIONS.length, sp = (k, s) => Pix.sprite(k, s);
+  const stars = MISSIONS.map((m, i) => `<img class="pixel vd-st ${i < n ? 'on' : ''}" alt="" src="${sp('estrellita', 2)}">`).join('');
+  return `<div class="vd-board"><div class="vd-head pn pn-wood"><span class="vd-ttl">Misiones de hoy</span><span class="vd-stars">${stars}</span>${v.streak > 1 ? `<span class="vd-streak"><img class="pixel" alt="" src="${sp('fuego', 2)}">${v.streak}</span>` : ''}</div>
+<div class="vd-body pn pn-cream"><div class="vd-say"><img class="pixel" alt="" src="${sp('brillito', 2)}">${esc(say(n, all))}</div>
+${MISSIONS.map(m => { const d = done(m), c = v.claimed[m.id]; return `<div class="vd-m pn pn-slot ${d ? 'on' : ''}"><span class="vd-ico"><img class="pixel" alt="" src="${sp(MIC[m.id] || 'estrellita', 3)}"></span><span class="vd-tx"><b>${m.t}</b><small>${m.hint}</small></span>${c ? `<span class="vd-got pn pn-tag">+2</span>` : d ? `<button class="vd-claim pn pn-pink" data-act="vidaClaim" data-id="${m.id}">Recoger +2</button>` : '<span class="vd-ring"></span>'}</div>`; }).join('')}
+${all ? (v.bonus ? '<div class="vd-bonus pn pn-tag">¡Premio del día recogido!</div>' : '<button class="vd-prize pn pn-pink" data-act="vidaBonus">Premio del día +6</button>') : '<div class="vd-hint">Completa las 4 para un premio extra</div>'}</div></div>`;
 }
 ACT.vidaClaim = a => { const v = state(), m = MISSIONS.find(x => x.id === a.dataset.id); if (!m || v.claimed[m.id] || !done(m)) return; v.claimed[m.id] = 1; A.giveStars(2); A.saveSettings(); toast('+2 estrellitas ✦'); A.render(); };
 ACT.vidaBonus = () => {

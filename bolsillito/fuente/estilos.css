@@ -2364,3 +2364,22 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .vs-acts .vs-a small{font-size:10.5px;color:#7a5a5a;opacity:.85}
 .vs-acts .vs-a:active{transform:translateY(4px);box-shadow:0 1px 0 #5a3a3a}
 .vs-acts .vs-a.heart .vs-ic img{animation:vdBob 1.3s ease-in-out infinite}
+
+/* ===== Misiones de hoy (tablero) ===== */
+.vd-board{display:flex;flex-direction:column;margin:2px 0 6px}
+.vd-head{display:flex;align-items:center;gap:8px;padding:0;margin-bottom:-6px;position:relative;z-index:1;border-width:7px;border-image-width:7px}
+.vd-ttl{font:800 15px var(--f-display);color:#fff9e6;text-shadow:0 2px 0 #5a3a3a;flex:1;padding:2px 4px}
+.vd-stars{display:flex;gap:1px}.vd-st{width:20px;height:20px;image-rendering:pixelated;filter:grayscale(1) opacity(.45)}.vd-st.on{filter:none;animation:vdBob 1.6s ease-in-out infinite}
+.vd-streak{display:flex;align-items:center;gap:2px;font-weight:800;color:#fff9e6;text-shadow:0 1px 0 #5a3a3a;font-size:13px}.vd-streak img{width:18px;image-rendering:pixelated}
+.vd-body{padding:6px 0 0;border-width:9px;display:flex;flex-direction:column;gap:6px}
+.vd-say{display:flex;gap:8px;align-items:center;font-size:13px;color:#7a4a2c;padding:2px 4px 4px}.vd-say img{width:20px;image-rendering:pixelated;flex:none}
+.vd-m{display:flex;align-items:center;gap:10px;padding:0;border-width:6px;border-image-width:6px;background:none}
+.vd-m .vd-ico{width:42px;height:42px;display:grid;place-items:center;flex:none}.vd-m .vd-ico img{width:34px;image-rendering:pixelated}
+.vd-m:not(.on) .vd-ico img{filter:grayscale(.6) opacity(.7)}
+.vd-m .vd-tx{flex:1;display:flex;flex-direction:column;min-width:0;line-height:1.2}.vd-m .vd-tx b{font-size:13.5px;color:#5a3238}.vd-m .vd-tx small{font-size:11px;color:#8a6a5a}
+.vd-ring{width:22px;height:22px;border-radius:50%;border:3px solid #c9a97a;margin-right:6px;flex:none}
+.vd-got{padding:0 6px;font-weight:800;color:#7a4a2c;font-size:13px;border-width:5px;border-image-width:5px;margin-right:2px}
+.vd-claim,.vd-prize{font:800 12px var(--f-display);color:#fff;text-shadow:0 1px 0 #5a3a3a;cursor:pointer;background:none;padding:0 4px;border-width:6px;border-image-width:6px;margin-right:2px;white-space:nowrap}
+.vd-prize{font-size:14px;width:100%;padding:3px 0;animation:vdBob 1.4s ease-in-out infinite}
+.vd-bonus{text-align:center;font-weight:800;color:#7a4a2c;padding:2px}
+.vd-hint{text-align:center;font-size:12px;color:#9a7a5a;padding:2px 0 4px}

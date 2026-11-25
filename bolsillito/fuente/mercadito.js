@@ -26,6 +26,7 @@ function panelURL(fill, edge, hi, sh) {
   return c.toDataURL();
 }
 let styled = false;
+A.pnStyles = () => styles();
 function styles() {
   if (styled) return; styled = true;
   const P = (n, a) => `url(${panelURL(...a)})`;
@@ -209,9 +210,7 @@ ACT.mkTake = async a => {
   try { await save(items => { const i = items.findIndex(x => x.id === a.dataset.id); if (i >= 0) { got = items[i]; items.splice(i, 1); } return items; }); } catch (e) { return toast('No pude quitarlo ahora'); }
   if (got) { giveItem(got); A.saveSettings(); toast('Guardado otra vez en tu cuarto'); } else toast('Ese ya se vendió'); closeSheet(); await load(true);
 };
-// ---- accesos: el puestito de tu amistad (al visitarla) y el tuyo (en tu cuarto) ----
-const c0 = A.screens.cuarto;
-A.screens.cuarto = function () { const h = c0.apply(this, arguments); const k = '<div class="seg"><button data-act="rmTab"'; const i = h.indexOf(k); if (i < 0 || S.roomEdit) return h; return h.slice(0, i) + `<button class="card row mk-mine" data-act="mkMine"><img class="pixel" alt="" src="${spr('puestito_ic', 4)}"><span><b>Mi puestito</b><br><span class="faint">Vende tus cosas a tus amistades</span></span></button>` + h.slice(i); };
+// ---- acceso: "Más cositas" en Cuidar (parte2) y el botón Puestito al visitar a una amistad (parte3) ----
 Pix.define('puestito_ic', { raw: ['..000000000000..', '.01122112211220.', '0112211221122110', '0222222222222220', '.03..........30.', '.03.44.66.55.30.', '.03.44.66.55.30.', '.07777777777770.'], pal: '#5a3a3a,#ff8fb3,#fff6e6,#c08a5a,#ffd84a,#7cc2f5,#8fd45a,#7a4a2c' });
 Object.values(A.PACKS || {}).forEach(p => { if (p.map) p.map.puestito = p === A.PACKS.pixel ? 's:puestito_ic' : 's:estudio'; });
 })();
