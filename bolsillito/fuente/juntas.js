@@ -159,6 +159,14 @@ function qExpense(g) {
   });
 }
 
+
+// API para "Anotar": dividir un gasto con un grupo de cuentas
+A.qGroups = cb => { if (!online()) return []; if (!Q.loaded && !Q.tried) { Q.tried = true; loadQ().then(() => cb && cb()); } return Q.loaded ? Q.groups.map(g => ({ id: g.id, name: g.name, n: (Q.members[g.id] || []).length })) : []; };
+A.qAddExpense = async (gid, amount, note) => {
+  const ms = Q.members[gid] || []; const { error } = await Store.sb.from('split_expenses').insert({ group_id: gid, paid_name: me(), amount, note: note || '', participants: ms.map(m => m.user_id) });
+  if (error) { console.warn(error); return false; } Q.loaded = false; loadQ(); return true;
+};
+
 // ============================== RETOS ==============================
 const R = { list: [], members: {}, checks: {}, loaded: false, loading: false };
 const PRESETS = [['Anotar mis gastos todos los días', 'anotar'], ['Día sin gastos hormiga', 'hormiga'], ['Ahorrar un poquito cada día', 'ahorrar']];

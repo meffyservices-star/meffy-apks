@@ -1489,8 +1489,9 @@ if (pane === 'cat' && t.type === 'transfer') pane = 'cuenta';
 if (pane === 'animo' && !feels) pane = 'cat';
 if (pane === 'split' && (t.type !== 'expense' || existing)) pane = 'cat';
 const splitPane = () => { const n = t.split.n, v = evalExpr(expr) || 0, share = Math.round(v / n * 100) / 100; return `<div class="qa-split"><div class="row between" style="gap:10px"><span>¿Entre cuántas personas?<small class="faint" style="display:block">Contándote a ti</small></span><span class="stepper"><button data-spn="-1" aria-label="Menos">−</button><b class="num">${n}</b><button data-spn="1" aria-label="Más">+</button></span></div>
+${(() => { const G = (window.App.qGroups ? window.App.qGroups(() => draw()) : []); return G.length ? `<div class="qa-spfr"><small class="faint">O divídelo en un grupo de cuentas</small><div class="chips">${G.map(g => `<button type="button" class="chip" data-spgr="${g.id}" aria-pressed="${t.grp === g.id}">${esc(g.name)} · ${g.n}</button>`).join('')}</div></div>` : ''; })()}
 ${(() => { const L = (S.settings.friends || []).map(f => ((window.App.V && window.App.V.cache[f.code]) || {}).name || f.name).filter(Boolean); return L.length ? `<div class="qa-spfr"><small class="faint">Elige entre tus amistades</small><div class="chips">${L.map(nm => `<button type="button" class="chip" data-spfr="${esc(nm)}" aria-pressed="${t.split.names.includes(nm)}">${esc(nm)}</button>`).join('')}</div></div><datalist id="spFrL">${L.map(nm => `<option value="${esc(nm)}">`).join('')}</datalist>` : ''; })()}
-${n > 1 ? `<div class="qa-spnames">${Array.from({ length: n - 1 }, (_, i) => `<input class="in" data-spname="${i}" placeholder="¿Quién? (persona ${i + 2})" value="${esc(t.split.names[i] || '')}" autocomplete="off">`).join('')}</div>
+${n > 1 && !t.grp ? `<div class="qa-spnames">${Array.from({ length: n - 1 }, (_, i) => `<input class="in" data-spname="${i}" placeholder="¿Quién? (persona ${i + 2})" value="${esc(t.split.names[i] || '')}" autocomplete="off">`).join('')}</div>
 <div class="qa-sptot">${v ? `A cada una le toca <b>${money(share)}</b>. Tú gastas <b>${money(Math.round((v - share * (n - 1)) * 100) / 100)}</b> y te deben <b>${money(share * (n - 1))}</b>, lo verás en Me deben.` : 'Escribe el monto y te digo cuánto le toca a cada una.'}</div>` : '<div class="faint">Si pagaste por varias personas, súbele aquí y te anoto lo que te debe cada una.</div>'}</div>`; };
 const catName = t.type === 'transfer' ? 'Transferencia' : ((cat(t.cat) || {}).name || 'Categoría');
 const acName = (acct(t.acct) || {}).name || 'Cuenta';
@@ -1556,6 +1557,7 @@ draw();
 box.addEventListener('click', e => {
 const b = e.target.closest('button'); if (!b) return;
 if (b.dataset.pane) { pane = b.dataset.pane; draw(); return; }
+if (b.dataset.spgr) { t.grp = t.grp === b.dataset.spgr ? null : b.dataset.spgr; const G = window.App.qGroups ? window.App.qGroups() : []; const g = G.find(x => x.id === t.grp); if (g) { t.split.n = Math.max(2, g.n); t.split.names = []; } draw(); return; }
 if (b.dataset.spfr) { const nm = b.dataset.spfr, at = t.split.names.indexOf(nm); if (at >= 0) t.split.names[at] = ''; else { let k = -1; for (let i = 0; i < t.split.n - 1; i++) if (!(t.split.names[i] || '').trim()) { k = i; break; } if (k < 0) { if (t.split.n >= 20) return; t.split.n++; k = t.split.n - 2; } t.split.names[k] = nm; } draw(); return; }
 if (b.dataset.spn) { t.split.n = Math.max(1, Math.min(20, t.split.n + +b.dataset.spn)); draw(); return; }
 if (b.hasAttribute('data-mic')) { listen(); return; }
@@ -1588,6 +1590,12 @@ if (t.type === 'transfer') { if (!t.to || t.to === t.acct) return toast('Elige u
 else if (!t.cat) { t.cat = guessCat(t.note) || (S.fin.categories.find(c => (t.type === 'income') === (c.type === 'income')) || {}).id; }
 const rec = { type: t.type, amount, cat: t.cat, acct: t.acct, to: t.type === 'transfer' ? t.to : undefined, date: t.date, feel: t.type === 'expense' ? (t.feel || undefined) : undefined, note: (t.note || '').replace(/\s*\d+(?:[.,]\d{1,2})?\s*$/, '').trim() || t.note };
 if (existing) { updateTx(existing.id, rec); toast('Cambios guardados'); }
+else if (t.type === 'expense' && t.grp && window.App.qAddExpense) {
+const G = window.App.qGroups(), g = G.find(x => x.id === t.grp), n = Math.max(2, (g || {}).n || t.split.n), share = Math.round(amount / n * 100) / 100, mine = Math.round((amount - share * (n - 1)) * 100) / 100;
+window.App.qAddExpense(t.grp, amount, rec.note || ((cat(rec.cat) || {}).name || '')).then(ok => { if (!ok) toast('No se pudo guardar en el grupo, pero sí en tu cuenta.'); });
+rec.amount = mine; addTx(rec); if (rec.acct) addTx({ type: 'loan_out', amount: Math.round((amount - mine) * 100) / 100, acct: rec.acct, date: rec.date, note: 'Parte de tus amistades en ' + ((g || {}).name || 'el grupo') });
+saveFin(); toast(`Anotado ✦ Se dividió en ${(g || {}).name || 'el grupo'}: te toca ${money(mine)}`);
+}
 else if (t.type === 'expense' && t.split.n > 1) {
 const n = t.split.n, share = Math.round(amount / n * 100) / 100, mine = Math.round((amount - share * (n - 1)) * 100) / 100;
 rec.amount = mine; addTx(rec); S.fin.loans = S.fin.loans || [];

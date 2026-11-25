@@ -2214,3 +2214,11 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .jt-rn { width: 74px; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .jt-bar { flex: 1; } .jt-bar i { display: block; height: 100%; border-radius: 6px; }
 .jt-pick .chip[aria-pressed="true"] { background: #f27ea1; color: #fff; border-color: #f27ea1; }
+/* Cuarto con vida */
+.vd-card { display: flex; flex-direction: column; gap: 8px; background: linear-gradient(135deg, #fff8e1, #ffeef4); }
+.vd-say { font-size: 13px; background: #fff; border-radius: 14px; padding: 8px 12px; border: 2px dashed #f3d9e2; }
+.vd-m { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.vd-ck { width: 24px; height: 24px; border-radius: 8px; border: 2px solid #e5cdd7; display: grid; place-items: center; background: #fff; font-weight: 700; color: #fff; flex: none; }
+.vd-m.on .vd-ck { background: #7fcf98; border-color: #7fcf98; }
+.vd-tx { flex: 1; display: flex; flex-direction: column; } .vd-tx small { color: #8a7a8a; }
+.vd-bonus { text-align: center; font-weight: 700; color: #3f9a5f; }
