@@ -424,6 +424,7 @@ ${Object.keys(rooms).length > 1 ? `<div class="chips">${Object.keys(rooms).map(k
 ${A.roomHTML(rooms[rk], { pets: guestPets, id: 'friendRoom', photos: b.photos || [], guest: mine })}
 <p class="faint" style="margin:-4px 0 0;text-align:center">${mine ? esc(A.petInfo(mine).name) + ' vino contigo de visita' : ''}</p>
 ${care ? `<div class="card row vs-pet" style="gap:10px"><img class="pixel" alt="" src="${spr(A.petInfo(b.active).sprite, 3)}" style="width:44px"><div style="flex:1"><b>${esc(pname)}</b><div class="faint">${care.sleep ? 'Está durmiendo' : care.h < 40 ? 'Tiene hambre' : care.f < 40 ? 'Está un poco triste' : 'Está feliz'}</div></div><button class="btn sm ${need ? 'pink' : ''}" data-act="vsFeed" ${did(cur, 'feed') || care.sleep ? 'disabled' : ''}>${img('cupcake', 16)} ${did(cur, 'feed') ? 'Ya le diste' : 'Darle de comer'}</button></div>` : ''}
+<button class="card row mk-visit" data-act="mkOpen" data-u="${cur.user_id}" data-n="${esc(cur.name)}"><img class="pixel" alt="" src="${spr('puestito_ic', 4)}"><span><b>Puestito de ${esc(cur.name)}</b><br><span class="faint">Mira lo que vende y compra con estrellitas</span></span></button>
 <div class="vs-acts">
 <button class="pc-act" data-act="vsHeart">${img('heart', 26)}Corazón</button>
 <button class="pc-act" data-act="vsLetter">${img('pg_carta', 26)}Carta</button>
