@@ -1,7 +1,10 @@
-const C = 'bolsillito-v110';
+const C = 'bolsillito-v111';
 const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
-const CORE = ['/', '/offline.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', CDN].concat([0, 1, 2, 3, 4, 5].map(i => '/p' + i + '.bin?v=1'));
-self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
+const CORE = ['/', '/offline.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/fonts/fuentes.css?v=1', CDN].concat([0, 1, 2, 3, 4, 5].map(i => '/p' + i + '.bin?v=1'), ['nunito', 'quicksand', 'fredoka', 'comfortaa', 'baloo2', 'pixelify', 'caveat', 'dmmono400', 'dmmono500', 'gaegu400', 'gaegu700', 'patrickhand', 'itim'].map(n => '/fonts/' + n + '.woff'));
+const CORE_EXT = ['/fonts/fuentes.css?v=1', CDN].concat(['nunito', 'quicksand', 'fredoka', 'comfortaa', 'baloo2', 'pixelify', 'caveat', 'dmmono400', 'dmmono500', 'gaegu400', 'gaegu700', 'patrickhand', 'itim'].map(n => '/fonts/' + n + '.woff'));
+const CORE_MAIN = CORE.filter(u => !CORE_EXT.includes(u));
+// lo esencial se guarda todo junto; lo demás (letras, supabase) se guarda por separado y, si falla, no tumba la actualización
+self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(CORE_MAIN).then(() => Promise.allSettled(CORE_EXT.map(u => c.add(u))))).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C && k !== 'bolsi-compartido').map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
   // Compartir a Bolsillito: guarda lo compartido (texto o captura) y abre la app para anotarlo
