@@ -7,7 +7,7 @@ Object.values(A.PACKS || {}).forEach(p => { if (p.map && !p.map.personalizar) p.
 const cfg = () => S.settings.cfg = S.settings.cfg || {};
 const on = k => cfg()[k] !== false;
 const hid = k => (S.settings.hidden || []).includes(k);
-const GAMES = [['calle', 'Cruzar la calle'], ['saltar', 'Saltar hasta las nubes'], ['monedas', 'Ahorra monedas, no antojos'], ['carrera', 'Carreritas']];
+const GAMES = [['calle', 'Cruzar la calle'], ['saltar', 'Saltar hasta las nubes'], ['monedas', 'Ahorra monedas, no antojos'], ['carrera', 'Carreritas'], ['cocina', 'Cafecito kawaii']];
 const MENUS = ['rincon', 'logros', 'tienda', 'juegos', 'jardin', 'amigos', 'visitas', 'compartidas', 'tarrito', 'cuentas', 'tablero', 'compras', 'shey', 'suscripciones', 'recordatorio', 'year', 'goals', 'recurring', 'projections', 'rules'];
 const LABEL = { shey: 'Antojos', recordatorio: 'Avisos', rincon: 'Mi mascota y cuarto', logros: 'Logros', tienda: 'Tiendita' };
 const CUARTO = [['misiones', 'Misiones de hoy', 'La tarjeta con tareas del día en tu cuarto'], ['paseo', 'Mascotas que pasean', 'Se mueven solas por el cuarto'], ['mariposas', 'Mariposas y bichitos', 'Pasan de vez en cuando y dan estrellitas'], ['reacciones', 'Burbujitas y muebles que reaccionan', 'Al tocar a tu mascota o un mueble']];
