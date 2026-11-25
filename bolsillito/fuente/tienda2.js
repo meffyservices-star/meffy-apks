@@ -186,4 +186,16 @@ ${raw ? `<div class="row" style="gap:10px"><label class="f" style="flex:1">Desde
   });
 };
 
+
+// ---------- que no se reinicie nada al comprar o probar: se queda en el mismo lugar ----------
+{
+  const r0 = A.render; let last = '';
+  A.render = function () {
+    const same = S.route === 'tienda' && !!document.querySelector('#scr .shop-in');
+    const y = window.scrollY, sh = same ? [...document.querySelectorAll('.shop-grid, .sx-shelf')].map(e => e.scrollLeft) : null;
+    const out = r0.apply(this, arguments); last = S.route;
+    if (same) { window.scrollTo(0, y); [...document.querySelectorAll('.shop-grid, .sx-shelf')].forEach((e, i) => { if (sh[i]) e.scrollLeft = sh[i]; }); }
+    return out;
+  };
+}
 })();
