@@ -2564,3 +2564,19 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .vb-list{display:flex;flex-direction:column;gap:8px}.vb-li{display:flex;align-items:center;gap:10px;border:2px solid #e9d2a8;border-radius:14px;background:#fffaf0;padding:11px 13px;font:inherit;color:#5a3a3a;cursor:pointer;text-align:left}.vb-li small{margin-left:auto;font-size:11.5px;color:#9a7b6a;font-weight:700}
 .vb-chips{display:flex;flex-wrap:wrap;gap:6px}.vb-ink{width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #d9c9a0;cursor:pointer}.vb-ink.on{box-shadow:0 0 0 3px #ff4f8b}
 .vt-w{display:inline-flex;gap:.06em;flex-wrap:nowrap;font-weight:400}
+/* ===== Vision boards v2 ===== */
+.vb-board{border:0;border-radius:3px;box-shadow:0 12px 26px rgba(90,58,58,.32),0 0 0 7px #fff,0 0 0 8px #e5d3b8;margin:10px 8px 18px;width:calc(100% - 16px)}
+.vb-board::before,.vb-board::after{content:'';position:absolute;top:7px;width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffb0b0,#e0455a 60%,#9a2638);box-shadow:0 2px 2px rgba(0,0,0,.35);z-index:9999;pointer-events:none}.vb-board::before{left:9px}.vb-board::after{right:9px}
+.vb-board.edit{outline:3px dashed #ff8fb3;outline-offset:10px}
+.vp-img.px{image-rendering:pixelated}
+.vsvg svg{display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(0 2px 2px rgba(0,0,0,.18))}
+.vpaper{width:100%;background:radial-gradient(rgba(90,58,58,.07) 1px,transparent 1.6px) 0 0/5px 5px,var(--pc);position:relative}
+.vbi.t-paper{filter:drop-shadow(0 3px 4px rgba(90,58,58,.28))}
+.pf-torn{clip-path:polygon(0 3%,5% 0,12% 2.5%,20% 0,29% 3%,38% 0,48% 2%,58% 0,68% 3%,78% 0,88% 2%,100% 0,98% 12%,100% 24%,97.5% 38%,100% 52%,98% 66%,100% 80%,97% 92%,100% 100%,90% 98%,80% 100%,70% 97.5%,58% 100%,47% 98%,36% 100%,25% 97%,13% 100%,0 98%,2% 86%,0 72%,2.5% 58%,0 44%,2% 30%,0 16%)}
+.pf-doily{border-radius:50%;background:radial-gradient(circle,transparent 0 30%,rgba(240,200,215,.55) 31% 33%,transparent 34% 44%,rgba(240,200,215,.55) 45% 47%,transparent 48%),radial-gradient(circle,var(--pc) 0 100%);border:.6em dotted #f3dde4;box-sizing:border-box;outline:2px dashed #f3dde4;outline-offset:-.1em}
+.pf-scallop{border-radius:16%;border:.5em dotted rgba(255,255,255,.9);box-sizing:border-box}.pf-round{border-radius:50%}.pf-plain{border-radius:3px}
+.vt-hand{font-family:Caveat,'Patrick Hand',Gaegu,cursive;font-weight:700;text-align:center;line-height:1.05;text-shadow:0 1px 0 rgba(255,255,255,.55)}
+.vt-badge{border-radius:50%/62%;background:#fff;padding:.45em .9em;text-align:center;box-shadow:0 0 0 .14em #5a3a3a,0 0 0 .3em #ffb3cf,0 0 0 .44em #bfe0ff,0 0 0 .56em #5a3a3a,0 4px 8px rgba(0,0,0,.2)}.vt-badge span{font-family:Fredoka,sans-serif;font-weight:700;letter-spacing:.1em;-webkit-text-stroke:.03em #5a3a3a;line-height:1;display:block}
+.vb-scenes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.vb-scn{border:2px solid #e9d2a8;border-radius:12px;background:#fffaf0;padding:6px;cursor:pointer;font:inherit;display:flex;flex-direction:column;gap:3px;align-items:center}.vb-scn img{width:100%;aspect-ratio:1/1.1;object-fit:cover;image-rendering:pixelated;border-radius:6px}.vb-scn small{font-size:10.5px;font-weight:800;color:#7a5a4a}
+.vb-grid.d{grid-template-columns:repeat(4,1fr)}.vb-stk.svg svg{width:100%;height:auto;max-height:44px}.vb-stk .vpaper{display:block}
+.vb-board{isolation:isolate}
