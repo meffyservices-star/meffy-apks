@@ -914,7 +914,7 @@ ACT.wxGps = () => {
   }, () => toast('No me diste permiso de ubicación. Puedes escribir tu ciudad.'), { maximumAge: 3600e3, timeout: 10000 });
 };
 // ---------------- Tiendita con toldo y letrero ----------------
-{ const tScreen = A.screens.tienda; A.screens.tienda = () => { const h = tScreen(); const i = h.indexOf('<div class="ph">'); if (i < 0) return h; let j = h.indexOf('</div>', h.indexOf('</div>', i) + 6) + 6; const pn = A.petInfo ? A.petInfo(A.petActive()).name : 'tu mascota'; return h.slice(0, j) + `<div class="awning" aria-hidden="true"></div><div class="shop-sign">${img('gift', 22)}Tiendita de ${esc(pn)}</div>` + h.slice(j); }; }
+{ const tScreen = A.screens.tienda; A.screens.tienda = () => { const h = tScreen(); const i = h.indexOf('<div class="ph">'); if (i < 0) return h; let j = h.indexOf('</div>', h.indexOf('</div>', i) + 6) + 6; const pn = A.petInfo ? A.petInfo(A.petActive()).name : 'tu mascota'; return h.slice(0, j) + `<div class="awning" aria-hidden="true"></div><div class="shop-sign">${img('gift', 22)}${A.petActive && A.petActive() ? 'Tiendita de ' + esc(pn) : 'La Tiendita'}</div>` + h.slice(j); }; }
 // ---------------- Personalizar la app (solo la dueña) ----------------
 // Iconos: cambia un dibujito por otro en TODA la app. Nombres: renombra secciones. Secciones: apaga las que no quieras mostrar.
 const LOOK = () => (A.CFG && A.CFG.look) || {};

@@ -48,7 +48,7 @@ function seasonCard(se) {
 <div class="sx-top"><span class="sx-badge">${esc(se.badge || 'Edición limitada')}${days ? ' · ' + (days === 1 ? 'último día' : days + ' días') : ''}</span><div class="sx-name">${esc(se.name)}</div><div class="sx-sub">${esc(se.sub || se.when || '')}</div></div>
 ${se.nomodel ? '' : `<div class="sx-stage" style="--mz:${size}px"><span class="sx-pod"></span>${modelArt(pet, worn, 6)}</div>
 <div class="sx-who">${pets.length > 1 ? pets.map(k => `<button class="chip" data-act="seModel" data-se="${esc(se.id)}" data-id="${k}" aria-pressed="${k === pet}">${esc(A.ANCH[k].name)}</button>`).join('') : ''}</div>
-${toBuy.length ? `<div class="sx-buy"><span>Lleva puesto: <b>${toBuy.map(id => esc(A.ACC[id].name)).join(', ')}</b></span>${toBuy.map(id => `<button class="btn sm pink" data-act="shopItem" data-id="${id}" ${bal() < A.ACC[id].price ? 'disabled' : ''}>${esc(A.ACC[id].name)} · ${A.ACC[id].price}</button>`).join('')}</div>` : ''}
+${toBuy.length ? `<div class="sx-buy"><span>Probando: <b>${toBuy.map(id => esc(A.ACC[id].name)).join(' + ')}</b></span>${toBuy.map(id => `<button class="btn sm pink" data-act="shopItem" data-id="${id}" ${bal() < A.ACC[id].price ? 'disabled' : ''}>${bal() < A.ACC[id].price ? 'Faltan ' + (A.ACC[id].price - bal()) + ' ' : 'Comprar '}${ST(11)}</button>`).join('')}</div>` : ''}
 ${Object.keys(tried).length ? `<button class="btn sm sx-clear" data-act="seTryClear" data-se="${esc(se.id)}">Quitar lo probado</button>` : ''}`}
 <div class="sx-shelf">${se.items.map(item).join('')}</div>
 <div class="sx-hint">Toca una prenda para probársela a ${esc(((A.ANCH[pet] || {}).name) || 'la mascota')} ›</div></section>`;

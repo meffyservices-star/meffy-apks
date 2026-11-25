@@ -2119,3 +2119,11 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .shop-tabs { flex-wrap: nowrap; gap: 6px; }
 .shop-tabs button { padding: 7px 9px; font-size: 12.5px; flex: 1 1 0; min-width: 0; white-space: nowrap; }
 .ph { flex-wrap: wrap; gap: 8px; }
+/* retoques de la tienda */
+.shop-tabs button { font-size: 12px; padding: 7px 4px; overflow: hidden; text-overflow: ellipsis; }
+.sx-buy { flex-direction: column; gap: 6px; }
+.sx-buy .btn[disabled] { background: #fff; color: #b07a5a; opacity: .9; }
+.shop-in .probador .pb-sign { left: 12px; right: auto; transform: none; }
+.shop-in .probador .pb-edit { right: 12px; left: auto; transform: none; font-size: 11px; padding: 4px 9px; }
+.shop-in > p.faint { background: #fffaf0; border: 2px dashed #b07a5a; border-radius: 14px; padding: 10px 12px !important; margin-top: 12px !important; color: #7a5a4a; font-size: 12.5px; }
+.shop-tabs button { flex: 1 1 auto; overflow: visible; text-overflow: clip; padding: 7px 8px; }
