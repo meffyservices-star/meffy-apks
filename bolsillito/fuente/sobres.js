@@ -66,6 +66,7 @@ ${disp > 0 && d.tot.b ? `<div class="sb-day">Puedes gastar unos <b>${money(disp 
 ${d.withB.length ? `<div class="sb-grid">${d.withB.map(card).join('')}</div>` : `<div class="sb-empty"><canvas id="sbDemo" class="sb-cv"></canvas><b>Aún no tienes sobres</b><span>Elige una categoría de abajo, ponle cuánto quieres gastar al mes y nace su sobre.</span></div>`}
 ${(() => { const L = cats().filter(c => !(eff(c) > 0)); return L.length ? `<div class="sb-lbl">Categorías sin sobre</div><div class="sb-none">${L.map(c => `<button class="sb-ghost" data-act="sbTope" data-id="${c.id}">${A.iconHTML ? A.iconHTML(c.icon, 16) : ''}<span>${esc(c.name)}</span><i>+ sobre</i></button>`).join('')}</div>` : ''; })()}`;
 };
+A.sobreDraw = drawEnv; A.sobreState = state;
 A.after.sobres = el => {
   const d = data();
   el.querySelectorAll('.sb-cv[data-id]').forEach(cv => { const x = d.withB.find(y => y.c.id === cv.dataset.id); if (x) drawEnv(cv, x, +cv.dataset.i); });

@@ -32,6 +32,7 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
   - **v64**: "Borrar ejemplos" ahora también quita los saldos y presupuestos de ejemplo que no hayas editado (también para quien ya los había borrado).
   - **v65**: se quitaron los Retos; Tarrito compartido rediseñado (tarritos de cristal con monedas, etiquetas, repisa) y Cuentas como recibo; fotos de perfil de tus amistades en ambos.
   - **v66 – Personalizar** (`config.js`): nueva pantalla en Más para mostrar u ocultar secciones del menú, cada juego, las cosas del cuarto (misiones, paseos, mariposas, burbujas) y la guía "Primeros pasitos".
+- v77: Planes (deudas, viajes/eventos, deseos), gastos hormiga en Movimientos y Foto del mes.
 - v76: Sobres de presupuesto (sobrecitos pixel por categoría, pasar plata entre sobres).
   - **v75 – Puestito más lleno + botones redondos**: bajo la escena del puestito hay una vitrina de madera con todo lo que vende (tocas y compras); los botones al visitar (Corazón, Carta, Su cajita, Puestito) son círculos con relieve.
   - **v74 – Mi puestito en "Más cositas" + tablero de misiones**: el acceso a tu puestito vive en Cuidar → Más cositas; las misiones del día ahora son un tablero de pixel art (letrero de madera, estrellas de progreso, racha, filas con iconos).
