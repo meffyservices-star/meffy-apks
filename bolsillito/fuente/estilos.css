@@ -2666,3 +2666,40 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .pos-pay{width:100%;display:flex;align-items:center;justify-content:space-between;border:0;border-radius:99px;padding:14px 20px;background:linear-gradient(#ff9fbf,#f27ea1);color:#fff;font:inherit;font-weight:800;font-size:15px;box-shadow:0 5px 0 #d4688e,0 10px 24px rgba(212,104,142,.35);cursor:pointer}.pos-pay em{font-style:normal;font:600 18px var(--f-display)}
 .pos-hint{text-align:center;font-size:12.5px;font-weight:800;color:var(--ink-soft);background:var(--glass);border:2px solid var(--glass-line);border-radius:99px;padding:10px;box-shadow:var(--shadow)}
 .ng-done{align-items:center;text-align:center}.ng-okk{width:78px;height:78px;border-radius:50%;background:#fff4c2;display:grid;place-items:center;margin:4px auto}
+
+/* ===== Negocio pro: paleta rosa + celeste ===== */
+.ngx{--ng-p:#ef6fa3;--ng-pi:#c24f82;--ng-s:#d6eefb;--ng-ss:#eef8ff;--ng-sd:#a8d6f0;--ng-si:#5b8fad;--ng-l:#f6cfdf;--ng-ink:#6b3b52}
+.ngx .card{background:#fff;border:0;box-shadow:0 0 0 2px var(--ng-l),0 8px 20px -14px rgba(194,79,130,.4);border-radius:22px;color:var(--ng-ink)}
+.ngx .card h3{color:var(--ng-pi);font-size:13px;letter-spacing:.04em;text-transform:none;font-weight:900;margin-bottom:12px}
+.ngx .btn.pink{background:var(--ng-p);color:#fff;box-shadow:inset 0 -3px 0 rgba(0,0,0,.08),0 3px 0 var(--ng-pi)}
+.ngx .btn{box-shadow:0 0 0 2px var(--ng-l)}.ngx .btn.pink:active{transform:translateY(2px)}
+.ngx .in{border:2px solid var(--ng-l);background:#fff;border-radius:16px}
+.ng-nav{display:flex;gap:6px;overflow-x:auto;padding:12px 0 4px;scrollbar-width:none}.ng-nav::-webkit-scrollbar{display:none}
+.ng-nav button{flex:none;border:2px solid var(--ng-l);background:#fff;border-radius:99px;padding:6px 14px;font:inherit;font-size:13px;font-weight:800;color:var(--ng-ink);cursor:pointer}.ng-nav button:nth-child(even){background:var(--ng-ss);border-color:var(--ng-s)}.ng-nav button[aria-pressed="true"]{background:var(--ng-p);border-color:var(--ng-p);color:#fff}
+.ng-acts{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:8px}.ng-act{border:2px solid var(--ng-l);background:#fff;border-radius:16px;padding:11px 4px;font:inherit;font-size:13px;font-weight:800;color:var(--ng-pi);cursor:pointer}.ng-act.sky{background:var(--ng-ss);border-color:var(--ng-s);color:var(--ng-si)}.ng-act.main{background:var(--ng-p);border-color:var(--ng-p);color:#fff;box-shadow:0 3px 0 var(--ng-pi)}.ng-act:active{transform:translateY(2px)}
+.ng-chips{display:flex;align-items:center;gap:6px}.ng-chips button{border:2px solid var(--ng-l);background:#fff;border-radius:99px;padding:4px 13px;font:inherit;font-size:13px;font-weight:800;color:var(--ng-ink);cursor:pointer}.ng-chips button[aria-pressed="true"]{background:var(--ng-ink);border-color:var(--ng-ink);color:#fff}.ng-range{margin-left:auto;font-size:12px;font-weight:800;color:#a27b8d}
+.ng-k4{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ng-k{border-radius:20px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;background:#fff;box-shadow:0 0 0 2px var(--ng-l)}.ng-k.sky{background:var(--ng-ss);box-shadow:0 0 0 2px var(--ng-s)}
+.ng-k span{font-size:12px;font-weight:800;color:#a27b8d}.ng-k b{font:600 25px var(--f-display);color:var(--ng-pi);font-variant-numeric:tabular-nums;letter-spacing:-.3px}.ng-k.sky b{color:var(--ng-si)}.ng-k b.neg{color:#d4546e}
+.ng-d{font-style:normal;font-size:11px;font-weight:800;border-radius:99px;padding:2px 8px;align-self:flex-start;margin-top:3px}.ng-d.up{background:#dff3e3;color:#3f9a6a}.ng-d.dn{background:#ffe0e4;color:#d4546e}.ng-d.flat{background:rgba(255,255,255,.7);color:#a27b8d;box-shadow:0 0 0 1.5px var(--ng-l)}
+.ng-chart2{width:100%;height:auto;display:block}.ng-leg{display:flex;gap:14px;margin-top:6px;font-size:11.5px;font-weight:800;color:#a27b8d}.ng-leg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.ng-als{display:flex;flex-direction:column;gap:8px}.ng-al{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:16px;background:#fff0f5}.ng-al:nth-child(even){background:var(--ng-ss)}.ng-al.warn{background:#ffe4e8;box-shadow:inset 0 0 0 1.5px #ffc2cd}.ng-al>span:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column}.ng-al b{font-size:13.5px}.ng-al small{font-size:12px;color:#a27b8d;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ng-mini{border:0;border-radius:99px;padding:6px 12px;background:#fff;color:var(--ng-pi);font:inherit;font-size:12px;font-weight:800;box-shadow:0 0 0 2px var(--ng-l);cursor:pointer;flex:none}
+.ng-rank{display:flex;flex-direction:column;gap:10px}.ng-rank>div{display:grid;grid-template-columns:24px 40px minmax(0,1fr) auto;gap:10px;align-items:center}.ng-rn{font:600 18px var(--f-display);text-align:center}.ng-rn.pink{color:var(--ng-p)}.ng-rn.sky{color:var(--ng-sd)}
+.ng-rimg{width:40px;height:40px;border-radius:13px;object-fit:cover;display:grid;place-items:center;font-size:15px}.ng-rt{display:flex;flex-direction:column;gap:4px;min-width:0}.ng-rt b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ng-rt i{display:block;height:7px;border-radius:99px}.ng-rt i.pink{background:#ffc7dc}.ng-rt i.sky{background:var(--ng-sd)}.ng-rank small{font-size:11.5px;font-weight:800;color:#a27b8d}
+.ng-pl{display:flex;flex-direction:column;gap:8px}.ng-pl>div{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;color:#a27b8d;font-weight:700}.ng-pl b{color:var(--ng-ink)}.ng-pl .tot{border-top:2px dashed var(--ng-l);padding-top:8px;font-size:15px;color:var(--ng-ink)}.ng-pl .tot b{font:600 20px var(--f-display)}.ng-pl .pos{color:#3f9a6a}.ng-pl .neg{color:#d4546e}
+.ng-stack{display:flex;height:12px;border-radius:99px;overflow:hidden;margin-top:12px;background:#f6e9ee}.ng-stack .c{background:#ffc7dc}.ng-stack .g{background:#a8d6f0}.ng-stack .p{background:#9fd9b3}
+.ng-prog{height:12px;border-radius:99px;background:#f6e9ee;overflow:hidden}.ng-prog i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#ffb4cc,#ef6fa3)}
+.ng-search{margin:10px 0}.ng-cl{padding:6px 10px!important}
+.ng-cli{width:100%;display:flex;align-items:center;gap:12px;border:0;background:none;padding:10px 4px;font:inherit;color:var(--ng-ink);text-align:left;cursor:pointer;border-bottom:1.5px dashed var(--ng-l)}.ng-cli:last-child{border-bottom:0}
+.ng-av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font:600 19px var(--f-display);flex:none}.ng-av.pink{background:#ffd9e8;color:var(--ng-pi)}.ng-av.sky{background:var(--ng-s);color:var(--ng-si)}
+.ng-ct{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}.ng-ct b{font-size:14.5px}.ng-ct small{font-size:12px;color:#a27b8d;font-weight:700}.ng-rv{font-style:normal;font-size:11px;font-weight:800;border-radius:99px;padding:2px 9px;background:var(--ng-s);color:var(--ng-si);align-self:flex-start;margin-top:3px}.ng-rv.late{background:#ffe0e4;color:#d4546e}
+.ng-cr{display:flex;flex-direction:column;align-items:flex-end;gap:3px}.ng-cr b{font:600 15px var(--f-display);color:var(--ng-pi)}.ng-debe{font-style:normal;font-size:11px;font-weight:800;background:#ffe0e4;color:#d4546e;border-radius:99px;padding:2px 8px}
+.ngx .ng-por{background:#fff}.ngx .ng-ic{background:#ffd9e8}
+.ngx .li{background:#fff0f5;border:0}.ngx .li:nth-child(even){background:var(--ng-ss)}.ngx .li.income{background:#f1faf3}
+.ng-vin{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;cursor:pointer}.ng-vin span:nth-child(2){flex:1;display:flex;flex-direction:column}.ng-vin i{font-style:normal;font-size:22px;color:#a27b8d}
+.ngx .ng-total{background:var(--ng-ss)}.ngx .ng-fch{box-shadow:inset 0 0 0 2px var(--ng-l)}
+.ngx .pos-pay{background:linear-gradient(#f58fb8,#ef6fa3);box-shadow:0 5px 0 var(--ng-pi),0 10px 24px rgba(194,79,130,.35)}
+.ngx .pos-tile{border:0;box-shadow:0 0 0 2px var(--ng-l)}.ngx .pos-tile>span:not(.pos-img){color:var(--ng-pi)}
+.ngx .ng-ic{flex:none!important;width:44px}.ngx .ng-por .ng-ic{flex:none}
+.ng-nav{gap:4px}.ng-nav button{padding:6px 10px;font-size:12.5px}
