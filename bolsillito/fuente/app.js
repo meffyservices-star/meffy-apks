@@ -1264,6 +1264,7 @@ return `
 ${banner || header('home', privBtn())}
 ${window.App && App.newsCard ? App.newsCard() : ''}
 ${exampleNote()}
+${window.App && App.notifBtn ? App.notifBtn() : ''}
 ${window.App && App.aleCard ? App.aleCard() : ''}
 <!--alertas--><div class="hoy card">
 <span class="hoy-deco" aria-hidden="true">${px('estrellita', 22)}${px('heart', 18)}${px('moneda', 20)}${px('star', 14)}</span>
@@ -2415,7 +2416,7 @@ if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('message',
   if (performance.now() < 20000 || document.hidden) return go();
   document.addEventListener('visibilitychange', function f() { if (!document.hidden) { document.removeEventListener('visibilitychange', f); go(); } });
 });
-window.BOLS_V = 'v107';
+window.BOLS_V = 'v108';
 A.ACTIONS.forceUpdate = async () => { A.toast('Buscando…'); try { const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(r => r.unregister())); const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); } catch (e) {} location.reload(); };
 A.ACTIONS.aleOpen = () => summary();
 const tipFn = A.ACTIONS.mascot;

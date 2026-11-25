@@ -2721,3 +2721,11 @@ body:has(.ngx){background:#f3f4f8!important;background-image:none!important}body
 .ng-k b.neg{color:#d4546e}
 .ngx .li,.ngx .li:nth-child(even){background:#fff;box-shadow:0 0 0 1px var(--ng-l)}
 .ngx .in{border:1px solid var(--ng-l);border-radius:10px}
+
+/* botoncito para activar notificaciones */
+.notif-pill { display: flex; align-items: center; justify-content: center; gap: 4px; margin: 2px 0 4px; }
+.notif-go { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; border: 2px solid #fff; background: linear-gradient(#ffd3e2, #ffb8d0); color: #a2415f; font: 800 12.5px/1 inherit; font-family: inherit; box-shadow: 0 3px 0 #f19ab9, 0 6px 12px rgba(242,126,161,.22); cursor: pointer; animation: notifBob 2.8s ease-in-out infinite; }
+.notif-go:active { transform: translateY(2px); box-shadow: 0 1px 0 #f19ab9; }
+.notif-x { background: none; border: 0; color: #b98a9c; font-size: 12px; padding: 6px; opacity: .7; cursor: pointer; }
+@keyframes notifBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) { .notif-go { animation: none; } }

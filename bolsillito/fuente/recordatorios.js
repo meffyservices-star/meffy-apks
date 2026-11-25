@@ -140,6 +140,20 @@ async function adoptSub() {
     if (!error) { setEp(j.endpoint); r.endpoint = j.endpoint; }
   } catch (e) { console.warn(e); }
 }
+
+// botoncito en el inicio: invita a activar las notificaciones (se esconde solo cuando ya están activas)
+const NK = 'bolsi_notif_hide';
+A.notifBtn = () => {
+  if (!canPush() || devOn() || !Store.uid) return '';
+  try { if (Date.now() < +localStorage.getItem(NK)) return ''; } catch (e) {}
+  return `<div class="notif-pill"><button class="notif-go" data-act="notifOn"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 22a2.4 2.4 0 0 0 2.4-2.4h-4.8A2.4 2.4 0 0 0 12 22zm7-6.2v-5a7 7 0 0 0-5-6.7V3.5a2 2 0 0 0-4 0v.6a7 7 0 0 0-5 6.7v5L3.5 17.5v1h17v-1z"/></svg><span>Activar notificaciones</span></button><button class="notif-x" data-act="notifHide" aria-label="Ahora no">✕</button></div>`;
+};
+ACT.notifOn = async () => {
+  if (isIOS() && !standalone()) return toast('Primero agrega Bolsillito a tu pantalla de inicio y ábrela desde ahí');
+  if (Notification.permission === 'denied') return toast('Están bloqueadas: actívalas en Ajustes del celular → Notificaciones');
+  if (await subscribeDevice()) { toast('¡Listo! Te avisaremos ♡'); A.render(); }
+};
+ACT.notifHide = () => { try { localStorage.setItem(NK, String(Date.now() + 7 * 864e5)); } catch (e) {} A.render(); };
 addEventListener('beforeinstallprompt', e => { e.preventDefault(); A.installEvt = e; if (S.route === 'recordatorio') A.render(); });
 addEventListener('appinstalled', () => { A.installEvt = null; toast('¡Listo! Bolsillito ya está instalada como app.'); });
 ACT.installApp = async () => { const e = A.installEvt; if (!e) return; e.prompt(); try { await e.userChoice; } catch (er) { } A.installEvt = null; A.render(); };
