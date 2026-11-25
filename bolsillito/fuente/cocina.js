@@ -54,14 +54,14 @@ D('ck_enceb', 20, 20, p => layered(p, q => { q.e(10, 13.6, 9, 5.4, 'l'); q.r(3, 
 D('ck_cupcake', 20, 20, p => { for (let y = 11; y < 19; y++) { const w = 13 - Math.floor((y - 11) * .4); p.r(10 - Math.floor(w / 2), y, w, 1, 'P'); } for (let x = 5; x < 16; x += 3) p.r(x, 11, 1, 8, 'p'); p.e(10, 10.5, 6.6, 2.6, 'C'); p.e(10, 8, 5.6, 2.4, 'w'); p.e(10, 5.6, 4, 2.2, 'p'); p.e(10, 3.4, 2.4, 1.8, 'w'); p.px(10, 1, 'R'); p.px(10, 2, 'R'); p.px(9, 2, 'R'); p.px(7, 8, 'V'); p.px(12, 7, 'Y'); p.px(9, 5, 'G'); p.px(12, 5, 'P'); });
 
 // ---------------- Recetas ----------------
-const BASE_ING = { masa: 'ckh_masa', miel: 'ck_miel', fresa: 'ckh_fresa', taza: 'ck_taza', te: 'ck_te', boba: 'ckh_boba', cono: 'ck_cono', bola: 'ck_bola', chispas: 'ck_chispas', crema: 'ckh_crema', pan: 'ckh_pan', panb: 'ckh_panb', pant: 'ckh_pant', carne: 'ckh_carne', carneh: 'ckh_carneh', salchicha: 'ckh_salchicha', queso: 'ckh_queso', quesoh: 'ckh_quesoh', arroz: 'ckh_arroz', menestra: 'ckh_menestra', platano: 'ckh_platano', pescado: 'ckh_pescado', cebolla: 'ckh_cebolla', yuca: 'ckh_yuca', pollo: 'ckh_pollo', matcha: 'ckh_matcha', chocolate: 'ckh_chocolate', menta: 'ckh_menta', aceite: 'ckh_aceite', harina: 'ckh_harina', huevos: 'ckh_huevos', leche: 'ckh_leche', mantequilla: 'ckh_mantequilla', azucar: 'ckh_azucar', sal: 'ckh_sal', lechuga: 'ckh_lechuga', tomate: 'ckh_tomate', mostaza: 'ckh_mostaza', limon: 'ckh_limon' };
+const BASE_ING = { masa: 'ckh_masa', miel: 'ckh_miel', fresa: 'ckh_fresa', taza: 'ckh_taza', te: 'ckh_te', boba: 'ckh_boba', cono: 'ckh_cono', bola: 'ckh_bola', chispas: 'ckh_chispas', crema: 'ckh_crema', pan: 'ckh_pan', panb: 'ckh_panb', pant: 'ckh_pant', carne: 'ckh_carne', carneh: 'ckh_carneh', salchicha: 'ckh_salchicha', queso: 'ckh_queso', quesoh: 'ckh_quesoh', arroz: 'ckh_arroz', menestra: 'ckh_menestra', platano: 'ckh_platano', pescado: 'ckh_pescado', cebolla: 'ckh_cebolla', yuca: 'ckh_yuca', pollo: 'ckh_pollo', matcha: 'ckh_matcha', chocolate: 'ckh_chocolate', menta: 'ckh_menta', aceite: 'ckh_aceite', harina: 'ckh_harina', huevos: 'ckh_huevos', leche: 'ckh_leche', mantequilla: 'ckh_mantequilla', azucar: 'ckh_azucar', sal: 'ckh_sal', lechuga: 'ckh_lechuga', tomate: 'ckh_tomate', mostaza: 'ckh_mostaza', limon: 'ckh_limon' };
 let ING = BASE_ING;
 const BASE_COOK = ['masa', 'carne', 'carneh', 'salchicha', 'platano', 'pollo']; let COOKERS = BASE_COOK;
 const BASE_D = ['masa', 'miel', 'fresa', 'crema', 'chispas', 'taza', 'te', 'boba', 'cono', 'bola', 'matcha', 'chocolate', 'menta'];
 const BASE_S = ['pan', 'panb', 'pant', 'salchicha', 'carne', 'carneh', 'queso', 'quesoh', 'arroz', 'menestra', 'platano', 'pescado', 'yuca', 'pollo'];
 const BASE_P = ['harina', 'huevos', 'leche', 'mantequilla', 'azucar', 'aceite', 'sal', 'lechuga', 'tomate', 'mostaza', 'limon', 'cebolla'];
 let ORD_D = BASE_D, ORD_S = BASE_S, ORD_P = BASE_P;
-let STN = 'dulce'; const order = () => STN === 'dulce' ? ORD_D : STN === 'despensa' ? ORD_P : ORD_S;
+let STN = 'dulce', SHOWN = null; const order = () => (STN === 'dulce' ? ORD_D : STN === 'despensa' ? ORD_P : ORD_S).filter(k => !SHOWN || SHOWN.has(k));
 const BASE_REC = [
   { id: 'hot', name: 'Hotcakes', steps: ['masa', 'cook', 'miel'], art: 'ckh_r_hot', price: 6, lvl: 1 },
   { id: 'boba', name: 'Té de burbujas', steps: ['taza', 'te', 'boba'], art: 'ckh_r_boba', price: 7, lvl: 1 },
@@ -73,14 +73,14 @@ const BASE_REC = [
   { id: 'helado2', name: 'Helado doble', steps: ['cono', 'bola', 'bola', 'chispas'], art: 'ckh_r_helado', price: 11, lvl: 5 },
   { id: 'tefresa', name: 'Té de fresa', steps: ['taza', 'te', 'fresa', 'boba'], art: 'ckh_r_boba', price: 12, lvl: 6 },
   { id: 'matcha', name: 'Matcha con crema', steps: ['taza', 'matcha', 'crema', 'boba'], art: 'ckh_r_matcha', price: 12, lvl: 4 },
-  { id: 'pastel', name: 'Pastel', steps: ['harina', 'huevos', 'azucar', 'cook', 'fresa'], art: 'ckh_r_pastel', price: 12, lvl: 4 },
-  { id: 'pastelf', name: 'Pastel de fresa', steps: ['harina', 'huevos', 'azucar', 'cook', 'crema', 'fresa'], art: 'ckh_r_pastelf', price: 15, lvl: 6 },
-  { id: 'hotdog', name: 'Hot dog', steps: ['pan', 'salchicha', 'cook', 'tomate', 'mostaza'], art: 'ckh_r_hotdog', price: 8, lvl: 1 },
+  { id: 'pastel', name: 'Pastel', steps: ['harina', 'huevos', 'cook', 'fresa'], art: 'ckh_r_pastel', price: 12, lvl: 4 },
+  { id: 'pastelf', name: 'Pastel de fresa', steps: ['harina', 'huevos', 'cook', 'crema', 'fresa'], art: 'ckh_r_pastelf', price: 15, lvl: 6 },
+  { id: 'hotdog', name: 'Hot dog', steps: ['pan', 'salchicha', 'cook', 'mostaza'], art: 'ckh_r_hotdog', price: 8, lvl: 1 },
   { id: 'bolon', name: 'Bolón', steps: ['platano', 'cook', 'queso'], art: 'ckh_r_bolon', price: 8, lvl: 2 },
-  { id: 'burger', name: 'Hamburguesa', steps: ['panb', 'carneh', 'cook', 'quesoh', 'lechuga', 'pant'], art: 'ckh_r_burger', price: 14, lvl: 3 },
+  { id: 'burger', name: 'Hamburguesa', steps: ['panb', 'carneh', 'cook', 'quesoh', 'pant'], art: 'ckh_r_burger', price: 13, lvl: 3 },
   { id: 'arroz', name: 'Arroz con menestra', steps: ['arroz', 'menestra', 'carne', 'cook'], art: 'ckh_r_arroz', price: 12, lvl: 4 },
-  { id: 'kfc', name: 'Pollito KFC', steps: ['pollo', 'harina', 'aceite', 'cook'], art: 'ckh_r_kfc', price: 13, lvl: 4 },
-  { id: 'enceb', name: 'Encebollado', steps: ['pescado', 'yuca', 'cebolla', 'limon'], art: 'ckh_r_enceb', price: 14, lvl: 5 }
+  { id: 'kfc', name: 'Pollito KFC', steps: ['pollo', 'aceite', 'cook'], art: 'ckh_r_kfc', price: 13, lvl: 4 },
+  { id: 'enceb', name: 'Encebollado', steps: ['pescado', 'yuca', 'cebolla'], art: 'ckh_r_enceb', price: 14, lvl: 5 }
 ];
 let RECIPES = BASE_REC;
 const ING_NAME = { masa: 'Masa', miel: 'Miel', fresa: 'Fresa', taza: 'Taza', te: 'Té', boba: 'Boba', cono: 'Cono', bola: 'Bola de helado', chispas: 'Chispas', crema: 'Crema', pan: 'Pan de hot dog', panb: 'Pan de abajo', pant: 'Pan de arriba', carne: 'Carne', carneh: 'Carne de hamburguesa', salchicha: 'Salchicha', queso: 'Queso manaba', quesoh: 'Queso de hamburguesa', arroz: 'Arroz', menestra: 'Menestra', platano: 'Verde', pescado: 'Albacora', cebolla: 'Cebolla', yuca: 'Yuca', pollo: 'Pollo', matcha: 'Matcha', chocolate: 'Chocolate', menta: 'Menta', aceite: 'Aceite', harina: 'Harina', huevos: 'Huevos', leche: 'Leche', mantequilla: 'Mantequilla', azucar: 'Azúcar', sal: 'Sal', lechuga: 'Lechuga', tomate: 'Salsa de tomate', mostaza: 'Mostaza', limon: 'Limón' };
@@ -148,9 +148,11 @@ async function cookGame() {
     const lc = [122, 74, 82], add = []; for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const i = yy * w + xx; if (solid[i]) continue; const nb = [xx > 0 && i - 1, xx < w - 1 && i + 1, yy > 0 && i - w, yy < h - 1 && i + w].filter(n => n !== false && solid[n]); if (nb.length && !nb.every(dark)) add.push(i); }
     add.forEach(i => { const o = i * 4; a[o] = lc[0]; a[o + 1] = lc[1]; a[o + 2] = lc[2]; a[o + 3] = 255; });
     x.putImageData(d, 0, 0); return c; };
-  const U = unlocked(); const lvl = cookLvl();
+  const U = unlocked(); const lvl = cookLvl(); SHOWN = new Set(U.reduce((a, r) => a.concat(r.steps), []));
+  const lens = [ORD_D, ORD_S, ORD_P].map(l => l.filter(k => SHOWN.has(k)).length); const maxN = Math.max(...lens);
+  { const st0 = [['dulce', ORD_D], ['salado', ORD_S], ['despensa', ORD_P]].find(([k, l]) => l.some(x => SHOWN.has(x))); STN = st0 ? st0[0] : 'dulce'; }
   // posiciones
-  const hudH = 16, counterY = Math.max(96, Math.min(Math.round(LH * .47), LH - 150 - (Math.max(2, Math.ceil(Math.max(ORD_D.length, ORD_S.length, ORD_P.length) / 5)) - 2) * 26)), btnH = 24, btnRows = Math.max(2, Math.ceil(Math.max(ORD_D.length, ORD_S.length, ORD_P.length) / 5)), gap = 2;
+  const hudH = 16, counterY = Math.max(96, Math.min(Math.round(LH * .47), LH - 150 - (Math.max(2, Math.ceil(maxN / 5)) - 2) * 26)), btnH = 24, btnRows = Math.max(2, Math.ceil(maxN / 5)), gap = 2;
   const btnY0 = LH - (btnH * btnRows + gap * (btnRows + 1)) - 4;
   const slotX = [0, 1, 2].map(i => Math.round(LW * (1 + i * 2) / 6));
   let cust, tray, pan, time, money, lives, served, perfect, pops, focus, fx, run = true, paused = true, last = 0, raf, spawnT, flash, shake, goneT, combo;
@@ -242,7 +244,7 @@ async function cookGame() {
   const drawTabs = () => {
     tabs().forEach(t => { const on = STN === t.k, c = on ? t.col : '#ffe3ec', e = on ? t.dk : '#f3c1d2'; px(t.x, t.y + 2, t.w, t.h - 2, e); px(t.x + 1, t.y + 1, t.w - 2, t.h - 2, c); px(t.x + 2, t.y, t.w - 4, 1, c); px(t.x + 2, t.y + t.h - 1, t.w - 4, 1, e); if (on) px(t.x + 3, t.y + 2, t.w - 6, 1, 'rgba(255,255,255,.55)'); });
   };
-  const tabs = () => { const w = Math.round(LW / 3) - 5, y = btnY0 - 19, x1 = 4, x2 = Math.round(LW / 3) + 2, x3 = Math.round(LW * 2 / 3) + 1; return [{ k: 'dulce', t: 'Dulces', x: x1, y, w, h: 13, col: '#f27ea1', dk: '#c9567a' }, { k: 'salado', t: 'Comidas', x: x2, y, w, h: 13, col: '#e8a04a', dk: '#b9762a' }, { k: 'despensa', t: 'Despensa', x: x3, y, w, h: 13, col: '#7fcf98', dk: '#4f9f68' }]; };
+  const tabs = () => { const all = [{ k: 'dulce', t: 'Dulces', col: '#f27ea1', dk: '#c9567a', l: ORD_D }, { k: 'salado', t: 'Comidas', col: '#e8a04a', dk: '#b9762a', l: ORD_S }, { k: 'despensa', t: 'Despensa', col: '#7fcf98', dk: '#4f9f68', l: ORD_P }].filter(t => t.l.some(x => SHOWN.has(x))); const n = Math.max(1, all.length), w = Math.floor((LW - 8 - (n - 1) * 3) / n), y = btnY0 - 19; return all.map((t, i) => Object.assign({}, t, { x: 4 + i * (w + 3), y, w, h: 13 })); };
   const btnPos = i => { const per = 5, bw = btnH, sp = (LW - per * bw) / (per + 1); const col = i % per, row = Math.floor(i / per); return { x: Math.round(sp + col * (bw + sp)), y: btnY0 + gap + row * (btnH + gap), w: bw, h: btnH }; };
   const trayRect = () => ({ x: Math.round(LW / 2 - 21 + 8), y: counterY + 14, w: 42, h: 30 });
   const panRect = () => ({ x: 8, y: counterY + 10, w: 38, h: 38 });
@@ -304,7 +306,7 @@ async function cookGame() {
     // mostrador por delante de las mascotitas
     px(0, counterY, LW, 4, '#e7b987'); px(0, counterY, LW, 1, '#f6d6ac');
     drawPan(); drawTray(); drawBin(); drawRecipe(); drawTabs();
-    U.forEach((_, i) => 0); const ings = order(); ings.forEach((k, i) => { const b = btnPos(i); const used = (pan && pan.on) ? 0 : 1; px(b.x, b.y + 2, b.w, b.h, 'rgba(120,70,100,.18)'); px(b.x, b.y, b.w, b.h, '#fff'); px(b.x + 1, b.y + 1, b.w - 2, b.h - 2, '#fff7fb'); px(b.x, b.y, b.w, 1, '#f9a8c4'); hi(ING[k], b.x + 2, b.y + 2, 20, 18); const need = (() => { const c = focusOrder(); if (!c || tray.done) return false; const nx = c.r.steps[tray.steps.length]; return nx === k; })(); if (need) { px(b.x, b.y + b.h - 2, b.w, 2, '#f27ea1'); } });
+    U.forEach((_, i) => 0); const ings = order(); ings.forEach((k, i) => { const b = btnPos(i); const used = (pan && pan.on) ? 0 : 1; px(b.x, b.y + 2, b.w, b.h, 'rgba(120,70,100,.18)'); px(b.x, b.y, b.w, b.h, '#fff'); px(b.x + 1, b.y + 1, b.w - 2, b.h - 2, '#fff7fb'); px(b.x, b.y, b.w, 1, '#f9a8c4'); hi(ING[k], b.x + 4, b.y + 3, 16, 15); const need = (() => { const c = focusOrder(); if (!c || tray.done) return false; const nx = c.r.steps[tray.steps.length]; return nx === k; })(); if (need) { px(b.x, b.y + b.h - 2, b.w, 2, '#f27ea1'); } });
     fx.forEach(f => { L.globalAlpha = Math.min(1, f.t / 14); const im = I[f.k === 'heart' ? 'heart' : 'star']; if (im) L.drawImage(im, Math.round(f.x), Math.round(f.y), im.width, im.height); }); L.globalAlpha = 1;
     g.imageSmoothingEnabled = false; g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(lo, 0, 0, LW * KP, LH * KP); HQ.forEach(f => f(g)); g.globalAlpha = 1; g.setTransform(KP / SC, 0, 0, KP / SC, 0, 0);
     tabs().forEach(t => { g.font = '800 13px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = STN === t.k ? '#fff' : '#b86a86'; g.fillText(t.t, (t.x + t.w / 2) * SC, (t.y + t.h / 2 + 1) * SC); g.textBaseline = 'alphabetic'; });
@@ -324,7 +326,7 @@ async function cookGame() {
   const hit = (r, x, y) => x >= r.x - 3 && x <= r.x + r.w + 3 && y >= r.y - 3 && y <= r.y + r.h + 3;
   sh.cv.addEventListener('pointerdown', e => {
     if (paused) return; const rc = sh.cv.getBoundingClientRect(); const x = (e.clientX - rc.left) * LW / rc.width, y = (e.clientY - rc.top) * LH / rc.height;
-    if (y >= btnY0 - 21 && y < btnY0 - 5) { const t2 = x < LW / 3 ? 'dulce' : x < LW * 2 / 3 ? 'salado' : 'despensa'; if (t2 !== STN) { STN = t2; gsfx('tick'); } return; }
+    if (y >= btnY0 - 21 && y < btnY0 - 5) { const tt = tabs().find(q => x >= q.x - 2 && x <= q.x + q.w + 2); if (tt && tt.k !== STN) { STN = tt.k; gsfx('tick'); } return; }
     for (let i = 0; i < order().length; i++) if (hit(btnPos(i), x, y)) return tapIngredient(order()[i]);
     if (hit(panRect(), x, y)) return tapPan();
     if (hit(binRect(), x, y)) return tapBin();
