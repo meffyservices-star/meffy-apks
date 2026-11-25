@@ -23,6 +23,12 @@
 <body>
 <div id="ld">Abriendo Bolsillito…</div>
 <script>
+// si algo falla, se muestra el aviso en pantalla (para poder mandar captura y arreglarlo)
+(function(){var n=0;function show(m){try{if(n++>2)return;var d=document.createElement('div');d.style.cssText='position:fixed;left:8px;right:8px;top:8px;z-index:99999;background:#fff3f6;color:#a2253f;border:2px solid #f27ea1;border-radius:14px;padding:8px 12px;font:600 12px system-ui,sans-serif;word-break:break-word;box-shadow:0 4px 14px rgba(0,0,0,.2)';d.textContent='⚠ '+String(m).slice(0,260)+' (toca para cerrar)';d.onclick=function(){d.remove()};document.body.appendChild(d);}catch(x){}}
+addEventListener('error',function(e){if(e.target&&e.target!==window)return;show((e.message||'error')+' · '+String(e.filename||'').split('/').pop()+':'+e.lineno+':'+e.colno)});
+addEventListener('unhandledrejection',function(e){var r=e.reason;show('promesa: '+((r&&(r.message||r.details))||r))});})();
+</script>
+<script>
 var FIX = [];
 (async function () {
   try {
