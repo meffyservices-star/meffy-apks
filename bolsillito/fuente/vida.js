@@ -37,7 +37,7 @@ ACT.vidaBonus = () => {
 document.addEventListener('click', e => { const pt = e.target.closest('.rm-pet[data-pk]'); if (pt && !pt.closest('.room.editing') && !pt.classList.contains('sleep')) { const v = state(); if (!v.seen.mimar) { v.seen.mimar = 1; A.saveSettings(); setTimeout(() => { if (['rincon', 'cuarto'].includes(S.route)) A.render(); }, 700); } } });
 const mark = () => { const v = state(), r = S.route; let ch = false; if (r === 'tienda' && !v.seen.tienda) { v.seen.tienda = 1; ch = true; } if (['amigos', 'visitas', 'compartidas'].includes(r) && !v.seen.amistad) { v.seen.amistad = 1; ch = true; } if (ch) A.saveSettings(); };
 const r0 = A.render; A.render = function () { try { mark(); } catch (e) { } return r0.apply(this, arguments); };
-const c0 = A.screens.cuarto; A.screens.cuarto = function () { const h = c0.apply(this, arguments); const k = '<div class="seg"><button data-act="rmTab"'; const i = h.indexOf(k); return i < 0 || S.roomEdit ? h : h.slice(0, i) + card() + h.slice(i); };
+const c0 = A.screens.cuarto; A.screens.cuarto = function () { const h = c0.apply(this, arguments); const k = '<div class="seg"><button data-act="rmTab"'; const i = h.indexOf(k); return i < 0 || S.roomEdit || (S.settings.cfg || {}).misiones === false ? h : h.slice(0, i) + card() + h.slice(i); };
 
 // ---------- Vida en el cuarto: mascotas que pasean, visitas sorpresa, reacciones y muebles que responden ----------
 const roomEl = () => { if (!['rincon', 'cuarto'].includes(S.route)) return null; const r = document.querySelector('.room:not(.editing)'); return r && r.offsetParent ? r : null; };
@@ -125,8 +125,9 @@ A.after.cuarto = function (el) {
   a0 && a0.apply(this, arguments); stop();
   const box = el.querySelector('#roomBox'); if (!box || S.roomEdit || box.dataset.vida) return; box.dataset.vida = 1; if (S.settings.vida) { const v = state2(); }
   if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  wander(box); butterflies(box);
+  const cf = S.settings.cfg || {}; if (cf.paseo !== false) wander(box); if (cf.mariposas !== false) butterflies(box);
   box.addEventListener('click', e => {
+    if ((S.settings.cfg || {}).reacciones === false) return;
     const pet = e.target.closest('.rm-pet:not(.guest)'); if (pet && !pet.classList.contains('sleep')) { bubble(box, pet, mood()); return; }
     const it = e.target.closest('.rm-it'); if (!it) return; it.classList.remove('vd-wig'); void it.offsetWidth; it.classList.add('vd-wig');
     const k = (it.alt || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); const e0 = (FEMO.find(([r]) => r.test(k)) || [0, '✨'])[1]; floatEmoji(box, pnum(it.style.left) + 4, pnum(it.style.top) - 4, e0);
