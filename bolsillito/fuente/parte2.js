@@ -413,9 +413,9 @@ ACT.pcFeed = a => {
   const p = P(), id = p.active, c = care(id), k = a.dataset.k, f = FOODS[k]; const n = p.pantry[k] || 0;
   if (c.sleep) return say(`Shh… ${info(id).name} está durmiendo.`);
   if (!n) return say('Ya no queda. Atrapa más en el minijuego o cómprala.');
-  if (c.h >= 98) return say('¡Estoy llenita! Mejor más tarde.');
+  if (c.h >= 98) return say('¡Ya comí bastante! Mejor más tarde.');
   p.pantry[k] = n - 1; c.h = clamp(c.h + f.gain); c.f = clamp(c.f + 4); addXp(id, 3, 'care');
-  fx('eat', spr(f.sprite || k, 4)); say(c.h >= 100 ? '¡Estoy llenita! Gracias.' : `¡Ñam! Gracias por ${f.art}.`); refreshCare();
+  fx('eat', spr(f.sprite || k, 4)); say(c.h >= 100 ? '¡Estoy lleno de energía! Gracias.' : `¡Ñam! Gracias por ${f.art}.`); refreshCare();
 };
 ACT.pcBath = () => {
   const id = P().active, c = care(id); if (c.sleep) return say(`Shh… ${info(id).name} está durmiendo.`);
@@ -423,7 +423,7 @@ ACT.pcBath = () => {
 };
 ACT.pcLove = () => {
   const id = P().active, c = care(id); const r = R(); const t = today();
-  if (c.sleep) { say('Zzz… (te da un abrazo dormida)'); return; }
+  if (c.sleep) { say('Zzz… (te abraza entre sueños)'); return; }
   c.f = clamp(c.f + 15); addXp(id, 1, 'care'); fx('love');
   if (r.lastPet !== t) { r.lastPet = t; r.pets = (r.pets || 0) + 1; toast('¡Le diste cariño! +1 estrellita'); }
   say(['¡Te quiero mucho!', 'Jiji, me haces cosquillas.', '¡Eres la mejor!', 'Más mimos, porfa.'][Math.floor(Math.random() * 4)]); refreshCare();
@@ -491,7 +491,7 @@ ACT.elAdopt = a => {
   const id = a.dataset.id, pt = allPets()[id]; const p = P(); if (p.owned.includes(id)) return;
   if (pt.how === 'stars') { if (!a.dataset.sure) { a.dataset.sure = 1; a.textContent = `¿Seguro? Toca otra vez para adoptar por ${pt.price}`; return; } if (!spend(pt.price)) return; }
   else if (!canGet(pt)) return;
-  p.owned.push(id); p.since[id] = today(); setActive(id); toast(`¡Bienvenida, ${pt.name}!`); A.go('rincon');
+  p.owned.push(id); p.since[id] = today(); setActive(id); toast(`¡${pt.name} se une a tu equipo!`); A.go('rincon');
 };
 A.petAdopt = id => { const p = P(); if (!p.owned.includes(id)) { p.owned.push(id); p.since[id] = today(); A.saveSettings(); } };
 
@@ -652,7 +652,7 @@ function roomHTML(rmIn, opts) {
   const part = opts.part || dayPart(); const night = part === 'noche';
   const photos = opts.photos || boardPhotos(); let ph = 0;
   const items = rm.items.filter(it => FURN[it.k]).map(it => ({ it, f: FURN[it.k] })).sort((a, b) => (a.f.flat ? 0 : a.f.wall ? 1 : 2) - (b.f.flat ? 0 : b.f.wall ? 1 : 2) || (a.it.y + a.f.h) - (b.it.y + b.f.h));
-  // cada mascota con su ropa: la tuya con lo que le pusiste, la de tu amiga con lo que le puso ella
+  // cada mascota con su ropa: la tuya con lo que le pusiste, la de tu amistad con lo que le puso ella
   const myEq = (S.settings.rincon || {}).equip || {};
   const list = (opts.pets || P().room).map(x => typeof x === 'string' ? { k: x, eq: opts.equip ? opts.equip[x] : myEq[x] } : x).filter(x => allPets()[x.k]);
   if (opts.guest && allPets()[opts.guest]) list.push({ k: opts.guest, eq: myEq[opts.guest], guest: true });
@@ -926,7 +926,7 @@ ${ed.how === 'logro' ? `<label class="f">Qué logro<select class="in" data-ed="a
 ${ed.how === 'temporada' ? `<label class="f">Qué temporada<select class="in" data-ed="season">${allSeasons().map(s => `<option value="${s.id}" ${ed.season === s.id ? 'selected' : ''}>${esc(s.name)} (${esc(s.when)})</option>`).join('')}</select></label>` : ''}
 </div>`}
 <div class="row" style="gap:8px;flex-wrap:wrap">${ed.id ? `<button class="btn" data-act="edOff">${ed.off ? 'Mostrar otra vez' : 'Ocultar'}</button><button class="btn danger" data-act="edDel">Borrar</button><button class="btn" data-act="edNew">Nueva</button>` : ''}<button class="btn pink" data-act="edSave" style="flex:1;justify-content:center">Guardar y publicar</button></div>
-<p class="faint" style="margin:0">Lo que guardes aquí les aparece a todas tus usuarias.</p>`;
+<p class="faint" style="margin:0">Lo que guardes aquí les aparece a todas las personas usuarias.</p>`;
 }
 function palHTML() { return `<div class="ed-pal">${ed.pal.map((h, i) => `<button class="ed-sw ${ed.color === i.toString(36) ? 'on' : ''}" data-sw="${i.toString(36)}" style="background:${h}" aria-label="Color ${i + 1}"></button>`).join('')}<button class="ed-sw erase ${ed.color === '.' ? 'on' : ''}" data-sw="." aria-label="Borrador">×</button><label class="ed-sw add" aria-label="Agregar color">+<input type="color" id="edAddCol" value="#f27ea1"></label></div>`; }
 // ---- Pantalla grande: solo el dibujo, con las herramientas justas y zoom con dos dedos ----
@@ -1370,7 +1370,7 @@ ACT.seAdd = () => {
   A.CFG.catalog = A.CFG.catalog || {}; const L = A.CFG.catalog.seasons = A.CFG.catalog.seasons || [];
   L.push({ id: 'cs_' + uid(), name: n, from: f.slice(5), to: t.slice(5) }); S.seasOpen = true; saveCatalog();
 };
-ACT.seDel = a => { if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Segura?'; return; } A.CFG.catalog.seasons = (A.CFG.catalog.seasons || []).filter(x => x.id !== a.dataset.id); S.seasOpen = true; saveCatalog(); };
+ACT.seDel = a => { if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Confirmas?'; return; } A.CFG.catalog.seasons = (A.CFG.catalog.seasons || []).filter(x => x.id !== a.dataset.id); S.seasOpen = true; saveCatalog(); };
 ACT.catKind = a => { S.catKind = a.dataset.v; ed = null; A.render(); };
 ACT.catEdit = a => { const kind = S.catKind || 'pets'; const it = (catalog()[kind] || []).find(x => x.id === a.dataset.id); newDraft(kind, it); A.render(); setTimeout(() => { const f = $('#catForm'); if (f) f.scrollIntoView({ behavior: 'smooth' }); }, 50); };
 ACT.edNew = () => { newDraft(S.catKind || 'pets'); A.render(); };
@@ -1404,7 +1404,7 @@ ACT.edSave = () => {
   ed = null; saveCatalog();
 };
 ACT.edOff = () => { const list = A.CFG.catalog[ed.kind]; const it = list.find(x => x.id === ed.id); if (it) it.off = !it.off; ed = null; saveCatalog(); };
-ACT.edDel = a => { if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Segura? Toca otra vez'; return; } A.CFG.catalog[ed.kind] = A.CFG.catalog[ed.kind].filter(x => x.id !== ed.id); ed = null; saveCatalog(); };
+ACT.edDel = a => { if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Confirmas? Toca otra vez'; return; } A.CFG.catalog[ed.kind] = A.CFG.catalog[ed.kind].filter(x => x.id !== ed.id); ed = null; saveCatalog(); };
 
 // ---- Lo que ya viene en la app: la dueña lo puede quitar o reemplazar ----
 const GONE_KINDS = ['pets', 'furn', 'clothes', 'food', 'walls', 'floors'];
@@ -1485,7 +1485,7 @@ function replBanner() {
   const b = builtins(ed.kind).find(x => x.k === ed.replaces); if (!b) return '';
   return `<div class="row" style="gap:10px;padding:10px;border-radius:12px;background:#fff3c4;color:#6b4d12"><img class="pixel" alt="" src="${b.src}" style="max-width:36px;max-height:36px"><div style="flex:1"><b>Reemplazando a ${esc(b.name)}</b><div style="font-size:13px">Dibuja o sube el nuevo y toca Guardar. ${esc(b.name)} se quita de la app y a quien lo tenía le llega este.</div></div><button class="btn sm" data-act="bltCancel">Cancelar</button></div>`;
 }
-ACT.bltDel = a => { if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Segura? Toca otra vez'; return; } setGone(S.catKind || 'pets', a.dataset.k, true); saveCatalog(); };
+ACT.bltDel = a => { if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Confirmas? Toca otra vez'; return; } setGone(S.catKind || 'pets', a.dataset.k, true); saveCatalog(); };
 ACT.bltBack = a => { setGone(S.catKind || 'pets', a.dataset.k, false); saveCatalog(); };
 ACT.bltRepl = a => {
   const kind = S.catKind || 'pets', k = a.dataset.k; newDraft(kind);

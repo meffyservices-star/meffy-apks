@@ -117,7 +117,7 @@ function picker(tab) {
     const regalos = (S.settings.giftStickers || []).filter(n => Pix.has(n));
     const nuevos = Pix.names.filter(n => /^cs_/.test(n));
     const pixel = Pix.names.filter(n => !['gochi', 'canela', 'shey', 'pudin'].includes(n) && !/^(x_pared|x_piso|pg_|cp_|cf_|cfo_|cs_|ci_|__|m_|regalo_|plataforma|acc_|cgb_|i_|x_)/.test(n));
-    return `${nuevos.length ? `<div class="lab">Nuevos</div>${grid(nuevos.map(n => stBtn(n)))}` : ''}${regalos.length ? `<div class="lab">Regalos de tus amigas</div>${grid(regalos.map(n => stBtn(n)))}` : ''}<div class="lab">Mascotas y colores especiales ${specialOK() ? '' : '<span class="tag gold">Meffy+</span>'}</div>${grid(MOCHIS.map(n => stBtn(n, true)))}<div class="lab">Stickers pixel</div>${grid(pixel.map(n => stBtn(n)))}`;
+    return `${nuevos.length ? `<div class="lab">Nuevos</div>${grid(nuevos.map(n => stBtn(n)))}` : ''}${regalos.length ? `<div class="lab">Regalos de tus amistades</div>${grid(regalos.map(n => stBtn(n)))}` : ''}<div class="lab">Mascotas y colores especiales ${specialOK() ? '' : '<span class="tag gold">Meffy+</span>'}</div>${grid(MOCHIS.map(n => stBtn(n, true)))}<div class="lab">Stickers pixel</div>${grid(pixel.map(n => stBtn(n)))}`;
   };
   const html = () => `<div class="seg" style="margin-bottom:12px"><button data-tb="st" aria-pressed="${tab === 'st'}">Stickers</button><button data-tb="wa" aria-pressed="${tab === 'wa'}">Washi</button><button data-tb="mi" aria-pressed="${tab === 'mi'}">Los míos</button></div><div id="bdxBody">${body()}</div>`;
   openSheet('Decorar el tablero', html(), sh => {

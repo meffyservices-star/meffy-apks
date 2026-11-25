@@ -219,7 +219,7 @@ ACT.remIdeaX = a => { S.settings.remIgn = (S.settings.remIgn || []).concat(a.dat
 ACT.remIdea = a => { const x = ideas()[+a.dataset.i]; if (x) editor(null, x.preset); };
 ACT.remNew = a => editor(null, { kind: a.dataset.kind || 'otro' });
 ACT.remEdit = a => { const r = RL().find(x => x.id === a.dataset.id); if (r) editor(r); };
-ACT.remClearPast = a => { if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Segura? Toca otra vez'; return; } S.settings.reminders = RL().filter(r => nextOcc(r)); save(); A.render(); };
+ACT.remClearPast = a => { if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Confirmas? Toca otra vez'; return; } S.settings.reminders = RL().filter(r => nextOcc(r)); save(); A.render(); };
 
 // ---------------- Crear / editar ----------------
 function editor(r0, preset) {
@@ -267,7 +267,7 @@ function editor(r0, preset) {
       if (b.dataset.rep) { d.repeat = b.dataset.rep; $$('[data-rep]', sh).forEach(x => x.setAttribute('aria-pressed', x.dataset.rep === d.repeat)); if (d.repeat === 'once' && (!d.date || d.date < today())) d.date = today(); reWhen(); }
       if (b.dataset.wd) { const i = +b.dataset.wd, s = new Set(d.wdays || []); s.has(i) ? s.delete(i) : s.add(i); d.wdays = [...s]; b.setAttribute('aria-pressed', s.has(i)); }
       if (b.dataset.bef != null && b.dataset.bef !== '') { const v = +b.dataset.bef, s = new Set(befores(d)); s.has(v) ? s.delete(v) : s.add(v); d.before = [...s].sort((x, y) => y - x); b.setAttribute('aria-pressed', s.has(v)); rePrev(); }
-      if (b.id === 'reDel') { if (!b.dataset.s) { b.dataset.s = 1; b.textContent = '¿Segura?'; return; } S.settings.reminders = RL().filter(x => x.id !== r0.id); closeSheet(); save(); A.render(); toast('Recordatorio borrado'); }
+      if (b.id === 'reDel') { if (!b.dataset.s) { b.dataset.s = 1; b.textContent = '¿Confirmas?'; return; } S.settings.reminders = RL().filter(x => x.id !== r0.id); closeSheet(); save(); A.render(); toast('Recordatorio borrado'); }
       if (b.id === 'reOk') {
         d.title = ($('#reT', sh).value || '').trim(); if (!d.title) { $('#reT', sh).focus(); return toast('Escribe qué te recuerdo'); }
         if (d.repeat === 'weekly' && !(d.wdays || []).length) return toast('Elige al menos un día');

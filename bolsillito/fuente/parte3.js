@@ -295,7 +295,7 @@ function habitSheet(h) {
 <button class="btn pink" id="hbOk" style="justify-content:center">Guardar</button>${isNew ? '' : '<button class="btn danger" id="hbDel" style="justify-content:center">Quitar del jardín</button>'}</div>`, sh => {
     sh.addEventListener('click', e => { const b = e.target.closest('[data-hi]'); if (!b) return; icon = b.dataset.hi; $$('[data-hi]', sh).forEach(x => x.setAttribute('aria-pressed', x === b)); });
     $('#hbOk', sh).onclick = () => { const n = $('#hbN').value.trim(); if (!n) return toast('Escribe el hábito'); h.name = n; h.icon = icon; if (isNew) { if (g.habits.length >= 8) return toast('Tu jardín tiene espacio para 8 plantas'); g.habits.push(h); } A.saveSettings(); closeSheet(); A.render(); };
-    const del = $('#hbDel', sh); if (del) del.onclick = () => { if (!del.dataset.s) { del.dataset.s = 1; del.textContent = '¿Segura? Toca otra vez'; return; } g.habits = g.habits.filter(x => x.id !== h.id); A.saveSettings(); closeSheet(); A.render(); };
+    const del = $('#hbDel', sh); if (del) del.onclick = () => { if (!del.dataset.s) { del.dataset.s = 1; del.textContent = '¿Confirmas? Toca otra vez'; return; } g.habits = g.habits.filter(x => x.id !== h.id); A.saveSettings(); closeSheet(); A.render(); };
   });
 }
 ACT.gdNew = () => habitSheet(null);
@@ -327,7 +327,7 @@ function boardSheet(it) {
     sh.addEventListener('click', e => { const s = e.target.closest('[data-sh]'); if (s) { d.cap = $('#bdCap').value; d.goal = $('#bdGoal').value; d.shape = s.dataset.sh; draw(); } });
     $('#bdFile', sh).onchange = async e => { const f = e.target.files[0]; if (!f) return; d.cap = $('#bdCap').value; d.goal = $('#bdGoal').value; toast('Subiendo foto…'); try { const r = await Store.saveImage(f, 900); d.img = r.src; draw(); } catch (er) { toast('No se pudo subir la foto'); } };
     $('#bdOk', sh).onclick = () => { d.cap = $('#bdCap').value.trim(); d.goal = $('#bdGoal').value; if (!d.cap && !d.img) return toast('Ponle una foto o un nombre'); Object.assign(it, d); if (isNew) b.items.push(it); A.saveSettings(); closeSheet(); A.render(); };
-    const del = $('#bdDel', sh); if (del) del.onclick = () => { if (!del.dataset.s) { del.dataset.s = 1; del.textContent = '¿Segura? Toca otra vez'; return; } b.items = b.items.filter(x => x.id !== it.id); A.saveSettings(); closeSheet(); A.render(); };
+    const del = $('#bdDel', sh); if (del) del.onclick = () => { if (!del.dataset.s) { del.dataset.s = 1; del.textContent = '¿Confirmas? Toca otra vez'; return; } b.items = b.items.filter(x => x.id !== it.id); A.saveSettings(); closeSheet(); A.render(); };
   });
   draw();
 }
@@ -335,8 +335,8 @@ ACT.bdAdd = () => { if (BD().items.length >= 12) return toast('Tu tablero tiene 
 ACT.bdEdit = a => boardSheet(BD().items.find(x => x.id === a.dataset.id));
 ACT.bdTitle = () => { const b = BD(); openSheet('Título del tablero', `<div class="stack"><input class="in" id="bdT" value="${esc(b.title)}" maxlength="24"><button class="btn pink" id="bdTo" style="justify-content:center">Guardar</button></div>`, sh => { $('#bdTo', sh).onclick = () => { b.title = $('#bdT').value.trim() || b.title; A.saveSettings(); closeSheet(); A.render(); }; }); };
 
-// ================= Visitas a los cuartos de tus amigas =================
-// pegatinas especiales: solo se consiguen cuando una amiga te las regala
+// ================= Visitas a los cuartos de tus amistades =================
+// pegatinas especiales: solo se consiguen cuando una amistad te las regala
 (function () {
   const D = (n, fn) => Pix.define(n, { w: 16, h: 16, fn });
   D('pg_carta', p => { p.r(1, 4, 14, 10, 'w'); p.line(1, 4, 8, 9, 'C'); p.line(14, 4, 8, 9, 'C'); p.e(8, 10, 2.4, 2, 'P'); p.px(7, 9, 'p'); });
@@ -348,13 +348,13 @@ ACT.bdTitle = () => { const b = BD(); openSheet('Título del tablero', `<div cla
   D('pg_cupcake', p => { p.e(8, 7, 5, 3.4, 'p'); p.r(4, 9, 8, 5, 'L'); p.r(6, 9, 1, 5, 'B'); p.r(9, 9, 1, 5, 'B'); p.map(7, 1, ['.y.', 'yYy', '.y.']); p.px(5, 6, 'w'); });
   D('pg_te_quiero', p => { p.e(6, 6, 3.4, 3.2, 'R'); p.e(10, 6, 3.4, 3.2, 'R'); p.e(8, 9, 5, 4, 'R', (i, j) => j > 6); p.r(3, 12, 10, 3, 'w'); p.r(4, 13, 8, 1, 'P'); p.px(5, 5, 'w'); });
 })();
-const PEGATINAS = { pg_carta: 'Cartita', pg_abrazo: 'Abrazo de mascotas', pg_arcoiris: 'Arcoíris', pg_brillo: 'Corazón brillante', pg_luna: 'Luna y estrella', pg_trebol: 'Trébol de la suerte', pg_cupcake: 'Cupcake de amigas', pg_te_quiero: 'Te quiero' };
+const PEGATINAS = { pg_carta: 'Cartita', pg_abrazo: 'Abrazo de mascotas', pg_arcoiris: 'Arcoíris', pg_brillo: 'Corazón brillante', pg_luna: 'Luna y estrella', pg_trebol: 'Trébol de la suerte', pg_cupcake: 'Cupcake de amistades', pg_te_quiero: 'Te quiero' };
 A.PEGATINAS = PEGATINAS;
 const PAPELES = { rosa: ['#fff0f5', '#f7a8c0'], menta: ['#effaf3', '#9fd6b5'], lila: ['#f5f0ff', '#c4b2ec'], crema: ['#fffaf0', '#e8c99a'], cielo: ['#eef7ff', '#a9d3ef'] };
 const SELLOS = ['heart', 'star', 'flower', 'pudin', 'gochi', 'estrellita'];
 const V = { cache: {}, inbox: null, events: null, gifts: null, signs: {}, loading: false, mine: null };
 const online = () => Store.mode === 'supa' && Store.sb && navigator.onLine !== false;
-function myName() { return (S.settings.name || (Store.profile && Store.profile.name) || 'Amiga').split(' ')[0]; }
+function myName() { return (S.settings.name || (Store.profile && Store.profile.name) || 'Alguien').split(' ')[0]; }
 function roomBody() {
   const r = A.roomState(); const p = A.petState(); const lv = Math.max(1, ...p.owned.map(k => A.petLevel(k).L));
   const st = A.rcStats ? A.rcStats() : {}; const logros = (A.RC.ACH || []).filter(a => { try { return a.ok(st); } catch (e) { return false; } }).length;
@@ -388,7 +388,7 @@ async function loadInbox() {
   applyHelp();
 }
 async function loadSigns(uid) { const { data } = await Store.sb.from('visit_events').select('from_name, text, style, created_at').eq('to_user', uid).eq('kind', 'sign').order('created_at', { ascending: false }).limit(30); V.signs[uid] = data || []; }
-// lo que tus amigas hicieron por ti mientras no estabas
+// lo que tus amistades hicieron por ti mientras no estabas
 function applyHelp() {
   const seen = S.settings.helpSeen || ''; const mine = (V.events || []).filter(e => e.to_user === Store.uid && ['feed', 'water', 'play'].includes(e.kind) && e.created_at > seen);
   if (!mine.length) return; const pst = A.petState(); const msgs = [];
@@ -442,7 +442,7 @@ ${house('h1', 4, 70)}${house('h2', 27, 84)}${house('h3', 53, 72)}${house('h4', 7
 <img class="pixel vl-tree a" alt="" src="${spr(Pix.has('x_cerezo') ? 'x_cerezo' : 'flower', 3)}"><img class="pixel vl-tree b" alt="" src="${spr(Pix.has('x_cerezo') ? 'x_cerezo' : 'flower', 3)}">
 ${Pix.has('x_farol') ? `<img class="pixel vl-lamp" alt="" src="${spr('x_farol', 3)}">` : ''}${Pix.has('x_flores') ? `<img class="pixel vl-fl a" alt="" src="${spr('x_flores', 3)}"><img class="pixel vl-fl b" alt="" src="${spr('x_flores', 3)}">` : ''}
 <img class="pixel vs-pet" alt="" src="${spr(petSprite(), 4)}"><div class="vs-hero-t"><b>${t}</b><span>${sub2}</span></div></div>`;
-  if (!online()) return `${sub('visitas')}${hero('Tu barrio', 'Visita los cuartos de tus amigas')}<div class="card empty"><p>Las visitas necesitan internet y tu cuenta de Bolsillito. Cuando tengas conexión, aquí verás los cuartos de tus amigas.</p></div>`;
+  if (!online()) return `${sub('visitas')}${hero('Tu barrio', 'Visita los cuartos de tus amistades')}<div class="card empty"><p>Las visitas necesitan internet y tu cuenta de Bolsillito. Cuando tengas conexión, aquí verás los cuartos de tus amistades.</p></div>`;
   refreshVisits();
   const friends = S.settings.friends || []; const cur = S.visitCode && V.cache[S.visitCode];
   if (cur) return friendRoomView(cur);
@@ -453,16 +453,16 @@ ${Pix.has('x_farol') ? `<img class="pixel vl-lamp" alt="" src="${spr('x_farol', 
   const thx = (V.gifts || []).filter(g => g.to_user === Store.uid && isThx(g) && !g.opened);
   const unreadL = letters.filter(l => !(S.settings.lettersRead || []).includes(l.id)).length;
   return `${sub('visitas', 'rincon', V.mine ? `<span class="pill sm">${img('heart', 16)} ${V.mine.hearts || 0}</span>` : '')}
-${hero('Tu barrio', friends.length ? (friends.length === 1 ? '1 amiga en tu lista' : friends.length + ' amigas en tu lista') : 'Agrega a tus amigas con su código')}
+${hero('Tu barrio', friends.length ? (friends.length === 1 ? '1 amistad en tu lista' : friends.length + ' amistades en tu lista') : 'Agrega a tus amistades con su código')}
 <div class="grid2"><button class="card vs-box" data-act="vsOpenBox">${img(box.length ? 'regalo_cerrado' : 'regalo_abierto', 52)}<b>Tu cajita</b><span class="faint">${box.length ? box.length + (box.length === 1 ? ' regalo sin abrir' : ' regalos sin abrir') : 'Vacía por ahora'}</span>${box.length ? '<span class="pc-dot"></span>' : ''}</button>
 <button class="card vs-box" data-act="vsLetters">${img('pg_carta', 52)}<b>Tus cartas</b><span class="faint">${letters.length ? (unreadL ? unreadL + ' sin leer' : letters.length + ' guardadas') : 'Todavía no hay'}</span>${unreadL ? '<span class="pc-dot"></span>' : ''}</button></div>
-${thx.length ? `<div class="card vs-thx">${img('heart', 34)}<span><b>${thx.length === 1 ? esc(thx[0].from_name || 'Una amiga') + ' te dio las gracias' : thx.length + ' amigas te dieron las gracias'}</b>${thx.slice(0, 3).map(t => `<span class="faint">${thx.length > 1 ? esc(t.from_name || 'Una amiga') + ': ' : ''}${t.msg ? '“' + esc(t.msg) + '”' : 'por tu regalito'}</span>`).join('')}</span><button class="btn sm" data-act="vsThxOk">Lindo</button></div>` : ''}
+${thx.length ? `<div class="card vs-thx">${img('heart', 34)}<span><b>${thx.length === 1 ? esc(thx[0].from_name || 'Alguien') + ' te dio las gracias' : thx.length + ' amistades te dieron las gracias'}</b>${thx.slice(0, 3).map(t => `<span class="faint">${thx.length > 1 ? esc(t.from_name || 'Alguien') + ': ' : ''}${t.msg ? '“' + esc(t.msg) + '”' : 'por tu regalito'}</span>`).join('')}</span><button class="btn sm" data-act="vsThxOk">Lindo</button></div>` : ''}
 <div class="card stack"><b>Tu código para que te agreguen</b><div class="row between"><span class="vs-code">${esc(S.settings.visitCode || '…')}</span><button class="btn sm" data-act="vsCopy">Copiar</button></div><span class="faint">Solo se ve tu cuarto: nunca tus cuentas ni tus gastos.</span></div>
-<div class="k-lbl">TUS AMIGAS</div>
-<div class="list vs-list">${friends.map(f => { const r = V.cache[f.code]; return `<div class="li"><span class="ic" style="width:44px;height:44px">${r && r.body && r.body.active && A.petInfo ? `<img class="pixel" alt="" src="${spr(A.petInfo(r.body.active).sprite, 3)}" style="width:40px">` : img('casita', 30)}</span><span class="tx-main"><b>${esc(f.name || f.code)}</b><span>${r ? 'Cambió su cuarto ' + ago(r.updated_at) : V.loading ? 'Cargando…' : 'No encontramos este código'}</span></span><button class="btn sm pink" data-act="vsGo" data-c="${esc(f.code)}" ${r ? '' : 'disabled'}>Visitar</button></div>`; }).join('') || '<div class="card empty">Agrega a tus amigas con su código para visitar sus cuartos.</div>'}</div>
-<button class="btn pink" data-go="amigos" style="justify-content:center">Agregar amigas y ver solicitudes${A.friendPending && A.friendPending() ? ' (' + A.friendPending() + ')' : ''}</button>
+<div class="k-lbl">TUS AMISTADES</div>
+<div class="list vs-list">${friends.map(f => { const r = V.cache[f.code]; return `<div class="li"><span class="ic" style="width:44px;height:44px">${r && r.body && r.body.active && A.petInfo ? `<img class="pixel" alt="" src="${spr(A.petInfo(r.body.active).sprite, 3)}" style="width:40px">` : img('casita', 30)}</span><span class="tx-main"><b>${esc(f.name || f.code)}</b><span>${r ? 'Cambió su cuarto ' + ago(r.updated_at) : V.loading ? 'Cargando…' : 'No encontramos este código'}</span></span><button class="btn sm pink" data-act="vsGo" data-c="${esc(f.code)}" ${r ? '' : 'disabled'}>Visitar</button></div>`; }).join('') || '<div class="card empty">Agrega a tus amistades con su código para visitar sus cuartos.</div>'}</div>
+<button class="btn pink" data-go="amigos" style="justify-content:center">Agregar amistades y ver solicitudes${A.friendPending && A.friendPending() ? ' (' + A.friendPending() + ')' : ''}</button>
 ${helps.length ? `<div class="k-lbl">LO QUE HICIERON POR TI</div><div class="list">${helps.map(e => `<div class="li"><span class="ic">${img({ feed: 'cupcake', water: 'regadera', play: 'paw' }[e.kind], 26)}</span><span class="tx-main"><b>${esc(e.from_name)}</b><span>${{ feed: 'Le dio de comer a tu mascota', water: 'Regó tu jardín', play: 'Vino a jugar con tu mascota' }[e.kind]} · ${ago(e.created_at)}</span></span></div>`).join('')}</div>` : ''}
-${toMe.length ? `<div class="k-lbl">CORAZONES Y NOTITAS</div><div class="list">${toMe.slice(0, 10).map(n => `<div class="li"><span class="ic">${img(n.kind === 'heart' ? 'heart' : 'ui_nota', 26)}</span><span class="tx-main"><b>${esc(n.from_name || 'Una amiga')}</b><span>${n.kind === 'heart' ? 'Le encantó tu cuarto' : '“' + esc(n.text) + '”'} · ${ago(n.created_at)}</span></span></div>`).join('')}</div>` : ''}
+${toMe.length ? `<div class="k-lbl">CORAZONES Y NOTITAS</div><div class="list">${toMe.slice(0, 10).map(n => `<div class="li"><span class="ic">${img(n.kind === 'heart' ? 'heart' : 'ui_nota', 26)}</span><span class="tx-main"><b>${esc(n.from_name || 'Alguien')}</b><span>${n.kind === 'heart' ? 'Le encantó tu cuarto' : '“' + esc(n.text) + '”'} · ${ago(n.created_at)}</span></span></div>`).join('')}</div>` : ''}
 <button class="btn" data-act="vsMyBook" style="justify-content:center">${img('book', 18)} Ver mi libro de visitas</button>`;
 };
 ACT.vsCopy = () => { const c = S.settings.visitCode; if (!c) return; (navigator.clipboard ? navigator.clipboard.writeText(c) : Promise.reject()).then(() => toast('Código copiado')).catch(() => toast(c)); };
@@ -498,7 +498,7 @@ ACT.vsFeed = () => {
   if (!foods.length) return toast('Tu despensa está vacía. Atrapa comidita en los juegos.');
   openSheet('¿Qué le das?', `<div class="fr-shop">${foods.map(([k, n]) => `<button class="shop-tile" data-ff="${k}"><img class="pixel" alt="" src="${spr(A.FOODS[k].sprite || k, 3)}" style="width:40px"><span>${esc(A.FOODS[k].name)}</span><em>tienes ${n}</em></button>`).join('')}</div><p class="faint" style="margin:8px 0 0">Sale de tu despensa.</p>`, sh => sh.addEventListener('click', async e => {
     const b = e.target.closest('[data-ff]'); if (!b) return; const k = b.dataset.ff; closeSheet();
-    if (!(await addEvent('feed', A.FOODS[k].name))) return; pst.pantry[k]--; A.saveSettings(); toast('¡Le diste de comer! Tu amiga lo verá al entrar.'); A.render();
+    if (!(await addEvent('feed', A.FOODS[k].name))) return; pst.pantry[k]--; A.saveSettings(); toast('¡Le diste de comer! Tu amistad lo verá al entrar.'); A.render();
   }));
 };
 ACT.vsWater = async () => { if (await addEvent('water')) { toast('¡Regaste su jardín!'); A.render(); } };
@@ -511,7 +511,7 @@ ACT.vsSign = () => {
 };
 ACT.vsLetter = () => {
   const c = cur(); if (!c) return; let pap = 'rosa', sello = 'heart';
-  const draw = () => openSheet('Carta para ' + c.name, `<div class="stack"><div class="carta" style="--pa:${PAPELES[pap][0]};--pb:${PAPELES[pap][1]}"><textarea class="carta-t" id="ltT" maxlength="500" placeholder="Querida ${esc(c.name)}…">${esc(V.draftL || '')}</textarea><span class="carta-firma">Con cariño, ${esc(myName())}</span><img class="pixel carta-sello" alt="" src="${spr(sello, 4)}"></div>
+  const draw = () => openSheet('Carta para ' + c.name, `<div class="stack"><div class="carta" style="--pa:${PAPELES[pap][0]};--pb:${PAPELES[pap][1]}"><textarea class="carta-t" id="ltT" maxlength="500" placeholder="Hola ${esc(c.name)}…">${esc(V.draftL || '')}</textarea><span class="carta-firma">Con cariño, ${esc(myName())}</span><img class="pixel carta-sello" alt="" src="${spr(sello, 4)}"></div>
 <div class="f">Papel<div class="chips">${Object.entries(PAPELES).map(([k, [a, b2]]) => `<button class="chip" data-pap="${k}" aria-pressed="${k === pap}" style="background:${a};border-color:${b2}">${k}</button>`).join('')}</div></div>
 <div class="f">Sello<div class="chips">${SELLOS.map(i => `<button class="chip" data-sello="${i}" aria-pressed="${i === sello}">${img(i, 22)}</button>`).join('')}</div></div>
 <button class="btn pink" id="ltOk" style="justify-content:center;padding:12px">Mandar carta</button></div>`, sh => {
@@ -532,7 +532,7 @@ ACT.vsLetters = () => {
     openSheet('Carta de ' + l.from_name, `<div class="carta abre" style="--pa:${pp[0]};--pb:${pp[1]}"><div class="carta-txt">${esc(l.text)}</div><span class="carta-firma">Con cariño, ${esc(l.from_name)}</span><img class="pixel carta-sello" alt="" src="${spr((l.style || {}).sello || 'heart', 4)}"></div><p class="faint" style="text-align:center;margin:8px 0 0">${ago(l.created_at)}</p>`);
   }));
 };
-ACT.vsMyBook = async () => { if (!online()) return; await loadSigns(Store.uid); const sg = V.signs[Store.uid] || []; openSheet('Tu libro de visitas', sg.length ? `<div class="vs-book">${sg.map(s2 => `<div class="vs-sign" style="--rot:${(s2.created_at.charCodeAt(18) % 7) - 3}deg"><img class="pixel" alt="" src="${spr(s2.style && s2.style.st || 'heart', 3)}"><b>${esc(s2.from_name)}</b><span>${esc(s2.text || '')}</span><em>${ago(s2.created_at)}</em></div>`).join('')}</div>` : '<p class="faint">Todavía nadie firmó tu libro. Comparte tu código con tus amigas.</p>'); };
+ACT.vsMyBook = async () => { if (!online()) return; await loadSigns(Store.uid); const sg = V.signs[Store.uid] || []; openSheet('Tu libro de visitas', sg.length ? `<div class="vs-book">${sg.map(s2 => `<div class="vs-sign" style="--rot:${(s2.created_at.charCodeAt(18) % 7) - 3}deg"><img class="pixel" alt="" src="${spr(s2.style && s2.style.st || 'heart', 3)}"><b>${esc(s2.from_name)}</b><span>${esc(s2.text || '')}</span><em>${ago(s2.created_at)}</em></div>`).join('')}</div>` : '<p class="faint">Todavía nadie firmó tu libro. Comparte tu código con tus amistades.</p>'); };
 // ---- la cajita: mandar regalos ----
 const STAR_DAY = 10, STICK_DAY = 3;
 const isThx = g => g.kind === 'thanks' || (g.kind === 'tpl' && g.payload && g.payload.thanks);
@@ -552,7 +552,7 @@ ACT.vsGift = () => {
     const why = n => n > b0 ? `te faltan ${n - b0}` : n > lim ? 'pasa el límite de hoy' : '';
     body = `<p class="faint" style="margin:0">${Store.isOwner ? `Tienes ${b0} estrellitas. Como dueña, puedes regalar las que quieras.` : `Tienes ${b0} estrellitas. Puedes regalar hasta ${STAR_DAY} al día; hoy te quedan ${lim}.`}</p><div class="gf-stars">${opts.map(n => { const w = why(n); return `<button class="chip" data-gf="stars:${n}" ${w ? 'disabled' : ''}>${ST(14)} ${n}${w ? `<small>${w}</small>` : ''}</button>`; }).join('')}</div>`;
   }
-  if (tab === 'sticker') body = `<p class="faint" style="margin:0">Pegatinas especiales para su journal: solo se consiguen cuando una amiga te las regala. Hoy puedes mandar ${Math.max(0, STICK_DAY - sentSt)}.</p><div class="fr-shop">${Object.entries(PEGATINAS).map(([k, n]) => `<button class="shop-tile" data-gf="sticker:${k}" ${sentSt >= STICK_DAY ? 'disabled' : ''}><img class="pixel" alt="" src="${spr(k, 3)}" style="width:40px"><span>${esc(n)}</span></button>`).join('')}</div>`;
+  if (tab === 'sticker') body = `<p class="faint" style="margin:0">Pegatinas especiales para su journal: solo se consiguen cuando una amistad te las regala. Hoy puedes mandar ${Math.max(0, STICK_DAY - sentSt)}.</p><div class="fr-shop">${Object.entries(PEGATINAS).map(([k, n]) => `<button class="shop-tile" data-gf="sticker:${k}" ${sentSt >= STICK_DAY ? 'disabled' : ''}><img class="pixel" alt="" src="${spr(k, 3)}" style="width:40px"><span>${esc(n)}</span></button>`).join('')}</div>`;
   if (tab === 'tpl') { const L2 = S.settings.jrTpls || []; body = L2.length ? `<div class="list">${L2.map(t => `<button class="li" data-gf="tpl:${t.id}"><span class="ic">${img('ui_plantilla', 26)}</span><span class="tx-main"><b>${esc(t.name)}</b><span>Le llega una copia para su journal</span></span></button>`).join('')}</div>` : '<p class="faint">Guarda una página como plantilla en tu journal (botón Plantillas) para poder mandarla.</p>'; }
   openSheet('Para la cajita de ' + c.name, `<div class="stack"><div class="chips">${tabs.map(([k, n]) => `<button class="chip" data-gt="${k}" aria-pressed="${k === tab}">${n}</button>`).join('')}</div>${body}<input class="in" id="gMsg" maxlength="140" placeholder="Mensajito (opcional)" value="${esc(V.gMsg || '')}"></div>`, sh => {
     sh.addEventListener('input', e => { if (e.target.id === 'gMsg') V.gMsg = e.target.value; });
@@ -583,14 +583,14 @@ ACT.vsThxOk = async () => {
   L.forEach(g => { g.opened = true; }); A.render();
   try { await Store.sb.from('gifts').update({ opened: true }).in('id', L.map(g => g.id)); } catch (e) {}
 };
-// dar las gracias por un regalo: le llega un aviso a tu amiga
+// dar las gracias por un regalo: le llega un aviso a tu amistad
 async function sendThanks(g, msg) {
   if (!online()) { toast('Para dar las gracias necesitas internet.'); return false; }
   const row = { to_user: g.from_user, from_user: Store.uid, from_name: myName(), kind: 'tpl', item: 'gracias', qty: 1, msg: (msg || '').trim().slice(0, 140), payload: { thanks: true, gift: g.id, de: giftLabel(g) } };
   const { error } = await Store.sb.from('gifts').insert(row);
   if (error) { toast('No se pudo mandar. Revisa tu conexión.'); return false; }
   S.settings.thanked = (S.settings.thanked || []).concat(g.id).slice(-80); A.saveSettings();
-  toast(`¡Le diste las gracias a ${g.from_name || 'tu amiga'}!`); return true;
+  toast(`¡Le diste las gracias a ${g.from_name || 'tu amistad'}!`); return true;
 }
 ACT.vsOpenBox = () => {
   const box = (V.gifts || []).filter(g => g.to_user === Store.uid && !g.opened && !isThx(g));
@@ -623,11 +623,11 @@ function applyGiftFromFriend(g) {
 }
 A.navDotVisits = () => (V.gifts || []).some(g => g.to_user === Store.uid && !g.opened) || !!(A.friendPending && A.friendPending());
 A.openCajita = () => { A.go('visitas'); const t = () => { if (V.gifts) ACT.vsOpenBox(); else setTimeout(t, 500); }; setTimeout(t, 600); };
-// cuando cambias tu cuarto, se actualiza lo que ven tus amigas
+// cuando cambias tu cuarto, se actualiza lo que ven tus amistades
 let pubT = null; const saveSet = A.saveSettings;
 A.saveSettings = (...x) => { const r = saveSet(...x); if (S.settings.visitCode && online()) { clearTimeout(pubT); pubT = setTimeout(() => publishRoom().catch(() => {}), 4000); } return r; };
-// ================= Journal: páginas compartidas con amigas =================
-A.PAGES.compartidas = 'Páginas con amigas'; pageIcon('compartidas', 'heart');
+// ================= Journal: páginas compartidas con amistades =================
+A.PAGES.compartidas = 'Páginas con amistades'; pageIcon('compartidas', 'heart');
 const SH = { rows: {}, base: {}, local: {}, timers: {}, chans: {}, list: null, loading: false };
 const jk = id => 'sh-' + id, idOf = key => key.slice(3);
 const clone = o => JSON.parse(JSON.stringify(o));
@@ -681,13 +681,13 @@ async function loadShared() {
   catch (e) { SH.list = SH.list || []; } finally { SH.loading = false; if (S.route === 'compartidas') A.render(); }
 }
 A.screens.compartidas = () => {
-  if (!online()) return `${sub('compartidas', 'journal')}<div class="card empty">${img('heart', 40)}<p>Las páginas con amigas necesitan internet y tu cuenta.</p></div>`;
+  if (!online()) return `${sub('compartidas', 'journal')}<div class="card empty">${img('heart', 40)}<p>Las páginas con amistades necesitan internet y tu cuenta.</p></div>`;
   if (!SH.list) loadShared();
   const hidden = S.settings.shHidden || [];
   const L2 = (SH.list || []).filter(r => !hidden.includes(r.id));
   return `${sub('compartidas', 'journal', '<button class="btn sm pink" data-act="shNew">Nueva +</button>')}
-<div class="card row" style="gap:12px">${img('pg_abrazo', 44)}<div style="flex:1"><b>Decoren una página juntas</b><div class="faint">Las dos pueden escribir, dibujar y pegar stickers en la misma página. Los cambios de tu amiga te aparecen solitos.</div></div></div>
-${SH.list ? (L2.length ? `<div class="list">${L2.map(r => { const others = Object.entries(r.names || {}).filter(([u]) => u !== Store.uid).map(([, n]) => n); const n = ((r.body || {}).pages || []).reduce((s2, p) => s2 + (p.els || []).length, 0); return `<button class="li" data-act="shOpen" data-id="${r.id}"><span class="ic">${img('ui_paginas', 28)}</span><span class="tx-main"><b>${esc(r.title)}</b><span>Con ${esc(others.join(', ') || 'nadie todavía')} · ${n} cositas · ${ago(r.updated_at)}</span></span><span class="faint">›</span></button>`; }).join('')}</div>` : '<div class="card empty">Todavía no tienes páginas con amigas. Crea una y elige con quién decorarla.</div>') : '<div class="card empty">Cargando…</div>'}
+<div class="card row" style="gap:12px">${img('pg_abrazo', 44)}<div style="flex:1"><b>Decoren una página juntas</b><div class="faint">Las dos pueden escribir, dibujar y pegar stickers en la misma página. Los cambios de tu amistad te aparecen solitos.</div></div></div>
+${SH.list ? (L2.length ? `<div class="list">${L2.map(r => { const others = Object.entries(r.names || {}).filter(([u]) => u !== Store.uid).map(([, n]) => n); const n = ((r.body || {}).pages || []).reduce((s2, p) => s2 + (p.els || []).length, 0); return `<button class="li" data-act="shOpen" data-id="${r.id}"><span class="ic">${img('ui_paginas', 28)}</span><span class="tx-main"><b>${esc(r.title)}</b><span>Con ${esc(others.join(', ') || 'nadie todavía')} · ${n} cositas · ${ago(r.updated_at)}</span></span><span class="faint">›</span></button>`; }).join('')}</div>` : '<div class="card empty">Todavía no tienes páginas con amistades. Crea una y elige con quién decorarla.</div>') : '<div class="card empty">Cargando…</div>'}
 ${(SH.list || []).some(r => hidden.includes(r.id)) ? '<button class="btn sm" data-act="shShowAll">Mostrar las ocultas</button>' : ''}`;
 };
 ACT.shOpen = async a => { const id = a.dataset.id; listen(id); Journal.openKey(jk(id)); };
@@ -695,14 +695,14 @@ ACT.shShowAll = () => { S.settings.shHidden = []; A.saveSettings(); A.render(); 
 ACT.shNew = async () => {
   const fr = (S.settings.friends || []); await Promise.all(fr.filter(f => !V.cache[f.code]).map(f => fetchRoom(f.code).then(r => { if (r) V.cache[f.code] = r; }).catch(() => {})));
   const ok = fr.filter(f => V.cache[f.code]);
-  if (!ok.length) return toast('Primero agrega a una amiga en Visitas con su código');
+  if (!ok.length) return toast('Primero agrega a una amistad en Visitas con su código');
   const pick = new Set();
-  openSheet('Nueva página con amigas', `<div class="stack"><label class="f">Nombre de la página<input class="in" id="shT" maxlength="40" placeholder="Ej. Nuestro viaje a la playa"></label>
+  openSheet('Nueva página con amistades', `<div class="stack"><label class="f">Nombre de la página<input class="in" id="shT" maxlength="40" placeholder="Ej. Nuestro viaje a la playa"></label>
 <div class="f">¿Con quién? (hasta 5)<div class="list">${ok.map(f => `<label class="li" style="cursor:pointer"><input type="checkbox" data-fu="${V.cache[f.code].user_id}" data-fn="${esc(V.cache[f.code].name)}"> <span class="tx-main"><b>${esc(V.cache[f.code].name)}</b><span>${esc(f.code)}</span></span></label>`).join('')}</div></div>
 <button class="btn pink" id="shOk" style="justify-content:center">Crear y empezar a decorar</button></div>`, sh => {
-    sh.addEventListener('change', e => { const u = e.target.dataset.fu; if (!u) return; e.target.checked ? pick.add(u) : pick.delete(u); if (pick.size > 5) { e.target.checked = false; pick.delete(u); toast('Hasta 5 amigas'); } });
+    sh.addEventListener('change', e => { const u = e.target.dataset.fu; if (!u) return; e.target.checked ? pick.add(u) : pick.delete(u); if (pick.size > 5) { e.target.checked = false; pick.delete(u); toast('Hasta 5 amistades'); } });
     $('#shOk', sh).onclick = async () => {
-      if (!pick.size) return toast('Elige al menos una amiga');
+      if (!pick.size) return toast('Elige al menos una amistad');
       const names = { [Store.uid]: myName() }; $$('[data-fu]', sh).forEach(c => { if (c.checked) names[c.dataset.fu] = c.dataset.fn; });
       const body = { pages: [{ id: uid(), tpl: 'libre', bg: '#fffaf3', grid: 'puntos', gridColor: '#f2c6d6', gs: 16, els: [], strokes: [], days: {} }] };
       const { data, error } = await Store.sb.from('shared_pages').insert({ owner: Store.uid, members: [Store.uid, ...pick], names, title: ($('#shT').value || '').trim() || 'Página compartida', body, updated_by: Store.uid }).select('id, owner, members, names, title, body, updated_by, updated_at').single();
@@ -711,9 +711,9 @@ ACT.shNew = async () => {
     };
   });
 };
-// mandar una plantilla a una amiga desde el journal (también se puede desde su cajita)
+// mandar una plantilla a una amistad desde el journal (también se puede desde su cajita)
 A.sendTplTo = async (code, tpl) => {
-  const r = V.cache[code] || await fetchRoom(code).catch(() => null); if (!r) return toast('No encontramos a tu amiga');
+  const r = V.cache[code] || await fetchRoom(code).catch(() => null); if (!r) return toast('No encontramos a tu amistad');
   const { error } = await Store.sb.from('gifts').insert({ to_user: r.user_id, from_user: Store.uid, from_name: myName(), kind: 'tpl', item: tpl.name.slice(0, 60), qty: 1, payload: { name: tpl.name, page: tpl.page } });
   toast(error ? 'No se pudo mandar' : `¡Plantilla enviada a ${r.name}!`);
 };
@@ -850,7 +850,7 @@ A.prettyHearts = (target, opts) => {
   }
 };
 A.pixelHearts = t => A.prettyHearts(t);
-// tocar a las mascotitas en el cuarto (y en el cuarto de tus amigas): brinquito, corazones y su vocecita
+// tocar a las mascotitas en el cuarto (y en el cuarto de tus amistades): brinquito, corazones y su vocecita
 document.addEventListener('click', e => {
   const pt = e.target.closest('.rm-pet[data-pk]'); if (!pt || pt.closest('.room.editing')) return;
   const asleep = pt.classList.contains('sleep'); Sfx.voice(pt.dataset.pk, asleep);
@@ -963,13 +963,13 @@ ${changed.length ? `<div class="card"><h3>Ya cambiados</h3>${iconTiles(changed.m
 ${keys.map(k => `<div class="setrow"><span class="row" style="gap:8px">${cimg(baseOf(map[k]) || 'sparkle', 24)}<span class="faint" style="min-width:0">${esc(ORIGP[k])}</span></span><input class="in" data-lkname="${k}" value="${esc((L.names || {})[k] || '')}" placeholder="${esc(ORIGP[k])}" maxlength="24" style="max-width:170px"></div>`).join('')}
 <button class="btn pink" data-act="lkNames" style="justify-content:center">Guardar nombres</button></div>`;
   } else {
-    body = `<div class="card stack"><b>Prende o apaga secciones</b><span class="faint">Las apagadas desaparecen para tus usuarias. Tú las sigues viendo para poder revisarlas y prenderlas cuando quieras.</span>
+    body = `<div class="card stack"><b>Prende o apaga secciones</b><span class="faint">Las apagadas desaparecen para tus usuarios. Tú las sigues viendo para poder revisarlas y prenderlas cuando quieras.</span>
 ${OFFABLE.filter(k => ORIGP[k]).map(k => `<div class="setrow"><span class="row" style="gap:8px">${cimg(baseOf(map[k]) || 'sparkle', 24)}${esc(A.PAGES[k])}</span><span class="toggle"><input type="checkbox" data-lkoff="${k}" ${(L.off || []).includes(k) ? '' : 'checked'}><span></span></span></div>`).join('')}</div>`;
   }
   return `${sub('adminlook', 'admin', '<span class="tag gold">Solo tú</span>')}${tabs}${body}`;
 };
 A.after.adminlook = el => {
-  el.addEventListener('change', e => { const t = e.target; if (!t.dataset.lkoff) return; const L = look(); const k = t.dataset.lkoff; L.off = L.off.filter(x => x !== k); if (!t.checked) L.off.push(k); saveLook(t.checked ? `${A.PAGES[k]} está prendida` : `${A.PAGES[k]} quedó apagada para tus usuarias`); });
+  el.addEventListener('change', e => { const t = e.target; if (!t.dataset.lkoff) return; const L = look(); const k = t.dataset.lkoff; L.off = L.off.filter(x => x !== k); if (!t.checked) L.off.push(k); saveLook(t.checked ? `${A.PAGES[k]} está prendida` : `${A.PAGES[k]} quedó apagada para tus usuarios`); });
 };
 ACT.lkTab = a => { S.lookTab = a.dataset.v; A.render(); };
 ACT.lkNames = () => { const L = look(); $$('[data-lkname]').forEach(i => { const v = i.value.trim(); if (v) L.names[i.dataset.lkname] = v; else delete L.names[i.dataset.lkname]; }); saveLook('Nombres guardados. Ya los ven todas.'); };
@@ -1048,7 +1048,7 @@ ${m.src ? `<div class="faint" style="word-break:break-all">${esc(m.name || 'Canc
   };
   const D = () => A.adminDraft && A.adminDraft();
   ACT.musPlay = a => { const g = a.dataset.g, m = (D() || {}).music?.[g]; if (!m || !m.src) return; if (prevG === g) { stopPrev(); A.render(); return; } stopPrev(); prev = new Audio(m.src); prev.volume = (m.vol != null ? m.vol : 60) / 100; prev.loop = true; prev.play().catch(() => toast('No se pudo reproducir')); prevG = g; S.musOpen = true; A.render(); };
-  ACT.musDel = a => { const g = a.dataset.g, d = D(); if (!d) return; if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Segura?'; return; } if (prevG === g) stopPrev(); d.music = d.music || {}; d.music[g] = { src: '', name: '', vol: 60, on: false }; S.musOpen = true; toast('Quitada. Toca Guardar cambios.'); A.render(); };
+  ACT.musDel = a => { const g = a.dataset.g, d = D(); if (!d) return; if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Confirmas?'; return; } if (prevG === g) stopPrev(); d.music = d.music || {}; d.music[g] = { src: '', name: '', vol: 60, on: false }; S.musOpen = true; toast('Quitada. Toca Guardar cambios.'); A.render(); };
   const aa = A.after.admin;
   A.after.admin = el => {
     if (aa) aa(el); const card = el.querySelector('#musCard'); if (!card) return;

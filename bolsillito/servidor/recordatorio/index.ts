@@ -1,7 +1,7 @@
 // Manda los avisos de Bolsillito. Lo llama pg_cron cada minuto con la llave x-cron-key.
 // 1) El recordatorio diario para anotar (tabla push_subs, columna daily).
-// 2) Los recordatorios que arma cada usuaria (tabla reminders): pago de tarjeta, suscripciones, cositas…
-// 3) Avisos de amigas: cuando te dejan algo en la cajita y cuando te dan las gracias (tabla gifts, payload.avisado).
+// 2) Los recordatorios que arma cada persona usuaria (tabla reminders): pago de tarjeta, suscripciones, cositas…
+// 3) Avisos de amistades: cuando te dejan algo en la cajita y cuando te dan las gracias (tabla gifts, payload.avisado).
 // 4) Avisos del admin (tabla admin_avisos): a una usuaria o a todas las que tienen notificaciones activadas.
 // 5) Solicitudes de amistad (tabla friend_requests): cuando te mandan una y cuando aceptan la tuya.
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4';
@@ -82,7 +82,7 @@ Deno.serve(async (req: Request) => {
     if (await push(s, { title: 'Bolsillito', body, url: '/' }, 3600)) await sb.from('push_subs').update({ last_sent: now.date }).eq('endpoint', s.endpoint);
   }
 
-  // 2) Recordatorios de cada usuaria
+  // 2) Recordatorios de cada persona usuaria
   const users = [...byUser.keys()];
   for (let i = 0; i < users.length; i += 200) {
     const { data: remData } = await sb.from('reminders').select('*').eq('enabled', true).in('user_id', users.slice(i, i + 200));
@@ -105,8 +105,8 @@ Deno.serve(async (req: Request) => {
       if (keys.length) await sb.from('reminders').update({ sent: [...(r.sent || []), ...keys].slice(-20) }).eq('user_id', r.user_id).eq('id', r.id);
     }
   }
-  // 3) Avisos de amigas (solo lo de la última media hora, una sola vez por regalo)
-  let amigas = 0;
+  // 3) Avisos de amistades (solo lo de la última media hora, una sola vez por regalo)
+  let amistades = 0;
   const since = new Date(Date.now() - 30 * 60000).toISOString();
   const { data: gData } = await sb.from('gifts').select('id, to_user, from_name, kind, msg, payload, opened').gte('created_at', since).limit(300);
   for (const g of (gData || []) as { id: number; to_user: string; from_name: string; kind: string; msg: string; payload: Record<string, unknown>; opened: boolean }[]) {
@@ -114,12 +114,12 @@ Deno.serve(async (req: Request) => {
     if (pl0.avisado) continue;
     const thx = g.kind === 'thanks' || (g.kind === 'tpl' && !!pl0.thanks);
     if (!(g.opened && !thx)) {
-      const quien = (g.from_name || '').trim() || 'Una amiga';
+      const quien = (g.from_name || '').trim() || 'Alguien';
       const pl = thx
         ? { title: `${quien} te dio las gracias`, body: g.msg ? `“${g.msg}”` : 'Le encantó tu regalito.', url: '/?visitas=1', tag: 'gracias-' + g.id }
         : { title: `${quien} te dejó algo en tu cajita`, body: (pl0.total ? `${pl0.total} estrellitas. ` : '') + (g.msg ? `“${g.msg}” · Toca para abrirla.` : 'Toca para abrirla.'), url: '/?cajita=1', tag: 'cajita' };
       for (const s of byUser.get(g.to_user) || []) await push(s, pl, 24 * 3600);
-      amigas++;
+      amistades++;
     }
     await sb.from('gifts').update({ payload: { ...pl0, avisado: true } }).eq('id', g.id);
   }
@@ -142,19 +142,19 @@ Deno.serve(async (req: Request) => {
     .or('and(status.eq.pending,notified.eq.false),and(status.neq.pending,notified_reply.eq.false)').limit(100);
   for (const f of (fData || []) as { id: number; from_user: string; to_user: string; from_name: string; to_name: string; status: string; notified: boolean; notified_reply: boolean }[]) {
     if (f.status === 'pending') {
-      const quien = (f.from_name || '').trim() || 'Una amiga';
-      for (const s of byUser.get(f.to_user) || []) await push(s, { title: `${quien} quiere ser tu amiga`, body: 'Toca para aceptar o rechazar su solicitud.', url: '/?amigos=1', tag: 'sol-' + f.id }, 24 * 3600);
+      const quien = (f.from_name || '').trim() || 'Alguien';
+      for (const s of byUser.get(f.to_user) || []) await push(s, { title: `${quien} quiere conectar contigo`, body: 'Toca para aceptar o rechazar su solicitud.', url: '/?amigos=1', tag: 'sol-' + f.id }, 24 * 3600);
       await sb.from('friend_requests').update({ notified: true }).eq('id', f.id);
       solicitudes++;
     } else {
       if (f.status === 'accepted') {
-        const quien = (f.to_name || '').trim() || 'Tu amiga';
-        for (const s of byUser.get(f.from_user) || []) await push(s, { title: `${quien} aceptó tu solicitud`, body: '¡Ya son amigas! Toca para visitar su cuarto.', url: '/?amigos=1', tag: 'sol-ok-' + f.id }, 24 * 3600);
+        const quien = (f.to_name || '').trim() || 'Tu amistad';
+        for (const s of byUser.get(f.from_user) || []) await push(s, { title: `${quien} aceptó tu solicitud`, body: '¡Ya son amistades! Toca para visitar su cuarto.', url: '/?amigos=1', tag: 'sol-ok-' + f.id }, 24 * 3600);
         solicitudes++;
       }
       // si la rechazaron no se avisa, solo se marca como vista por el sistema
       await sb.from('friend_requests').update({ notified: true, notified_reply: true }).eq('id', f.id);
     }
   }
-  return new Response(JSON.stringify({ sent, gone, rems, amigas, avisos, solicitudes }), { headers: { 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify({ sent, gone, rems, amistades, avisos, solicitudes }), { headers: { 'Content-Type': 'application/json' } });
 });

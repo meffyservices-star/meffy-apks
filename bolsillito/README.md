@@ -23,6 +23,8 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
 
 ## Historial
 
+  - Lenguaje neutro (amistades, personas), menú Más en grupos con descripción y con Juegos/Jardín/Tablero/Páginas compartidas, **Carreritas** con pista en relieve, sombras y profundidad, **Tiendita** con vitrina (saldo, destacado del día, lista de deseos con corazón, atajos; módulo `tienda2.js`). Caché `bolsillito-v47`.
+
   - **Amigos** (Más → Amigas): solicitudes de amistad (RPC `send_friend_request` / `respond_friend_request`, tabla `friend_requests`), buscar por código con vista previa, última vez en línea con día y hora (`rooms.last_seen`, se puede ocultar), actividad de amigas y explicación de todo lo que se puede hacer juntas. Aviso push de solicitudes (edge `recordatorio`, sección 5). Admin: hora real de última entrada (`profiles.last_seen`), avisos a una o todas (`admin_avisos`) y premio a las 3 más activas. Mascota: dormida ya no pierde felicidad. Jardín: el riego de hoy no se deshace sin querer. Caché `bolsillito-v46`.
 
 - **28-oct-2026 (22h)**

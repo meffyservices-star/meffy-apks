@@ -1,4 +1,4 @@
-// ===== Bolsillito · Juego "Carreritas": carrera contra las amigas agregadas y Meffy (récord de la semana) =====
+// ===== Bolsillito · Juego "Carreritas": carrera contra las amistades agregadas y Meffy (récord de la semana) =====
 (function () {
 const A = App, S = A.S, { $, esc, toast } = A;
 const ACT = A.ACTIONS;
@@ -27,7 +27,7 @@ const spriteOf = k => (A.petInfo && A.petInfo(k) && A.petInfo(k).sprite) || (Pix
 function RC() { const g = GM(); const r = g.race = g.race || {}; if (r.d !== A.today()) { r.d = A.today(); r.n = 0; } return r; }
 function payRace(n) { const r = RC(); const ok = Math.max(0, Math.min(n, RACE_CAP - r.n)); r.n += ok; if (ok) A.giveStars(ok); return ok; }
 
-// las rivales: tus amigas y Meffy con su mejor tiempo de esta semana (si no han corrido, corre su versión de práctica)
+// las rivales: tus amistades y Meffy con su mejor tiempo de esta semana (si no han corrido, corre su versión de práctica)
 let rivalsCache = null, rivalsAt = 0;
 async function loadRivals() {
   if (rivalsCache && Date.now() - rivalsAt < 60000) return rivalsCache;
@@ -46,13 +46,13 @@ async function loadRivals() {
         if (!x || x.user_id === me || seen.has(x.user_id)) return; seen.add(x.user_id);
         const isOwner = x.user_id === own; const rc = x.race && x.race.w === w ? x.race : null;
         const pk = x.active || null, eq = pk && x.equip ? x.equip[pk] : null;
-        if (!rc && !isOwner) { out.push({ name: x.name || 'Amiga', sprite: spriteOf(pk || 'gochi'), pk, eq, t: null, friend: true }); return; }
-        out.push({ name: isOwner ? 'Meffy' : (x.name || 'Amiga'), sprite: rc ? (Pix.has(rc.pet) ? rc.pet : spriteOf(x.active || 'pudin')) : 'pudin', pk, eq, t: rc ? +rc.t : 49, owner: isOwner, practice: !rc, friend: !isOwner });
+        if (!rc && !isOwner) { out.push({ name: x.name || 'Alguien', sprite: spriteOf(pk || 'gochi'), pk, eq, t: null, friend: true }); return; }
+        out.push({ name: isOwner ? 'Meffy' : (x.name || 'Alguien'), sprite: rc ? (Pix.has(rc.pet) ? rc.pet : spriteOf(x.active || 'pudin')) : 'pudin', pk, eq, t: rc ? +rc.t : 49, owner: isOwner, practice: !rc, friend: !isOwner });
       }));
     } catch (e) {}
   }
   if (!out.some(r => r.owner) && !Store.isOwner) out.push({ name: 'Meffy', sprite: 'pudin', t: 49, owner: true, practice: true });
-  // amigas que no han corrido esta semana: corren con un tiempo de práctica para que igual estén en la pista
+  // amistades que no han corrido esta semana: corren con un tiempo de práctica para que igual estén en la pista
   out.forEach((r, i) => { if (r.t == null) { r.t = 52 + (i % 4) * 3; r.practice = true; } });
   let b = 0; while (out.length < 3 && b < BOTS.length) { const [n, sp, t] = BOTS[b++]; if (!out.some(r => r.name === n)) out.push({ name: n, sprite: spriteOf(sp), pk: sp, t, bot: true }); }
   rivalsCache = out.sort((a, b2) => a.t - b2.t).slice(0, 7); rivalsAt = Date.now();
@@ -210,9 +210,13 @@ async function raceGame() {
     g.save(); if (shake > 0) g.translate((Math.random() - .5) * 8 * shake, (Math.random() - .5) * 6 * shake);
     g.fillStyle = z.grass; g.fillRect(-10, -10, W + 20, H + 20);
     g.fillStyle = z.grass2; for (let y = -((dist * PXM) % 40); y < H; y += 40) { g.fillRect(0, y, TX - 6, 20); g.fillRect(TX + TW + 6, y + 20, W, 20); }
+    { const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, 'rgba(255,255,255,.32)'); gr.addColorStop(.35, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(60,40,60,.14)'); g.fillStyle = gr; g.fillRect(-10, -10, W + 20, H + 20); }
     deco.forEach(d => drawDeco(g, d));
     // pista con el color del tramo
     for (let y = 0; y < H; y += 8) { const m = dist + (PY() - y) / PXM; const zz = zoneAt(m); g.fillStyle = zz.track; g.fillRect(TX, y, TW, 8); g.fillStyle = zz.edge; const on = Math.floor(m / 1.85) % 2; g.fillRect(TX - 5, y, 5, 8); g.fillStyle = on ? '#ffffff' : zz.edge; g.fillRect(TX - 5, y, 5, 4); g.fillStyle = zz.edge; g.fillRect(TX + TW, y, 5, 8); g.fillStyle = on ? zz.edge : '#ffffff'; g.fillRect(TX + TW, y, 5, 4); }
+    { const tg = g.createLinearGradient(TX, 0, TX + TW, 0); tg.addColorStop(0, 'rgba(90,50,60,.16)'); tg.addColorStop(.18, 'rgba(255,255,255,0)'); tg.addColorStop(.5, 'rgba(255,255,255,.14)'); tg.addColorStop(.82, 'rgba(255,255,255,0)'); tg.addColorStop(1, 'rgba(90,50,60,.16)'); g.fillStyle = tg; g.fillRect(TX, 0, TW, H);
+      g.fillStyle = 'rgba(90,50,60,.05)'; for (let y = -((dist * PXM) % 96); y < H; y += 96) g.fillRect(TX, y, TW, 48);
+      g.fillStyle = 'rgba(90,50,60,.22)'; g.fillRect(TX + TW, 0, 4, H); g.fillRect(TX - 9, 0, 4, H); }
     g.fillStyle = 'rgba(255,255,255,.8)'; for (let l = 1; l < LANES; l++) for (let y = -((dist * PXM) % 30); y < H; y += 30) g.fillRect(TX + LW * l - 1.5, y, 3, 16);
     // líneas de velocidad
     if (boost > 0 || v > 14.5) { g.fillStyle = boost > 0 ? 'rgba(255,226,122,.55)' : 'rgba(255,255,255,.4)'; for (let k = 0; k < 8; k++) { const lx = TX + ((k * 53 + Math.floor(time * 60) * 7) % TW); const ly = (k * 97 + time * 900) % H; g.fillRect(lx, ly, 2, 26); } }
@@ -221,10 +225,13 @@ async function raceGame() {
     drawArch(g, 0, 'SALIDA', '#f27ea1', '#ffffff'); drawArch(g, GOAL, 'META', '#6b3b3f', '#ffd166');
     // cositas en la pista
     items.forEach(it => { if (it.done) return; const y = yOf(it.m); if (y < -40 || y > H + 40) return; const cx = laneX(it.l);
+      const dk = .74 + .26 * Math.max(0, Math.min(1.1, y / (PY() + 20))); g.save(); g.translate(cx, y); g.scale(dk, dk); g.translate(-cx, -y);
+      if (it.k !== 'charco' && it.k !== 'rampa') { g.fillStyle = 'rgba(80,40,50,.18)'; g.beginPath(); g.ellipse(cx, y + (it.k === 'star' ? 16 : 14), it.k === 'star' ? 9 : 15, 4, 0, 0, 7); g.fill(); }
       if (it.k === 'star') { const bb = Math.sin(time * 6 + it.m) * 2; g.drawImage(I.star, cx - 12, y - 12 + bb, 24, 24); }
       else if (it.k === 'charco') g.drawImage(I.charco, cx - 26, y - 10, 52, 26);
       else if (it.k === 'rampa') g.drawImage(I.rampa, cx - 26, y - 14, 52, 30);
-      else g.drawImage(I[it.k], cx - 20, y - 22, 40, 40); });
+      else g.drawImage(I[it.k], cx - 20, y - 22, 40, 40);
+      g.restore(); });
     // polvito
     dust.forEach(d => { g.fillStyle = `rgba(255,255,255,${d.t / 30})`; g.beginPath(); g.arc(d.x, d.y, d.r, 0, 7); g.fill(); });
     // rivales: corren de verdad, cambian de carril y se te adelantan o se quedan
@@ -233,6 +240,7 @@ async function raceGame() {
     const jh = jump > 0 ? Math.sin(Math.PI * (1 - jump / (jump > .62 ? 1 : .62))) * (jump > .62 ? 46 : 34) : 0;
     const hop = count > 0 ? 0 : (jump > 0 ? jh : Math.abs(Math.sin(time * 18)) * 3);
     if (boost > 0) { g.fillStyle = 'rgba(255,190,90,.6)'; for (let k = 1; k < 4; k++) { g.beginPath(); g.ellipse(x, PY() + 8 + k * 9, 12 - k * 3, 4, 0, 0, 7); g.fill(); } }
+    g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 3; g.beginPath(); g.ellipse(x, PY() + 6, PET * .42, 7, 0, 0, 7); g.stroke();
     drawRunner(g, meCv, x, PY(), PET + (jump > 0 ? 6 : 0), hop, slow > 0 && Math.floor(time * 20) % 2 ? .45 : 1, 'Tú', 'rgba(242,166,58,.95)');
     // textitos
     pops.forEach(p => {
@@ -240,6 +248,7 @@ async function raceGame() {
       g.globalAlpha = Math.max(0, p.t / 34); g.font = `900 ${p.big ? 18 : 15}px Nunito, sans-serif`; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#ffffff'; const yy = p.y - 70 - (34 - p.t); g.strokeText(p.txt, p.x, yy); g.fillStyle = p.c; g.fillText(p.txt, p.x, yy); g.globalAlpha = 1;
     });
     g.restore();
+    { const vg = g.createRadialGradient(W / 2, H * .55, Math.min(W, H) * .35, W / 2, H * .55, Math.max(W, H) * .8); vg.addColorStop(0, 'rgba(60,30,50,0)'); vg.addColorStop(1, 'rgba(60,30,50,.28)'); g.fillStyle = vg; g.fillRect(0, 0, W, H); }
     // barra de la carrera: dónde va cada una
     const bx = 12, by = 70, bh = Math.min(H - 300, 280);
     g.fillStyle = 'rgba(255,255,255,.85)'; g.fillRect(bx, by, 8, bh); g.fillStyle = '#6b3b3f'; g.fillRect(bx - 3, by - 4, 14, 4);
@@ -322,7 +331,7 @@ const juegos0 = A.screens.juegos;
 A.screens.juegos = () => {
   const h = juegos0(); const best = myBest(); const RCd = RC();
   const art = `<div class="gm-art cr-art"><span class="cr-art-track"></span><img class="pixel cr-art-a" alt="" src="${spr(petSprite(), 4)}"><img class="pixel cr-art-b" alt="" src="${spr('pudin', 4)}"><img class="pixel cr-art-flag" alt="" src="${spr('cr_bandera', 3)}"></div>`;
-  const card = `<button class="gm-row race" data-act="gmPlay" data-g="carrera"><span class="gm-cover">${art}</span><span class="gm-info"><b>Carreritas</b><span>Compite con tus amigas y Meffy.</span><span class="gm-rec">${img('trofeo', 14)}${best != null ? fmtT(best) + ' esta semana' : 'Sin tiempo esta semana'}</span></span><span class="gm-play"><i></i>Jugar</span></button>`;
+  const card = `<button class="gm-row race" data-act="gmPlay" data-g="carrera"><span class="gm-cover">${art}</span><span class="gm-info"><b>Carreritas</b><span>Compite con tus amistades y Meffy.</span><span class="gm-rec">${img('trofeo', 14)}${best != null ? fmtT(best) + ' esta semana' : 'Sin tiempo esta semana'}</span></span><span class="gm-play"><i></i>Jugar</span></button>`;
   const extra = `<div class="gm-today cr-today">${img('cr_bandera', 22)}<div style="flex:1"><b>Carreritas hoy: ${RCd.n} de ${RACE_CAP} estrellitas</b><div class="gm-bar"><i style="width:${Math.min(100, RCd.n / RACE_CAP * 100)}%"></i></div><span class="faint">Aparte de los otros juegos. El que gana se lleva más.</span></div><button class="btn sm" data-act="raceBoard">Tabla</button></div>`;
   const i = h.indexOf('<div class="gm-list">');
   if (i < 0) return h + card;
@@ -334,7 +343,7 @@ ACT.raceBoard = async () => {
   const rivals = await loadRivals(); const best = myBest();
   const all = rivals.filter(r => !r.bot && !r.practice).map(r => ({ name: r.name, t: r.t, owner: r.owner, sprite: r.sprite })).concat(best != null ? [{ name: 'Tú', t: best, me: true, sprite: petSprite() }] : []).sort((a, b) => a.t - b.t);
   const body = all.length ? `<div class="cr-rank big">${all.map((r, i) => `<div class="${r.me ? 'me' : ''} ${r.owner ? 'owner' : ''}"><span>${i < 3 ? img(['trofeo', 'estrellita', 'heart'][i], 22) : i + 1}</span><span>${img(r.sprite, 26)}</span><b>${esc(r.name)}</b><span>${fmtT(r.t)}</span></div>`).join('')}</div>` : '<div class="empty">Nadie ha corrido esta semana todavía. ¡Sé la primera!</div>';
-  A.openSheet('Tabla de la semana', `<div class="stack">${body}<p class="faint" style="margin:0">Cuentan tus amigas agregadas y Meffy. Se reinicia cada lunes. ${(S.settings.friends || []).length ? '' : 'Agrega amigas en Visitas para competir con ellas.'}</p><button class="btn pink" data-act="raceGo" style="justify-content:center">¡A correr!</button></div>`);
+  A.openSheet('Tabla de la semana', `<div class="stack">${body}<p class="faint" style="margin:0">Cuentan tus amistades agregadas y Meffy. Se reinicia cada lunes. ${(S.settings.friends || []).length ? '' : 'Agrega amistades en Visitas para competir con ellas.'}</p><button class="btn pink" data-act="raceGo" style="justify-content:center">¡A correr!</button></div>`);
 };
 ACT.raceGo = () => { A.closeSheet(); raceGame(); };
 A.raceGame = raceGame;

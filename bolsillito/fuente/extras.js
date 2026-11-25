@@ -1,4 +1,4 @@
-// ===== Bolsillito · Buscador en Más, "todo guardado", bienvenida con Ale, primeros pasitos y avisos de amigas =====
+// ===== Bolsillito · Buscador en Más, "todo guardado", bienvenida con Ale, primeros pasitos y avisos de amistades =====
 (function () {
 const A = App, S = A.S, { $, $$, esc, toast } = A;
 const ACT = A.ACTIONS;
@@ -38,12 +38,12 @@ const INFO = {
   juegos: ['Saltar, atrapar monedas, cruzar la calle', 'juegos jugar saltar monedas estrellitas cruzar calle minijuegos'],
   jardin: ['Tus hábitos como plantitas', 'jardin habitos plantas regar'],
   tablero: ['Tu moodboard del año', 'tablero suenos moodboard manifestar fotos stickers'],
-  amigos: ['Agregar amigas y solicitudes', 'amigos amigas solicitudes agregar codigo aceptar rechazar compartir ultima vez en linea'],
-  visitas: ['Tus amigas, tu cajita y tus cartas', 'visitas amigas cajita regalos cartas codigo libro de visitas barrio gracias'],
-  compartidas: ['Páginas de journal con amigas', 'compartidas paginas con amigas journal compartido'],
+  amigos: ['Agregar amistades y solicitudes', 'amigos amistades solicitudes agregar codigo aceptar rechazar compartir ultima vez en linea'],
+  visitas: ['Tus amistades, tu cajita y tus cartas', 'visitas amistades cajita regalos cartas codigo libro de visitas barrio gracias'],
+  compartidas: ['Páginas de journal con amistades', 'compartidas paginas con amistades journal compartido'],
   recordatorio: ['Avisos al celular', 'recordatorios avisos notificaciones alarma pago de tarjeta cumpleanos'],
   compras: ['Lista del súper, precios y lo que hay en casa', 'compras lista super mercado farmacia precios en casa carrito'],
-  admin: ['Panel de la dueña', 'admin panel usuarias configuracion'],
+  admin: ['Panel de administración', 'admin panel usuarias configuracion'],
   admincat: ['Mascotas, muebles, ropa y comida nuevos', 'agregar cosas nuevas panel muebles ropa mascotas'],
   adminlook: ['Íconos, nombres y secciones de la app', 'personalizar iconos nombres secciones apagar']
 };
@@ -123,7 +123,7 @@ function welcome() {
     `<h2>Así funciona Bolsillito</h2><div class="wl-cards">
 <div class="wl-card"><span class="wl-ic" style="background:#ffe3ec">${A.iconHTML(A.pageIcon('add'), 34)}</span><span><b>Anota en dos toques</b><br>Cada gasto con el botón Anotar. Funciona aunque no tengas internet.</span></div>
 <div class="wl-card"><span class="wl-ic" style="background:#e3f3df">${img('heart', 30)}</span><span><b>Tu mascota crece contigo</b><br>Cuando cuidas tu dinero, ella está feliz. Báñala, aliméntala y decora su cuarto.</span></div>
-<div class="wl-card"><span class="wl-ic" style="background:#efe6fb">${img('casita', 32)}</span><span><b>Con tus amigas</b><br>Visita sus cuartos y déjales regalitos en su cajita. Nunca ven tus cuentas.</span></div></div>`,
+<div class="wl-card"><span class="wl-ic" style="background:#efe6fb">${img('casita', 32)}</span><span><b>Con tus amistades</b><br>Visita sus cuartos y déjales regalitos en su cajita. Nunca ven tus cuentas.</span></div></div>`,
     `<div class="wl-art small">${ale(5)}</div><h2>Te dejé unos ejemplos</h2><p>Lo que ves en Inicio son datos de ejemplo para que veas cómo luce todo. Los borras cuando quieras.</p><p>Te preparé unos <b>primeros pasitos</b>: cada uno te da estrellitas para la Tiendita.</p>`
   ];
   const ov = document.createElement('div'); ov.id = 'wl'; ov.className = 'wl'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-label', 'Bienvenida');
@@ -151,7 +151,7 @@ const STEPS = [
   ['cuarto', 'Decora el cuarto de tu mascota', 'go:rincon', () => !!(S.settings.seen || {}).cuarto, 'sp:casita'],
   ['compras', 'Arma tu primera lista de compras', 'go:compras', () => !!(((Store.get('compras') || {}).lists || []).length || ((S.cp || {}).lists || []).length), 'sp:x_carrito_super'],
   ['avisos', 'Activa los avisos del celular', 'go:recordatorio', () => typeof Notification !== 'undefined' && Notification.permission === 'granted', 'sp:campana'],
-  ['amiga', 'Agrega a una amiga', 'go:amigos', () => !!(S.settings.friends || []).length, 'sp:casita'],
+  ['amiga', 'Agrega a una amistad', 'go:amigos', () => !!(S.settings.friends || []).length, 'sp:casita'],
   ['ejemplos', 'Borra los datos de ejemplo', 'clearExamples', () => !(S.tx || []).some(t => t.example), 'sp:estrellita']
 ];
 const STEP_STARS = 3, ALL_STARS = 10;

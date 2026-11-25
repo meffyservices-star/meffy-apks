@@ -207,7 +207,7 @@ function listen(rid) {
     if (C().shDirty.includes(rid)) { l.items = m3((SH.base[rid] || {}).items, l.items, body.items); }
     else { l.items = clone(body.items || []); l.budget = body.budget; l.kind = body.kind || l.kind; l.repeat = body.repeat || null; l.name = row.title || l.name; }
     SH.base[rid] = clone(body); SH.rows[rid] = row; save();
-    if (['compras', 'compra'].includes(S.route) && !document.querySelector('.scrim:not([hidden])')) { A.render(); toast((Object.entries(row.names || {}).find(([u]) => u === row.updated_by) || [, 'Tu amiga'])[1] + ' cambió la lista'); }
+    if (['compras', 'compra'].includes(S.route) && !document.querySelector('.scrim:not([hidden])')) { A.render(); toast((Object.entries(row.names || {}).find(([u]) => u === row.updated_by) || [, 'Tu amistad'])[1] + ' cambió la lista'); }
   }).subscribe();
 }
 async function loadShared() {
@@ -440,7 +440,7 @@ ACT.cpMenu = () => {
 <button data-m="budget">${img('moneda', 24)}<span>Presupuesto</span></button>
 <button data-m="repeat">${img('repeat', 24)}<span>${l.repeat ? 'No repetir' : 'Repetir cada semana'}</span></button>
 <button data-m="tpl">${img('star', 24)}<span>Guardar como plantilla</span></button>
-<button data-m="share">${img('heart', 24)}<span>${l.shared ? 'Compartida con ' + esc(sharedWith(l) || 'amigas') : 'Compartir con una amiga'}</span></button>
+<button data-m="share">${img('heart', 24)}<span>${l.shared ? 'Compartida con ' + esc(sharedWith(l) || 'amistades') : 'Compartir con una amistad'}</span></button>
 <button data-m="text">${img('phone', 24)}<span>Mandar por WhatsApp</span></button>
 <button data-m="uncheck">${img('check', 24)}<span>Desmarcar todo</span></button>
 <button data-m="clear">${img('cart', 24)}<span>Quitar lo que ya está en el carrito</span></button>
@@ -456,7 +456,7 @@ ACT.cpMenu = () => {
       if (m === 'uncheck') { l.items.forEach(i => { i.done = false; }); save(); touch(l); closeSheet(); A.render(); }
       if (m === 'clear') { l.items = l.items.filter(i => !i.done); save(); touch(l); closeSheet(); A.render(); }
       if (m === 'del') {
-        if (!b.dataset.s) { b.dataset.s = 1; b.querySelector('span').textContent = '¿Segura? Toca otra vez'; return; }
+        if (!b.dataset.s) { b.dataset.s = 1; b.querySelector('span').textContent = '¿Confirmas? Toca otra vez'; return; }
         if (l.shared) { if (isOwner && online()) Store.sb.from('shared_lists').delete().eq('id', l.shared).then(() => {}, () => {}); else { C().shHidden.push(l.shared); if (online()) { const r = SH.rows[l.shared]; if (r) Store.sb.from('shared_lists').update({ members: r.members.filter(u => u !== Store.uid) }).eq('id', l.shared).then(() => {}, () => {}); } } }
         C().lists = C().lists.filter(x => x.id !== l.id); save(); closeSheet(); A.go('compras'); toast('Lista borrada');
       }
@@ -465,17 +465,17 @@ ACT.cpMenu = () => {
 };
 async function shareSheet(l) {
   if (!online()) return toast('Para compartir necesitas internet');
-  const fr = S.settings.friends || []; if (!fr.length) return toast('Primero agrega a una amiga en Visitas con su código');
+  const fr = S.settings.friends || []; if (!fr.length) return toast('Primero agrega a una amistad en Visitas con su código');
   const rooms = (await Promise.all(fr.map(f => (A.fetchRoom ? A.fetchRoom(f.code) : Promise.resolve(null)).catch(() => null)))).filter(Boolean);
-  if (!rooms.length) return toast('No encontré a tus amigas. Revisa tu conexión.');
+  if (!rooms.length) return toast('No encontré a tus amistades. Revisa tu conexión.');
   const pick = new Set();
-  openSheet('Compartir lista', `<div class="stack"><span class="faint">Las dos pueden anotar y marcar en la misma lista. Lo que marque tu amiga te aparece al instante.</span>
+  openSheet('Compartir lista', `<div class="stack"><span class="faint">Las dos pueden anotar y marcar en la misma lista. Lo que marque tu amistad te aparece al instante.</span>
 <div class="list">${rooms.map(r => `<label class="li" style="cursor:pointer"><input type="checkbox" data-fu="${esc(r.user_id)}" data-fn="${esc(r.name)}"> <span class="tx-main"><b>${esc(r.name)}</b></span></label>`).join('')}</div>
 <button class="btn pink" id="cpShOk" style="justify-content:center">Compartir</button></div>`, sh => {
     sh.addEventListener('change', e => { const u = e.target.dataset.fu; if (!u) return; e.target.checked ? pick.add(u) : pick.delete(u); });
     $('#cpShOk', sh).onclick = async () => {
-      if (!pick.size) return toast('Elige al menos una amiga');
-      const names = { [Store.uid]: (S.settings.name || 'Amiga').split(' ')[0] }; $$('[data-fu]', sh).forEach(c => { if (c.checked) names[c.dataset.fu] = c.dataset.fn; });
+      if (!pick.size) return toast('Elige al menos una amistad');
+      const names = { [Store.uid]: (S.settings.name || 'Alguien').split(' ')[0] }; $$('[data-fu]', sh).forEach(c => { if (c.checked) names[c.dataset.fu] = c.dataset.fn; });
       const { data, error } = await Store.sb.from('shared_lists').insert({ owner: Store.uid, members: [Store.uid, ...pick], names, title: l.name, body: bodyOf(l), updated_by: Store.uid }).select('id, owner, members, names, title, body, updated_by, updated_at').single();
       if (error) return toast('No se pudo compartir. Revisa tu conexión.');
       l.shared = data.id; SH.rows[data.id] = data; SH.base[data.id] = clone(data.body); save(); listen(data.id); closeSheet(); A.render(); toast('¡Lista compartida!');
@@ -550,7 +550,7 @@ ${h.items.map(i => `<div class="cp-receipt-r"><span>${esc(i.name)} <i>${qtyTxt(i
 <div class="row" style="gap:8px"><button class="btn" id="hAgain" style="flex:1;justify-content:center">Volver a comprar esto</button><button class="btn danger" id="hDel">Borrar</button></div>
 <span class="faint" style="font-size:12px">Borrar aquí solo lo quita del resumen de compras; el gasto sigue en tus movimientos.</span></div>`, sh => {
     $('#hAgain', sh).onclick = () => { closeSheet(); setTimeout(() => newListSheet({ name: h.name, kind: h.kind || 'super', budget: h.budget || '', items: h.items.map(i => Object.assign({ id: '', done: false }, i)) }), 200); };
-    $('#hDel', sh).onclick = e => { const b = e.currentTarget; if (!b.dataset.s) { b.dataset.s = 1; b.textContent = '¿Segura?'; return; } C().hist = C().hist.filter(x => x.id !== h.id); save(); closeSheet(); A.render(); };
+    $('#hDel', sh).onclick = e => { const b = e.currentTarget; if (!b.dataset.s) { b.dataset.s = 1; b.textContent = '¿Confirmas?'; return; } C().hist = C().hist.filter(x => x.id !== h.id); save(); closeSheet(); A.render(); };
   });
 };
 
@@ -608,7 +608,7 @@ ${H.length > 1 ? `<div class="cp-spark">${H.map(h => `<span title="${shortD(h.d)
 ${Object.keys(byS).length ? `<div class="cp-stores">${Object.entries(byS).sort((a2, b2) => a2[1].p - b2[1].p).map(([s, h], i2) => `<div class="cp-srow ${i2 === 0 && Object.keys(byS).length > 1 ? 'best' : ''}"><span>${esc(s)}</span><span class="faint">${shortD(h.d)}</span><b>${money(h.p)}</b></div>`).join('')}</div>` : ''}
 <div class="row" style="gap:8px"><button class="btn pink" id="pAdd" style="flex:1;justify-content:center">Agregar a una lista</button><button class="btn danger" id="pDel">Olvidar</button></div></div>`, sh => {
     $('#pAdd', sh).onclick = () => { const Ls = C().lists; if (!Ls.length) { closeSheet(); return toast('Primero crea una lista'); } const l = (S.cpOpen && L(S.cpOpen)) || Ls[0]; l.items.push({ id: 'i' + uid(), name: p.name, qty: 1, unit: p.unit, price: p.last.p, cat: p.cat || 'otros', done: false }); save(); touch(l); closeSheet(); toast(`Agregado a "${l.name}"`); };
-    $('#pDel', sh).onclick = e => { const b = e.currentTarget; if (!b.dataset.s) { b.dataset.s = 1; b.textContent = '¿Segura?'; return; } delete C().prices[k]; save(); closeSheet(); A.render(); };
+    $('#pDel', sh).onclick = e => { const b = e.currentTarget; if (!b.dataset.s) { b.dataset.s = 1; b.textContent = '¿Confirmas?'; return; } delete C().prices[k]; save(); closeSheet(); A.render(); };
   });
 };
 
