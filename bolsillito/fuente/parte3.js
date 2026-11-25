@@ -226,6 +226,7 @@ function seasonItem(key) {
   if (kind === 'furn') { const f = A.FURN[id]; if (!f) return ''; const own = A.roomState().owned.includes(id); return `<button class="se-item" data-act="rmFurn" data-k="${id}"><img class="pixel" alt="" src="${Pix.sprite(f.sprite || 'x_' + id, 2)}" style="height:40px;width:auto"><b>${esc(f.name)}</b>${own ? '<span class="tag">Tuyo</span>' : `<span class="se-price">${ST(12)} ${f.price}</span>`}<em></em></button>`; }
   return '';
 }
+A.seasonItem = seasonItem; A.lookArt = lookArt;
 const tiendaScreen = A.screens.tienda;
 A.screens.tienda = () => {
   const html = tiendaScreen(); const ALL = A.allSeasons(); const cur = ALL.filter(s => A.inSeason(s.id) && s.items.length); const next = ALL.filter(s => !A.inSeason(s.id));

@@ -560,10 +560,13 @@ const NEXT = { ok: 'poco', poco: 'no', no: 'ok' };
 function casaHTML() {
   const P = C().pantry; const need = P.filter(p => p.state !== 'ok');
   const groups = CK.map(k => [k, P.filter(p => (p.cat || 'otros') === k)]).filter(g => g[1].length);
+  const fc = groups.some(g => g[0] === S.cpCasaCat) ? S.cpCasaCat : ''; const shown = fc ? groups.filter(g => g[0] === fc) : groups;
+  const chips = groups.length > 1 ? `<div class="cp-cats"><button class="chip" data-act="cpCasaCat" data-v="" aria-pressed="${!fc}">Todo ${P.length}</button>${groups.map(g => `<button class="chip" data-act="cpCasaCat" data-v="${g[0]}" aria-pressed="${fc === g[0]}">${esc(cat(g[0]).n)} ${g[1].length}</button>`).join('')}</div>` : '';
   return `<div class="card cp-casa-h">${img('bolsa', 40, '', 'cp-float')}<div><b>Lo que tienes en casa</b><div class="faint">Toca una cosa para cambiarla: hay → queda poco → se acabó. Lo que falta lo pasas a una lista con un toque.</div></div></div>
 <form class="cp-add" id="cpCasaAdd" autocomplete="off"><input class="in" id="cpCasaN" placeholder="Ej. Arroz, aceite, papel higiénico"><button class="btn pink" type="submit" aria-label="Agregar">+</button></form>
 ${need.length ? `<div class="cp-need"><span><b>${need.length}</b> ${need.length === 1 ? 'cosa falta' : 'cosas faltan'}</span><button class="btn pink sm" data-act="cpNeedToList">Pasar a una lista</button></div>` : ''}
-${P.length ? groups.map(([k, g]) => `<div class="cp-aisle">${tile(k, 26)}<span>${cat(k).n}</span><i></i></div><div class="cp-pgrid">${g.map(p => `<button class="cp-pchip ${ST[p.state].c}" data-act="cpPState" data-id="${esc(p.id)}"><b>${esc(p.name)}</b><span>${ST[p.state].n}</span></button>`).join('')}</div>`).join('')
+${chips}
+${P.length ? shown.map(([k, g]) => `<div class="cp-aisle">${tile(k, 26)}<span>${cat(k).n}</span><i></i></div><div class="cp-pgrid">${g.map(p => `<button class="cp-pchip ${ST[p.state].c}" data-act="cpPState" data-id="${esc(p.id)}"><b>${esc(p.name)}</b><span>${ST[p.state].n}</span></button>`).join('')}</div>`).join('')
     : `<div class="card cp-empty"><span class="faint">Cuando cierres una compra, lo que compraste se guarda aquí solito. También puedes anotarlo tú.</span></div>`}
 ${P.length ? '<button class="btn sm" data-act="cpPEdit">Quitar cosas</button>' : ''}`;
 }
@@ -573,6 +576,7 @@ A.after.compras = el => {
   const q = $('#cpQ', el); if (q) { q.oninput = () => { S.cpQ = q.value; const box = $('#cpPriceList', el); if (box) box.innerHTML = priceRows(); }; if (S.cpQFocus) { q.focus(); S.cpQFocus = 0; } }
   const mb = $('#cpMB', el); if (mb) mb.onchange = () => { C().monthBudget = Math.max(0, +mb.value || 0); save(); A.render(); };
 };
+ACT.cpCasaCat = a => { S.cpCasaCat = a.dataset.v; A.render(); };
 ACT.cpPState = a => { const p = C().pantry.find(x => x.id === a.dataset.id); if (!p) return; p.state = NEXT[p.state] || 'ok'; save(); a.className = 'cp-pchip ' + ST[p.state].c; a.querySelector('span').textContent = ST[p.state].n; if (window.Sfx) Sfx.play('blup'); clearTimeout(S.cpPT); S.cpPT = setTimeout(() => A.render(), 1400); };
 ACT.cpNeedToList = () => {
   const need = C().pantry.filter(p => p.state !== 'ok'); const Ls = C().lists;

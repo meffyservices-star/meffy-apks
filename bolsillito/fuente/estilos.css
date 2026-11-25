@@ -2052,3 +2052,40 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .shop-tile { box-shadow: 0 3px 0 rgba(176,122,90,.25); }
 .grp-h { margin: -4px 4px 8px; font-size: 13px; }
 .grp-h { margin: -4px 4px 8px; font-size: 13px; }
+
+/* Tiendita en pestañas + colecciones con modelo */
+.shop-tabs { position: sticky; top: 0; z-index: 5; margin: 8px 0 12px; overflow-x: auto; scrollbar-width: none; }
+.shop-tabs button { flex: none; white-space: nowrap; }
+.sx { position: relative; border-radius: 24px; padding: 14px 14px 12px; margin: 0 0 16px; color: #fff; overflow: hidden; background: linear-gradient(160deg, var(--se1), var(--se2)); box-shadow: 0 6px 0 rgba(0,0,0,.14); }
+.sx-p-puntos::before, .sx-p-rayas::before, .sx-p-estrellas::before { content: ""; position: absolute; inset: 0; opacity: .22; pointer-events: none; }
+.sx-p-puntos::before { background: radial-gradient(var(--se3) 2px, transparent 2.5px) 0 0/18px 18px; }
+.sx-p-rayas::before { background: repeating-linear-gradient(135deg, var(--se3) 0 6px, transparent 6px 20px); }
+.sx-p-estrellas::before { background: radial-gradient(var(--se3) 1.5px, transparent 2px) 0 0/26px 26px, radial-gradient(var(--se3) 1px, transparent 1.5px) 13px 13px/26px 26px; }
+.sx > * { position: relative; }
+.sx-top { text-align: center; }
+.sx-badge { display: inline-block; font: 800 11px var(--f-body, inherit); letter-spacing: .08em; text-transform: uppercase; background: rgba(255,255,255,.25); border-radius: 20px; padding: 4px 10px; }
+.sx-name { font: 700 26px var(--f-pixel, inherit); margin-top: 6px; text-shadow: 0 2px 0 rgba(0,0,0,.18); }
+.sx-sub { font-size: 13px; opacity: .92; }
+.sx-stage { display: flex; justify-content: center; align-items: flex-end; height: calc(var(--mz) + 30px); margin-top: 8px; }
+.sx-pod { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 170px; height: 34px; border-radius: 50%; background: radial-gradient(ellipse, var(--se3), rgba(255,255,255,.15) 70%); opacity: .8; }
+.sx-stage .mz { position: relative; display: inline-block; width: var(--mz); height: var(--mz); margin-bottom: 14px; }
+.sx-stage .mz-base { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+.sx-stage .mz-acc { position: absolute; height: auto; image-rendering: pixelated; }
+.sx-who { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin: 6px 0; }
+.sx-who .chip { background: rgba(255,255,255,.25); color: #fff; border-color: transparent; }
+.sx-who .chip[aria-pressed="true"] { background: #fff; color: var(--se1); }
+.sx-buy { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: center; background: rgba(255,255,255,.2); border-radius: 14px; padding: 8px; font-size: 13px; margin-bottom: 8px; }
+.sx-clear { display: block; margin: 0 auto 8px; }
+.sx-shelf { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 10px; scroll-snap-type: x proximity; scrollbar-width: none; }
+.sx-shelf > * { flex: none; scroll-snap-align: start; }
+.sx-it { width: 100px; min-height: 108px; background: #fff; color: #5b3b45; border: 3px solid transparent; border-radius: 16px; padding: 8px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; font-size: 12px; }
+.sx-it.on { border-color: #fff; box-shadow: 0 0 0 3px var(--se1); }
+.sx-hint { text-align: center; font-size: 12px; opacity: .85; }
+.sx-news { background: linear-gradient(135deg, var(--se1), var(--se2)); color: #fff; align-items: center; gap: 12px; width: 100%; text-align: left; margin-bottom: 10px; }
+.sx-news-art { width: 54px; height: 54px; flex: none; display: inline-flex; }
+/* catálogos: estantes que se deslizan de lado, no listas largas */
+.shop-grid { grid-template-columns: none !important; grid-auto-flow: column; grid-template-rows: repeat(2, auto); grid-auto-columns: 104px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
+.shop-grid > * { scroll-snap-align: start; }
+.cp-cats { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 4px 0 10px; position: sticky; top: 0; z-index: 4; padding: 4px 0; }
+.cp-cats .chip { flex: none; white-space: nowrap; }
+.cp-pgrid { max-height: none; }
