@@ -1743,7 +1743,7 @@ const sc = A.screens, after = A.after, ACT = A.ACTIONS;
 const rerender = () => { A.render(); };
 function avatarHTML(cls) { return S.settings.photo ? `<img class="avatar ${cls}" alt="Tu foto" src="${esc(S.settings.photo)}">` : `<img class="avatar ${cls} pixel" alt="" src="${Pix.sprite('pudin', 5)}" style="object-fit:contain;padding:8px">`; }
 A.avatarHTML = avatarHTML;
-const MENU = ['rincon', 'logros', 'tienda', 'juegos', 'jardin', 'amigos', 'visitas', 'tarrito', 'cuentas', 'tablero', 'estudio', 'sobres', 'planes', 'negocio', 'compras', 'shey', 'suscripciones', 'recordatorio', 'year', 'goals', 'recurring', 'projections', 'rules', 'settings', 'appearance', 'personalizar', 'plan', 'data'];
+const MENU = ['rincon', 'logros', 'tienda', 'juegos', 'jardin', 'amigos', 'visitas', 'tarrito', 'tablero', 'estudio', 'sobres', 'planes', 'negocio', 'compras', 'shey', 'suscripciones', 'recordatorio', 'year', 'goals', 'recurring', 'projections', 'rules', 'settings', 'appearance', 'personalizar', 'plan', 'data'];
 sc.more = () => `
 ${A.header('more')}${A.appCard ? A.appCard() : ''}
 <button class="card row" data-act="tourOpen" style="gap:12px;text-align:left;width:100%;color:inherit;font:inherit;cursor:pointer"><span class="ni" style="background:#fff4c2">${iconHTML('s:estrellita', 30)}</span><span><b>¿Por dónde empiezo?</b><br><span class="faint">Un recorrido corto con los primeros pasos</span></span></button>
@@ -2399,7 +2399,7 @@ if (rec && rec.closed) return `<button class="card row" data-act="aleOpen" style
 if (h < 17) return '';
 return `<button class="card row" data-act="aleOpen" style="gap:12px;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer;background:#fff6c4;border-color:#f6e3a3">${A.mascotImg(48, 3)}<div style="flex:1"><b>¿Cerramos el día?</b> ${A.px('moon', 18)}<div class="faint">${esc(A.conMascota('{nombre} tiene tu resumen de hoy listo'))}</div></div><span class="faint">›</span></button>`;
 };
-window.BOLS_V = 'v104';
+window.BOLS_V = 'v105';
 A.ACTIONS.forceUpdate = async () => { A.toast('Buscando…'); try { const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(r => r.unregister())); const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); } catch (e) {} location.reload(); };
 A.ACTIONS.aleOpen = () => summary();
 const tipFn = A.ACTIONS.mascot;
