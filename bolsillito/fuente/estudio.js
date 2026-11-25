@@ -14,8 +14,8 @@ const SIZES = { furn: [[16, 16, 'Chiquito'], [24, 24, 'Mediano'], [32, 24, 'Anch
 const KINDS = { furn: ['Mueble u objeto', 'Para tu cuarto', 'Mueble'], acc: ['Ropita y accesorios', 'Para tus mascotas', 'Accesorio'], sticker: ['Pegatina', 'Para tu Journal y tablero', 'Pegatina'] };
 const SLOTS = [['head', 'Cabeza'], ['face', 'Cara'], ['neck', 'Cuello']];
 const st = () => S.settings.studio = S.settings.studio || { items: [] };
-const keyOf = it => it.kind === 'furn' ? 'cu_' + it.id : it.kind === 'acc' ? 'cu_' + it.id : 'cs_u' + it.id;
-const spName = it => it.kind === 'acc' ? 'acc_cu_' + it.id : keyOf(it);
+const keyOf = it => it._k || (it.kind === 'furn' ? 'cu_' + it.id : it.kind === 'acc' ? 'cu_' + it.id : 'cs_u' + it.id);
+const spName = it => it.kind === 'acc' ? 'acc_' + keyOf(it) : keyOf(it);
 
 function trim(rows) {
   const h = rows.length, w = rows[0].length; let x0 = w, y0 = h, x1 = -1, y1 = -1;
@@ -25,7 +25,7 @@ function trim(rows) {
 }
 // deja listo todo lo que dibujaste: sprites, muebles, accesorios y pegatinas
 function reg() {
-  st().items.forEach(it => {
+  st().items.concat((st().got || []).map(g => { g._k = g.k; g.id = g.k; return g; })).forEach(it => {
     const t = trim(it.rows), nm = spName(it), k = keyOf(it);
     if (it.kind === 'acc') {
       if (!A.ACC[k]) { const dw = Math.max(8, Math.min(18, Math.round(t.w * 1.15))); A.ACC[k] = { slot: it.slot || 'head', name: it.name, price: 0, w: dw, h: dw * t.h / t.w, mine: true, dx: 0, dy: 0 }; }
@@ -39,6 +39,10 @@ function reg() {
   });
 }
 A.studioReg = reg;
+A.studioPal = PALS;
+// datos de una creación mía (para venderla) y recibir una creación de otra persona
+A.studioData = k => { const it = st().items.find(x => keyOf(x) === k); return it ? { kind: it.kind, name: it.name, rows: it.rows, slot: it.slot, wall: it.wall } : null; };
+A.studioGot = (k, d) => { const s = st(); s.got = s.got || []; if (!s.got.some(g => g.k === k) && d && d.rows) s.got.push({ k, kind: d.kind, name: d.name, rows: d.rows, slot: d.slot, wall: d.wall }); reg(); };
 // un mueble de una amiga: lo dibujamos con los datos que viajan junto al mueble
 A.studioEnsure = it => {
   if (!it || !it.sp || FURN[it.k]) return; const sp = it.sp; if (!sp.w || !sp.h || !sp.r) return;
