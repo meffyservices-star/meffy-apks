@@ -8,7 +8,18 @@ const online = () => Store.mode === 'supa' && Store.sb && navigator.onLine !== f
 const FR = { list: [], loaded: false, loading: false, at: 0, code: '', found: null, busy: false };
 A.PAGES.amigos = 'Amistades';
 Object.values(A.PACKS || {}).forEach(p => { if (p.map && !p.map.amigos) p.map.amigos = 's:gochi'; if (p.map && !p.map.visitas) p.map.visitas = 's:casita'; });
-A.friendUsers = () => FR.list.filter(r => r.status === 'accepted').map(r => r.from_user === Store.uid ? { id: r.to_user, name: (r.to_name || '').trim() || 'Amistad' } : { id: r.from_user, name: (r.from_name || '').trim() || 'Amistad' });
+const LEG = { map: {}, tried: false };
+A.friendUsers = () => {
+  const out = FR.list.filter(r => r.status === 'accepted').map(r => r.from_user === Store.uid ? { id: r.to_user, name: (r.to_name || '').trim() || 'Amistad' } : { id: r.from_user, name: (r.from_name || '').trim() || 'Amistad' });
+  const have = new Set(out.map(o => o.id));
+  (S.settings.friends || []).forEach(f => { const u = LEG.map[f.code]; if (u && !have.has(u) && u !== Store.uid) { have.add(u); out.push({ id: u, name: (f.name || '').trim() || 'Amistad' }); } });
+  return out;
+};
+// amistades viejas (agregadas solo con código): buscamos su usuario por el código de su cuarto
+async function resolveLegacy() {
+  const codes = (S.settings.friends || []).map(f => f.code).filter(c => c && !LEG.map[c]); if (!codes.length || !online()) return;
+  try { const { data } = await Store.sb.from('rooms').select('user_id, code').in('code', codes); (data || []).forEach(r => { LEG.map[r.code] = r.user_id; }); } catch (e) { console.warn(e); }
+}
 A.friendsLoaded = () => FR.loaded;
 A.loadFriendReqs = () => loadReqs();
 A.friendPending = () => FR.list.filter(r => r.status === 'pending' && r.to_user === Store.uid).length;
@@ -37,7 +48,7 @@ async function loadReqs() {
   try {
     const { data, error } = await Store.sb.from('friend_requests').select('*').order('created_at', { ascending: false }).limit(100);
     if (error) throw error;
-    FR.list = data || []; FR.loaded = true; FR.at = Date.now(); syncFriends();
+    FR.list = data || []; syncFriends(); await resolveLegacy(); FR.loaded = true; FR.at = Date.now();
   } catch (e) { console.warn(e); } finally { FR.loading = false; }
   try { A.renderNav(); } catch (e) {}
 }
