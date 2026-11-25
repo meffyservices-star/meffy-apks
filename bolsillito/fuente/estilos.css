@@ -2363,7 +2363,6 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .vs-acts .vs-a b{font:800 13px var(--f-display);color:#5a3238;margin-top:4px}
 .vs-acts .vs-a small{font-size:10.5px;color:#7a5a5a;opacity:.85}
 .vs-acts .vs-a:active{transform:translateY(4px);box-shadow:0 1px 0 #5a3a3a}
-.vs-acts .vs-a.heart .vs-ic img{animation:vdBob 1.3s ease-in-out infinite}
 
 /* ===== Misiones de hoy (tablero) ===== */
 .vd-board{display:flex;flex-direction:column;margin:2px 0 6px}
