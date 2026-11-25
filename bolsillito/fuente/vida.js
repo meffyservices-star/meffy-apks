@@ -2,6 +2,7 @@
 (function () {
 const A = App, S = A.S, { esc, toast } = A;
 const ACT = A.ACTIONS;
+A.pxi = (n, w) => Pix.has(n) ? `<img class="pixel" alt="" src="${Pix.sprite(n, 2)}" style="width:${w || 20}px;height:auto;vertical-align:middle">` : '';
 const state = () => { const v = S.settings.vida = S.settings.vida || {}; if (v.day !== A.today()) { S.settings.vida = { day: A.today(), seen: {}, claimed: {}, bonus: false, vis: 0, streak: v.streak || 0, last: v.last || '' }; } return S.settings.vida; };
 const MISSIONS = [
   { id: 'anotar', t: 'Anota un gasto o ingreso', hint: 'Cualquier movimiento de hoy cuenta', auto: () => S.tx.some(x => x.date === A.today() && x.type !== 'loan_out' && x.type !== 'loan_in') },
@@ -46,28 +47,28 @@ const float = (room, html, x, y, cls) => { const e = document.createElement('spa
 // 1) las mascotas despiertas pasean por el piso
 const wander = () => { const room = roomEl(); if (!room || document.hidden) return; room.querySelectorAll('.rm-pet:not(.sleep)').forEach((p, i) => { if (Math.random() < .35) return; const top = parseFloat(p.style.top) || 60; p.style.transition = 'left 3.2s ease-in-out, top 3.2s ease-in-out'; p.style.left = rnd(8, 74).toFixed(1) + '%'; p.style.top = Math.max(52, Math.min(80, top + rnd(-7, 7))).toFixed(1) + '%'; }); };
 // 2) visitas sorpresa que se recogen tocándolas
-const VIS = [['🦋', 1, 'Una mariposa te trajo una estrellita'], ['🐞', 1, 'Una mariquita te trajo una estrellita'], ['🐦', 1, 'Un pajarito te dejó una estrellita'], ['💌', 2, 'Te llegó una cartita con estrellitas']];
+const VIS = [['mariposa', 1, 'Una mariposa te trajo una estrellita'], ['campanita', 1, 'Una campanita te trajo una estrellita'], ['flower', 1, 'Una florecita te dejó una estrellita'], ['regalo_cerrado', 2, 'Te llegó un regalito con estrellitas']];
 const visit = () => { const room = roomEl(); if (!room || document.hidden) return; const v = state(); if ((v.vis || 0) >= 5 || room.querySelector('.vd-vis')) return; const t = VIS[Math.floor(Math.random() * (Math.random() < .15 ? VIS.length : VIS.length - 1))];
-  const e = document.createElement('button'); e.type = 'button'; e.className = 'vd-vis'; e.textContent = t[0]; e.style.top = rnd(18, 70).toFixed(0) + '%'; e.style.setProperty('--dx', rnd(-30, 30).toFixed(0) + 'px'); room.appendChild(e);
+  const e = document.createElement('button'); e.type = 'button'; e.className = 'vd-vis'; e.innerHTML = A.pxi(t[0], 30); e.style.top = rnd(18, 70).toFixed(0) + '%'; e.style.setProperty('--dx', rnd(-30, 30).toFixed(0) + 'px'); room.appendChild(e);
   const bye = setTimeout(() => e.remove(), 14000);
   e.onclick = ev => { ev.stopPropagation(); clearTimeout(bye); const v2 = state(); v2.vis = (v2.vis || 0) + 1; A.giveStars(t[1]); A.saveSettings(); const r = e.getBoundingClientRect(), rr = room.getBoundingClientRect(); float(room, '+' + t[1] + ' ✦', ((r.left - rr.left) / rr.width * 100), ((r.top - rr.top) / rr.height * 100)); e.remove(); toast(t[2] + ' ✦'); };
 };
 // 3) la mascota reacciona a cómo vas con tu dinero
 const mes = () => { const k = A.today().slice(0, 7); let inc = 0, exp = 0; S.tx.forEach(x => { if (x.date.slice(0, 7) !== k) return; if (x.type === 'income') inc += +x.amount || 0; else if (x.type === 'expense') exp += +x.amount || 0; }); return { inc, exp }; };
 const mood = () => { const { inc, exp } = mes(), hoy = S.tx.filter(x => x.date === A.today() && x.type === 'expense').length;
-  if (!inc && !exp) return ['¡Anotemos algo hoy!', '🌷'];
-  if (inc && exp > inc) return ['Uy, este mes va gastado… pero tú puedes', '💦'];
-  if (inc && exp < inc * .5) return ['¡Vas ahorrando muy bien!', '🎉'];
-  if (!hoy) return ['Hoy no has gastado nada, ¡qué bien!', '✨'];
-  return ['Vamos paso a paso, tú puedes', '💗']; };
+  if (!inc && !exp) return ['¡Anotemos algo hoy!', 'flower'];
+  if (inc && exp > inc) return ['Uy, este mes va gastado… pero tú puedes', 'gota'];
+  if (inc && exp < inc * .5) return ['¡Vas ahorrando muy bien!', 'estrellita'];
+  if (!hoy) return ['Hoy no has gastado nada, ¡qué bien!', 'brillito'];
+  return ['Vamos paso a paso, tú puedes', 'corazon_rosa']; };
 document.addEventListener('click', e => {
   const room = roomEl(); if (!room) return;
   const pet = e.target.closest('.rm-pet[data-pk]');
-  if (pet && !pet.classList.contains('sleep')) { room.querySelectorAll('.vd-bub').forEach(x => x.remove()); const [msg, em] = mood(); const b = document.createElement('div'); b.className = 'vd-bub'; b.textContent = em + ' ' + msg; const rr = room.getBoundingClientRect(), pr = pet.getBoundingClientRect(); b.style.left = Math.max(4, Math.min(52, (pr.left - rr.left) / rr.width * 100 - 6)) + '%'; b.style.top = Math.max(2, (pr.top - rr.top) / rr.height * 100 - 14) + '%'; room.appendChild(b); setTimeout(() => b.remove(), 3200); return; }
+  if (pet && !pet.classList.contains('sleep')) { room.querySelectorAll('.vd-bub').forEach(x => x.remove()); const [msg, em] = mood(); const b = document.createElement('div'); b.className = 'vd-bub'; b.innerHTML = A.pxi(em, 16) + ' ' + esc(msg); const rr = room.getBoundingClientRect(), pr = pet.getBoundingClientRect(); b.style.left = Math.max(4, Math.min(52, (pr.left - rr.left) / rr.width * 100 - 6)) + '%'; b.style.top = Math.max(2, (pr.top - rr.top) / rr.height * 100 - 14) + '%'; room.appendChild(b); setTimeout(() => b.remove(), 3200); return; }
   const it = e.target.closest('.rm-it'); if (it) { const n = (it.alt || '').toLowerCase(); const rr = room.getBoundingClientRect(), r = it.getBoundingClientRect(); const x = (r.left - rr.left + r.width / 2) / rr.width * 100, y = (r.top - rr.top) / rr.height * 100;
     it.classList.remove('vd-pop'); void it.offsetWidth; it.classList.add('vd-pop'); setTimeout(() => it.classList.remove('vd-pop'), 700);
-    const em = /l[aá]mpara|vela|luz|farol/.test(n) ? '💡' : /tele|tv|pantalla/.test(n) ? '📺' : /radio|tocadisco|bocina|piano|guitarra|m[uú]sica/.test(n) ? '🎵' : /planta|flor|maceta|cactus|jard/.test(n) ? '🌿' : /cama|sof[aá]|sill|puff|coj[ií]n/.test(n) ? '💤' : /libro|librero|escritorio/.test(n) ? '📖' : /espejo/.test(n) ? '✨' : /cocina|mesa|caf|t[eé]/.test(n) ? '🍵' : '💗';
-    float(room, em, x, y); }
+    const em = /l[aá]mpara|vela|luz|farol/.test(n) ? 'foco' : /tele|tv|pantalla/.test(n) ? 'laptop' : /radio|tocadisco|bocina|piano|guitarra|m[uú]sica/.test(n) ? 'music' : /planta|flor|maceta|cactus|jard/.test(n) ? 'brote' : /cama|sof[aá]|sill|puff|coj[ií]n/.test(n) ? 'zzz' : /libro|librero|escritorio/.test(n) ? 'book' : /espejo/.test(n) ? 'brillito' : /cocina|mesa|caf|t[eé]/.test(n) ? 'coffee' : 'corazon_rosa';
+    float(room, A.pxi(em, 22), x, y); }
 });
 setInterval(wander, 7000); setInterval(() => { if (Math.random() < .5) visit(); }, 22000); setTimeout(visit, 6000);
 })();
@@ -100,8 +101,8 @@ function bubble(box, anchor, txt) {
   const b = document.createElement('div'); b.className = 'vd-bub'; b.textContent = txt;
   const x = Math.max(8, Math.min(62, pnum(anchor.style.left) - 10)); b.style.left = x + '%'; b.style.top = Math.max(2, pnum(anchor.style.top) - 16) + '%'; box.appendChild(b); setTimeout(() => b.remove(), 2800);
 }
-function floatEmoji(box, x, y, e) { const s = document.createElement('span'); s.className = 'vd-fl'; s.textContent = e; s.style.left = x + '%'; s.style.top = y + '%'; box.appendChild(s); setTimeout(() => s.remove(), 1400); }
-const FEMO = [[/tele|tv|pantalla|compu/, '📺'], [/lamp|luz|vela|farol/, '💡'], [/radio|tocadisc|music|piano|bocina/, '🎵'], [/planta|maceta|flor|jard/, '🌱'], [/cama|sofa|sillon|puff|cojin/, '💤'], [/libro|estante|librero/, '📖'], [/pastel|cocina|mesa|taza|cafe/, '☕']];
+function floatEmoji(box, x, y, e) { const s = document.createElement('span'); s.className = 'vd-fl'; if (/^[a-z_]+$/.test(e)) s.innerHTML = A.pxi(e, 22); else s.textContent = e; s.style.left = x + '%'; s.style.top = y + '%'; box.appendChild(s); setTimeout(() => s.remove(), 1400); }
+const FEMO = [[/tele|tv|pantalla|compu/, 'laptop'], [/lamp|luz|vela|farol/, 'foco'], [/radio|tocadisc|music|piano|bocina/, 'music'], [/planta|maceta|flor|jard/, 'brote'], [/cama|sofa|sillon|puff|cojin/, 'zzz'], [/libro|estante|librero/, 'book'], [/pastel|cocina|mesa|taza|cafe/, 'coffee']];
 function wander(box) {
   const pets = [...box.querySelectorAll('.rm-pet:not(.sleep):not(.guest)')].filter(p => { const n = p.nextElementSibling; return !(n && /rm-(note|food)/.test(n.className)); });
   pets.forEach(p => { if (!p.dataset.hx) { p.dataset.hx = pnum(p.style.left); p.dataset.hy = pnum(p.style.top); p.style.transition = 'left 2.6s ease-in-out, top 2.6s ease-in-out'; } });
@@ -114,7 +115,7 @@ function wander(box) {
 function butterflies(box) {
   const spawn = () => {
     if (!box.isConnected) return stop(); const v = S.settings.vida; if (!v) return; const left = 5 - (v.bf || 0); if (left <= 0 || document.hidden) return;
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'vd-bf'; b.setAttribute('aria-label', 'Mariposa'); b.textContent = pick(['🦋', '🐝', '🐞']); b.style.top = (25 + Math.random() * 40) + '%';
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'vd-bf'; b.setAttribute('aria-label', 'Mariposa'); b.innerHTML = A.pxi('mariposa', 26); b.style.top = (25 + Math.random() * 40) + '%';
     b.onclick = e => { e.stopPropagation(); b.remove(); const vv = S.settings.vida; vv.bf = (vv.bf || 0) + 1; A.giveStars(1); A.saveSettings(); floatEmoji(box, pnum(b.style.left) || 50, pnum(b.style.top), '+1 ✦'); };
     box.appendChild(b); setTimeout(() => b.remove(), 9000);
   };
@@ -130,7 +131,7 @@ A.after.cuarto = function (el) {
     if ((S.settings.cfg || {}).reacciones === false) return;
     const pet = e.target.closest('.rm-pet:not(.guest)'); if (pet && !pet.classList.contains('sleep')) { bubble(box, pet, mood()); return; }
     const it = e.target.closest('.rm-it'); if (!it) return; it.classList.remove('vd-wig'); void it.offsetWidth; it.classList.add('vd-wig');
-    const k = (it.alt || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); const e0 = (FEMO.find(([r]) => r.test(k)) || [0, '✨'])[1]; floatEmoji(box, pnum(it.style.left) + 4, pnum(it.style.top) - 4, e0);
+    const k = (it.alt || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); const e0 = (FEMO.find(([r]) => r.test(k)) || [0, 'brillito'])[1]; floatEmoji(box, pnum(it.style.left) + 4, pnum(it.style.top) - 4, e0);
   });
 };
 function state2() { return S.settings.vida; }

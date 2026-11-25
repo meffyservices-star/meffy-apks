@@ -48,6 +48,37 @@ A.studioEnsure = it => {
 };
 const h0 = A.header; A.header = function () { try { reg(); } catch (e) {} return h0.apply(this, arguments); };
 
+
+// ---------- plantillas para empezar (dibujadas con formas y sombreado, quedan lindas y las puedes cambiar) ----------
+const cir = (cx, cy, r) => (x, y) => (x - cx) ** 2 + (y - cy) ** 2 <= r * r;
+const rect = (x0, y0, x1, y1) => (x, y) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
+const ell = (cx, cy, rx, ry) => (x, y) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
+const tri = (ax, ay, bx, by, cx, cy) => (x, y) => { const d = (px, py, qx, qy) => (x - qx) * (py - qy) - (px - qx) * (y - qy); const d1 = d(ax, ay, bx, by), d2 = d(bx, by, cx, cy), d3 = d(cx, cy, ax, ay); return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0)); };
+const heart = (cx, cy, s) => (x, y) => { const nx = (x - cx) / s, ny = (cy - y) / s; return (nx * nx + ny * ny - 1) ** 3 - nx * nx * ny ** 3 <= 0; };
+const star = (cx, cy, R, r) => (x, y) => { const a = Math.atan2(y - cy, x - cx) + Math.PI / 2, d = Math.hypot(x - cx, y - cy); const t = ((a % (2 * Math.PI / 5)) + 2 * Math.PI / 5) % (2 * Math.PI / 5) / (2 * Math.PI / 5); const k = Math.abs(t - .5) * 2; return d <= r + (R - r) * (1 - k); };
+const HUE = { rosa: 0, rojo: 1, naranja: 2, amarillo: 3, verde: 4, menta: 5, azul: 6, lila: 7, morado: 8, cafe: 9 };
+// shapes: [[pred, hue o índice fijo], …] se pintan en orden; luz arriba-izquierda y sombra abajo-derecha
+function build(w, h, shapes) {
+  const id = Array.from({ length: h }, () => Array(w).fill(-1));
+  shapes.forEach(([f], n) => { for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (f(x + .5, y + .5)) id[y][x] = n; });
+  const g = blank(w, h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const n = id[y][x]; if (n < 0) continue; const c = shapes[n][1];
+    if (typeof c === 'string') { g[y][x] = +c; continue; }
+    const up = (id[y - 1] || [])[x] !== n || (id[y] || [])[x - 1] !== n, dn = (id[y + 1] || [])[x] !== n || (id[y] || [])[x + 1] !== n;
+    g[y][x] = c * 3 + (up && !dn ? 0 : dn && !up ? 2 : 1);
+  }
+  const o = g.map(r => r.slice());
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (g[y][x] < 0 && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => (g[y + b] || [])[x + a] >= 0)) o[y][x] = OUT;
+  return o;
+}
+const TPL = {
+  sticker: [['Corazón', 16, 16, () => build(16, 16, [[heart(8, 7.6, 5.6), HUE.rosa], [cir(5.6, 5.6, 1.1), '30']])], ['Estrella', 16, 16, () => build(16, 16, [[star(8, 8.6, 6.6, 3.2), HUE.amarillo]])], ['Nube', 16, 16, () => build(16, 16, [[cir(5.5, 9, 3.4), HUE.azul], [cir(9.5, 7.5, 4.2), HUE.azul], [cir(12, 10, 2.8), HUE.azul], [rect(5.5, 9, 12, 12.4), HUE.azul]])], ['Flor', 16, 16, () => build(16, 16, [[cir(8, 4.4, 2.8), HUE.rosa], [cir(12, 7.6, 2.8), HUE.rosa], [cir(10.6, 11.6, 2.8), HUE.rosa], [cir(5.4, 11.6, 2.8), HUE.rosa], [cir(4, 7.6, 2.8), HUE.rosa], [cir(8, 8, 2.4), HUE.amarillo]])]],
+  furn: [['Maceta', 16, 16, () => build(16, 16, [[cir(8, 5.5, 3.2), HUE.verde], [cir(4.8, 8, 3), HUE.verde], [cir(11.2, 8, 3), HUE.verde], [tri(3, 10, 13, 10, 11, 15.8), HUE.naranja], [rect(3, 10, 13, 12), HUE.naranja], [tri(3.5, 12, 12.5, 12, 11, 15.8), HUE.naranja], [cir(8, 3.6, 1.2), HUE.rosa]])], ['Puff', 16, 16, () => build(16, 16, [[ell(8, 10.6, 6.6, 4.6), HUE.lila], [ell(8, 8.4, 5, 2.8), HUE.lila], [cir(8, 7.8, 1.1), '30']])], ['Lámpara', 16, 16, () => build(16, 16, [[rect(7.2, 8, 8.8, 14), '34'], [ell(8, 14.4, 4, 1.4), HUE.cafe], [tri(3, 8.4, 13, 8.4, 9.4, 1.2), HUE.amarillo], [tri(3, 8.4, 13, 8.4, 6.6, 1.2), HUE.amarillo]])], ['Mesita', 16, 16, () => build(16, 16, [[rect(2, 6, 14, 8.6), HUE.cafe], [rect(3, 8.6, 4.8, 15), HUE.cafe], [rect(11.2, 8.6, 13, 15), HUE.cafe], [cir(8, 4.2, 1.8), HUE.rosa], [rect(7.2, 5, 8.8, 6), HUE.verde]])]],
+  acc: [['Moño', 12, 12, () => build(12, 12, [[tri(1, 2.6, 6, 6, 1, 9.4), HUE.rosa], [tri(11, 2.6, 6, 6, 11, 9.4), HUE.rosa], [cir(6, 6, 1.9), HUE.rojo]])], ['Gorrito', 12, 12, () => build(12, 12, [[tri(1, 10.5, 11, 10.5, 6, 2.2), HUE.lila], [rect(1, 9, 11, 10.8), HUE.rosa], [cir(6, 2, 1.4), '30']])], ['Corona', 12, 12, () => build(12, 12, [[rect(1.5, 6, 10.5, 10), HUE.amarillo], [tri(1.5, 6.2, 4, 6.2, 1.5, 2.4), HUE.amarillo], [tri(4, 6.2, 8, 6.2, 6, 1.6), HUE.amarillo], [tri(8, 6.2, 10.5, 6.2, 10.5, 2.4), HUE.amarillo], [cir(6, 8.2, 1), HUE.rojo]])], ['Lentes', 16, 12, () => build(16, 12, [[ring(4.4, 6, 3.4, 2.2), HUE.azul], [ring(11.6, 6, 3.4, 2.2), HUE.azul], [rect(7.6, 5.4, 8.4, 6.6), HUE.azul]])]]
+};
+function ring(cx, cy, r, t) { return (x, y) => { const d = Math.hypot(x - cx, y - cy); return d <= r && d >= r - t * .55; }; }
+
 // ---------- el editor ----------
 let E = null; // lo que estás dibujando ahora
 const blank = (w, h) => Array.from({ length: h }, () => Array(w).fill(-1));
@@ -122,6 +153,7 @@ function editor() {
   const pal = []; for (let r = 0; r < 3; r++) for (let c = 0; c < 12; c++) { const v = hue(c, r); pal.push(`<button class="es-sw ${v === E.color ? 'on' : ''}" data-act="esColor" data-col="${v}" style="background:${PAL[v]}" aria-label="Color ${v + 1}"></button>`); }
   return `${A.header('estudio')}
 <div class="card es-top"><div class="es-pv"><canvas id="esPv" class="pixel"></canvas></div><div style="flex:1;min-width:0"><span class="pill sm">${esc(kd[2])}</span><input id="esName" class="es-name" maxlength="24" placeholder="Ponle nombre…" value="${esc(E.name)}"></div></div>
+<div class="card es-tpl"><b>Empezar con una plantilla</b><div class="chips" style="margin-top:6px">${(TPL[E.kind] || []).map(([n], i) => `<button class="chip" data-act="esTpl" data-i="${i}">${n}</button>`).join('')}</div></div>
 <div class="card es-board"><canvas id="esCv" class="es-cv"></canvas>
 <p class="faint" style="margin:6px 2px 0;font-size:12px">Deja un marguito vacío alrededor y usa “Contorno” para que se vea como de tienda.</p></div>
 <div class="card es-tools"><div class="chips">${TOOLS.map(([t, n]) => `<button class="chip" data-act="esTool" data-tool="${t}" aria-pressed="${E.tool === t}">${n}</button>`).join('')}</div>
@@ -140,9 +172,10 @@ function tile(it) {
 }
 function gallery() {
   reg(); const items = st().items, plus = A.isPlus();
-  const news = Object.keys(KINDS).map(k => `<button class="es-new" data-act="esNew" data-kind="${k}" ${plus ? '' : 'disabled'}><span class="es-ni">${k === 'furn' ? '🛋️' : k === 'acc' ? '🎀' : '⭐'}</span><b>${KINDS[k][0]}</b><small>${KINDS[k][1]}</small></button>`).join('');
+  const news = Object.keys(KINDS).map(k => `<button class="es-new" data-act="esNew" data-kind="${k}" ${plus ? '' : 'disabled'}><span class="es-ni"><img class="pixel" alt="" src="${Pix.sprite(k === 'furn' ? 'es_mueble' : k === 'acc' ? 'es_mono' : 'estrellita', 3)}"></span><b>${KINDS[k][0]}</b><small>${KINDS[k][1]}</small></button>`).join('');
   return `${A.header('estudio')}
 ${plus ? '' : `<div class="card es-lock"><span class="tag gold">Meffy+</span><h3>Crea tus propias cosas</h3><p class="faint">Dibuja muebles para tu cuarto, ropita para tus mascotas y pegatinas para tu Journal, pixel por pixel, con colores de paleta kawaii, espejo y contorno automático.</p><button class="btn pink" data-go="plan" style="justify-content:center;width:100%">Ver Meffy+</button></div>`}
+<div class="es-hero"><img class="pixel" alt="" src="${Pix.sprite('estudio', 5)}"><div><b>Tu estudio de diseño</b><span>Dibuja muebles, ropita y pegatinas. ${items.length ? items.length + (items.length === 1 ? ' creación guardada' : ' creaciones guardadas') : 'Todo lo que hagas es solo tuyo'}.</span></div></div>
 <div class="es-news">${news}</div>
 <div class="ph"><span class="pill sm">Mis creaciones</span></div>
 ${items.length ? `<div class="es-grid">${items.map(tile).join('')}</div>` : '<p class="faint" style="text-align:center;margin:18px 8px">Aquí van a aparecer las cosas que crees. ¡Empieza con una pegatina chiquita!</p>'}`;
@@ -159,6 +192,7 @@ ACT.esColor = a => { E.color = +a.dataset.col; if (E.tool !== 'pen' && E.tool !=
 ACT.esMirror = () => { E.mirror = !E.mirror; sync(document); };
 ACT.esUndo = () => { const g = E.hist.pop(); if (g) { E.g = g; paint(); } };
 ACT.esClear = () => { snap(); E.g = blank(E.w, E.h); paint(); };
+ACT.esTpl = a => { const t = TPL[E.kind][+a.dataset.i]; if (!t) return; snap(); E.w = t[1]; E.h = t[2]; E.g = t[3](); if (!E.name) E.name = t[0]; A.render(); };
 ACT.esOutline = () => {
   snap(); const g = E.g.map(r => r.slice());
   for (let j = 0; j < E.h; j++) for (let i = 0; i < E.w; i++) if (E.g[j][i] < 0) {
@@ -180,7 +214,7 @@ ACT.esSave = () => {
   const k = keyOf(it); reg();
   if (it.kind === 'furn' && !E.id) A.giveFurn(k, 1);
   if (it.kind === 'acc') { const r = A.roomState(); r.owned = r.owned || []; if (!r.owned.includes('acc:' + k)) r.owned.push('acc:' + k); }
-  A.saveSettings(); E = null; A.render(); T('¡Guardado en tus creaciones! ✨');
+  A.saveSettings(); E = null; A.render(); T('¡Guardado en tus creaciones!');
 };
 ACT.esAdd = a => { const it = st().items.find(x => x.id === a.dataset.id); if (!it) return; reg(); A.giveFurn(keyOf(it), 1); A.saveSettings(); T(`Otro ${it.name} en tu inventario`); };
 ACT.esWear = a => { const it = st().items.find(x => x.id === a.dataset.id); if (!it) return; reg(); const r = A.roomState(); r.owned = r.owned || []; if (!r.owned.includes('acc:' + keyOf(it))) r.owned.push('acc:' + keyOf(it)); A.saveSettings(); S.shopSec = it.slot; A.go('tienda'); };
@@ -190,6 +224,9 @@ ACT.esDel = a => {
   L.splice(i, 1); if (it.kind === 'acc') delete A.ACC[k];
   A.saveSettings(); A.render();
 };
+// iconos de los botones: un sillón y un moño
+Pix.define('es_mueble', { raw: ['..0000000000..', '.033333333330.', '.031111111130.', '00311111111300', '03211111111230', '03221111112230', '03111111111130', '02222222222220', '.000000000000.', '.0.0......0.0.'].map(r => r.length === 14 ? r : r.slice(0, 14)), pal: '#5a3a3a,#b79cf2,#7a5cc4,#e6dcff' });
+Pix.define('es_mono', { raw: (() => { const L = ['.000..', '03310.', '031110', '031112', '031110', '03310.', '.000..'], C = ['.', '0', '0', '2', '0', '0', '.']; return L.map((l, i) => l + C[i] + [...l].reverse().join('')); })(), pal: '#5a3a3a,#ff8fb3,#d94a7a,#ffd6e3' });
 // icono del menú: una paleta de pintura
 (function () {
   const W = 16, H = 14, g = Array.from({ length: H }, () => Array(W).fill('.'));
@@ -200,6 +237,6 @@ ACT.esDel = a => {
   for (let y = 9; y < 12; y++) for (let x = 10; x < 13; x++) if (g[y][x] === '1') g[y][x] = (x + y) % 5 === 0 ? '0' : '6';
   g[9][11] = '0'; g[9][10] = '0'; g[10][10] = '0'; g[10][11] = '0'; g[10][9] = '0'; g[11][11] = '0'; g[11][12] = '0'; g[10][12] = '0';
   Pix.define('estudio', { raw: g.map(r => r.join('')), pal: '#7a4a2c,#fff6e6,#ff8fb3,#ff8fb3,#7cc2f5,#ffd84a,#fff6e6' });
-  Object.values(A.PACKS || {}).forEach(p => { if (p.map) p.map.estudio = p === A.PACKS.pixel ? 's:estudio' : 'e:🎨'; });
+  Object.values(A.PACKS || {}).forEach(p => { if (p.map) p.map.estudio = p === A.PACKS.pixel ? 's:estudio' : 's:estudio'; });
 })();
 })();

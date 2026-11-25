@@ -166,7 +166,7 @@ ACT.frDel = async a => {
 };
 ACT.frShare = () => {
   const c = S.settings.visitCode; if (!c) return;
-  const text = `Agrégame en Bolsillito 🌸 Mi código es ${c}`;
+  const text = `Agrégame en Bolsillito. Mi código es ${c}`;
   if (navigator.share) navigator.share({ text }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast('Mensaje copiado')).catch(() => toast(c)); else toast(c);
 };
 ACT.frSeen = a => { S.settings.hideSeen = !a.checked; A.saveSettings(); if (!S.settings.hideSeen && A.publishRoom) A.publishRoom(); toast(S.settings.hideSeen ? 'Tus amistades ya no ven tu última vez en línea' : 'Tus amistades verán tu última vez en línea'); };

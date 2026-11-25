@@ -104,7 +104,7 @@ ACT.shopItem = a => {
     const { bal0, ok } = sheetBuy(); const on = wish().includes(id);
     sh.innerHTML = `<div class="stack" style="text-align:center"><div class="buy-art"><img class="pixel" alt="" src="${spr('acc_' + id, 6)}" style="width:${Math.min(96, it.w * 6)}px"></div><b style="font-size:18px">${esc(it.name)}</b><div class="faint">${ST(13)} ${it.price} estrellitas · tienes ${bal0}</div>
 <button class="btn pink" id="byGo" style="justify-content:center" ${ok ? '' : 'disabled'}>${ok ? 'Comprar por ' + it.price : 'Te faltan ' + (it.price - bal0) + ' estrellitas'}</button>
-<button class="btn" id="byGift" style="justify-content:center">🎁 Regalarlo a una amistad</button>
+<button class="btn" id="byGift" style="justify-content:center">Regalarlo a una amistad</button>
 <button class="btn" id="byWish" style="justify-content:center;gap:8px"><img class="pixel" alt="" src="${spr('heart', 3)}" style="width:18px;height:auto;${on ? '' : 'filter:grayscale(1);opacity:.55'}">${on ? 'Está en tu lista de deseos · quitar' : 'Guardar en mi lista de deseos'}</button>
 <button class="btn" id="byNo" style="justify-content:center">Ahora no</button></div>`;
     sh.querySelector('#byGo').onclick = () => { A.closeSheet(); si0({ dataset: { id, sure: '1' }, querySelector: () => ({}) }); };
