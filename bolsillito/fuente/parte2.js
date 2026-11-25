@@ -334,7 +334,7 @@ const giftReady = () => (S.settings.gift || {}).last !== today();
 A.giftReady = giftReady;
 const PLACES = () => [
   ['regalo', giftReady() ? 'regalo_cerrado' : 'regalo_abierto', 'Regalo del día', giftReady()], ['crecer', 'brotecito', 'Crecer'], ['coleccion', 'maca', 'Colección'],
-  ['tienda', 'gift', 'Tiendita'], ['visitas', 'casita', 'Visitas', !!(A.navDotVisits && A.navDotVisits())], ['shey', (info(P().active || 'shey') || {}).sprite || 'shey', 'Antojos']
+  ['tienda', 'gift', 'Tiendita'], ['visitas', 'casita', 'Visitas', !!(A.navDotVisits && A.navDotVisits())]
 ];
 const needsCare = () => { const p = P(); if (!p.active) return false; const c = care(p.active); return !c.sleep && (c.h < 30 || c.l < 25 || c.f < 25); };
 A.navDot = k => k === 'more' && (giftReady() || needsCare() || !!(A.navDotVisits && A.navDotVisits()));

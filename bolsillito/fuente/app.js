@@ -1723,12 +1723,12 @@ const sc = A.screens, after = A.after, ACT = A.ACTIONS;
 const rerender = () => { A.render(); };
 function avatarHTML(cls) { return S.settings.photo ? `<img class="avatar ${cls}" alt="Tu foto" src="${esc(S.settings.photo)}">` : `<img class="avatar ${cls} pixel" alt="" src="${Pix.sprite('pudin', 5)}" style="object-fit:contain;padding:8px">`; }
 A.avatarHTML = avatarHTML;
-const MENU = ['rincon', 'logros', 'tienda', 'juegos', 'jardin', 'amigos', 'visitas', 'compartidas', 'tarrito', 'cuentas', 'retos', 'tablero', 'compras', 'calma', 'suscripciones', 'recordatorio', 'year', 'goals', 'recurring', 'projections', 'rules', 'settings', 'appearance', 'plan', 'data'];
+const MENU = ['rincon', 'logros', 'tienda', 'juegos', 'jardin', 'amigos', 'visitas', 'compartidas', 'tarrito', 'cuentas', 'retos', 'tablero', 'compras', 'shey', 'suscripciones', 'recordatorio', 'year', 'goals', 'recurring', 'projections', 'rules', 'settings', 'appearance', 'plan', 'data'];
 sc.more = () => `
 ${A.header('more')}${A.appCard ? A.appCard() : ''}
 <button class="card row" data-act="tourOpen" style="gap:12px;text-align:left;width:100%;color:inherit;font:inherit;cursor:pointer"><span class="ni" style="background:#fff4c2">${iconHTML('s:estrellita', 30)}</span><span><b>¿Por dónde empiezo?</b><br><span class="faint">Un recorrido corto con los primeros pasos</span></span></button>
 <button class="card row" data-go="data" style="gap:14px;text-align:left;width:100%;color:inherit;font:inherit;cursor:pointer">${avatarHTML('')}<div style="min-width:0"><b class="mid" style="display:block">${esc(S.settings.name || 'Tu perfil')}</b><div class="faint">${A.isPlus() ? '<span class="tag gold">Meffy+</span> ' : ''}${S.settings.photo ? 'Toca para editar tu perfil' : 'Toca para poner tu foto y tu nombre'}</div></div></button>
-${(() => { const vis = MENU.concat(Store.isOwner ? ['admin'] : []).filter(k => !(S.settings.hidden || []).includes(k) || ['settings', 'appearance', 'plan', 'data', 'admin'].includes(k)).filter(k => !!sc[k] || k === 'admin'); const TINT = { calma: '#e1effb', tarrito: '#fff4c2', cuentas: '#ffe0ea', retos: '#efe6fb', rincon: '#e3f3df', juegos: '#e1effb', jardin: '#e3f3df', compartidas: '#ffe0ea', tablero: '#efe6fb', amigos: '#ffe0ea', visitas: '#e1effb', logros: '#fff4c2', tienda: '#efe6fb', suscripciones: '#efe6fb', recordatorio: '#e1effb', compras: '#ffe0ea', year: '#fff4c2', goals: '#e1effb', recurring: '#fde3ea', projections: '#e3f3df', rules: '#dcf3ec', settings: '#ffe8c7', appearance: '#dcf3ec', plan: '#fde3ea', data: '#e1effb', admin: '#f3e4dc' }; const G = [['Tu mascota', ['rincon', 'tienda', 'logros', 'juegos', 'jardin'], 'Cuídala, vístela, juega y gana estrellitas'], ['Amistades', ['amigos', 'visitas', 'compartidas', 'tarrito', 'cuentas', 'retos'], 'Agrega gente, visita sus cuartos, ahorren y dividan cuentas juntas'], ['Tu dinero', ['compras', 'calma', 'goals', 'suscripciones', 'recurring', 'year', 'projections', 'rules'], 'Compras, metas, pagos que se repiten y cómo vas'], ['Crear', ['tablero'], 'Tu tablero de sueños'], ['Ajustes', ['recordatorio', 'settings', 'appearance', 'plan', 'data', 'admin'], 'Avisos, cuentas, apariencia y tu perfil']]; const used = new Set(G.flatMap(g => g[1])); const extra = vis.filter(k => !used.has(k)); if (extra.length) G[2][1] = G[2][1].concat(extra); return G.map(([t, ks, hint]) => { const L = ks.filter(k => vis.includes(k)); return L.length ? `<div class="ph"><span class="pill sm">${t}</span></div><p class="faint grp-h">${hint}</p><div class="menugrid tinted">${L.map(k => `<button data-go="${k}"><span class="ni" style="background:${TINT[k] || '#fde3ea'}">${iconHTML(A.pageIcon(k), 36)}</span>${esc(A.PAGES[k])}</button>`).join('')}</div>` : ''; }).join(''); })()}
+${(() => { const vis = MENU.concat(Store.isOwner ? ['admin'] : []).filter(k => !(S.settings.hidden || []).includes(k) || ['settings', 'appearance', 'plan', 'data', 'admin'].includes(k)).filter(k => !!sc[k] || k === 'admin'); const TINT = { shey: '#ece0fb', tarrito: '#fff4c2', cuentas: '#ffe0ea', retos: '#efe6fb', rincon: '#e3f3df', juegos: '#e1effb', jardin: '#e3f3df', compartidas: '#ffe0ea', tablero: '#efe6fb', amigos: '#ffe0ea', visitas: '#e1effb', logros: '#fff4c2', tienda: '#efe6fb', suscripciones: '#efe6fb', recordatorio: '#e1effb', compras: '#ffe0ea', year: '#fff4c2', goals: '#e1effb', recurring: '#fde3ea', projections: '#e3f3df', rules: '#dcf3ec', settings: '#ffe8c7', appearance: '#dcf3ec', plan: '#fde3ea', data: '#e1effb', admin: '#f3e4dc' }; const G = [['Tu mascota', ['rincon', 'tienda', 'logros', 'juegos', 'jardin'], 'Cuídala, vístela, juega y gana estrellitas'], ['Amistades', ['amigos', 'visitas', 'compartidas', 'tarrito', 'cuentas', 'retos'], 'Agrega gente, visita sus cuartos, ahorren y dividan cuentas juntas'], ['Tu dinero', ['compras', 'shey', 'goals', 'suscripciones', 'recurring', 'year', 'projections', 'rules'], 'Compras, metas, pagos que se repiten y cómo vas'], ['Crear', ['tablero'], 'Tu tablero de sueños'], ['Ajustes', ['recordatorio', 'settings', 'appearance', 'plan', 'data', 'admin'], 'Avisos, cuentas, apariencia y tu perfil']]; const used = new Set(G.flatMap(g => g[1])); const extra = vis.filter(k => !used.has(k)); if (extra.length) G[2][1] = G[2][1].concat(extra); return G.map(([t, ks, hint]) => { const L = ks.filter(k => vis.includes(k)); return L.length ? `<div class="ph"><span class="pill sm">${t}</span></div><p class="faint grp-h">${hint}</p><div class="menugrid tinted">${L.map(k => `<button data-go="${k}"><span class="ni" style="background:${TINT[k] || '#fde3ea'}">${iconHTML(A.pageIcon(k), 36)}</span>${esc(A.PAGES[k])}</button>`).join('')}</div>` : ''; }).join(''); })()}
 `;
 sc.goals = () => `
 ${A.bannerHTML('goals') || ''}
@@ -2126,7 +2126,7 @@ return `${A.header('rincon', `<span class="pill sm" style="background:#fff09a;co
 <div class="card"><h3>Racha</h3><div class="mid">${s.streak} ${s.streak === 1 ? 'día' : 'días'}</div><div class="faint">Mejor racha: ${s.best}</div></div>
 <div class="card"><h3>Estrellitas</h3><div class="mid">${ST} ${bal}</div><div class="faint">Ganas ${RW().day} por cada día que anotas</div></div>
 </div>
-<div class="grid2"><button class="btn" data-go="tienda" style="justify-content:center">${A.px('gift', 20)} Tiendita</button><button class="btn" data-go="shey" style="justify-content:center">${A.px('shey', 20)} Antojos con Shey</button></div>
+<button class="btn" data-go="tienda" style="justify-content:center;width:100%">${A.px('gift', 20)} Tiendita</button>
 <div class="seg"><button data-act="rcTab" data-v="logros" aria-pressed="${tab !== 'como'}">Logros</button><button data-act="rcTab" data-v="como" aria-pressed="${tab === 'como'}">Cómo ganar</button></div>
 ${tab !== 'como' ? `<div class="list">${ACH.map(a => { const ok = a.ok(s); return `<div class="li" style="${ok ? '' : 'opacity:.6'}"><span class="ic" style="${ok ? 'background:#fff09a' : 'filter:grayscale(1)'}">${A.px(a.ic, 28)}</span><span class="tx-main"><b>${esc(a.name)}</b><span>${esc(a.desc)}</span></span><span class="amt">${ok ? '✓' : '+' + a.prize + ' ' + ST}</span></div>`; }).join('')}</div>` : ''}
 ${tab === 'como' ? `<div class="card stack">
@@ -2166,9 +2166,8 @@ A.saveSettings(); toast('¡Es tuyo! ✦'); A.render();
 ACT.rcBg = a => { R().bg = a.dataset.k; A.saveSettings(); A.render(); };
 document.addEventListener('click', e => {
 const c = e.target.closest('[data-pet]'); if (!c || S.route !== 'rincon') return;
-const id = c.dataset.pet; const m = id === 'gochi' ? gochiMood() : id === 'yaki' ? yakiMood() : { msg: A.sheyMsg ? A.sheyMsg() + ' (tócame otra vez para ir a mis antojos)' : '' };
+const id = c.dataset.pet; const m = id === 'gochi' ? gochiMood() : id === 'yaki' ? yakiMood() : { msg: '¡Hola! Aquí estoy contigo ✦' };
 const say = $('#rcSay');
-if (id === 'shey' && say && say.dataset.last === 'shey') { A.go('shey'); return; }
 if (say) { say.textContent = NAMES[id] + ': ' + m.msg; say.dataset.last = id; }
 c.classList.remove('boing'); void c.offsetWidth; c.classList.add('boing'); hearts(c);
 });
@@ -2225,22 +2224,21 @@ return `<div class="chips">${Object.entries(FEELS).map(([k, f]) => `<button type
 A.feelChips = feelChips;
 A.screens.shey = () => {
 const tab = S.sheyTab || 'antojos'; const all = list();
-const wait = all.filter(a => a.status === 'esperando' && daysLeft(a) > 0);
+const wait = all.filter(a => a.status === 'esperando' && daysLeft(a) > 0).sort((a, b) => daysLeft(a) - daysLeft(b));
 const rd = ready(); const done = all.filter(a => a.status !== 'esperando').sort((a, b) => (b.decided || '').localeCompare(a.decided || ''));
-const saved = all.filter(a => a.status === 'resistido').reduce((s, a) => s + (+a.price || 0), 0);
-const card = a => `<div class="li" style="flex-wrap:wrap"><span class="ic">${a.feel ? FEELS[a.feel].e : A.px('moon', 24)}</span><span class="tx-main"><b>${esc(a.name)}</b><span>${a.why ? esc(a.why) + ' · ' : ''}lo anotaste el ${A.fmtDate(a.created)}</span></span><span class="amt num">${money(a.price)}</span>`;
-return `${A.header('shey', `<span class="pill sm" style="background:#ece0fb;color:#4a3570">${money(saved)} ahorrados</span>`)}
-<div class="rc-scene" style="background-image:url(${Pix.banner('estrellas')});min-height:210px">
-<div class="rc-row"><button class="rc-char" data-shey-tap aria-label="${esc(PN())}"><span class="rc-fx">${A.px(rd.length ? 'alerta' : 'moon', 26)}</span>${A.wear ? A.wear(PID()) : `<img class="pixel" alt="" src="${Pix.sprite((A.petInfo ? A.petInfo(PID()).sprite : 'shey'), 5)}">`}<span class="pill sm">${esc(PN())}</span></button></div>
-<div class="rc-say">${esc(sheyMsg())}</div>
-</div>
-<button class="btn pink" data-act="antojoNew" style="justify-content:center;padding:12px">Contarle un antojo a ${esc(PN())}</button>
+const res = all.filter(a => a.status === 'resistido'); const saved = res.reduce((s, a) => s + (+a.price || 0), 0);
+const total = a => Math.max(1, Math.round((A.parseYmd(a.until) - A.parseYmd(a.created || A.today())) / 864e5));
+const face = a => a.feel && FEELS[a.feel] ? FEELS[a.feel].e : A.px('moon', 26);
+const info = a => `<div class="an-tx"><b>${esc(a.name)}</b><span>${a.why ? esc(a.why) : 'Lo anotaste el ' + A.fmtDate(a.created)}</span></div><span class="an-price">${money(a.price)}</span>`;
+return `${A.header('shey')}
+<section class="an-hero"><span class="an-moon">${A.px('moon', 40)}</span><div class="an-k">Lo que te has ahorrado</div><div class="an-big">${money(saved)}</div><div class="an-sub">${res.length} ${res.length === 1 ? 'antojo resistido' : 'antojos resistidos'}${wait.length + rd.length ? ' · ' + (wait.length + rd.length) + ' en espera' : ''}</div></section>
+<button class="btn pink an-cta" data-act="antojoNew">+ Anotar un antojo</button>
 <div class="seg"><button data-act="sheyTab" data-v="antojos" aria-pressed="${tab === 'antojos'}">Antojos</button><button data-act="sheyTab" data-v="emociones" aria-pressed="${tab === 'emociones'}">Mis emociones</button></div>
 ${tab === 'antojos' ? `
-${rd.length ? `<section class="stack"><span class="pill sm" style="align-self:flex-start">Listos para decidir</span>${rd.map(a => card(a) + `<div class="row" style="width:100%;margin-top:8px"><button class="btn sm" data-act="antojoYes" data-id="${a.id}" style="flex:1;justify-content:center">Sí, lo compro</button><button class="btn pink sm" data-act="antojoNo" data-id="${a.id}" style="flex:1;justify-content:center">Ya no lo quiero +5 ${A.px('estrellita', 16)}</button></div></div>`).join('')}</section>` : ''}
-<section class="stack"><span class="pill sm" style="align-self:flex-start">Esperando</span>${wait.length ? wait.map(a => card(a) + `<div class="row between" style="width:100%;margin-top:6px"><span class="faint">${daysLeft(a) === 1 ? 'Falta 1 día' : 'Faltan ' + daysLeft(a) + ' días'}</span><button class="btn ghost sm" data-act="antojoDel" data-id="${a.id}">Quitar</button></div></div>`).join('') : `<div class="card empty">No hay antojos esperando. Cuando quieras comprar algo, cuéntaselo primero a ${esc(PN())}.</div>`}</section>
-${done.length ? `<section class="stack"><span class="pill sm" style="align-self:flex-start">Historial</span>${done.slice(0, 20).map(a => `<div class="li ${a.status === 'resistido' ? 'income' : ''}"><span class="ic">${A.px(a.status === 'resistido' ? 'heart' : 'bolsa', 26)}</span><span class="tx-main"><b>${esc(a.name)}</b><span>${a.status === 'resistido' ? 'Resististe' : 'Lo compraste'} · ${A.fmtDate(a.decided || a.created)}</span></span><span class="amt num ${a.status === 'resistido' ? 'pos' : ''}">${money(a.price)}</span></div>`).join('')}</section>` : ''}
-<div class="card"><b>¿Cómo funciona?</b><p class="muted" style="margin:6px 0 0">Anotas lo que se te antojó y eliges cuántos días esperar. ${esc(PN())} lo guarda. Al terminar la espera decides: si ya no lo quieres, ganas 5 estrellitas y ${esc(PN())} suma ese dinero a lo que te ahorraste.</p></div>`
+${rd.length ? `<div class="an-h">Hora de decidir</div>${rd.map(a => `<div class="an-card ready"><div class="an-row"><span class="an-face">${face(a)}</span>${info(a)}</div><div class="an-q">Ya pasó la espera. ¿Todavía lo quieres?</div><div class="an-btns"><button class="btn sm" data-act="antojoYes" data-id="${a.id}">Sí, lo compro</button><button class="btn pink sm" data-act="antojoNo" data-id="${a.id}">Ya no · +5 ${A.px('estrellita', 14)}</button></div></div>`).join('')}` : ''}
+${wait.length ? `<div class="an-h">Esperando</div>${wait.map(a => { const d = daysLeft(a), p = Math.round((1 - d / total(a)) * 100); return `<div class="an-card"><div class="an-row"><span class="an-ring" style="--p:${p}"><b>${d}</b></span>${info(a)}</div><div class="an-foot"><span>${d === 1 ? 'Falta 1 día' : 'Faltan ' + d + ' días'} · ${face(a)}</span><button class="iconbtn sm" data-act="antojoDel" data-id="${a.id}" aria-label="Quitar este antojo">✕</button></div></div>`; }).join('')}` : (!rd.length ? `<div class="an-empty">${A.px('moon', 48)}<b>Nada en espera</b><span>Cuando se te antoje algo, anótalo aquí antes de comprarlo. Esperas unos días y decides con la cabeza fría.</span></div>` : '')}
+${done.length ? `<details class="card an-hist"><summary><b>Historial</b> <span class="faint">${done.length}</span></summary>${done.slice(0, 20).map(a => `<div class="li ${a.status === 'resistido' ? 'income' : ''}"><span class="ic">${A.px(a.status === 'resistido' ? 'heart' : 'bolsa', 26)}</span><span class="tx-main"><b>${esc(a.name)}</b><span>${a.status === 'resistido' ? 'Lo resististe' : 'Lo compraste'} · ${A.fmtDate(a.decided || a.created)}</span></span><span class="amt num ${a.status === 'resistido' ? 'pos' : ''}">${money(a.price)}</span></div>`).join('')}</details>` : ''}
+<details class="card an-hist"><summary><b>¿Cómo funciona?</b></summary><p class="muted" style="margin:8px 0 0">Anotas lo que se te antojó y eliges cuántos días esperar. Al terminar la espera decides: si ya no lo quieres, ganas 5 estrellitas y ese dinero suma a lo que te ahorraste. Si lo quieres, lo compras con calma y se anota como gasto.</p></details>`
 : emotions()}`;
 };
 function emotions() {
@@ -2278,24 +2276,24 @@ A.quickAdd(null, { type: 'expense', amount: x.price, note: x.name, feel: x.feel,
 document.addEventListener('click', e => { if (e.target.closest('[data-shey-tap]')) { const s = $('.rc-say'); if (s) s.textContent = sheyMsg(); const c = e.target.closest('.rc-char'); c.classList.remove('boing'); void c.offsetWidth; c.classList.add('boing'); } });
 function newAntojo() {
 const a = { id: uid(), name: '', price: '', wait: 3, feel: null, why: '', cat: null };
-openSheet('Contarle un antojo a ' + PN(), `<div class="stack">
-<div class="row" style="gap:10px"><img class="pixel" alt="" src="${Pix.sprite((A.petInfo ? A.petInfo(PID()).sprite : 'shey'), 3)}" style="width:48px;height:48px"><span class="muted">Cuéntame qué se te antojó. Lo guardo unos días y después decides con calma.</span></div>
+openSheet('Anotar un antojo', `<div class="stack">
+<div class="row" style="gap:10px"><img class="pixel" alt="" src="${Pix.sprite('moon', 3)}" style="width:40px;height:auto"><span class="muted">Cuéntame qué se te antojó. Lo guardo unos días y después decides con calma.</span></div>
 <label class="f">¿Qué quieres comprar?<input class="in" id="anN" placeholder="Ej. unos tenis, un labial" autofocus></label>
 <div class="formgrid"><label class="f">¿Cuánto cuesta?<input class="in" id="anP" type="number" inputmode="decimal" step="0.01"></label>
 <label class="f">Categoría<select class="in" id="anC"><option value="">Sin categoría</option>${S.fin.categories.filter(c => c.type !== 'income').map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></label></div>
 <div class="f">¿Cuánto esperamos?<div class="seg" style="margin-top:4px"><button type="button" data-w="1" aria-pressed="false">1 día</button><button type="button" data-w="3" aria-pressed="true">3 días</button><button type="button" data-w="7" aria-pressed="false">7 días</button><button type="button" data-w="30" aria-pressed="false">30 días</button></div></div>
 <div class="f">¿Cómo te sientes ahora?${feelChips(null, 'fl')}</div>
 <label class="f">¿Por qué lo quieres? (opcional)<input class="in" id="anW" placeholder="Ej. lo vi en TikTok, lo necesito para el trabajo"></label>
-<button class="btn pink" id="anOk" style="justify-content:center;padding:12px">Guardar con ${esc(PN())} ✦</button></div>`, sh => {
+<button class="btn pink" id="anOk" style="justify-content:center;padding:12px">Guardar y esperar</button></div>`, sh => {
 sh.addEventListener('click', e => {
 const w = e.target.closest('[data-w]'); if (w) { a.wait = +w.dataset.w; $$('[data-w]', sh).forEach(b => b.setAttribute('aria-pressed', b === w)); }
 const f = e.target.closest('[data-fl]'); if (f) { a.feel = a.feel === f.dataset.fl ? null : f.dataset.fl; $$('[data-fl]', sh).forEach(b => b.setAttribute('aria-pressed', b.dataset.fl === a.feel)); }
 });
 $('#anOk', sh).onclick = () => {
 a.name = $('#anN').value.trim(); a.price = +$('#anP').value || 0; a.cat = $('#anC').value || null; a.why = $('#anW').value.trim();
-if (!a.name) return toast('Cuéntale a ' + PN() + ' qué quieres');
+if (!a.name) return toast('Escribe qué se te antojó');
 a.created = A.today(); a.until = ymd(addDays(new Date(), a.wait)); a.status = 'esperando';
-list().push(a); A.saveFin(); closeSheet(); toast(`${PN()} lo cuida ${a.wait === 1 ? '1 día' : a.wait + ' días'} ✦`); A.render();
+list().push(a); A.saveFin(); closeSheet(); toast(`Guardado. Decides en ${a.wait === 1 ? '1 día' : a.wait + ' días'} ✦`); A.render();
 };
 });
 }

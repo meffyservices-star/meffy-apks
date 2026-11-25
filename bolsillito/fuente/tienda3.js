@@ -1,12 +1,11 @@
-// ================= Ofertas del día, regalar prendas y Compra con calma =================
+// ================= Ofertas del día y regalar prendas =================
 (function () {
 const A = App, S = A.S, { $, $$, esc, toast, openSheet, closeSheet } = A;
 const sc = A.screens, ACT = A.ACTIONS;
 const spr = (n, k) => Pix.sprite(n, k || 3);
 const ST = s => `<img class="pixel" alt="" src="${spr('estrellita', 3)}" style="width:${s}px;height:auto;vertical-align:-3px">`;
 const ico = (n, fb) => (Pix.has(n) ? n : fb);
-A.PAGES.calma = 'Compra con calma';
-Object.values(A.PACKS || {}).forEach(p => { if (p.map && !p.map.calma) p.map.calma = 's:' + ico('luna', 'estrellita'); if (p.map && !p.map.tarrito) p.map.tarrito = 's:' + ico('alcancia', 'estrellita'); if (p.map && !p.map.cuentas) p.map.cuentas = 's:' + ico('moneda', 'estrellita'); if (p.map && !p.map.retos) p.map.retos = 's:' + ico('trofeo', 'estrellita'); });
+Object.values(A.PACKS || {}).forEach(p => { if (p.map && !p.map.tarrito) p.map.tarrito = 's:' + ico('alcancia', 'estrellita'); if (p.map && !p.map.cuentas) p.map.cuentas = 's:' + ico('moneda', 'estrellita'); if (p.map && !p.map.retos) p.map.retos = 's:' + ico('trofeo', 'estrellita'); });
 const owned = id => A.isPlus() || ((S.settings.rincon || {}).owned || []).includes('acc:' + id);
 
 // ---------- ofertas del día (cambian solas cada día, para todos) ----------
@@ -48,30 +47,4 @@ A.giftAccPick = id => {
   });
 };
 
-// ---------- Compra con calma ----------
-const C = () => { const c = S.settings.calma = S.settings.calma || { items: [], saved: 0, dropped: 0 }; c.items = c.items || []; return c; };
-const WAITS = [[1, '1 día'], [3, '3 días'], [7, '1 semana']];
-const left = it => it.due - Date.now();
-const fmtLeft = ms => { const h = Math.ceil(ms / 36e5); return h >= 48 ? Math.ceil(h / 24) + ' días' : h >= 2 ? h + ' horas' : 'menos de 1 hora'; };
-const money = n => (A.money ? A.money(n) : '$' + n);
-A.calmaDue = () => C().items.filter(i => i.state === 'wait' && left(i) <= 0).length;
-sc.calma = () => {
-  const c = C(); const wait = c.items.filter(i => i.state === 'wait'); const ready = wait.filter(i => left(i) <= 0), soon = wait.filter(i => left(i) > 0).sort((a, b) => a.due - b.due);
-  const w = S.calmaW || 1;
-  return `${A.header('calma')}
-<div class="card cm-intro"><span class="cm-ic">${ico('luna', 'estrellita') ? `<img class="pixel" alt="" src="${spr(ico('luna', 'estrellita'), 5)}" style="width:44px;height:auto">` : ''}</span><div><b>Antes de comprar, espera un ratito</b><div class="faint">Anota lo que se te antojó y elige cuánto esperar. Cuando pase el tiempo te pregunto si todavía lo quieres. Si ya no, ¡ese dinero se quedó contigo!</div></div></div>
-<form class="card stack" id="cmForm" autocomplete="off"><b>¿Qué se te antojó?</b><input class="in" id="cmName" maxlength="40" placeholder="Ej. Audífonos, zapatos, un helado grande"><input class="in" id="cmPrice" inputmode="decimal" placeholder="¿Cuánto cuesta?"><div class="chips">${WAITS.map(([d, n]) => `<button type="button" class="chip" data-act="cmWait" data-v="${d}" aria-pressed="${d === w}">Esperar ${n}</button>`).join('')}</div><button class="btn pink" type="submit" style="justify-content:center">Guardar y esperar</button></form>
-${ready.length ? `<div class="ph"><span class="pill sm">Ya puedes decidir</span></div>${ready.map(i => `<div class="card cm-it ready"><div class="tx-main"><b>${esc(i.name)}</b><span class="faint">${money(i.price)} · ya pasó el tiempo. ¿Todavía lo quieres?</span></div><div class="row" style="gap:8px"><button class="btn sm pink" data-act="cmYes" data-id="${i.id}">Sí, lo quiero</button><button class="btn sm" data-act="cmNo" data-id="${i.id}">Ya no</button></div></div>`).join('')}` : ''}
-${soon.length ? `<div class="ph"><span class="pill sm">Esperando</span></div>${soon.map(i => { const tot = i.days * 864e5, p = Math.min(1, 1 - left(i) / tot); return `<div class="card cm-it"><div class="row between"><div class="tx-main"><b>${esc(i.name)}</b><span class="faint">${money(i.price)} · falta ${fmtLeft(left(i))}</span></div><button class="iconbtn sm" data-act="cmDel" data-id="${i.id}" aria-label="Quitar">✕</button></div><span class="cp-bar"><i style="width:${Math.round(p * 100)}%"></i></span></div>`; }).join('')}` : ''}
-<div class="card cm-saved"><b>Lo que te ahorraste</b><div class="cm-big">${money(c.saved || 0)}</div><div class="faint">${c.dropped ? `por ${c.dropped} ${c.dropped === 1 ? 'antojo que se pasó' : 'antojos que se pasaron'}` : 'Aquí vas a ver el dinero de los antojos que se pasaron.'}</div></div>`;
-};
-ACT.cmWait = a => { S.calmaW = +a.dataset.v; A.render(); };
-A.after.calma = el => {
-  const f = $('#cmForm', el); if (!f) return;
-  f.onsubmit = e => { e.preventDefault(); const n = $('#cmName', el).value.trim(); const p = parseFloat(String($('#cmPrice', el).value).replace(',', '.')); if (!n) return toast('Ponle nombre a lo que quieres'); if (!(p > 0)) return toast('Escribe cuánto cuesta'); const d = S.calmaW || 1; C().items.unshift({ id: 'cm' + Date.now().toString(36), name: n.slice(0, 40), price: p, days: d, due: Date.now() + d * 864e5, state: 'wait' }); A.saveSettings(); toast('Guardado. Te pregunto cuando pase el tiempo.'); A.render(); };
-};
-const find = a => C().items.find(i => i.id === a.dataset.id);
-ACT.cmNo = a => { const i = find(a); if (!i) return; i.state = 'dropped'; const c = C(); c.saved = (c.saved || 0) + i.price; c.dropped = (c.dropped || 0) + 1; if (A.giveStars) A.giveStars(2); A.saveSettings(); toast(`¡Te ahorraste ${money(i.price)}! +2 estrellitas ✦`); A.render(); };
-ACT.cmYes = a => { const i = find(a); if (!i) return; i.state = 'bought'; A.saveSettings(); A.render(); if (A.quickAdd) A.quickAdd(null, { type: 'expense', amount: i.price, note: i.name }); };
-ACT.cmDel = a => { const c = C(); c.items = c.items.filter(i => i.id !== a.dataset.id); A.saveSettings(); A.render(); };
 })();
