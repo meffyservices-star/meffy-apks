@@ -2408,7 +2408,14 @@ A.ask = (msg, ok, danger) => new Promise(res => {
   ov.onclick = e => { if (e.target === ov) done(false); }; ov.querySelector('[data-n]').onclick = () => done(false); ov.querySelector('[data-y]').onclick = () => done(true);
   addEventListener('keydown', key, true); document.body.appendChild(ov); ov.querySelector('[data-n]').focus();
 });
-window.BOLS_V = 'v106';
+// versión nueva: se actualiza sola (al abrir la app, o cuando vuelves a ella)
+if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('message', e => {
+  if (!(e.data && e.data.nueva)) return; let last = 0; try { last = +sessionStorage.getItem('bols_rl') || 0; } catch (er) {} if (Date.now() - last < 30000) return;
+  const go = () => { try { sessionStorage.setItem('bols_rl', String(Date.now())); } catch (er) {} location.reload(); };
+  if (performance.now() < 20000 || document.hidden) return go();
+  document.addEventListener('visibilitychange', function f() { if (!document.hidden) { document.removeEventListener('visibilitychange', f); go(); } });
+});
+window.BOLS_V = 'v107';
 A.ACTIONS.forceUpdate = async () => { A.toast('Buscando…'); try { const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(r => r.unregister())); const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); } catch (e) {} location.reload(); };
 A.ACTIONS.aleOpen = () => summary();
 const tipFn = A.ACTIONS.mascot;
