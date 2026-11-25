@@ -81,19 +81,20 @@ let RECIPES = BASE_REC;
 const ING_NAME = { masa: 'Masa', miel: 'Miel', fresa: 'Fresa', taza: 'Taza', te: 'Té', boba: 'Boba', cono: 'Cono', bola: 'Bola de helado', chispas: 'Chispas', crema: 'Crema', pan: 'Pan', carne: 'Carne', salchicha: 'Salchicha', queso: 'Queso', arroz: 'Arroz', menestra: 'Menestra', platano: 'Plátano', pescado: 'Pescado', cebolla: 'Cebolla', yuca: 'Yuca' };
 // lo que la dueña agrega, edita o quita desde el panel
 const catC = () => ((A.CFG && A.CFG.catalog) || {});
+const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
 function applyCatalog() {
   const gone = catC().gone || {}, gi = gone.ckIng || [], gr = gone.ckRec || [];
   const ci = (catC().ckIng || []).filter(x => !x.off), cr = (catC().ckRec || []).filter(x => !x.off);
   ING = Object.assign({}, BASE_ING); gi.forEach(k => delete ING[k]);
   ORD_D = BASE_D.filter(k => !gi.includes(k)); ORD_S = BASE_S.filter(k => !gi.includes(k)); COOKERS = BASE_COOK.filter(k => !gi.includes(k));
   ci.forEach(x => {
-    const rep = x.rep && BASE_ING[x.rep] && ING[x.rep] ? x.rep : null, k = rep || 'x_' + x.id; ING[k] = 'cki_' + x.id;
+    const r0 = x.rep || Object.keys(ING_NAME).find(b => norm(ING_NAME[b]) === norm(x.name)), rep = r0 && BASE_ING[r0] && ING[r0] ? r0 : null, k = rep || 'x_' + x.id; ING[k] = 'cki_' + x.id;
     const baseSt = rep ? (BASE_S.includes(rep) ? 'salado' : 'dulce') : null, st = x.st === 'salado' ? 'salado' : 'dulce';
     if (!rep || baseSt !== st) { ORD_D = ORD_D.filter(a => a !== k); ORD_S = ORD_S.filter(a => a !== k); (st === 'salado' ? ORD_S : ORD_D).push(k); }
     COOKERS = COOKERS.filter(a => a !== k); if (x.cook) COOKERS.push(k);
   });
   RECIPES = BASE_REC.filter(r => !gr.includes(r.id)).slice();
-  cr.forEach(x => { const o = { id: x.rep && BASE_REC.some(r => r.id === x.rep) ? x.rep : 'x_' + x.id, name: x.name, steps: (x.steps || []).slice(), art: 'ckr_' + x.id, price: +x.price || 8, lvl: Math.min(6, Math.max(1, +x.lvl || 1)) }; const i = RECIPES.findIndex(r => r.id === o.id); if (i >= 0) RECIPES[i] = o; else RECIPES.push(o); });
+  cr.forEach(x => { const r0 = x.rep || (BASE_REC.find(r => norm(r.name) === norm(x.name)) || {}).id; const o = { id: r0 && BASE_REC.some(r => r.id === r0) ? r0 : 'x_' + x.id, name: x.name, steps: (x.steps || []).slice(), art: 'ckr_' + x.id, price: +x.price || 8, lvl: Math.min(6, Math.max(1, +x.lvl || 1)) }; const i = RECIPES.findIndex(r => r.id === o.id); if (i >= 0) RECIPES[i] = o; else RECIPES.push(o); });
   RECIPES = RECIPES.filter(r => r.steps.length && r.steps.every(k => k === 'cook' || ING[k]));
   if (!RECIPES.length) { ING = BASE_ING; ORD_D = BASE_D; ORD_S = BASE_S; COOKERS = BASE_COOK; RECIPES = BASE_REC; }
 }
@@ -322,7 +323,7 @@ async function cookGame() {
   const kd = e => { if (e.key === 'Escape') sh.close(); }; addEventListener('keydown', kd);
   $('.gm-pause', sh.ov).onclick = () => { paused = !paused; gsfx('tick'); paused ? A.gameMusic.pause() : A.gameMusic.resume(); const m = $('.gm-msg', sh.ov); if (paused) { m.hidden = false; m.innerHTML = `<div class="gm-end"><div class="gm-k">PAUSA</div><div class="row" style="gap:8px;margin-top:10px"><button class="btn" data-x="out" style="flex:1;justify-content:center">Salir</button><button class="btn pink" data-x="go" style="flex:1;justify-content:center">Seguir</button></div></div>`; m.onclick = e => { const b = e.target.closest('[data-x]'); if (!b) return; if (b.dataset.x === 'out') sh.close(); else { paused = false; m.hidden = true; A.gameMusic.resume(); } }; } };
   sh.close = () => { A.gameMusic.stop(); run = false; cancelAnimationFrame(raf); removeEventListener('keydown', kd); sh.ov.remove(); document.body.classList.remove('gaming'); if (S.route === 'juegos' || S.route === 'rincon') A.render(); };
-  sh.ov.__ck = { stn: v => { STN = v; }, tapIngredient, tapPan, serve, st: () => ({ cust, tray, pan, money, lives, served }), skip: s => { time -= s; } };
+  sh.ov.__ck = { rec: () => RECIPES.map(r => r.id + ':' + r.art), stn: v => { STN = v; }, tapIngredient, tapPan, serve, st: () => ({ cust, tray, pan, money, lives, served }), skip: s => { time -= s; } };
   reset(); const m = $('.gm-msg', sh.ov); m.hidden = false;
   m.innerHTML = `<div class="gm-end"><div class="gm-k">CAFECITO KAWAII</div><div class="gm-legend"><span>${img('ck_hotcakes', 30)}Mira el pedido</span><span>${img('ck_masa', 30)}Toca en orden</span><span>${img('ck_cupcake', 30)}Sirve rápido</span></div><div class="faint">Atiende antes de que se enojen. Con la masa, toca la plancha cuando esté dorada. Nivel ${lvl}.</div><button class="btn pink" data-x="go" style="justify-content:center;width:100%;margin-top:10px">¡Abrir el café!</button></div>`;
   m.onclick = e => { if (e.target.closest('[data-x]')) { m.hidden = true; paused = false; gsfx('start'); A.gameMusic.start(MUS); } };
