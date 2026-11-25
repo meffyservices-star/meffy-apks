@@ -20,10 +20,12 @@ const BUILT = {
 Object.entries(BUILT).forEach(([k, b]) => { Pix.define('cgb_' + k, { raw: b.map, pal: b.pal }); });
 const RARE = { 1: ['Común', '#8fd59a'], 2: ['Raro', '#8ec5ff'], 3: ['Súper raro', '#ff9fd0'] };
 const GACHA_PRICE = 30, DUP_BACK = 10;
+const goneCh = k => ((((A.CFG || {}).catalog || {}).gone || {}).chars || []).includes(k);
+A.calleBuilt = () => BUILT;
 const catChars = () => (((A.CFG && A.CFG.catalog) || {}).chars || []).filter(x => !x.off && !(x.from && x.from > A.today()));
 function allChars() {
   const out = catChars().map(x => ({ id: 'cg_' + x.id, name: x.name, sprite: 'cg_' + x.id, how: x.how || 'gacha', price: +x.price || 0, rare: +x.rare || 1 }));
-  Object.entries(BUILT).forEach(([k, b]) => out.push({ id: 'cgb_' + k, name: b.name, sprite: 'cgb_' + k, how: 'gacha', rare: b.rare }));
+  Object.entries(BUILT).forEach(([k, b]) => { if (goneCh(k) && !CS().owned.includes('cgb_' + k)) return; out.push({ id: 'cgb_' + k, name: b.name, sprite: 'cgb_' + k, how: 'gacha', rare: b.rare }); });
   return out;
 }
 const PET_CHAR = () => ({ id: 'pet', name: (A.petInfo ? A.petInfo(K.activePet()).name : 'Tu mascota'), sprite: K.petSprite(), how: 'free', rare: 1, pet: true });

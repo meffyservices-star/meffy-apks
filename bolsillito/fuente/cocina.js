@@ -54,11 +54,14 @@ D('ck_enceb', 20, 20, p => layered(p, q => { q.e(10, 13.6, 9, 5.4, 'l'); q.r(3, 
 D('ck_cupcake', 20, 20, p => { for (let y = 11; y < 19; y++) { const w = 13 - Math.floor((y - 11) * .4); p.r(10 - Math.floor(w / 2), y, w, 1, 'P'); } for (let x = 5; x < 16; x += 3) p.r(x, 11, 1, 8, 'p'); p.e(10, 10.5, 6.6, 2.6, 'C'); p.e(10, 8, 5.6, 2.4, 'w'); p.e(10, 5.6, 4, 2.2, 'p'); p.e(10, 3.4, 2.4, 1.8, 'w'); p.px(10, 1, 'R'); p.px(10, 2, 'R'); p.px(9, 2, 'R'); p.px(7, 8, 'V'); p.px(12, 7, 'Y'); p.px(9, 5, 'G'); p.px(12, 5, 'P'); });
 
 // ---------------- Recetas ----------------
-const ING = { masa: 'ck_masa', miel: 'ck_miel', fresa: 'fresa', taza: 'ck_taza', te: 'ck_te', boba: 'ck_boba', cono: 'ck_cono', bola: 'ck_bola', chispas: 'ck_chispas', crema: 'ck_crema', pan: 'ck_pan', carne: 'ck_carne', salchicha: 'ck_salchicha', queso: 'ck_queso', arroz: 'ck_arroz', menestra: 'ck_menestra', platano: 'ck_platano', pescado: 'ck_pescado', cebolla: 'ck_cebolla', yuca: 'ck_yuca' };
-const COOKERS = ['masa', 'carne', 'salchicha', 'platano'];
-const ORD_D = ['masa', 'miel', 'fresa', 'crema', 'chispas', 'taza', 'te', 'boba', 'cono', 'bola'], ORD_S = ['pan', 'carne', 'salchicha', 'queso', 'arroz', 'menestra', 'platano', 'pescado', 'cebolla', 'yuca'];
+const BASE_ING = { masa: 'ck_masa', miel: 'ck_miel', fresa: 'fresa', taza: 'ck_taza', te: 'ck_te', boba: 'ck_boba', cono: 'ck_cono', bola: 'ck_bola', chispas: 'ck_chispas', crema: 'ck_crema', pan: 'ck_pan', carne: 'ck_carne', salchicha: 'ck_salchicha', queso: 'ck_queso', arroz: 'ck_arroz', menestra: 'ck_menestra', platano: 'ck_platano', pescado: 'ck_pescado', cebolla: 'ck_cebolla', yuca: 'ck_yuca' };
+let ING = BASE_ING;
+const BASE_COOK = ['masa', 'carne', 'salchicha', 'platano']; let COOKERS = BASE_COOK;
+const BASE_D = ['masa', 'miel', 'fresa', 'crema', 'chispas', 'taza', 'te', 'boba', 'cono', 'bola'];
+const BASE_S = ['pan', 'carne', 'salchicha', 'queso', 'arroz', 'menestra', 'platano', 'pescado', 'cebolla', 'yuca'];
+let ORD_D = BASE_D, ORD_S = BASE_S;
 let STN = 'dulce'; const order = () => STN === 'dulce' ? ORD_D : ORD_S;
-const RECIPES = [
+const BASE_REC = [
   { id: 'hot', name: 'Hotcakes', steps: ['masa', 'cook', 'miel'], art: 'ck_hotcakes', price: 6, lvl: 1 },
   { id: 'boba', name: 'Té de burbujas', steps: ['taza', 'te', 'boba'], art: 'ck_boba_dish', price: 7, lvl: 1 },
   { id: 'helado', name: 'Helado', steps: ['cono', 'bola', 'chispas'], art: 'ck_helado', price: 6, lvl: 1 },
@@ -74,6 +77,28 @@ const RECIPES = [
   { id: 'arroz', name: 'Arroz con menestra', steps: ['arroz', 'menestra', 'carne', 'cook'], art: 'ck_arroz_men', price: 12, lvl: 4 },
   { id: 'enceb', name: 'Encebollado', steps: ['pescado', 'yuca', 'cebolla'], art: 'ck_enceb', price: 13, lvl: 5 }
 ];
+let RECIPES = BASE_REC;
+const ING_NAME = { masa: 'Masa', miel: 'Miel', fresa: 'Fresa', taza: 'Taza', te: 'Té', boba: 'Boba', cono: 'Cono', bola: 'Bola de helado', chispas: 'Chispas', crema: 'Crema', pan: 'Pan', carne: 'Carne', salchicha: 'Salchicha', queso: 'Queso', arroz: 'Arroz', menestra: 'Menestra', platano: 'Plátano', pescado: 'Pescado', cebolla: 'Cebolla', yuca: 'Yuca' };
+// lo que la dueña agrega, edita o quita desde el panel
+const catC = () => ((A.CFG && A.CFG.catalog) || {});
+function applyCatalog() {
+  const gone = catC().gone || {}, gi = gone.ckIng || [], gr = gone.ckRec || [];
+  const ci = (catC().ckIng || []).filter(x => !x.off), cr = (catC().ckRec || []).filter(x => !x.off);
+  ING = Object.assign({}, BASE_ING); gi.forEach(k => delete ING[k]);
+  ORD_D = BASE_D.filter(k => !gi.includes(k)); ORD_S = BASE_S.filter(k => !gi.includes(k)); COOKERS = BASE_COOK.filter(k => !gi.includes(k));
+  ci.forEach(x => {
+    const rep = x.rep && BASE_ING[x.rep] && ING[x.rep] ? x.rep : null, k = rep || 'x_' + x.id; ING[k] = 'cki_' + x.id;
+    const baseSt = rep ? (BASE_S.includes(rep) ? 'salado' : 'dulce') : null, st = x.st === 'salado' ? 'salado' : 'dulce';
+    if (!rep || baseSt !== st) { ORD_D = ORD_D.filter(a => a !== k); ORD_S = ORD_S.filter(a => a !== k); (st === 'salado' ? ORD_S : ORD_D).push(k); }
+    COOKERS = COOKERS.filter(a => a !== k); if (x.cook) COOKERS.push(k);
+  });
+  RECIPES = BASE_REC.filter(r => !gr.includes(r.id)).slice();
+  cr.forEach(x => { const o = { id: x.rep && BASE_REC.some(r => r.id === x.rep) ? x.rep : 'x_' + x.id, name: x.name, steps: (x.steps || []).slice(), art: 'ckr_' + x.id, price: +x.price || 8, lvl: Math.min(6, Math.max(1, +x.lvl || 1)) }; const i = RECIPES.findIndex(r => r.id === o.id); if (i >= 0) RECIPES[i] = o; else RECIPES.push(o); });
+  RECIPES = RECIPES.filter(r => r.steps.length && r.steps.every(k => k === 'cook' || ING[k]));
+  if (!RECIPES.length) { ING = BASE_ING; ORD_D = BASE_D; ORD_S = BASE_S; COOKERS = BASE_COOK; RECIPES = BASE_REC; }
+}
+A.cookData = () => ({ ING: BASE_ING, names: ING_NAME, rec: BASE_REC, ordS: BASE_S, cook: BASE_COOK, cur: () => ING });
+
 const CK = () => { const g = GM(); g.cook = g.cook || { served: 0 }; return g.cook; };
 const lvlOf = served => Math.min(6, 1 + Math.floor(served / 8));
 const cookLvl = () => lvlOf(CK().served);
@@ -82,6 +107,7 @@ const TURN = 90;
 
 // ---------------- El juego ----------------
 async function cookGame() {
+  applyCatalog();
   const sh = gameShell('cook'); let { w: W, h: H } = sh.fit(); const MUS = 'cocina';
   const SC = 3, DPR = window.devicePixelRatio || 1, KP = Math.max(2, Math.round(SC * DPR)); // cada pixel del juego = número ENTERO de pixeles de pantalla (nítido)
   let LW = Math.floor(W * DPR / KP), LH = Math.floor(H * DPR / KP);
@@ -118,7 +144,7 @@ async function cookGame() {
     x.putImageData(d, 0, 0); return c; };
   const U = unlocked(); const lvl = cookLvl();
   // posiciones
-  const hudH = 16, counterY = Math.max(96, Math.min(Math.round(LH * .47), LH - 150)), btnH = 24, btnRows = 2, gap = 2;
+  const hudH = 16, counterY = Math.max(96, Math.min(Math.round(LH * .47), LH - 150 - (Math.max(2, Math.ceil(Math.max(ORD_D.length, ORD_S.length) / 5)) - 2) * 26)), btnH = 24, btnRows = Math.max(2, Math.ceil(Math.max(ORD_D.length, ORD_S.length) / 5)), gap = 2;
   const btnY0 = LH - (btnH * btnRows + gap * (btnRows + 1)) - 4;
   const slotX = [0, 1, 2].map(i => Math.round(LW * (1 + i * 2) / 6));
   let cust, tray, pan, time, money, lives, served, perfect, pops, focus, fx, run = true, paused = true, last = 0, raf, spawnT, flash, shake, goneT, combo;

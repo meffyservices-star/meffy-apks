@@ -152,7 +152,7 @@ function daysLeft(se) {
 A.seasonDaysLeft = daysLeft;
 
 // ---- cosas que agrega la administradora (se guardan en la configuración de la app) ----
-const catalog = () => { const c = (A.CFG && A.CFG.catalog) || {}; return { pets: c.pets || [], furn: c.furn || [], clothes: c.clothes || [], food: c.food || [], icons: c.icons || [], stickers: c.stickers || [], walls: c.walls || [], floors: c.floors || [], seasons: c.seasons || [], chars: c.chars || [], boxes: c.boxes || [] }; };
+const catalog = () => { const c = (A.CFG && A.CFG.catalog) || {}; return { pets: c.pets || [], furn: c.furn || [], clothes: c.clothes || [], food: c.food || [], icons: c.icons || [], stickers: c.stickers || [], walls: c.walls || [], floors: c.floors || [], seasons: c.seasons || [], chars: c.chars || [], boxes: c.boxes || [], ckIng: c.ckIng || [], ckRec: c.ckRec || [] }; };
 const defMap = (name, w, h, map) => Pix.define(name, { w, h, fn(p) { p.map(0, 0, map); } });
 const defX = (name, x, w, h) => { if (x.pal) { Pix.define(name, { raw: x.map, pal: x.pal }); if (x.map2) { Pix.define(name + '__2', { raw: x.map2, pal: x.pal }); A.ANIM[name] = name + '__2'; } } else defMap(name, w, h, x.map); };
 const notYet = x => x.from && x.from > A.today();
@@ -170,6 +170,7 @@ function registerCatalog() {
   c.icons.forEach(x => { if (x.off || notYet(x)) return; const k = 'ci_' + x.id; defX(k, x, x.w || 16, x.h || 16); customKeys.icons.push(k); });
   c.stickers.forEach(x => { if (x.off || notYet(x)) return; defX('cs_' + x.id, x, x.w, x.h); });
   c.chars.forEach(x => defX('cg_' + x.id, x, x.w || 20, x.h || 20));
+  c.ckIng.forEach(x => defX('cki_' + x.id, x, x.w || 16, x.h || 16)); c.ckRec.forEach(x => defX('ckr_' + x.id, x, x.w || 20, x.h || 20));
   c.boxes.forEach(x => defX('cbx_' + x.id, x, x.w || 20, x.h || 20));
   const tileDef = (name, x, W, H) => { const t = x.pal ? x : null; if (!t) return; Pix.define(name, { raw: tiledRaw(x.map, W, H), pal: x.pal }); };
   c.walls.forEach(x => { const k = 'cw_' + x.id; tileDef('x_pared_' + k, x, 144, 34); customKeys.walls.push(k); if (!x.off && !notYet(x)) WALLS[k] = [x.name, x.how === 'stars' ? +x.price || 0 : 0]; });
@@ -825,10 +826,10 @@ ACT.rgDone = () => {
 };
 
 // ---------------- Admin: crear mascotas, muebles, ropa, comida, paredes, pisos, stickers e íconos ----------------
-const KINDS = { pets: ['Mascota', 20, 20], furn: ['Mueble', 24, 24], clothes: ['Ropa', 12, 8], food: ['Comida', 16, 16], walls: ['Pared', 16, 16], floors: ['Piso', 16, 16], stickers: ['Sticker', 24, 24], icons: ['Ícono', 16, 16], chars: ['Personaje', 20, 20], boxes: ['Cajita sorpresa', 14, 16] };
-const KIND_NEW = { pets: 'Nueva mascota', furn: 'Nuevo mueble', clothes: 'Nueva ropa', food: 'Nueva comida', walls: 'Nueva pared', floors: 'Nuevo piso', stickers: 'Nuevo sticker', icons: 'Nuevo ícono', chars: 'Nuevo personaje del juego', boxes: 'Nueva cajita sorpresa' };
-const KIND_PL = { pets: 'Mascotas', furn: 'Muebles', clothes: 'Ropa', food: 'Comidas', walls: 'Paredes', floors: 'Pisos', stickers: 'Stickers', icons: 'Íconos', chars: 'Personajes de Cruzar la calle', boxes: 'Cajitas sorpresa' };
-const KIND_SPR = { pets: 'cp_', furn: 'cf_', clothes: 'acc_cc_', food: 'cfo_', walls: 'x_pared_cw_', floors: 'x_piso_cl_', stickers: 'cs_', icons: 'ci_', chars: 'cg_', boxes: 'cbx_' };
+const KINDS = { pets: ['Mascota', 20, 20], furn: ['Mueble', 24, 24], clothes: ['Ropa', 12, 8], food: ['Comida', 16, 16], walls: ['Pared', 16, 16], floors: ['Piso', 16, 16], stickers: ['Sticker', 24, 24], icons: ['Ícono', 16, 16], chars: ['Personaje', 20, 20], boxes: ['Cajita sorpresa', 14, 16], ckIng: ['Ingredientes de Cafecito', 16, 16], ckRec: ['Recetas de Cafecito', 20, 20] };
+const KIND_NEW = { pets: 'Nueva mascota', furn: 'Nuevo mueble', clothes: 'Nueva ropa', food: 'Nueva comida', walls: 'Nueva pared', floors: 'Nuevo piso', stickers: 'Nuevo sticker', icons: 'Nuevo ícono', chars: 'Nuevo personaje del juego', boxes: 'Nueva cajita sorpresa', ckIng: 'Nuevo ingrediente de Cafecito', ckRec: 'Nueva receta de Cafecito' };
+const KIND_PL = { pets: 'Mascotas', furn: 'Muebles', clothes: 'Ropa', food: 'Comidas', walls: 'Paredes', floors: 'Pisos', stickers: 'Stickers', icons: 'Íconos', chars: 'Personajes de Cruzar la calle', boxes: 'Cajitas sorpresa', ckIng: 'Ingredientes de Cafecito', ckRec: 'Recetas de Cafecito' };
+const KIND_SPR = { pets: 'cp_', furn: 'cf_', clothes: 'acc_cc_', food: 'cfo_', walls: 'x_pared_cw_', floors: 'x_piso_cl_', stickers: 'cs_', icons: 'ci_', chars: 'cg_', boxes: 'cbx_', ckIng: 'cki_', ckRec: 'ckr_' };
 const PALK = Object.keys(Pix.PAL);
 const BASE_PAL = PALK.map(k => Pix.PAL[k]);
 function blankMap(w, h) { return Array.from({ length: h }, () => '.'.repeat(w)); }
@@ -847,6 +848,8 @@ function newDraft(kind, item) {
   ed.color = ed.color && ed.color !== 'P' ? ed.color : String(PALK.indexOf('P').toString(36));
   ed.tool = 'pen'; ed.hist = [];
   if (kind === 'furn' && !ed.dw) ed.dw = Math.min(40, Math.max(10, ed.w));
+  if (kind === 'ckIng') { ed.st = ed.st || 'dulce'; ed.cook = !!ed.cook; }
+  if (kind === 'ckRec') { ed.steps = (ed.steps || []).slice(); ed.lvl = ed.lvl || 1; if (!item) ed.price = 8; }
   if (kind === 'boxes' && !item) { ed.price = 30; ed.items = []; if (A.boxPreset) A.boxPreset(ed, 0); }
   if (kind === 'clothes' && !ed.dw) ed.dw = ed.w + 2;
   ed.tryPet = ed.tryPet || A.petActive && A.petActive() || 'gochi';
@@ -869,9 +872,11 @@ ${builtinHTML(kind)}
 <button class="btn" data-act="seAdd" style="justify-content:center">Agregar temporada</button>
 <p class="faint" style="margin:0">Se repite cada año en esas fechas. Luego, al agregar ropa o muebles, elige "Temporada" y escoge esta.</p></details>`;
 };
-function howLabel(x, kind) { if (kind === 'stickers' || kind === 'icons') return 'Gratis'; return x.how === 'gacha' ? 'Máquina gacha · ' + (['', 'Común', 'Raro', 'Súper raro'][+x.rare || 1]) : x.how === 'stars' ? `${x.price} estrellitas` : x.how === 'logro' ? 'Por logro' : x.how === 'temporada' ? 'De temporada' : x.how === 'raro' ? 'Regalo raro' : 'Gratis'; }
-const PH = { pets: 'Ej. Mochi de coco', furn: 'Ej. Lámpara de luna', clothes: 'Ej. Gorrito de lana', food: 'Ej. Flan', walls: 'Ej. Rayitas rosadas', floors: 'Ej. Baldosa de corazones', stickers: 'Ej. Gatito feliz', icons: 'Ej. Mi banco', chars: 'Ej. Pandy', boxes: 'Ej. Cajita de gorritos' };
+function howLabel(x, kind) { if (kind === 'stickers' || kind === 'icons') return 'Gratis'; if (kind === 'ckIng') return (x.st === 'salado' ? 'En Comidas' : 'En Dulces') + (x.cook ? ' · se cocina' : '') + (x.rep ? ' · cambia uno de la app' : ''); if (kind === 'ckRec') return '$' + (x.price || 8) + ' · nivel ' + (x.lvl || 1) + (x.rep ? ' · cambia una de la app' : ''); return x.how === 'gacha' ? 'Máquina gacha · ' + (['', 'Común', 'Raro', 'Súper raro'][+x.rare || 1]) : x.how === 'stars' ? `${x.price} estrellitas` : x.how === 'logro' ? 'Por logro' : x.how === 'temporada' ? 'De temporada' : x.how === 'raro' ? 'Regalo raro' : 'Gratis'; }
+const PH = { pets: 'Ej. Mochi de coco', furn: 'Ej. Lámpara de luna', clothes: 'Ej. Gorrito de lana', food: 'Ej. Flan', walls: 'Ej. Rayitas rosadas', floors: 'Ej. Baldosa de corazones', stickers: 'Ej. Gatito feliz', icons: 'Ej. Mi banco', chars: 'Ej. Pandy', boxes: 'Ej. Cajita de gorritos', ckIng: 'Ej. Mantequilla', ckRec: 'Ej. Sándwich' };
 const HELP = {
+  ckIng: 'Es un botoncito de ingrediente del juego Cafecito. Elige si va en la pestaña Dulces o en Comidas, y si se cocina en la sartén. Dibújalo o súbelo (16 × 16 va perfecto).',
+  ckRec: 'Dibuja el plato terminado (es lo que pide el cliente y lo que ves al servir). Abajo armas la receta: toca los ingredientes en el orden en que se ponen.',
   walls: 'Dibuja o sube un cuadrito que se repite a lo ancho de toda la pared (la pared mide 34 de alto).',
   floors: 'Dibuja o sube una baldosa: se repite en todo el piso, como azulejos.',
   stickers: 'Los stickers les aparecen gratis a todas en el journal. Con "Foto a pixel" puedes convertir cualquier foto o dibujo, con borde blanco de sticker.',
@@ -881,6 +886,42 @@ const HELP = {
   boxes: 'Dibuja o sube solo la portada de la cajita (el frente). La app le pone la tapa, el costado y el contorno. Abajo eliges el color, en qué estante va, el precio y qué sorpresitas trae.',
   chars: 'Personajes para el juego Cruzar la calle. Sube un dibujo pixel (de frente, con fondo transparente). Pueden salir en la máquina gacha, venderse con estrellitas o darse gratis desde el inicio.'
 };
+
+// ---- Cafecito: ingredientes y recetas ----
+function ckAllIng() { // todos los ingredientes que se pueden usar en una receta: los de la app (que no quitaste) y los tuyos
+  const cd = A.cookData ? A.cookData() : null; if (!cd) return [];
+  const gone = goneOf('ckIng'), c = catalog(); const out = [];
+  Object.entries(cd.ING).forEach(([k, spn]) => { if (gone.includes(k)) return; const ov = c.ckIng.find(x => x.rep === k && !x.off); out.push({ k, name: cd.names[k] || k, src: spr(ov ? 'cki_' + ov.id : spn, 1) }); });
+  c.ckIng.filter(x => !x.off && !x.rep).forEach(x => out.push({ k: 'x_' + x.id, name: x.name, src: spr('cki_' + x.id, 1) }));
+  return out;
+}
+function ckIngFields() {
+  return `<div class="formgrid"><label class="f">Va en la pestaña<select class="in" data-ed="st">${[['dulce', 'Dulces'], ['salado', 'Comidas']].map(([v, n]) => `<option value="${v}" ${ed.st === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+<div class="f">¿Se cocina en la sartén?<div class="chips"><button class="chip" data-act="ckCook" aria-pressed="${!!ed.cook}">${ed.cook ? 'Sí, se cocina' : 'No'}</button></div></div></div>`;
+}
+function ckRecFields() {
+  const all = ckAllIng(), by = k => all.find(x => x.k === k);
+  return `<div class="formgrid"><label class="f">Cuánto paga ($)<input class="in" data-ed="price" type="number" min="1" value="${ed.price}"></label>
+<label class="f">Desde qué nivel sale<select class="in" data-ed="lvl">${[1, 2, 3, 4, 5, 6].map(n => `<option value="${n}" ${+ed.lvl === n ? 'selected' : ''}>Nivel ${n}</option>`).join('')}</select></label></div>
+<div class="f">Pasos de la receta (en orden)
+<div class="chips" style="min-height:34px">${(ed.steps || []).length ? ed.steps.map((k, i) => { const x = by(k); return `<span class="chip" style="gap:4px">${i + 1}. ${k === 'cook' ? 'Sartén 🔥' : x ? `<img class="pixel" alt="" src="${x.src}" style="width:18px;height:18px"> ${esc(x.name)}` : esc(k)}</span>`; }).join('') : '<span class="faint">Toca abajo los ingredientes, en el orden en que se ponen.</span>'}</div>
+<div class="row" style="gap:6px;margin-top:6px"><button class="btn sm" data-act="ckStepUndo">Quitar el último</button><button class="btn sm" data-act="ckStepClear">Empezar de nuevo</button></div></div>
+<div class="f">Agregar ingrediente<div class="chips">${all.map(x => `<button class="chip" data-act="ckStep" data-k="${x.k}" style="gap:4px"><img class="pixel" alt="" src="${x.src}" style="width:18px;height:18px"> ${esc(x.name)}</button>`).join('')}<button class="chip" data-act="ckStep" data-k="cook">Sartén 🔥</button></div>
+<span class="faint" style="font-size:12px">La sartén va justo después de un ingrediente que se cocina (como la masa o la carne).</span></div>`;
+}
+ACT.ckCook = () => { ed.cook = !ed.cook; A.render(); };
+ACT.ckStep = a => { ed.steps = ed.steps || []; if (ed.steps.length < 7) ed.steps.push(a.dataset.k); else toast('Máximo 7 pasos'); A.render(); };
+ACT.ckStepUndo = () => { (ed.steps || []).pop(); A.render(); };
+ACT.ckStepClear = () => { ed.steps = []; A.render(); };
+function rasterInto(spriteName, cb) { // convierte un dibujo de la app en una cuadrícula editable
+  const im = new Image(); im.onload = () => {
+    const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, c.width, c.height).data; const pal = [], idx = {}; const rows = [];
+    for (let y = 0; y < c.height; y++) { let row = ''; for (let xx = 0; xx < c.width; xx++) { const i = (y * c.width + xx) * 4; if (d[i + 3] < 128) { row += '.'; continue; } const hx = '#' + [d[i], d[i + 1], d[i + 2]].map(v => v.toString(16).padStart(2, '0')).join('');
+        if (!(hx in idx)) { if (pal.length >= 36) { let b = 0, bd = 1e9; pal.forEach((p, k) => { const dd = [1, 3, 5].reduce((s2, o) => s2 + (parseInt(p.substr(o, 2), 16) - parseInt(hx.substr(o, 2), 16)) ** 2, 0); if (dd < bd) { bd = dd; b = k; } }); idx[hx] = b; } else { idx[hx] = pal.length; pal.push(hx); } }
+        row += idx[hx].toString(36); } rows.push(row); }
+    cb({ w: c.width, h: c.height, map: rows, pal });
+  }; im.src = spr(spriteName, 1);
+}
 function formHTML() {
   if (ed.replaces) return replBanner() + formHTML0();
   return formHTML0();
@@ -894,6 +935,7 @@ function formHTML0() {
 <label class="f">Nombre<input class="in" data-ed="name" value="${esc(ed.name)}" placeholder="${PH[k]}"></label>
 ${k === 'pets' ? `<label class="f">Cómo es<input class="in" data-ed="desc" value="${esc(ed.desc)}" placeholder="Ej. Muy dormilona"></label>` : k === 'food' ? `<label class="f">Llena la pancita (+)<input class="in" data-ed="gain" type="number" value="${ed.gain}"></label>` : k === 'clothes' ? `<label class="f">Dónde se pone<select class="in" data-ed="slot">${[['head', 'Cabeza'], ['face', 'Cara'], ['neck', 'Cuello']].map(([v, n]) => `<option value="${v}" ${ed.slot === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>` : k === 'furn' ? `<label class="f">Va en<select class="in" data-ed="wall"><option value="" ${!ed.wall ? 'selected' : ''}>El piso</option><option value="1" ${ed.wall ? 'selected' : ''}>La pared</option></select></label><label class="f">Sale en la tienda en<select class="in" data-ed="cat">${FCATS.filter(([c]) => c !== 'todo').map(([c, n]) => `<option value="${c}" ${(ed.cat || (ed.wall ? 'pared' : 'deco')) === c ? 'selected' : ''}>${n}</option>`).join('')}</select></label><label class="f">Hace algo especial<select class="in" data-ed="light">${[['', 'Según la tienda (los de Luces alumbran)'], ['no', 'Nada'], ['luz', 'Alumbra de noche (lámpara)'], ['ventana', 'Es ventana (se ve el día y la noche)']].map(([v, n]) => `<option value="${v}" ${(ed.light || '') === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>` : ''}
 </div>
+${k === 'ckIng' ? ckIngFields() : k === 'ckRec' ? ckRecFields() : ''}
 ${HELP[k] ? `<p class="faint" style="margin:0">${HELP[k]}</p>` : ''}
 <div class="ad-up">
 <label class="btn sm pink">Subir dibujo pixel<input type="file" accept="image/*" id="edFile" multiple hidden></label>
@@ -919,7 +961,7 @@ ${palHTML()}`}
 <div class="f">Variantes de color<div class="ad-vars">${VARS.map(([n, hue]) => `<button class="ad-var" data-var="${n}"><img class="pixel" alt="" src="${varPreview(hue)}"><span>${n}</span></button>`).join('')}</div><span class="faint" style="font-size:12px">Toca una y se crea una copia en ese color, lista para guardar.</span></div>
 ${k === 'clothes' ? tryOnHTML() : ''}${k === 'furn' || tile ? roomPreviewHTML() : ''}
 <div class="formgrid"><label class="f">Colección (opcional)<input class="in" data-ed="col" value="${esc(ed.col || '')}" placeholder="Ej. Otoño cozy" list="adCols"><datalist id="adCols">${[...new Set(Object.values(catalog()).flat().map(x => x && x.col).filter(Boolean))].map(c => `<option value="${esc(c)}">`).join('')}</datalist></label><label class="f">Sale el día (opcional)<input class="in" data-ed="from" type="date" value="${ed.from || ''}"></label></div>
-${k === 'boxes' ? (A.boxFormHTML ? A.boxFormHTML(ed) : '') : k === 'stickers' || k === 'icons' ? '' : `<div class="f">¿Cómo se consigue?<div class="chips">${(k === 'chars' ? [['gacha', 'Máquina gacha'], ['stars', 'Con estrellitas'], ['free', 'Gratis desde el inicio']] : tile ? [['stars', 'Con estrellitas'], ['free', 'Gratis']] : [['stars', 'Con estrellitas'], ['logro', 'Logro'], ['temporada', 'Temporada'], ['raro', 'Regalo raro'], ...(k === 'food' ? [] : [['free', 'Gratis']])]).map(([v, n]) => `<button class="chip" data-edhow="${v}" aria-pressed="${ed.how === v}">${n}</button>`).join('')}</div></div>
+${k === 'boxes' ? (A.boxFormHTML ? A.boxFormHTML(ed) : '') : k === 'stickers' || k === 'icons' || k === 'ckIng' || k === 'ckRec' ? '' : `<div class="f">¿Cómo se consigue?<div class="chips">${(k === 'chars' ? [['gacha', 'Máquina gacha'], ['stars', 'Con estrellitas'], ['free', 'Gratis desde el inicio']] : tile ? [['stars', 'Con estrellitas'], ['free', 'Gratis']] : [['stars', 'Con estrellitas'], ['logro', 'Logro'], ['temporada', 'Temporada'], ['raro', 'Regalo raro'], ...(k === 'food' ? [] : [['free', 'Gratis']])]).map(([v, n]) => `<button class="chip" data-edhow="${v}" aria-pressed="${ed.how === v}">${n}</button>`).join('')}</div></div>
 <div class="formgrid">
 ${k === 'chars' && ed.how === 'gacha' ? `<label class="f">Qué tan difícil de sacar<select class="in" data-ed="rare">${[[1, 'Común'], [2, 'Raro'], [3, 'Súper raro']].map(([v, n]) => `<option value="${v}" ${+ed.rare === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>` : ''}
 ${ed.how === 'stars' || k === 'food' ? `<label class="f">Precio en estrellitas<input class="in" data-ed="price" type="number" min="0" value="${ed.price}"></label>` : ''}
@@ -1283,7 +1325,7 @@ A.pixFit = (img, maxN, cell) => {
 };
 // Dibuja el resultado en un PNG nítido (cada cuadrito del mismo tamaño).
 A.pixPNG = (r, maxPx) => { const s = Math.max(1, Math.floor((maxPx || 160) / Math.max(r.w, r.h))); const pal = r.pal.split(','); const cv = document.createElement('canvas'); cv.width = r.w * s; cv.height = r.h * s; const g = cv.getContext('2d'); r.raw.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '.') return; g.fillStyle = pal[parseInt(ch, 36)]; g.fillRect(x * s, y * s, s, s); })); return cv; };
-const MAXN = { chars: 48, pets: 64, furn: 96, clothes: 48, food: 48, icons: 48, stickers: 64, walls: 34, floors: 48 };
+const MAXN = { ckIng: 32, ckRec: 48, chars: 48, pets: 64, furn: 96, clothes: 48, food: 48, icons: 48, stickers: 64, walls: 34, floors: 48 };
 // Foto (o dibujo normal) a pixel: se achica a pocos cuadritos, se reducen los colores y, si quieres, se le pone borde de sticker.
 function photoToPixel(img, o) {
   const { d, W, H } = img;
@@ -1398,22 +1440,33 @@ ACT.edSave = () => {
   if (kind === 'pets') Object.assign(item, { desc: ed.desc, say: ed.desc });
   if (kind === 'food') Object.assign(item, { gain: +ed.gain || 20 });
   if (kind === 'chars') item.rare = +ed.rare || 1;
+  if (kind === 'ckIng') Object.assign(item, { st: ed.st === 'salado' ? 'salado' : 'dulce', cook: !!ed.cook });
+  if (kind === 'ckRec') {
+    const cd = A.cookData(), cur = ckAllIng(); const st = (ed.steps || []).filter(Boolean); if (!st.length) return toast('Agrega los pasos de la receta');
+    const isCook = k => cd.cook.includes(k) || (catalog().ckIng.find(x => 'x_' + x.id === k) || {}).cook;
+    for (let i = 0; i < st.length; i++) if (st[i] === 'cook' && (i === 0 || !isCook(st[i - 1]))) return toast('La sartén va justo después de un ingrediente que se cocina');
+    Object.assign(item, { steps: st, price: Math.max(1, +ed.price || 8), lvl: Math.min(6, Math.max(1, +ed.lvl || 1)) });
+  }
+  if ((kind === 'ckIng' || kind === 'ckRec') && ed.rep) item.rep = ed.rep;
   if (kind === 'boxes') { const err = A.boxSaveItem ? A.boxSaveItem(ed, item) : 'Falta la parte de las cajitas'; if (err) return toast(err); }
   if (kind === 'furn') { Object.assign(item, { wall: !!ed.wall, cat: ed.cat || (ed.wall ? 'pared' : 'deco') }); if (ed.light) item.light = ed.light; if (ed.lx != null) { item.lx = +ed.lx; item.ly = +ed.ly; } if (+ed.lr) item.lr = +ed.lr; if (ed.light === 'ventana' && ed.glass) item.glass = ed.glass; }
   if (ed.how === 'logro') item.ach = ed.ach; if (ed.how === 'temporada') item.season = ed.season;
   const i = list.findIndex(x => x.id === item.id); if (i >= 0) list[i] = item; else list.push(item);
-  if (ed.replaces) markSwap(kind, ed.replaces, item.id);
+  if (ed.replaces) { if (kind === 'ckIng' || kind === 'ckRec') item.rep = ed.replaces; else markSwap(kind, ed.replaces, item.id); }
   ed = null; saveCatalog();
 };
 ACT.edOff = () => { const list = A.CFG.catalog[ed.kind]; const it = list.find(x => x.id === ed.id); if (it) it.off = !it.off; ed = null; saveCatalog(); };
 ACT.edDel = a => { if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Confirmas? Toca otra vez'; return; } A.CFG.catalog[ed.kind] = A.CFG.catalog[ed.kind].filter(x => x.id !== ed.id); ed = null; saveCatalog(); };
 
 // ---- Lo que ya viene en la app: la dueña lo puede quitar o reemplazar ----
-const GONE_KINDS = ['pets', 'furn', 'clothes', 'food', 'walls', 'floors'];
-const NEW_PFX = { pets: 'cp_', furn: 'cf_', clothes: 'cc_', food: 'cfo_', walls: 'cw_', floors: 'cl_' };
+const GONE_KINDS = ['pets', 'furn', 'clothes', 'food', 'walls', 'floors', 'chars', 'ckIng', 'ckRec'];
+const NEW_PFX = { ckIng: 'x_', ckRec: 'x_', chars: 'cg_', pets: 'cp_', furn: 'cf_', clothes: 'cc_', food: 'cfo_', walls: 'cw_', floors: 'cl_' };
 function goneOf(kind) { const g = (A.CFG && A.CFG.catalog && A.CFG.catalog.gone) || {}; return g[kind] || []; }
 const GONE_STASH = { walls: {}, floors: {} };
 function builtins(kind) {
+  if (kind === 'ckIng') { const cd = A.cookData(); return Object.entries(cd.ING).map(([k, v]) => ({ k, name: cd.names[k] || k, src: spr(v, 3), edited: catalog().ckIng.find(c => c.rep === k) })); }
+  if (kind === 'ckRec') { const cd = A.cookData(); return cd.rec.map(r => ({ k: r.id, name: r.name, src: spr(r.art, 2), edited: catalog().ckRec.find(c => c.rep === r.id) })); }
+  if (kind === 'chars') return Object.entries(A.calleBuilt ? A.calleBuilt() : {}).map(([k, v]) => ({ k, name: v.name, src: spr('cgb_' + k, 2) }));
   if (kind === 'pets') return Object.entries(BASE_PETS).map(([k, v]) => ({ k, name: v.name, src: spr(v.sprite, 2) }));
   if (kind === 'furn') return Object.entries(FURN).filter(([, v]) => !v.custom).map(([k, v]) => ({ k, name: v.name, src: Pix.sprite(furnSprite(k), 2) }));
   if (kind === 'clothes') return Object.entries(A.ACC || {}).filter(([, v]) => !v.custom).map(([k, v]) => ({ k, name: v.name, src: Pix.sprite('acc_' + k, 3) }));
@@ -1480,12 +1533,13 @@ function builtinHTML(kind) {
   return `<div class="card stack" id="bltCard"><h3 style="margin:0">${KIND_PL[kind]} que ya vienen en la app</h3>
 <p class="faint" style="margin:0">Quítalos o reemplázalos por uno tuyo. Lo quitado ya no sale en la tienda ni para adoptar; quien ya lo tenía lo conserva. Si lo reemplazas, a quien lo tenía le llega el nuevo.</p>
 <div class="list">${list.map(x => { const off = g.includes(x.k); const to = sw[kind + ':' + x.k];
+    if (x.edited) return `<div class="li" style="gap:10px"><span class="ad-item-art" style="flex:0 0 auto"><img class="pixel" alt="" src="${x.src}" style="max-width:40px;max-height:40px"></span><span class="tx-main" style="flex:1;min-width:0"><b>${esc(x.name)}</b><span>Ya lo editaste (arriba en “ya agregaste”)</span></span><span class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn sm" data-act="bltRevert" data-k="${x.k}">Volver al original</button></span></div>`;
     return `<div class="li" style="gap:10px;${off ? 'opacity:.6' : ''}"><span class="ad-item-art ${x.tile ? 'tile' : ''}" style="flex:0 0 auto"><img class="pixel" alt="" src="${x.src}" style="max-width:40px;max-height:40px"></span><span class="tx-main" style="flex:1;min-width:0"><b>${esc(x.name)}</b><span>${off ? (to ? 'Reemplazado por ' + esc(nameOf(to)) : 'Quitado de la app') : 'Viene con la app'}</span></span>
-<span class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-end">${off ? `<button class="btn sm" data-act="bltBack" data-k="${x.k}">Volver a poner</button>` : `<button class="btn sm" data-act="bltRepl" data-k="${x.k}">Reemplazar</button><button class="btn sm danger" data-act="bltDel" data-k="${x.k}">Quitar</button>`}</span></div>`; }).join('')}</div></div>`;
+<span class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-end">${off ? `<button class="btn sm" data-act="bltBack" data-k="${x.k}">Volver a poner</button>` : `<button class="btn sm" data-act="bltRepl" data-k="${x.k}">${kind === 'ckIng' || kind === 'ckRec' || kind === 'chars' ? 'Editar' : 'Reemplazar'}</button><button class="btn sm danger" data-act="bltDel" data-k="${x.k}">Quitar</button>`}</span></div>`; }).join('')}</div></div>`;
 }
 function replBanner() {
   const b = builtins(ed.kind).find(x => x.k === ed.replaces); if (!b) return '';
-  return `<div class="row" style="gap:10px;padding:10px;border-radius:12px;background:#fff3c4;color:#6b4d12"><img class="pixel" alt="" src="${b.src}" style="max-width:36px;max-height:36px"><div style="flex:1"><b>Reemplazando a ${esc(b.name)}</b><div style="font-size:13px">Dibuja o sube el nuevo y toca Guardar. ${esc(b.name)} se quita de la app y a quien lo tenía le llega este.</div></div><button class="btn sm" data-act="bltCancel">Cancelar</button></div>`;
+  return `<div class="row" style="gap:10px;padding:10px;border-radius:12px;background:#fff3c4;color:#6b4d12"><img class="pixel" alt="" src="${b.src}" style="max-width:36px;max-height:36px"><div style="flex:1">${ed.kind === 'ckIng' || ed.kind === 'ckRec' || ed.kind === 'chars' ? `<b>Editando ${esc(b.name)}</b><div style="font-size:13px">Cambia el dibujo y lo demás, y toca Guardar. ${ed.kind === 'chars' ? 'Tu versión toma su lugar en la app.' : 'El juego usa tu versión, y puedes volver al original cuando quieras.'}</div>` : `<b>Reemplazando a ${esc(b.name)}</b><div style="font-size:13px">Dibuja o sube el nuevo y toca Guardar. ${esc(b.name)} se quita de la app y a quien lo tenía le llega este.</div>`}</div><button class="btn sm" data-act="bltCancel">Cancelar</button></div>`;
 }
 ACT.bltDel = a => { if (!a.dataset.s) { a.dataset.s = 1; a.textContent = '¿Confirmas? Toca otra vez'; return; } setGone(S.catKind || 'pets', a.dataset.k, true); saveCatalog(); };
 ACT.bltBack = a => { setGone(S.catKind || 'pets', a.dataset.k, false); saveCatalog(); };
@@ -1493,9 +1547,19 @@ ACT.bltRepl = a => {
   const kind = S.catKind || 'pets', k = a.dataset.k; newDraft(kind);
   const pre = kind === 'pets' ? BASE_PETS[k] : kind === 'furn' ? FURN[k] : kind === 'food' ? FOODS[k] : kind === 'clothes' ? A.ACC[k] : null;
   if (pre) { ed.name = pre.name || ''; if (pre.desc) ed.desc = pre.desc; if (pre.price != null) ed.price = pre.price; if (pre.how && ['stars', 'free', 'logro', 'raro'].includes(pre.how)) ed.how = pre.how; if (pre.ach) ed.ach = pre.ach; if (kind === 'clothes' && pre.slot) ed.slot = pre.slot; if (kind === 'food' && pre.gain) ed.gain = pre.gain; if (kind === 'furn') { ed.wall = !!pre.wall; if (pre.cat) ed.cat = pre.cat; } }
-  else { const T = kind === 'walls' ? WALLS : FLOORS; const v = T[k] || GONE_STASH[kind][k]; if (v) { ed.name = v[0]; ed.price = v[1]; ed.how = v[1] ? 'stars' : 'free'; } }
+  else if (kind === 'walls' || kind === 'floors') { const T = kind === 'walls' ? WALLS : FLOORS; const v = T[k] || GONE_STASH[kind][k]; if (v) { ed.name = v[0]; ed.price = v[1]; ed.how = v[1] ? 'stars' : 'free'; } }
+  if (kind === 'ckIng' || kind === 'ckRec') {
+    const cd = A.cookData();
+    if (kind === 'ckIng') { ed.name = cd.names[k] || k; ed.st = cd.ordS.includes(k) ? 'salado' : 'dulce'; ed.cook = cd.cook.includes(k); }
+    else { const r = cd.rec.find(x => x.id === k); if (r) { ed.name = r.name; ed.steps = r.steps.slice(); ed.price = r.price; ed.lvl = r.lvl; } }
+    ed.replaces = k; const src = kind === 'ckIng' ? cd.ING[k] : (cd.rec.find(x => x.id === k) || {}).art;
+    rasterInto(src, d => { ed.w = d.w; ed.h = d.h; ed.map = d.map; ed.pal = d.pal; ed.mode = null; ed.hist = []; A.render(); setTimeout(() => { const f = $('#catForm'); if (f) f.scrollIntoView({ behavior: 'smooth' }); }, 50); });
+    return;
+  }
+  if (kind === 'chars') { const b = (A.calleBuilt() || {})[k]; if (b) { ed.name = b.name; ed.rare = b.rare; ed.how = 'gacha'; ed.w = b.map[0].length; ed.h = b.map.length; ed.map = b.map.slice(); ed.pal = b.pal.split(','); ed.mode = null; } }
   ed.replaces = k; A.render(); setTimeout(() => { const f = $('#catForm'); if (f) f.scrollIntoView({ behavior: 'smooth' }); }, 50);
 };
+ACT.bltRevert = a => { const kind = S.catKind; A.CFG.catalog[kind] = (A.CFG.catalog[kind] || []).filter(x => x.rep !== a.dataset.k); if (ed && ed.rep === a.dataset.k) ed = null; saveCatalog(); };
 ACT.bltCancel = () => { newDraft(S.catKind || 'pets'); A.render(); };
 // botón en el panel de admin
 const adminScreen = A.screens.admin;
