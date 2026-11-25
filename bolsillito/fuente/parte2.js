@@ -872,7 +872,7 @@ ${builtinHTML(kind)}
 <button class="btn" data-act="seAdd" style="justify-content:center">Agregar temporada</button>
 <p class="faint" style="margin:0">Se repite cada año en esas fechas. Luego, al agregar ropa o muebles, elige "Temporada" y escoge esta.</p></details>`;
 };
-function howLabel(x, kind) { if (kind === 'stickers' || kind === 'icons') return 'Gratis'; if (kind === 'ckIng') return (x.st === 'salado' ? 'En Comidas' : 'En Dulces') + (x.cook ? ' · se cocina' : '') + (x.rep ? ' · cambia uno de la app' : ''); if (kind === 'ckRec') return '$' + (x.price || 8) + ' · nivel ' + (x.lvl || 1) + (x.rep ? ' · cambia una de la app' : ''); return x.how === 'gacha' ? 'Máquina gacha · ' + (['', 'Común', 'Raro', 'Súper raro'][+x.rare || 1]) : x.how === 'stars' ? `${x.price} estrellitas` : x.how === 'logro' ? 'Por logro' : x.how === 'temporada' ? 'De temporada' : x.how === 'raro' ? 'Regalo raro' : 'Gratis'; }
+function howLabel(x, kind) { if (kind === 'stickers' || kind === 'icons') return 'Gratis'; if (kind === 'ckIng') return (x.st === 'salado' ? 'En Comidas' : x.st === 'despensa' ? 'En Despensa' : 'En Dulces') + (x.cook ? ' · se cocina' : '') + (x.rep ? ' · cambia uno de la app' : ''); if (kind === 'ckRec') return '$' + (x.price || 8) + ' · nivel ' + (x.lvl || 1) + (x.rep ? ' · cambia una de la app' : ''); return x.how === 'gacha' ? 'Máquina gacha · ' + (['', 'Común', 'Raro', 'Súper raro'][+x.rare || 1]) : x.how === 'stars' ? `${x.price} estrellitas` : x.how === 'logro' ? 'Por logro' : x.how === 'temporada' ? 'De temporada' : x.how === 'raro' ? 'Regalo raro' : 'Gratis'; }
 const PH = { pets: 'Ej. Mochi de coco', furn: 'Ej. Lámpara de luna', clothes: 'Ej. Gorrito de lana', food: 'Ej. Flan', walls: 'Ej. Rayitas rosadas', floors: 'Ej. Baldosa de corazones', stickers: 'Ej. Gatito feliz', icons: 'Ej. Mi banco', chars: 'Ej. Pandy', boxes: 'Ej. Cajita de gorritos', ckIng: 'Ej. Mantequilla', ckRec: 'Ej. Sándwich' };
 const HELP = {
   ckIng: 'Es un botoncito de ingrediente del juego Cafecito. Elige si va en la pestaña Dulces o en Comidas, y si se cocina en la sartén. Dibújalo o súbelo (16 × 16 va perfecto).',
@@ -896,7 +896,7 @@ function ckAllIng() { // todos los ingredientes que se pueden usar en una receta
   return out;
 }
 function ckIngFields() {
-  return `<div class="formgrid"><label class="f">Va en la pestaña<select class="in" data-ed="st">${[['dulce', 'Dulces'], ['salado', 'Comidas']].map(([v, n]) => `<option value="${v}" ${ed.st === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+  return `<div class="formgrid"><label class="f">Va en la pestaña<select class="in" data-ed="st">${[['dulce', 'Dulces'], ['salado', 'Comidas'], ['despensa', 'Despensa']].map(([v, n]) => `<option value="${v}" ${ed.st === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
 <div class="f">¿Se cocina en la sartén?<div class="chips"><button class="chip" data-act="ckCook" aria-pressed="${!!ed.cook}">${ed.cook ? 'Sí, se cocina' : 'No'}</button></div></div></div>`;
 }
 function ckRecFields() {
@@ -1440,7 +1440,7 @@ ACT.edSave = () => {
   if (kind === 'pets') Object.assign(item, { desc: ed.desc, say: ed.desc });
   if (kind === 'food') Object.assign(item, { gain: +ed.gain || 20 });
   if (kind === 'chars') item.rare = +ed.rare || 1;
-  if (kind === 'ckIng') Object.assign(item, { st: ed.st === 'salado' ? 'salado' : 'dulce', cook: !!ed.cook });
+  if (kind === 'ckIng') Object.assign(item, { st: ed.st === 'salado' ? 'salado' : ed.st === 'despensa' ? 'despensa' : 'dulce', cook: !!ed.cook });
   if (kind === 'ckRec') {
     const cd = A.cookData(), cur = ckAllIng(); const st = (ed.steps || []).filter(Boolean); if (!st.length) return toast('Agrega los pasos de la receta');
     const isCook = k => cd.cook.includes(k) || (catalog().ckIng.find(x => 'x_' + x.id === k) || {}).cook;
@@ -1550,7 +1550,7 @@ ACT.bltRepl = a => {
   else if (kind === 'walls' || kind === 'floors') { const T = kind === 'walls' ? WALLS : FLOORS; const v = T[k] || GONE_STASH[kind][k]; if (v) { ed.name = v[0]; ed.price = v[1]; ed.how = v[1] ? 'stars' : 'free'; } }
   if (kind === 'ckIng' || kind === 'ckRec') {
     const cd = A.cookData();
-    if (kind === 'ckIng') { ed.name = cd.names[k] || k; ed.st = cd.ordS.includes(k) ? 'salado' : 'dulce'; ed.cook = cd.cook.includes(k); }
+    if (kind === 'ckIng') { ed.name = cd.names[k] || k; ed.st = cd.ordS.includes(k) ? 'salado' : (cd.ordP || []).includes(k) ? 'despensa' : 'dulce'; ed.cook = cd.cook.includes(k); }
     else { const r = cd.rec.find(x => x.id === k); if (r) { ed.name = r.name; ed.steps = r.steps.slice(); ed.price = r.price; ed.lvl = r.lvl; } }
     ed.replaces = k; const src = kind === 'ckIng' ? cd.ING[k] : (cd.rec.find(x => x.id === k) || {}).art;
     rasterInto(src, d => { ed.w = d.w; ed.h = d.h; ed.map = d.map; ed.pal = d.pal; ed.mode = null; ed.hist = []; A.render(); setTimeout(() => { const f = $('#catForm'); if (f) f.scrollIntoView({ behavior: 'smooth' }); }, 50); });
