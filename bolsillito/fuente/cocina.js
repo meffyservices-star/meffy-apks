@@ -56,7 +56,7 @@ D('ck_cupcake', 20, 20, p => { for (let y = 11; y < 19; y++) { const w = 13 - Ma
 // ---------------- Recetas ----------------
 const BASE_ING = { papa: 'ckh_papa', masa: 'ckh_masa', miel: 'ckh_miel', fresa: 'ckh_fresa', taza: 'ckh_taza', te: 'ckh_te', boba: 'ckh_boba', cono: 'ckh_cono', bola: 'ckh_bola', chispas: 'ckh_chispas', crema: 'ckh_crema', pan: 'ckh_pan', panb: 'ckh_panb', pant: 'ckh_pant', carne: 'ckh_carne', carneh: 'ckh_carneh', salchicha: 'ckh_salchicha', queso: 'ckh_queso', quesoh: 'ckh_quesoh', arroz: 'ckh_arroz', menestra: 'ckh_menestra', platano: 'ckh_platano', pescado: 'ckh_pescado', cebolla: 'ckh_cebolla', yuca: 'ckh_yuca', pollo: 'ckh_pollo', matcha: 'ckh_matcha', chocolate: 'ckh_chocolate', menta: 'ckh_menta', aceite: 'ckh_aceite', harina: 'ckh_harina', huevos: 'ckh_huevos', leche: 'ckh_leche', mantequilla: 'ckh_mantequilla', azucar: 'ckh_azucar', sal: 'ckh_sal', lechuga: 'ckh_lechuga', tomate: 'ckh_tomate', mostaza: 'ckh_mostaza', limon: 'ckh_limon' };
 let ING = BASE_ING;
-const BASE_COOK = ['masa', 'papa', 'carne', 'carneh', 'salchicha', 'platano', 'pollo']; let COOKERS = BASE_COOK;
+const BASE_COOK = ['masa', 'papa', 'huevos', 'pescado', 'carne', 'carneh', 'salchicha', 'platano', 'pollo']; let COOKERS = BASE_COOK;
 const BASE_D = ['masa', 'miel', 'fresa', 'crema', 'chispas', 'taza', 'te', 'boba', 'cono', 'bola', 'matcha', 'chocolate', 'menta'];
 const BASE_S = ['pan', 'panb', 'papa', 'salchicha', 'carne', 'carneh', 'queso', 'arroz', 'menestra', 'platano', 'pescado', 'yuca', 'pollo'];
 const BASE_P = ['harina', 'huevos', 'leche', 'mantequilla', 'azucar', 'aceite', 'sal', 'lechuga', 'tomate', 'mostaza', 'limon', 'cebolla'];
@@ -77,11 +77,11 @@ const BASE_REC = [
   { id: 'pastelf', name: 'Pastel de fresa', steps: ['harina', 'huevos', 'cook', 'crema', 'fresa'], art: 'ckh_r_pastelf', price: 15, lvl: 6 },
   { id: 'hotdog', name: 'Hot dog', steps: ['pan', 'salchicha', 'cook', 'mostaza'], art: 'ckh_r_hotdog', price: 8, lvl: 1 },
   { id: 'bolon', name: 'Bolón', steps: ['platano', 'cook', 'queso'], art: 'ckh_r_bolon', price: 8, lvl: 2 },
-  { id: 'salchipapa', name: 'Salchipapa', steps: ['papa', 'salchicha', 'cook', 'mostaza', 'tomate'], art: 'ckh_r_salchipapa', price: 11, lvl: 3 },
+  { id: 'salchipapa', name: 'Salchipapa', steps: ['papa', 'cook', 'salchicha', 'cook', 'mostaza', 'tomate'], art: 'ckh_r_salchipapa', price: 13, lvl: 4 },
   { id: 'burger', name: 'Hamburguesa', steps: ['panb', 'carneh', 'cook', 'queso', 'panb'], art: 'ckh_r_burger', price: 13, lvl: 3 },
   { id: 'arroz', name: 'Arroz con menestra', steps: ['arroz', 'menestra', 'carne', 'cook'], art: 'ckh_r_arroz', price: 12, lvl: 4 },
-  { id: 'kfc', name: 'Pollito KFC', steps: ['pollo', 'aceite', 'cook'], art: 'ckh_r_kfc', price: 13, lvl: 4 },
-  { id: 'enceb', name: 'Encebollado', steps: ['pescado', 'yuca', 'cebolla'], art: 'ckh_r_enceb', price: 14, lvl: 5 }
+  { id: 'kfc', name: 'Pollito KFC', steps: ['aceite', 'pollo', 'cook'], art: 'ckh_r_kfc', price: 13, lvl: 4 },
+  { id: 'enceb', name: 'Encebollado', steps: ['pescado', 'cook', 'yuca', 'cebolla'], art: 'ckh_r_enceb', price: 14, lvl: 5 }
 ];
 let RECIPES = BASE_REC;
 const ING_NAME = { papa: 'Papa', masa: 'Masa', miel: 'Miel', fresa: 'Fresa', taza: 'Taza', te: 'Té', boba: 'Boba', cono: 'Cono', bola: 'Bola de helado', chispas: 'Chispas', crema: 'Crema', pan: 'Pan de hot dog', panb: 'Pan de abajo', pant: 'Pan de arriba', carne: 'Carne', carneh: 'Carne de hamburguesa', salchicha: 'Salchicha', queso: 'Queso manaba', quesoh: 'Queso de hamburguesa', arroz: 'Arroz', menestra: 'Menestra', platano: 'Verde', pescado: 'Albacora', cebolla: 'Cebolla', yuca: 'Yuca', pollo: 'Pollo', matcha: 'Matcha', chocolate: 'Chocolate', menta: 'Menta', aceite: 'Aceite', harina: 'Harina', huevos: 'Huevos', leche: 'Leche', mantequilla: 'Mantequilla', azucar: 'Azúcar', sal: 'Sal', lechuga: 'Lechuga', tomate: 'Salsa de tomate', mostaza: 'Mostaza', limon: 'Limón' };
