@@ -93,13 +93,13 @@ function applyCatalog() {
   ING = Object.assign({}, BASE_ING); gi.forEach(k => delete ING[k]);
   ORD_D = BASE_D.filter(k => !gi.includes(k)); ORD_S = BASE_S.filter(k => !gi.includes(k)); ORD_P = BASE_P.filter(k => !gi.includes(k)); COOKERS = BASE_COOK.filter(k => !gi.includes(k));
   ci.forEach(x => {
-    const r0 = x.rep || Object.keys(ING_NAME).find(b => norm(ING_NAME[b]) === norm(x.name)), rep = r0 && BASE_ING[r0] && ING[r0] ? r0 : null, k = rep || 'x_' + x.id; ING[k] = 'cki_' + x.id;
+    const r0 = x.rep || Object.keys(ING_NAME).find(b => norm(ING_NAME[b]) === norm(x.name)), rep = r0 && BASE_ING[r0] && ING[r0] ? r0 : null, k = rep || 'x_' + x.id; if (rep && /^ckh_/.test(BASE_ING[rep])) return; ING[k] = 'cki_' + x.id;
     const baseSt = rep ? (BASE_S.includes(rep) ? 'salado' : BASE_P.includes(rep) ? 'despensa' : 'dulce') : null, st = x.st === 'salado' ? 'salado' : x.st === 'despensa' ? 'despensa' : 'dulce';
     if (!rep || baseSt !== st) { ORD_D = ORD_D.filter(a => a !== k); ORD_S = ORD_S.filter(a => a !== k); ORD_P = ORD_P.filter(a => a !== k); (st === 'salado' ? ORD_S : st === 'despensa' ? ORD_P : ORD_D).push(k); }
     COOKERS = COOKERS.filter(a => a !== k); if (x.cook) COOKERS.push(k);
   });
   RECIPES = BASE_REC.filter(r => !gr.includes(r.id)).slice();
-  cr.forEach(x => { const r0 = x.rep || (BASE_REC.find(r => norm(r.name) === norm(x.name)) || {}).id; const o = { id: r0 && BASE_REC.some(r => r.id === r0) ? r0 : 'x_' + x.id, name: x.name, steps: (x.steps || []).slice(), art: 'ckr_' + x.id, price: +x.price || 8, lvl: Math.min(6, Math.max(1, +x.lvl || 1)) }; const i = RECIPES.findIndex(r => r.id === o.id); if (i >= 0) RECIPES[i] = o; else RECIPES.push(o); });
+  cr.forEach(x => { const r0 = x.rep || (BASE_REC.find(r => norm(r.name) === norm(x.name)) || {}).id; if (r0 && BASE_REC.some(r => r.id === r0)) return; const o = { id: r0 && BASE_REC.some(r => r.id === r0) ? r0 : 'x_' + x.id, name: x.name, steps: (x.steps || []).slice(), art: 'ckr_' + x.id, price: +x.price || 8, lvl: Math.min(6, Math.max(1, +x.lvl || 1)) }; const i = RECIPES.findIndex(r => r.id === o.id); if (i >= 0) RECIPES[i] = o; else RECIPES.push(o); });
   RECIPES = RECIPES.filter(r => r.steps.length && r.steps.every(k => k === 'cook' || ING[k]));
   if (!RECIPES.length) { ING = BASE_ING; ORD_D = BASE_D; ORD_S = BASE_S; ORD_P = BASE_P; COOKERS = BASE_COOK; RECIPES = BASE_REC; }
 }
@@ -115,7 +115,7 @@ const TURN = 90;
 async function cookGame() {
   applyCatalog();
   const sh = gameShell('cook'); let { w: W, h: H } = sh.fit(); const MUS = 'cocina';
-  const SC = 2.6, DPR = window.devicePixelRatio || 1, KP = Math.max(2, Math.round(SC * DPR)); // cada pixel del juego = número ENTERO de pixeles de pantalla (nítido)
+  const SC = 3, DPR = window.devicePixelRatio || 1, KP = Math.max(2, Math.round(SC * DPR)); // cada pixel del juego = número ENTERO de pixeles de pantalla (nítido)
   let LW = Math.floor(W * DPR / KP), LH = Math.floor(H * DPR / KP);
   sh.cv.width = LW * KP; sh.cv.height = LH * KP; sh.cv.style.width = (LW * KP / DPR) + 'px'; sh.cv.style.height = (LH * KP / DPR) + 'px'; sh.g.setTransform(1, 0, 0, 1, 0, 0); sh.g.imageSmoothingEnabled = false;
   const lo = document.createElement('canvas'); const L = lo.getContext('2d');
@@ -152,7 +152,7 @@ async function cookGame() {
   const lens = [ORD_D, ORD_S, ORD_P].map(l => l.filter(k => SHOWN.has(k)).length); const maxN = Math.max(...lens);
   { const st0 = [['dulce', ORD_D], ['salado', ORD_S], ['despensa', ORD_P]].find(([k, l]) => l.some(x => SHOWN.has(x))); STN = st0 ? st0[0] : 'dulce'; }
   // posiciones
-  const hudH = 16, counterY = Math.max(96, Math.min(Math.round(LH * .47), LH - 150 - (Math.max(2, Math.ceil(maxN / 5)) - 2) * 26)), btnH = 24, btnRows = Math.max(2, Math.ceil(maxN / 5)), gap = 2;
+  const hudH = 16, counterY = Math.max(96, Math.min(Math.round(LH * .47), LH - 150 - (Math.max(2, Math.ceil(maxN / 5)) - 2) * 26)), btnH = maxN > 10 ? 20 : 24, btnRows = Math.max(2, Math.ceil(maxN / 5)), gap = 2;
   const btnY0 = LH - (btnH * btnRows + gap * (btnRows + 1)) - 4;
   const slotX = [0, 1, 2].map(i => Math.round(LW * (1 + i * 2) / 6));
   let cust, tray, pan, time, money, lives, served, perfect, pops, focus, fx, run = true, paused = true, last = 0, raf, spawnT, flash, shake, goneT, combo;
@@ -215,7 +215,7 @@ async function cookGame() {
   // arte grande (ckh_*): se dibuja en alta resolución sobre el lienzo final, con pixeles enteros, para que no se borre ni se pierda detalle
   const HQ = [];
   const isHQ = n => /^ckh_/.test(n || '');
-  const hi = (n, x, y, bw, bh) => { const im = I[n]; if (!im || !im.width) return; if (!isHQ(n)) { spr1(n, x + (bw - im.width) / 2, y + (bh - im.height) / 2, 1); return; } const al = L.globalAlpha;
+  const hi = (n, x, y, bw, bh) => { const im = I[n]; if (!im || !im.width) return; if (!isHQ(n)) { const k = Math.min(1, bw / im.width, bh / im.height), w2 = Math.max(1, Math.round(im.width * k)), h2 = Math.max(1, Math.round(im.height * k)); L.drawImage(im, Math.round(x + (bw - w2) / 2), Math.round(y + (bh - h2) / 2), w2, h2); return; } const al = L.globalAlpha;
     HQ.push(g => { const s = Math.max(1, Math.floor(Math.min(bw * KP / im.width, bh * KP / im.height))), dw = im.width * s, dh = im.height * s; g.globalAlpha = al; g.drawImage(im, Math.round(x * KP + (bw * KP - dw) / 2), Math.round(y * KP + (bh * KP - dh) / 2), dw, dh); g.globalAlpha = 1; }); };
   const hq = f => HQ.push(f);
   const spr1 = (n, x, y, s) => { const im = I[n]; if (im && im.width) L.drawImage(im, Math.round(x), Math.round(y), im.width * (s || 1), im.height * (s || 1)); };
@@ -306,7 +306,7 @@ async function cookGame() {
     // mostrador por delante de las mascotitas
     px(0, counterY, LW, 4, '#e7b987'); px(0, counterY, LW, 1, '#f6d6ac');
     drawPan(); drawTray(); drawBin(); drawRecipe(); drawTabs();
-    U.forEach((_, i) => 0); const ings = order(); ings.forEach((k, i) => { const b = btnPos(i); const used = (pan && pan.on) ? 0 : 1; px(b.x, b.y + 2, b.w, b.h, 'rgba(120,70,100,.18)'); px(b.x, b.y, b.w, b.h, '#fff'); px(b.x + 1, b.y + 1, b.w - 2, b.h - 2, '#fff7fb'); px(b.x, b.y, b.w, 1, '#f9a8c4'); hi(ING[k], b.x + 4, b.y + 3, 16, 15); const need = (() => { const c = focusOrder(); if (!c || tray.done) return false; const nx = c.r.steps[tray.steps.length]; return nx === k; })(); if (need) { px(b.x, b.y + b.h - 2, b.w, 2, '#f27ea1'); } });
+    U.forEach((_, i) => 0); const ings = order(); ings.forEach((k, i) => { const b = btnPos(i); const used = (pan && pan.on) ? 0 : 1; px(b.x, b.y + 2, b.w, b.h, 'rgba(120,70,100,.18)'); px(b.x, b.y, b.w, b.h, '#fff'); px(b.x + 1, b.y + 1, b.w - 2, b.h - 2, '#fff7fb'); px(b.x, b.y, b.w, 1, '#f9a8c4'); hi(ING[k], b.x + 3, b.y + 2, b.w - 6, b.h - 5); const need = (() => { const c = focusOrder(); if (!c || tray.done) return false; const nx = c.r.steps[tray.steps.length]; return nx === k; })(); if (need) { px(b.x, b.y + b.h - 2, b.w, 2, '#f27ea1'); } });
     fx.forEach(f => { L.globalAlpha = Math.min(1, f.t / 14); const im = I[f.k === 'heart' ? 'heart' : 'star']; if (im) L.drawImage(im, Math.round(f.x), Math.round(f.y), im.width, im.height); }); L.globalAlpha = 1;
     g.imageSmoothingEnabled = false; g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(lo, 0, 0, LW * KP, LH * KP); HQ.forEach(f => f(g)); g.globalAlpha = 1; g.setTransform(KP / SC, 0, 0, KP / SC, 0, 0);
     tabs().forEach(t => { g.font = '800 13px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = STN === t.k ? '#fff' : '#b86a86'; g.fillText(t.t, (t.x + t.w / 2) * SC, (t.y + t.h / 2 + 1) * SC); g.textBaseline = 'alphabetic'; });

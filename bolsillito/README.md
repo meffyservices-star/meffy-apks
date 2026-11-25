@@ -32,6 +32,7 @@ Ojo: los arreglos de `FIX` (en `index.html`) y de `offline.js` buscan textos exa
   - **v64**: "Borrar ejemplos" ahora también quita los saldos y presupuestos de ejemplo que no hayas editado (también para quien ya los había borrado).
   - **v65**: se quitaron los Retos; Tarrito compartido rediseñado (tarritos de cristal con monedas, etiquetas, repisa) y Cuentas como recibo; fotos de perfil de tus amistades en ambos.
   - **v66 – Personalizar** (`config.js`): nueva pantalla en Más para mostrar u ocultar secciones del menú, cada juego, las cosas del cuarto (misiones, paseos, mariposas, burbujas) y la guía "Primeros pasitos".
+- v116: Cafecito: los dibujos viejos de ingredientes y recetas ya no tapan los nuevos, tamaños parejos y los muñequitos vuelven a su tamaño.
 - v115: Cafecito más fácil y más bonito: solo aparecen los ingredientes que sirven para tus recetas, íconos más chicos, dibujos nuevos de miel, taza, té, cono, bola y chispas, y recetas más cortas.
 - v114: arreglado el error que impedía abrir Juegos (se trababa si se había quitado un personaje de Cruzar la calle).
 - v113: si algo falla aparece un aviso en pantalla con el error (para poder arreglarlo rápido).
