@@ -2595,38 +2595,47 @@ body.night .cp-hero, body.night .cp-kpi:first-child { color: #6b3b3f; }
 .ia-bar{position:sticky;bottom:84px;background:linear-gradient(transparent,#fbeed3 28%);padding:14px 2px 4px;display:flex;flex-direction:column;gap:4px;align-items:center;margin-top:-130px}
 .ia-in{display:flex;gap:8px;width:100%}.ia-in .in{flex:1;border-radius:20px;padding:12px 16px}.ia-send{width:48px;border:0;border-radius:50%;background:linear-gradient(#ff9fbf,#ff86ac);color:#fff;font-size:28px;font-weight:900;box-shadow:0 3px 0 #d4688e;cursor:pointer;line-height:1}
 .ia-bar small{font-size:11px;color:#9a7b6a;font-weight:700}.ia-clear{border:0;background:none;font:inherit;font-size:11.5px;color:#b09080;text-decoration:underline;cursor:pointer}
-/* ===== Bolsillito Negocio ===== */
-.nav-in.n7 button{font-size:10px}.nav-in.n7 button .ni{width:30px;height:30px}.nav-in.n7 button .ni img{width:28px;height:28px}.nav-in.n7 button.fab .ni{width:44px;height:44px}.nav-in.n7 button.fab .ni img{width:26px;height:26px}
-.ng-hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:18px 10px 8px;color:#5a3a3a}.ng-hero b{font-size:20px}.ng-hero span{font-size:13px;color:#7a5a4a;max-width:300px;line-height:1.4}
-.ng-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}.ng-feat .pn{display:flex;flex-direction:column;gap:4px;padding:12px;color:#5a3a3a}.ng-feat b{font-size:13px}.ng-feat span{font-size:11.5px;color:#7a5a4a;line-height:1.35}
-.ng-wait{margin-top:14px;text-align:center;padding:14px;border:2.5px dashed #e0c9a0;border-radius:16px;background:#fff8ea;color:#9a7b6a;font-weight:800;font-size:13px}
-.ng-types{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ng-type{border:3px solid #e9d2a8;background:#fffdf6;border-radius:18px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;font:inherit;color:#5a3a3a;cursor:pointer;box-shadow:0 4px 0 #e0c9a0}.ng-type b{font-size:12.5px}.ng-type:active{transform:translateY(3px);box-shadow:0 1px 0 #e0c9a0}
-.ng-name{display:flex;align-items:center;gap:8px;margin:2px 2px 10px;color:#5a3a3a}.ng-name img{width:28px;height:28px}.ng-name b{font-size:16px}.ng-name span{font-size:11px;font-weight:800;color:#c04a78;background:#ffe0ec;border-radius:10px;padding:3px 8px}
-.ng-tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 10px;margin:0 -2px;scrollbar-width:none}.ng-tabs::-webkit-scrollbar{display:none}
-.ng-tab{flex:none;border:2.5px solid #e9d2a8;background:#fffdf6;border-radius:14px;padding:8px 14px;font:inherit;font-size:13px;font-weight:800;color:#9a7b6a;cursor:pointer;box-shadow:0 3px 0 #e0c9a0}.ng-tab.on{background:#ffe0ec;border-color:#ff8fb3;color:#5a3a3a;box-shadow:0 3px 0 #f0a3bf}
-.ng-mes{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px}
-.ng-tick{position:relative;background:#fffdf6;border:3px solid #e9d2a8;border-radius:20px;padding:14px 16px 12px;color:#5a3a3a;box-shadow:0 4px 0 #e0c9a0;background-image:radial-gradient(circle at 10px 0,transparent 7px,#fffdf6 8px);background-size:20px 12px;background-repeat:repeat-x;background-position:0 -1px}
-.ng-tk-top{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px;color:#9a7b6a}.ng-tk-top img{width:34px;height:34px}
-.ng-big{display:block;font-size:38px;line-height:1.1;margin:4px 0 2px;color:#3f9a52;letter-spacing:-.5px}.ng-big.neg{color:#d4546e}
-.ng-tick p{margin:2px 0 10px;font-size:13px;color:#7a5a4a;line-height:1.35}
-.ng-lines{border-top:2.5px dashed #e9d2a8;padding-top:8px;display:flex;flex-direction:column;gap:5px}.ng-lines div,.ng-row{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:#7a5a4a}.ng-lines b,.ng-row b{color:#5a3a3a}
-.ng-sec{display:flex;flex-direction:column;gap:6px;margin-top:12px;padding:12px 14px;color:#5a3a3a;text-align:left;font:inherit}.ng-sec>b{font-size:14px}.ng-sec>span{font-size:12.5px;color:#7a5a4a;line-height:1.35}.ng-link{cursor:pointer;width:100%;border:0}
-.ng-bar{display:flex;gap:3px}.ng-bar i{flex:1;height:14px;border-radius:4px;background:#f3e3c4}.ng-bar i.on{background:linear-gradient(#ffb4cc,#ff86ac)}
-.ng-chart{display:flex;align-items:flex-end;justify-content:space-between;gap:6px;height:96px;padding-top:6px}.ng-chart div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px}.ng-chart i{width:100%;max-width:30px;border-radius:6px 6px 2px 2px;background:#f3e3c4}.ng-chart i.on{background:linear-gradient(#ffb4cc,#ff86ac)}.ng-chart small{font-size:10px;font-weight:800;color:#9a7b6a}
-.ng-day{margin:14px 4px 6px;font-size:12px;font-weight:800;color:#9a7b6a}.ng-day b{color:#5a3a3a}
-.ng-sale,.ng-cli{width:100%;display:flex;align-items:center;gap:10px;justify-content:space-between;border:2.5px solid #e9d2a8;background:#fffdf6;border-radius:16px;padding:11px 13px;margin-bottom:8px;font:inherit;color:#5a3a3a;text-align:left;cursor:pointer;box-shadow:0 3px 0 #e0c9a0}
-.ng-sale span,.ng-cli>span:nth-child(2){display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}.ng-sale b,.ng-cli b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ng-sale small,.ng-cli small{font-size:11.5px;color:#9a7b6a;font-weight:700}
-.ng-sale em,.ng-cli em{font-style:normal;font-weight:900;font-size:14px;color:#3f9a52}.ng-sale em.deb,.ng-cli em.deb,.deb{color:#d4546e}
-.ng-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(#ffb4cc,#ff86ac);color:#fff;display:grid;place-items:center;font-weight:900;font-size:16px;text-shadow:0 1px 0 rgba(90,58,58,.3);flex:none}
-.ng-prods{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ng-prod{display:flex;flex-direction:column;align-items:flex-start;gap:3px;border:2.5px solid #e9d2a8;background:#fffdf6;border-radius:18px;padding:12px;font:inherit;color:#5a3a3a;text-align:left;cursor:pointer;box-shadow:0 3px 0 #e0c9a0}
-.ng-prod b{font-size:14px}.ng-prod em{font-style:normal;font-weight:900;font-size:18px;color:#c04a78}.ng-prod small{font-size:11px;color:#9a7b6a;font-weight:700;line-height:1.3}
-.ng-m,.ng-st{margin-top:4px;font-size:10.5px;font-weight:900;border-radius:10px;padding:3px 8px;background:#dff3e3;color:#3f9a52}.ng-m.lo,.ng-st.lo{background:#ffe0e4;color:#d4546e}.ng-st{background:#efe6fb;color:#7a5aa8}
-.ng-empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:30px 16px;color:#7a5a4a}.ng-empty b{color:#5a3a3a;font-size:15px}.ng-empty span{font-size:12.5px;line-height:1.4}
-.ng-pick{display:flex;flex-direction:column;gap:8px;max-height:36vh;overflow:auto}.ng-pk{display:flex;align-items:center;justify-content:space-between;gap:8px;border:2.5px solid #e9d2a8;background:#fffdf6;border-radius:14px;padding:8px 10px}.ng-pk.on{border-color:#ff8fb3;background:#fff0f5}.ng-pk b{display:block;font-size:13.5px;color:#5a3a3a}.ng-pk small{font-size:11px;color:#9a7b6a;font-weight:700}
-.ng-step{display:flex;align-items:center;gap:8px}.ng-step button{width:32px;height:32px;border:0;border-radius:50%;background:linear-gradient(#ff9fbf,#ff86ac);color:#fff;font-size:20px;font-weight:900;box-shadow:0 2px 0 #d4688e;cursor:pointer;line-height:1}.ng-step span{min-width:18px;text-align:center;font-weight:900;color:#5a3a3a}
-.ng-otro{display:grid;grid-template-columns:1fr 90px;gap:8px}
-.ng-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.ng-seg.wrap{grid-template-columns:repeat(2,1fr)}.ng-sg{border:2.5px solid #e9d2a8;background:#fff8ea;border-radius:12px;padding:9px 4px;font:inherit;font-size:12.5px;font-weight:800;color:#9a7b6a;cursor:pointer}.ng-sg.on{background:#ffe0ec;border-color:#ff8fb3;color:#5a3a3a}
-.ng-total{display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-top:2.5px dashed #e9d2a8;border-bottom:2.5px dashed #e9d2a8;color:#5a3a3a}.ng-total b{font-size:22px}
-.ng-promo{display:flex;align-items:center;gap:10px;position:relative;margin:0 0 12px;padding:12px 34px 12px 12px;border-radius:18px;border:3px solid #ffb4cc;background:linear-gradient(#fff4f8,#ffe6ef);color:#5a3a3a;box-shadow:0 4px 0 #f0a3bf}.ng-promo img{width:40px;height:auto}.ng-promo span{flex:1;display:flex;flex-direction:column;gap:2px}.ng-promo b{font-size:14px}.ng-promo small{font-size:11.5px;color:#7a5a4a;line-height:1.3}
-.ng-promo button:not(.x){border:0;border-radius:12px;padding:8px 10px;background:linear-gradient(#ff9fbf,#ff86ac);color:#fff;font:inherit;font-size:12px;font-weight:900;box-shadow:0 3px 0 #d4688e;cursor:pointer}.ng-promo .x{position:absolute;top:2px;right:6px;border:0;background:none;font-size:22px;color:#b09080;cursor:pointer}
-.nav-in.n7{grid-template-columns:repeat(7,1fr);gap:2px}
+/* ===== Bolsillito Negocio (estilo nativo) ===== */
+.nav-in.n7{grid-template-columns:repeat(7,1fr);gap:2px}.nav-in.n7 button{font-size:10px}.nav-in.n7 button .ni{width:30px;height:30px}.nav-in.n7 button .ni img{width:28px;height:28px}.nav-in.n7 button.fab .ni{width:44px;height:44px}.nav-in.n7 button.fab .ni img{width:26px;height:26px}
+.ng-seg5{margin:12px 0 4px}.ng-seg5 button{padding:7px 2px;font-size:12px}.ng-body{margin-top:8px}
+.ng-ic{width:44px;height:44px;border-radius:14px;background:#fde3ea;display:grid;place-items:center;flex:none}
+.ng-cta{width:100%;justify-content:center;padding:13px 16px;font-size:15px;border-radius:99px}
+.ng-hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:22px 16px}.ng-hero .faint{max-width:300px;line-height:1.4}
+.ng-feat{display:flex;flex-direction:column;gap:12px}.ng-fr{display:flex;align-items:center;gap:12px}.ng-fr span{display:flex;flex-direction:column;gap:1px}.ng-fr small{font-size:12.5px}
+.ng-wait{text-align:center;font-weight:800;color:var(--ink-soft)}
+.ng-types{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ng-type{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;font:inherit;color:var(--ink);cursor:pointer}.ng-type b{font-size:13px}
+.ng-mes{display:flex;align-items:center;justify-content:center;gap:10px}
+.ng-gan{display:flex;align-items:center;gap:16px}.ng-gi{width:66px;height:66px;border-radius:20px;background:#e3f3df;display:grid;place-items:center;flex:none}.ng-pos{color:#3f9a6a}.ng-neg{color:#d4546e}
+.ng-msg{margin:-2px 4px 0;text-align:center}
+.ng-por{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:var(--ink);cursor:pointer;background:#fff0f3}.ng-por span{flex:1;display:flex;flex-direction:column}.ng-por small{font-size:12.5px}.ng-por i{font-style:normal;font-size:22px;color:var(--ink-faint)}
+.ng-chart{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;height:104px}.ng-chart>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px}.ng-chart i{width:100%;max-width:30px;border-radius:10px;background:var(--glass-strong);box-shadow:inset 0 0 0 1.5px var(--glass-line)}.ng-chart i.on{background:linear-gradient(#ff9fbf,#f27ea1);box-shadow:none}.ng-chart em{font-style:normal;font-size:10.5px;font-weight:800;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.04em}.ng-chart small{font-size:10.5px;font-weight:800;color:#c04a78}
+.ng-prods{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ng-prod{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;font:inherit;color:var(--ink);cursor:pointer;padding:14px}.ng-prod b{font-size:14px}.ng-prod .mid{color:#c04a78}.ng-prod small{font-size:11.5px;line-height:1.3}
+.ng-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}.ng-tags em{font-style:normal;font-size:11px;font-weight:800;border-radius:99px;padding:3px 9px}.ng-tags .ok{background:#e3f3df;color:#3f9a6a}.ng-tags .lo{background:#ffe0e4;color:#d4546e}.ng-tags .st{background:#ece6fd;color:#6a58b0}
+.ng-empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:26px 16px}
+.ng-av{font-weight:900;color:#c04a78;font-size:17px}
+.ng-pick{display:flex;flex-direction:column;gap:8px;max-height:34vh;overflow:auto}.ng-pk{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1.5px solid var(--glass-line);background:var(--glass-strong);border-radius:16px;padding:9px 12px}.ng-pk.on{border-color:var(--accent);background:#fff0f5}.ng-pk b{display:block;font-size:14px}.ng-pk small{font-size:11.5px;color:var(--ink-faint);font-weight:700}
+.ng-step{display:flex;align-items:center;gap:10px}.ng-step button{width:32px;height:32px;border:0;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:20px;font-weight:900;line-height:1;cursor:pointer}.ng-step span{min-width:18px;text-align:center;font-weight:900}
+.ng-otro{display:grid;grid-template-columns:1fr 92px;gap:8px}
+.ng-total{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:16px;background:var(--glass-strong)}.ng-total b{font-size:22px}
+.ng-f .ng-row,.ng-row{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:3px 2px}
+.ng-promo{display:flex;align-items:center;gap:10px;position:relative;margin:0 0 12px;padding:12px 34px 12px 12px;border-radius:var(--r-card);border:2px solid var(--glass-line);background:#fff0f3;box-shadow:var(--shadow)}.ng-promo img{width:40px;height:auto}.ng-promo span{flex:1;display:flex;flex-direction:column;gap:2px}.ng-promo b{font-size:14px}.ng-promo small{font-size:12px;color:var(--ink-soft);line-height:1.3}
+.ng-promo button:not(.x){border:0;border-radius:99px;padding:8px 12px;background:var(--accent);color:var(--accent-ink);font:inherit;font-size:12px;font-weight:800;cursor:pointer}.ng-promo .x{position:absolute;top:2px;right:6px;border:0;background:none;font-size:22px;color:var(--ink-faint);cursor:pointer}
+
+/* ===== Sobres y Planes: estilo nativo ===== */
+.sbn-say{display:flex;align-items:center;gap:10px;margin-bottom:12px}.sbn-say img{width:40px;height:40px;flex:none}.sbn-say span{font-weight:800;line-height:1.3}
+.sbn-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}.sbn-stats div{background:var(--glass-strong);border-radius:16px;padding:9px 8px;text-align:center;display:flex;flex-direction:column;gap:2px;min-width:0}.sbn-stats small{font-size:11px;color:var(--ink-faint);font-weight:800}.sbn-stats b{font-size:15px;font-family:var(--f-display);font-weight:600}.sbn-stats .ok b{color:#3f9a6a}.sbn-stats .bad b{color:#d4546e}
+.sbn-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sbn-card{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 10px 12px;font:inherit;color:var(--ink);cursor:pointer;text-align:center}
+.sbn-card .sb-cv{width:100%;max-width:130px;height:auto;aspect-ratio:56/50;animation:sbBob 3.6s ease-in-out infinite}.sbn-card:nth-child(2n) .sb-cv{animation-delay:-1.2s}
+.sbn-name{display:inline-flex;align-items:center;gap:5px;background:var(--glass-strong);border-radius:99px;padding:3px 10px;font-size:12.5px}
+.sbn-left{font:600 21px var(--f-display)}.sbn-left.neg{color:#d4546e}.sbn-card .evs-track{width:100%}.sbn-card small{font-size:11.5px}
+.sbn-empty{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:22px 16px}
+.sbn-btn{width:100%;justify-content:center;padding:12px;border-radius:99px}
+.sb-open .sb-big{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px;text-align:center}.sb-open .sb-big .evs-track{width:100%}
+.nvx .pn{border:2px solid var(--glass-line)!important;border-image:none!important;border-radius:var(--r-card);background:var(--glass)!important;box-shadow:var(--shadow);image-rendering:auto;color:var(--ink)}
+.nvx .pn-pink{background:var(--accent)!important;color:var(--accent-ink)}
+.nvx .pn-tag{background:#fff4c2!important}
+.nvx .pl-seg{background:var(--glass-strong);border-radius:99px;padding:3px;gap:2px}.nvx .pl-sg{border:0!important;background:none!important;border-radius:99px!important;box-shadow:none!important}.nvx .pl-sg.on{background:var(--navy)!important;color:#fff!important}
+.nvx .pl-btn{border-radius:99px;box-shadow:none;background:var(--accent);color:var(--accent-ink);text-shadow:none}.nvx .pl-btn.ghost{background:var(--glass-strong);color:var(--ink-soft);border:0}
+.nvx .sb-act{border-radius:99px}
+.ld-tiles{margin:10px 0 14px}.ld-tile{border:2px solid var(--glass-line);box-shadow:var(--shadow);opacity:.75}.ld-tile.on{opacity:1;border-color:#f27ea1;box-shadow:0 0 0 2px #f9c4d4,var(--shadow);transform:none}

@@ -4,10 +4,10 @@ const A = App, S = A.S, { esc, money, toast, openSheet, closeSheet } = A;
 const sc = A.screens, ACT = A.ACTIONS;
 A.PAGES.sobres = 'Sobres';
 const spr = (n, k) => Pix.sprite(n, k || 3);
-const sheet = (t, h) => openSheet(t, h, sh => sh.addEventListener('click', ev => { const b = ev.target.closest('[data-act]'); if (b && ACT[b.dataset.act]) { ev.stopPropagation(); ACT[b.dataset.act](b); } }));
+const sheet = (t, h) => openSheet(t, h, sh => (sh.classList.add('nvx'), sh.addEventListener('click', ev => { const b = ev.target.closest('[data-act]'); if (b && ACT[b.dataset.act]) { ev.stopPropagation(); ACT[b.dataset.act](b); } })));
 const MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const KRAFT = [['#f6d9a8', '#e3bd82', '#fff0cf'], ['#ffd1de', '#f0a5bd', '#ffe9f0'], ['#cfeedd', '#9fd5b8', '#e8f8ef'], ['#cfe6fb', '#9cc8ee', '#e6f2fd'], ['#e2d8fb', '#bcaaf0', '#f1ecfd'], ['#ffe3b8', '#f5c283', '#fff2da']];
-const OUT = '#5a3a3a';
+const OUT = '#a0707a';
 const k0 = () => A.ym(A.today());
 const eff = (c, k) => (+c.budget || 0) + (((S.settings.sobres || {})[k || k0()] || {})[c.id] || 0);
 const cats = () => S.fin.categories.filter(c => c.type !== 'income' && !A.isSaving(c));
@@ -75,14 +75,15 @@ sc.sobres = () => {
   const over = d.withB.filter(x => state(x) === 'over'), low = d.withB.filter(x => ['low', 'empty'].includes(state(x)));
   const say = !d.withB.length ? 'Ponle un tope a una categoría y le hago su sobrecito' : over.length ? `El sobre de ${over[0].c.name} se pasó. ¿Le pasamos plata de otro?` : low.length ? `A ${low[0].c.name} le queda poquito. ¡Cuidémoslo!` : d.tot.s === 0 ? 'Mes nuevo, sobres llenitos. ¡A cuidarlos!' : 'Todos los sobres respiran bien. ¡Vas genial!';
   const pet = (() => { try { return A.petInfo(A.petActive ? A.petActive() : 'gochi').sprite; } catch (e) { return 'gochi'; } })();
-  const card = (x, i) => { const st = state(x); return `<button class="sb-card" data-act="sbOpen" data-id="${x.c.id}"><canvas class="sb-cv" data-i="${i}" data-id="${x.c.id}"></canvas><span class="sb-tag pn pn-tag">${A.iconHTML ? A.iconHTML(x.c.icon, 14) : ''}<b>${esc(x.c.name)}</b></span><span class="sb-left ${x.left < 0 ? 'neg' : ''}">${x.left < 0 ? '−' + money(-x.left) : money(x.left)}</span><small>${x.b > 0 ? 'de ' + money(x.b) + ' · ' + stateTxt(x, st) : stateTxt(x, st)}</small>${bar(x, st)}</button>`; };
+  const nb = (x, st) => `<div class="evs-track"><i class="real" style="width:${x.b > 0 ? Math.max(3, Math.min(100, x.s / x.b * 100)) : 0}%;background:${tone(st)}"></i></div>`;
+  const card = (x, i) => { const st = state(x); return `<button class="card sbn-card" data-act="sbOpen" data-id="${x.c.id}"><canvas class="sb-cv" data-i="${i}" data-id="${x.c.id}"></canvas><span class="sbn-name">${A.iconHTML ? A.iconHTML(x.c.icon, 18) : ''}<b>${esc(x.c.name)}</b></span><span class="sbn-left ${x.left < 0 ? 'neg' : ''}">${x.left < 0 ? '−' + money(-x.left) : money(x.left)}</span>${nb(x, st)}<small class="faint">${x.b > 0 ? 'de ' + money(x.b) + ' · ' : ''}${stateTxt(x, st)}</small></button>`; };
   return `${A.header('sobres')}
-<div class="sb-board"><div class="sb-head pn pn-wood"><span>Sobres de ${MES[+d.k.slice(5) - 1]}</span><em>${dl} ${dl === 1 ? 'día' : 'días'} para fin de mes</em></div>
-<div class="sb-body pn pn-cream"><div class="sb-say"><img class="pixel" alt="" src="${spr(pet, 3)}"><span>${esc(say)}</span></div>
-<div class="sb-stats"><div><small>Repartido</small><b>${money(d.tot.b)}</b></div><div><small>Gastado</small><b>${money(d.tot.s)}</b></div><div class="${disp > 0 ? 'ok' : 'bad'}"><small>Te queda</small><b>${money(disp)}</b></div></div>
-${disp > 0 && d.tot.b ? `<div class="sb-day">Puedes gastar unos <b>${money(disp / dl)}</b> al día</div>` : ''}</div></div>
-${d.withB.length ? `<div class="sb-drawer"><div class="sb-grid">${d.withB.map(card).join('')}</div><div class="sb-front"><i></i><span>Mis sobres</span><i></i></div></div>` : `<div class="sb-empty"><canvas id="sbDemo" class="sb-cv"></canvas><b>Aún no tienes sobres</b><span>Elige una categoría de abajo, ponle cuánto quieres gastar al mes y nace su sobre.</span></div>`}
-${(() => { const L = cats().filter(c => !(eff(c) > 0)); return L.length ? `<div class="sb-lbl">Categorías sin sobre</div><div class="sb-none">${L.map(c => `<button class="sb-ghost" data-act="sbTope" data-id="${c.id}">${A.iconHTML ? A.iconHTML(c.icon, 16) : ''}<span>${esc(c.name)}</span><i>+ sobre</i></button>`).join('')}</div>` : ''; })()}`;
+<div class="stack sbn">
+<div class="card"><div class="sbn-say"><img class="pixel" alt="" src="${spr(pet, 3)}"><span>${esc(say)}</span></div>
+<div class="sbn-stats"><div><small>Repartido</small><b>${money(d.tot.b)}</b></div><div><small>Gastado</small><b>${money(d.tot.s)}</b></div><div class="${disp > 0 ? 'ok' : 'bad'}"><small>Te queda</small><b>${money(disp)}</b></div></div>
+<div class="evs-foot"><span>${disp > 0 && d.tot.b ? `Puedes gastar unos <b>${money(disp / dl)}</b> al día` : 'Sin margen por ahora'}</span><span class="faint">${dl} ${dl === 1 ? 'día' : 'días'} para fin de mes</span></div></div>
+${d.withB.length ? `<div class="sbn-grid">${d.withB.map(card).join('')}</div>` : `<div class="card sbn-empty"><canvas id="sbDemo" class="sb-cv"></canvas><b>Aún no tienes sobres</b><span class="faint">Elige una categoría de abajo, ponle cuánto quieres gastar al mes y nace su sobre.</span></div>`}
+${(() => { const L = cats().filter(c => !(eff(c) > 0)); return L.length ? `<div class="card"><h3>Categorías sin sobre</h3><div class="chips">${L.map(c => `<button class="chip" data-act="sbTope" data-id="${c.id}">${A.iconHTML ? A.iconHTML(c.icon, 16) : ''}<span>${esc(c.name)}</span> +</button>`).join('')}</div></div>` : ''; })()}</div>`;
 };
 A.sobreDraw = drawEnv; A.sobreState = state;
 A.after.sobres = el => {
@@ -95,15 +96,15 @@ function recent(c) { return A.txIn(k0()).filter(t => t.type === 'expense' && t.c
 function openEnv(id) {
   const c = S.fin.categories.find(x => x.id === id); if (!c) return; const d = data(), x = d.withB.find(y => y.c.id === id) || { c, b: eff(c), s: 0, left: eff(c), pct: 1 }, st = state(x), idx = Math.max(0, d.withB.findIndex(y => y.c.id === id));
   const L = recent(c);
-  sheet(c.name, `<div class="sb-open"><div class="sb-big pn pn-cream"><canvas id="sbBig" class="sb-cv"></canvas><b class="sb-bigleft ${x.left < 0 ? 'neg' : ''}">${x.left < 0 ? '−' + money(-x.left) : money(x.left)}</b><span>${x.left < 0 ? 'te pasaste de este sobre' : 'te quedan en este sobre'}</span>${bar(x, st)}<small>${money(x.s)} gastado de ${money(x.b)}</small></div>
-<div class="sb-acts"><button class="sb-act pn pn-pink" data-act="sbMove" data-id="${id}">Pasar plata de otro sobre</button><button class="sb-act pn pn-wood" data-act="sbTope" data-id="${id}">Cambiar el tope</button></div>
+  sheet(c.name, `<div class="sb-open"><div class="sb-big card flat"><canvas id="sbBig" class="sb-cv"></canvas><b class="sb-bigleft ${x.left < 0 ? 'neg' : ''}">${x.left < 0 ? '−' + money(-x.left) : money(x.left)}</b><span>${x.left < 0 ? 'te pasaste de este sobre' : 'te quedan en este sobre'}</span><div class="evs-track"><i class="real" style="width:${x.b > 0 ? Math.max(3, Math.min(100, x.s / x.b * 100)) : 0}%;background:${tone(st)}"></i></div><small class="faint">${money(x.s)} gastado de ${money(x.b)}</small></div>
+<div class="sb-acts"><button class="btn pink sbn-btn" data-act="sbMove" data-id="${id}">Pasar plata de otro sobre</button><button class="btn sbn-btn" data-act="sbTope" data-id="${id}">Cambiar el tope</button></div>
 <div class="sb-lbl">Lo último que salió de aquí</div>${L.length ? `<div class="sb-hist">${L.map(t => `<div><span>${A.fmtDate ? A.fmtDate(t.date) : t.date}</span><em>${esc(t.note || c.name)}</em><b>${money(t.amount)}</b></div>`).join('')}</div>` : '<p class="faint" style="text-align:center">Todavía no has gastado de este sobre este mes.</p>'}</div>`);
   setTimeout(() => { const cv = document.getElementById('sbBig'); if (cv) drawEnv(cv, x, idx); }, 0);
 }
 ACT.sbOpen = a => openEnv(a.dataset.id);
 ACT.sbTope = a => {
   const c = S.fin.categories.find(x => x.id === a.dataset.id); if (!c) return;
-  sheet(`Tope de ${c.name}`, `<div class="sb-form"><p class="faint" style="margin:0">¿Cuánto quieres gastar al mes en ${esc(c.name)}? Es el tope de todos los meses.</p><label class="f">Tope al mes<input class="in" id="sbTopeIn" type="number" inputmode="decimal" step="0.01" min="0" value="${+c.budget || ''}" placeholder="Ej. 80"></label><button class="sb-act pn pn-pink" data-act="sbTopeOk" data-id="${c.id}">Guardar</button></div>`);
+  sheet(`Tope de ${c.name}`, `<div class="sb-form"><p class="faint" style="margin:0">¿Cuánto quieres gastar al mes en ${esc(c.name)}? Es el tope de todos los meses.</p><label class="f">Tope al mes<input class="in" id="sbTopeIn" type="number" inputmode="decimal" step="0.01" min="0" value="${+c.budget || ''}" placeholder="Ej. 80"></label><button class="btn pink sbn-btn" data-act="sbTopeOk" data-id="${c.id}">Guardar</button></div>`);
 };
 ACT.sbTopeOk = a => {
   const c = S.fin.categories.find(x => x.id === a.dataset.id), v = Math.max(0, +document.getElementById('sbTopeIn').value || 0); if (!c) return;
@@ -117,7 +118,7 @@ ACT.sbMove = a => {
 ACT.sbMoveAmt = a => {
   const d = data(), f = d.withB.find(x => x.c.id === a.dataset.from), t = d.withB.find(x => x.c.id === a.dataset.to) || { c: S.fin.categories.find(x => x.id === a.dataset.to), left: 0 }; if (!f) return;
   const need = t.left < 0 ? Math.min(f.left, -t.left) : Math.min(f.left, 5);
-  sheet('¿Cuánto pasamos?', `<div class="sb-form"><p class="faint" style="margin:0">De <b>${esc(f.c.name)}</b> a <b>${esc(t.c.name)}</b>. Solo cambia este mes.</p><label class="f">Cantidad (máx. ${money(f.left)})<input class="in" id="sbAmt" type="number" inputmode="decimal" step="0.01" min="0" value="${Math.round(need * 100) / 100}"></label><button class="sb-act pn pn-pink" data-act="sbMoveOk" data-from="${f.c.id}" data-to="${t.c.id}">Pasar la plata</button></div>`);
+  sheet('¿Cuánto pasamos?', `<div class="sb-form"><p class="faint" style="margin:0">De <b>${esc(f.c.name)}</b> a <b>${esc(t.c.name)}</b>. Solo cambia este mes.</p><label class="f">Cantidad (máx. ${money(f.left)})<input class="in" id="sbAmt" type="number" inputmode="decimal" step="0.01" min="0" value="${Math.round(need * 100) / 100}"></label><button class="btn pink sbn-btn" data-act="sbMoveOk" data-from="${f.c.id}" data-to="${t.c.id}">Pasar la plata</button></div>`);
 };
 ACT.sbMoveOk = a => {
   const d = data(), f = d.withB.find(x => x.c.id === a.dataset.from); const v = Math.round(Math.min(f ? f.left : 0, +document.getElementById('sbAmt').value || 0) * 100) / 100; if (!f || v <= 0) return toast('Pon una cantidad');
@@ -135,4 +136,5 @@ ACT.sbMoveOk = a => {
   Pix.define('sobre_ic', { raw: g.map(r => r.join('')), pal: '#5a3a3a,#9fdf80,#ffe0a8,#fff3d6,#ff6f9c' });
   Object.values(A.PACKS || {}).forEach(p => { if (p.map) p.map.sobres = 's:sobre_ic'; });
 })();
+  sc.sobres = ((f) => function () { return '<div class="nvx">' + f.apply(this, arguments) + '</div>'; })(sc.sobres);
 })();

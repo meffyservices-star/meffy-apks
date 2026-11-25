@@ -4,7 +4,7 @@ const A = App, S = A.S, { esc, money, toast, openSheet, closeSheet } = A;
 const sc = A.screens, ACT = A.ACTIONS;
 A.PAGES.planes = 'Planes'; A.PAGES.viaje = 'Viaje';
 const spr = (n, k) => Pix.sprite(n, k || 3);
-const sheet = (t, h) => openSheet(t, h, sh => sh.addEventListener('click', ev => { const b = ev.target.closest('[data-act]'); if (b && ACT[b.dataset.act]) { ev.stopPropagation(); ACT[b.dataset.act](b); } }));
+const sheet = (t, h) => openSheet(t, h, sh => (sh.classList.add('nvx'), sh.addEventListener('click', ev => { const b = ev.target.closest('[data-act]'); if (b && ACT[b.dataset.act]) { ev.stopPropagation(); ACT[b.dataset.act](b); } })));
 const MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const P = () => (S.settings.planes = S.settings.planes || { debts: [], trips: [], wishes: [] });
 const save = () => A.saveSettings();
@@ -187,4 +187,7 @@ sc.loans = () => {
 ${mine.length ? `<div class="ld-list">${mine.map(l => { const r = lft(l), done = r <= 0, pc = l.amount ? Math.min(1, (l.paid || 0) / l.amount) : 0, c = avC(l.who); return `<div class="ld-card ${done ? 'done' : ''}"><button class="ld-main" data-act="loanOpen" data-id="${l.id}"><span class="ld-av" style="background:linear-gradient(${c[0]},${c[1]})">${esc(ini(l.who))}</span><span class="ld-who"><b>${esc(l.who)}</b><small>${esc(l.note || (tab === 'in' ? 'Le presté' : 'Me prestó'))}${l.date ? ' · ' + (A.fmtDate ? A.fmtDate(l.date) : l.date) : ''}</small></span><span class="ld-amt">${done ? '<i>Pagado</i>' : `<em>${money(r)}</em><small>de ${money(l.amount)}</small>`}</span></button>${bar(pc, tab === 'in' ? '#78c15a' : '#e0709a')}${done ? '' : `<div class="ld-acts"><button class="ld-pay" data-act="loanPay" data-id="${l.id}">${tab === 'in' ? 'Me abonó' : 'Abonar'}</button><button class="ld-open" data-act="loanOpen" data-id="${l.id}">Ver detalle</button></div>`}</div>`; }).join('')}</div>` : `<div class="pl-empty"><img class="pixel" alt="" src="${spr(tab === 'in' ? 'corazon_rosa' : 'billetera', 6)}"><b>${tab === 'in' ? 'Nadie te debe nada' : 'No le debes a nadie'}</b><span>${tab === 'in' ? 'Aquí anotas lo que le prestas a alguien para no olvidarte.' : 'Aquí anotas lo que te prestaron para saber cuánto devolver.'}</span></div>`}
 <button class="pl-btn" data-act="loanNew" data-dir="${tab}">${tab === 'in' ? 'Anotar algo que presté' : 'Anotar algo que me prestaron'}</button>`;
 };
+  sc.planes = ((f) => function () { return '<div class="nvx">' + f.apply(this, arguments) + '</div>'; })(sc.planes);
+  sc.viaje = ((f) => function () { return '<div class="nvx">' + f.apply(this, arguments) + '</div>'; })(sc.viaje);
+  sc.loans = ((f) => function () { return '<div class="nvx">' + f.apply(this, arguments) + '</div>'; })(sc.loans);
 })();
