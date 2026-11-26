@@ -255,7 +255,7 @@ async function cookGame() {
     const x = slotX[i]; let dy = 0, a = 1; const bounce = Math.sin(Date.now() / 260 + i) * 1;
     if (c.st === 'in') dy = Math.max(0, 28 - c.t * 56); if (c.st === 'out') { a = Math.max(0, 1 - c.t); dy = c.out === 'happy' ? -Math.sin(Math.min(1, c.t) * Math.PI) * 6 : 0; }
     const im = I['p_' + c.pet]; if (!im || !im.width) return;
-    const B = 44 * KP, m = Math.max(im.width, im.height); let s = B / m; const small = m <= 32; if (small) s = Math.max(1, Math.floor(s));
+    const B = 44 * KP, m = Math.max(im.width, im.height); const s = Math.max(1, Math.floor(B / m)); const small = true;
     const iw = Math.round(im.width * s), ih = Math.round(im.height * s);
     g.save(); g.globalAlpha = a; g.imageSmoothingEnabled = !small; g.imageSmoothingQuality = 'high';
     g.drawImage(im, Math.round(x * KP - iw / 2), Math.round((counterY + dy + (c.st === 'wait' ? bounce : 0)) * KP - ih), iw, ih); g.restore();
