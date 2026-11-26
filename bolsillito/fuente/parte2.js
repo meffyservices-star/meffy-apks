@@ -1317,8 +1317,47 @@ A.readPixels = file => new Promise((ok, bad) => {
   im.onload = () => { const k = Math.min(1, 1800 / Math.max(im.width, im.height)); const W = Math.round(im.width * k), H = Math.round(im.height * k); const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(im, 0, 0, W, H); URL.revokeObjectURL(url); ok({ d: g.getImageData(0, 0, W, H).data, W, H }); };
   im.onerror = () => { URL.revokeObjectURL(url); bad(new Error('img')); }; im.src = url;
 });
+// Limpia el fondo de un dibujo pixel: transparente, blanco o con el "brillito" oscuro que deja la IA alrededor.
+// Deja solo el dibujo (lo más grande), tapa los huequitos y no toca los colores de adentro.
+function autoCut(img) {
+  const { d, W, H } = img, N = W * H;
+  const dil = (m, it) => { for (let t = 0; t < it; t++) { const o = new Uint8Array(m); for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = y * W + x; if (m[i]) { if (x > 0) o[i - 1] = 1; if (x < W - 1) o[i + 1] = 1; if (y > 0) o[i - W] = 1; if (y < H - 1) o[i + W] = 1; } } m = o; } return m; };
+  const ero = (m, it) => { for (let t = 0; t < it; t++) { const o = new Uint8Array(m); for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = y * W + x; if (!m[i]) { if (x > 0) o[i - 1] = 0; if (x < W - 1) o[i + 1] = 0; if (y > 0) o[i - W] = 0; if (y < H - 1) o[i + W] = 0; } else if (x === 0 || y === 0 || x === W - 1 || y === H - 1) o[i] = 0; } m = o; } return m; };
+  // etiqueta zonas conectadas (m = 1 donde cuenta)
+  const label = m => { const lab = new Int32Array(N); let n = 0; const st = new Int32Array(N); for (let s0 = 0; s0 < N; s0++) { if (!m[s0] || lab[s0]) continue; n++; let sp = 0; st[sp++] = s0; lab[s0] = n; while (sp) { const i = st[--sp], x = i % W, y = (i / W) | 0; if (x > 0 && m[i - 1] && !lab[i - 1]) { lab[i - 1] = n; st[sp++] = i - 1; } if (x < W - 1 && m[i + 1] && !lab[i + 1]) { lab[i + 1] = n; st[sp++] = i + 1; } if (y > 0 && m[i - W] && !lab[i - W]) { lab[i - W] = n; st[sp++] = i - W; } if (y < H - 1 && m[i + W] && !lab[i + W]) { lab[i + W] = n; st[sp++] = i + W; } } } return { lab, n }; };
+  const borderLabels = lab => { const s = new Set(); for (let x = 0; x < W; x++) { s.add(lab[x]); s.add(lab[(H - 1) * W + x]); } for (let y = 0; y < H; y++) { s.add(lab[y * W]); s.add(lab[y * W + W - 1]); } s.delete(0); return s; };
+  let keep = new Uint8Array(N), transp = 0;
+  for (let i = 0; i < N; i++) if (d[i * 4 + 3] < 128) transp++;
+  if (transp > N * 0.05) {
+    for (let i = 0; i < N; i++) keep[i] = d[i * 4 + 3] >= 200 ? 1 : 0;
+    keep = dil(ero(keep, 2), 2);
+  } else {
+    let cmin = 255, cn = 0; for (let y = 0; y < 6; y++) for (let x = 0; x < 6; x++) { const o = (y * W + x) * 4; cmin = Math.min(cmin, d[o], d[o + 1], d[o + 2]); cn++; }
+    const m = new Uint8Array(N);
+    if (cmin > 235) { for (let i = 0; i < N; i++) { const o = i * 4; m[i] = Math.min(d[o], d[o + 1], d[o + 2]) > 238 ? 1 : 0; } const { lab } = label(m); const bl = borderLabels(lab); for (let i = 0; i < N; i++) keep[i] = m[i] && bl.has(lab[i]) ? 0 : 1; }
+    else {
+      const T = 14, wall = new Uint8Array(N);
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = y * W + x, o = i * 4; if (x > 0) { const q = o - 4; if (Math.max(Math.abs(d[o] - d[q]), Math.abs(d[o + 1] - d[q + 1]), Math.abs(d[o + 2] - d[q + 2])) > T) { wall[i] = 1; wall[i - 1] = 1; } } if (y > 0) { const q = o - W * 4; if (Math.max(Math.abs(d[o] - d[q]), Math.abs(d[o + 1] - d[q + 1]), Math.abs(d[o + 2] - d[q + 2])) > T) { wall[i] = 1; wall[i - W] = 1; } } }
+      for (let i = 0; i < N; i++) m[i] = wall[i] ? 0 : 1;
+      const { lab } = label(m), bl = borderLabels(lab); const out = new Uint8Array(N); for (let i = 0; i < N; i++) out[i] = bl.has(lab[i]) ? 1 : 0;
+      const o2 = dil(out, 2); for (let i = 0; i < N; i++) keep[i] = o2[i] ? 0 : 1;
+      keep = dil(ero(keep, 3), 3);
+    }
+  }
+  // quedarse con lo más grande
+  const { lab, n } = label(keep); if (!n) return img;
+  const sz = new Int32Array(n + 1); for (let i = 0; i < N; i++) sz[lab[i]]++; let bi = 1; for (let k = 2; k <= n; k++) if (sz[k] > sz[bi]) bi = k;
+  for (let i = 0; i < N; i++) keep[i] = lab[i] === bi ? 1 : 0;
+  // tapar huequitos: lo que no se alcanza desde afuera es del dibujo
+  const inv = new Uint8Array(N); for (let i = 0; i < N; i++) inv[i] = keep[i] ? 0 : 1; const l2 = label(inv), bl2 = borderLabels(l2.lab);
+  for (let i = 0; i < N; i++) if (inv[i] && !bl2.has(l2.lab[i])) keep[i] = 1;
+  for (let i = 0; i < N; i++) { d[i * 4 + 3] = keep[i] ? 255 : 0; }
+  return img;
+}
+A.autoCut = autoCut;
 // Pixela con un tope de cuadritos (si sale más grande, se agranda el cuadrito).
 A.pixFit = (img, maxN, cell) => {
+  if (!img._cut) { try { autoCut(img); } catch (e) {} img._cut = 1; }
   let r = pixelize(img.d, img.W, img.H, cell ? { cell } : {}); let n = 0;
   while (r && Math.max(r.w, r.h) > maxN && n++ < 6) r = pixelize(img.d, img.W, img.H, { cell: r.cell * Math.max(r.w, r.h) / maxN * 1.02 });
   return r;

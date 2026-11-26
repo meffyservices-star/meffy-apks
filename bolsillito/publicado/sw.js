@@ -1,4 +1,4 @@
-const C = 'bolsillito-v121';
+const C = 'bolsillito-v122';
 const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
 const CORE = ['/', '/offline.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/fonts/fuentes.css?v=1', CDN].concat([0, 1, 2, 3, 4, 5].map(i => '/p' + i + '.bin?v=1'), ['nunito', 'quicksand', 'fredoka', 'comfortaa', 'baloo2', 'pixelify', 'caveat', 'dmmono400', 'dmmono500', 'gaegu400', 'gaegu700', 'patrickhand', 'itim'].map(n => '/fonts/' + n + '.woff'));
 const CORE_EXT = ['/fonts/fuentes.css?v=1', CDN].concat(['nunito', 'quicksand', 'fredoka', 'comfortaa', 'baloo2', 'pixelify', 'caveat', 'dmmono400', 'dmmono500', 'gaegu400', 'gaegu700', 'patrickhand', 'itim'].map(n => '/fonts/' + n + '.woff'));
