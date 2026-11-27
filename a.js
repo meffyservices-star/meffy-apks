@@ -240,11 +240,12 @@ A.blobFor = blobFor;
 A.saveBlob = async (blob, name) => {
   if (window.AeffyNative) { const b64 = await new Promise(r => { const f = new FileReader(); f.onload = () => r(String(f.result).split(',')[1] || ''); f.readAsDataURL(blob) }); const ok = AeffyNative.saveFile(name, blob.type || 'application/octet-stream', b64); if (!ok) toast('No pude guardar el archivo'); return }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 30000) };
-A.playIdx = async (i, keepPos) => {
+A.playIdx = async (i, keepPos, noPlay) => {
   P.qi = i; const t = A.byId(P.queue[i]); if (!t) return; A.initAudio(); if (actx && actx.state === 'suspended') actx.resume();
   const b = await blobFor(t); if (!b) { toast('No encuentro el archivo; vuelve a agregar esta canción'); return }
   if (P.url) URL.revokeObjectURL(P.url); P.url = URL.createObjectURL(b); P.cur = t.id; P.au.src = P.url; P.au.playbackRate = A.ST.speed; P.last = 0;
   if (fadeN) fadeN.gain.value = A.ST.crossfade ? 0 : 1;
+  if (noPlay) { if (fadeN) fadeN.gain.value = 1; if (noPlay.t) { const seek = () => { try { P.au.currentTime = noPlay.t } catch (e) { } }; P.au.readyState >= 1 ? seek() : P.au.addEventListener('loadedmetadata', seek, { once: true }) } if (noPlay.play) { try { await P.au.play() } catch (e) { } } setMedia(t); A.repaint(); A.onTrack && A.onTrack(t); return }
   try { await P.au.play() } catch (e) { }
   if (fadeN && A.ST.crossfade) fadeN.gain.setTargetAtTime(1, actx.currentTime, .4);
   const S = A.STS; S.recent = [t.id, ...S.recent.filter(x => x !== t.id)].slice(0, 60); S.plays[t.id] = (S.plays[t.id] || 0) + 1; A.saveStats();
@@ -536,7 +537,7 @@ function fpHtml() {
    <div class="meta"><div><h2>${esc(t.name)}</h2><p>${esc(t.artist)}</p></div><div class="side2"><button class="ib" data-a="fav" data-id="${t.id}" aria-label="Me gusta">${ms('favorite', A.isFav(t.id))}</button><button class="ib" data-a="enqueue-menu" data-id="${t.id}" aria-label="Agregar a playlist">${ms('playlist_add')}</button></div></div>
    <div class="prog"><div class="wave" id="wave" role="slider" aria-label="Posición" tabindex="0"><svg id="wsvg"></svg><span class="th" id="wth"></span></div><div class="times"><span id="tc">0:00</span><span class="fmt">${ms('graphic_eq')}${esc([t.ext, t.bits ? t.bits + '-bit' : '', t.sr ? (t.sr / 1000).toFixed(1).replace('.0', '') + ' kHz' : ''].filter(Boolean).join(' · ') || 'Local')}</span><span id="td">${fmt(t.dur)}</span></div></div>
    <div class="tp"><button class="ib${P.shuffle ? ' on' : ''}" data-a="shuffle" aria-label="Aleatorio">${ms('shuffle')}</button><button class="ib" data-a="prev" aria-label="Anterior">${ms('skip_previous', 1)}</button><button class="ck s80${playing ? ' on' : ''}" data-a="toggle" id="fpPlay" aria-label="Reproducir o pausar">${shp('cookie')}${ms(playing ? 'pause' : 'play_arrow', 1)}</button><button class="ib" data-a="next" aria-label="Siguiente">${ms('skip_next', 1)}</button><button class="ib${P.repeat ? ' on' : ''}${P.repeat === 2 ? ' rep1' : ''}" data-a="repeat" aria-label="Repetir">${ms(P.repeat === 2 ? 'repeat_one' : 'repeat')}</button></div></div>
-  <div class="tbar"><button data-a="recast" aria-label="Dispositivos">${ms('devices')}</button><button data-a="rate" data-id="${t.id}" class="${r ? 'on' : ''}" aria-label="Calificar">${ms('filter_vintage', !!r)}${r ? r : ''}</button><button data-a="fpmode" data-v="lyrics" class="${fpMode === 'lyrics' ? 'on' : ''}" aria-label="Letra">${ms('mic')}</button><button data-a="fpmode" data-v="queue" class="${fpMode === 'queue' ? 'on' : ''}" aria-label="Cola">${ms('format_list_bulleted')}</button></div></div>`
+  <div class="tbar"><button data-a="recast" aria-label="Dispositivos">${ms('devices')}</button><button data-a="rate" data-id="${t.id}" class="${r ? 'on' : ''}" aria-label="Calificar">${ms('filter_vintage', !!r)}${r ? r : ''}</button><button data-a="fpmode" data-v="lyrics" class="${fpMode === 'lyrics' ? 'on' : ''}" aria-label="Letra">${ms('lyrics')}</button><button data-a="fpmode" data-v="queue" class="${fpMode === 'queue' ? 'on' : ''}" aria-label="Cola">${ms('format_list_bulleted')}</button></div></div>`
 }
 A.paintFp = () => { const f = $('#fp'); if (!f.classList.contains('open')) return; f.innerHTML = fpHtml(); f.className = 'fp open' + (fpMode ? ' panel ' + fpMode : ''); A.upgradeCovers(f); if (fpMode === 'lyrics') buildLyrics(); if (fpMode === 'queue') buildQueue(); drawWave() };
 A.openFp = () => { if (!P.cur) return; const f = $('#fp'); f.classList.add('open'); A.paintFp(); A.pushLayer(() => { f.classList.remove('open') }) };
@@ -1728,6 +1729,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
   A.render();
   await A.loadLibrary(); A.render();
   A.afterBoot && A.afterBoot();
+  A.resumeNow && A.resumeNow();
   A.cloudInit && A.cloudInit();
 })();
 }
@@ -1847,4 +1849,50 @@ if (N) {
   A.afterBoot = () => { if (A.nativeHasPerm()) A.nativeScan(true); else setTimeout(() => { if (!A.nativeHasPerm() && !localStorage.getItem('ae_asked')) { localStorage.setItem('ae_asked', '1'); A.sheet(A.shead('library_music', '¿Permitir que aeffy acceda a tu música?', 'Así aeffy encuentra sola las canciones de tu teléfono, como un reproductor de verdad. Tu música no se mueve ni se sube a ningún lado.') + `<div class="foot"><button class="btn t" data-a="closesheet">Ahora no</button><button class="btn" data-a="nperm2">Permitir</button></div>`) } }, 900) };
   on('nperm2', () => { A.popLayer(); try { N.requestPermission() } catch (e) { } });
 }
+}
+
+/* aeffy · recordar lo que sonaba: al volver a la app sigue la misma canción y en el mismo segundo */
+'use strict';
+{
+const P = A.P;
+let lastSave = 0;
+const snap = () => P.cur ? { q: P.queue, qi: P.qi, cur: P.cur, t: P.au.currentTime || 0, from: P.from, play: !P.au.paused, at: Date.now() } : null;
+const saveNow = () => { const s = snap(); if (!s) return; try { localStorage.setItem('ae_now', JSON.stringify(s)) } catch (e) { } };
+A.saveNow = saveNow;
+P.au.addEventListener('timeupdate', () => { const n = Date.now(); if (n - lastSave > 3000) { lastSave = n; saveNow() } });
+['pause', 'play', 'ended', 'loadedmetadata'].forEach(ev => P.au.addEventListener(ev, saveNow));
+addEventListener('pagehide', saveNow);
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow() });
+
+/* si hay otra ventana de aeffy abierta sonando, esta toma la canción y la otra se calla */
+let bc = null; try { bc = new BroadcastChannel('aeffy-player') } catch (e) { }
+const me = Math.random().toString(36).slice(2);
+let handed = null;
+if (bc) bc.onmessage = e => {
+  const m = e.data || {}; if (m.from === me) return;
+  if (m.k === 'hello' && P.cur && !P.au.paused) { const s = snap(); P.au.pause(); bc.postMessage({ k: 'state', to: m.from, from: me, s }) }
+  else if (m.k === 'state' && m.to === me) handed = m.s;
+  else if (m.k === 'playing' && !P.au.paused) P.au.pause();
+};
+P.au.addEventListener('play', () => { if (bc) bc.postMessage({ k: 'playing', from: me }) });
+if (bc) bc.postMessage({ k: 'hello', from: me });
+
+const apply = async s => {
+  if (!s || !s.cur || P.cur) return false;
+  const q = (s.q || []).filter(id => A.byId(id)); let qi = q.indexOf(s.cur);
+  if (qi < 0) { if (!A.byId(s.cur)) return false; q.unshift(s.cur); qi = 0 }
+  P.queue = q; P.from = s.from || 'Tu biblioteca';
+  /* si venía sonando hace poco, sigue sonando; si no, queda en pausa lista para continuar */
+  const t = s.play ? (s.t || 0) + Math.min(30, (Date.now() - (s.at || 0)) / 1000) : (s.t || 0);
+  await A.playIdx(qi, true, { t: s.play ? Math.max(0, t - .5) : t, play: !!s.play && (Date.now() - (s.at || 0) < 6 * 3600e3) });
+  A.paintMini && A.paintMini(); return true
+};
+A.resumeNow = async () => {
+  await new Promise(r => setTimeout(r, 700)); /* esperar respuesta de otra ventana */
+  if (handed) { handed.at = Date.now(); if (await apply(handed)) return }
+  let s = null; try { s = JSON.parse(localStorage.getItem('ae_now') || 'null') } catch (e) { }
+  if (!s) return;
+  /* la música del teléfono puede tardar en aparecer: reintento un rato */
+  for (let i = 0; i < 8 && !P.cur; i++) { if (await apply(s)) return; await new Promise(r => setTimeout(r, 1500)) }
+};
 }
