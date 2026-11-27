@@ -609,13 +609,13 @@ on('addtolist', el => { const l = A.LISTS.find(x => x.id === el.dataset.l); if (
 function listForm(l, id) {
   let pic = l && l.cover ? { cover: l.cover, hue: l.hue, sat: l.sat } : null;
   const prev = () => pic ? `<img src="${esc(pic.cover)}" alt="">` : ms('queue_music', 1);
-  const s = A.sheet(A.shead('queue_music', l ? 'Editar playlist' : 'Nueva playlist') + `<form id="lf"><div class="plcov"><div class="cov" id="lfc">${prev()}</div><div style="display:grid;gap:6px;justify-items:start"><button type="button" class="btn t" id="lfp">${ms('add_photo_alternate')}Elegir portada</button><button type="button" class="btn g" id="lfx" style="${pic ? '' : 'display:none'}">Quitar portada</button></div><input type="file" id="lff" accept="image/*" hidden></div><label class="fld"><small>Nombre de la playlist</small><input id="lfn" maxlength="60" required value="${esc(l ? l.name : (id ? A.byId(id).artist + ' Mix' : ''))}"></label><label class="fld"><input id="lfd" maxlength="160" placeholder="Descripción (opcional)" value="${esc(l?.desc || '')}"></label><div class="foot">${l ? `<button type="button" class="btn d" data-a="dellist" data-id="${l.id}">Borrar</button>` : `<button type="button" class="btn t" data-a="closesheet">Cancelar</button>`}<button class="btn">${l ? 'Guardar' : 'Crear'}</button></div></form>`);
+  const s = A.sheet(A.shead('queue_music', l ? 'Editar playlist' : 'Nueva playlist') + `<form id="lf"><div class="plcov"><div class="cov" id="lfc">${prev()}</div><div style="display:grid;gap:6px;justify-items:start"><button type="button" class="btn t" id="lfp">${ms('add_photo_alternate')}Elegir portada</button><button type="button" class="btn g" id="lfx" style="${pic ? '' : 'display:none'}">Quitar portada</button></div><input type="file" id="lff" accept="image/*" hidden></div><label class="fld"><small>Nombre de la playlist</small><input id="lfn" maxlength="60" required value="${esc(l ? l.name : (id ? A.byId(id).artist + ' Mix' : ''))}"></label><label class="fld"><input id="lfd" maxlength="160" placeholder="Descripción (opcional)" value="${esc(l?.desc || '')}"></label><label class="si" style="padding:6px 4px;min-height:0"><span class="t"><b>Mostrarla en mi perfil</b><span>Tus amigos podrán verla y escuchar las canciones que también tengan.</span></span><input type="checkbox" id="lfs" class="ck2" ${l && l.share === false ? '' : 'checked'}></label><div class="foot">${l ? `<button type="button" class="btn d" data-a="dellist" data-id="${l.id}">Borrar</button>` : `<button type="button" class="btn t" data-a="closesheet">Cancelar</button>`}<button class="btn">${l ? 'Guardar' : 'Crear'}</button></div></form>`);
   const f = $('#lff', s);
   $('#lfp', s).onclick = () => { f.value = ''; f.click() };
   f.onchange = async () => { const file = f.files[0]; if (!file) return; try { const r = await A.shrinkCover(file); pic = { cover: r.url, hue: r.hue, sat: r.sat }; $('#lfc', s).innerHTML = prev(); $('#lfx', s).style.display = '' } catch (e) { toast('No pude abrir esa imagen') } };
   $('#lfx', s).onclick = () => { pic = null; $('#lfc', s).innerHTML = prev(); $('#lfx', s).style.display = 'none' };
   $('#lf', s).addEventListener('submit', e => { e.preventDefault(); const n = $('#lfn', s).value.trim(); if (!n) return; const cv = pic ? { cover: pic.cover, hue: pic.hue, sat: pic.sat } : { cover: null, hue: null, sat: null };
-    if (l) { l.name = n; l.desc = $('#lfd', s).value.trim(); Object.assign(l, cv) } else A.LISTS.unshift({ id: 'l' + Date.now().toString(36), name: n, desc: $('#lfd', s).value.trim(), ids: id ? [id] : [], ...cv });
+    const share = $('#lfs', s).checked; if (l) { l.name = n; l.desc = $('#lfd', s).value.trim(); l.share = share; Object.assign(l, cv) } else A.LISTS.unshift({ id: 'l' + Date.now().toString(36), name: n, desc: $('#lfd', s).value.trim(), ids: id ? [id] : [], share, ...cv });
     try { A.saveLists() } catch (err) { toast('No hay espacio para esa portada'); return } A.popLayer(); toast(l ? 'Playlist guardada' : 'Playlist creada'); A.render() })
 }
 on('newlist', el => { const id = el.dataset.id; if (layers.length) { A.popLayer(); setTimeout(() => listForm(null, id), 260) } else listForm(null, id) });
@@ -845,7 +845,7 @@ V.perfil = () => {
   return top({ back: 1 }) + ban + `<div class="prof" style="${col}"><div class="avatar">${shp('flower')}${A.avImg(A.me, 'flower')}</div><h2>${esc(me.display_name || 'Tu perfil')}</h2>${me.handle ? `<div class="muted">@${esc(me.handle)}</div>` : ''}${A.isPremium() ? `<span class="pbadge">${ms('crown', 1)}Premium</span>` : ''}
    ${me.bio ? `<p class="pbio">${esc(me.bio)}</p>` : ''}
    <div class="counts"><div><b>${rated}</b><span>reseñas</span></div><div><b>0</b><span>seguidores</span></div><div><b>0</b><span>amigos</span></div></div>
-   <div class="row2" style="justify-content:center"><button class="btn" data-a="go" data-v="ajustes/perfil">${ms('edit')}Editar perfil</button>${me.handle ? `<button class="btn t" data-a="fr-share">${ms('share')}Compartir</button>` : ''}</div></div>
+   <div class="row2" style="justify-content:center"><button class="btn" data-a="go" data-v="ajustes/perfil">${ms('edit')}Editar perfil</button><button class="btn t" data-a="viewas">${ms('visibility')}Cómo me ven</button>${me.handle ? `<button class="btn t" data-a="fr-share">${ms('share')}Compartir</button>` : ''}</div></div>
    <div class="sech"><h2>Sesiones y rachas</h2></div><div class="sgrid">${stt('local_fire_department', 'Días seguidos', plural(st.cur, 'día', 'días'))}${stt('music_note', 'Canciones distintas', dist)}${stt('graphic_eq', 'Sesiones', A.STS.sessions.length)}${stt('timer', 'Racha más larga', plural(st.best, 'día', 'días'))}</div>`
 };
 const stt = (i, l, v, s, cls = '') => `<div class="st ${cls}"><small>${ms(i)}${l}</small><b>${v}</b>${s ? `<span>${s}</span>` : ''}</div>`;
@@ -1458,7 +1458,7 @@ A.liveStart = () => {
 setInterval(() => { if (!document.hidden && A.session) A.loadFriends() }, 45000);
 function friendRow(f) {
   const live = f.playing && f.updated_at && Date.now() - new Date(f.updated_at) < 15 * 60000;
-  return `<div class="li">${f.cover ? `<div class="cov s48 round"><img src="${esc(f.cover)}" alt=""></div>` : av(f.display_name, 48, f.avatar_url)}<div class="t"><b>${esc(f.display_name || '@' + f.handle)}</b><span>${f.title ? (live ? ms('graphic_eq') : '') + esc(f.title) + ' · ' + esc(f.artist || '') + (live ? '' : ' · ' + ago(f.updated_at)) : f.handle ? '@' + esc(f.handle) : ''}</span></div>${f.spot_code ? `<button class="btn t" data-a="go" data-v="spot/${esc(f.spot_code)}">${ms('podcasts')}Spot</button>` : ''}<button class="ib" data-a="fr-menu" data-id="${f.id}" aria-label="Opciones">${ms('more_vert')}</button></div>`
+  return `<div class="li" data-a="go" data-v="u/${esc(f.id)}" role="button" tabindex="0">${f.cover ? `<div class="cov s48 round"><img src="${esc(f.cover)}" alt=""></div>` : av(f.display_name, 48, f.avatar_url)}<div class="t"><b>${esc(f.display_name || '@' + f.handle)}</b><span>${f.title ? (live ? ms('graphic_eq') : '') + esc(f.title) + ' · ' + esc(f.artist || '') + (live ? '' : ' · ' + ago(f.updated_at)) : f.handle ? '@' + esc(f.handle) : ''}</span></div>${f.spot_code ? `<button class="btn t" data-a="go" data-v="spot/${esc(f.spot_code)}">${ms('podcasts')}Spot</button>` : ''}<button class="ib" data-a="fr-menu" data-id="${f.id}" aria-label="Opciones">${ms('more_vert')}</button></div>`
 }
 function paintDrawerFriends() { const d = $('#drawer .fr'); if (!d) return; const L = (A.FR || []).filter(f => f.status === 'accepted' && f.title).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)).slice(0, 6); d.innerHTML = `<b style="font-family:var(--hf);font-size:16px">Tus amigos ahora</b>` + (L.length ? L.map(friendRow).join('') : `<p class="muted small" style="margin:6px 0 0">Cuando tus amigos escuchen algo, aparecerá aquí.</p>`) }
 A.paintDrawerFriends = paintDrawerFriends;
@@ -1542,6 +1542,99 @@ A.translateLyrics = async t => {
 /* =================== GOOGLE =================== */
 A.googleLogin = async () => { const sb = A.sb(); if (!sb) { toast('Sin conexión'); return } const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + '/' } }); if (error) toast(/provider is not enabled|Unsupported provider/i.test(error.message) ? 'Entrar con Google se activa muy pronto' : 'No se pudo abrir Google') };
 on('google', () => A.googleLogin());
+}
+/* aeffy · perfiles entre amigos y playlists compartidas */
+'use strict';
+{
+const { $, esc, ms, toast, shp, cov, on, top, badge } = A;
+const V = A.views;
+const plural = (n, a, b) => n + ' ' + (n === 1 ? a : b);
+const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\(.*?\)|\[.*?\]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+
+/* ---------- subir mis playlists para que las vean mis amigos ---------- */
+let syncT = null, syncing = false;
+const save0 = A.saveLists;
+A.saveLists = () => { save0(); clearTimeout(syncT); syncT = setTimeout(A.syncLists, 2500) };
+const sigOf = c => c ? c.length + ':' + c.slice(-40) : '';
+A.syncLists = async () => {
+  const sb = A.sb && A.sb(); if (!sb || !A.session || syncing) return; syncing = true;
+  try {
+    const uid = A.session.user.id; let dirty = false;
+    for (const l of A.LISTS) {
+      const sg = sigOf(l.cover);
+      if (l.cover && l.coverSig !== sg) {
+        try {
+          const blob = await (await fetch(l.cover)).blob(); const path = uid + '/pl-' + l.id + '-' + Date.now().toString(36) + '.jpg';
+          const { error } = await sb.storage.from('aeffy-avatars').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+          if (!error) { l.coverUrl = sb.storage.from('aeffy-avatars').getPublicUrl(path).data.publicUrl; l.coverSig = sg; dirty = true }
+        } catch (e) { }
+      }
+      if (!l.cover && l.coverUrl) { l.coverUrl = null; l.coverSig = ''; dirty = true }
+    }
+    if (dirty) save0();
+    const rows = A.LISTS.map((l, i) => ({ user_id: uid, lid: l.id, name: l.name, descr: l.desc || null, cover_url: l.cover ? l.coverUrl || null : null, visible: l.share !== false, pos: i, updated_at: new Date().toISOString(),
+      tracks: l.ids.map(A.byId).filter(Boolean).slice(0, 500).map(t => ({ t: t.name, a: t.artist, al: t.album || '', d: Math.round(t.dur || 0) })) }));
+    if (rows.length) await sb.from('aeffy_lists').upsert(rows);
+    const keep = A.LISTS.map(l => l.id);
+    const { data } = await sb.from('aeffy_lists').select('lid').eq('user_id', uid);
+    const gone = (data || []).map(r => r.lid).filter(x => !keep.includes(x));
+    if (gone.length) await sb.from('aeffy_lists').delete().eq('user_id', uid).in('lid', gone);
+  } catch (e) { }
+  syncing = false
+};
+const ls0 = A.liveStart;
+A.liveStart = () => { ls0 && ls0(); setTimeout(A.syncLists, 4000) };
+
+/* ---------- perfil de un amigo (y "así te ven") ---------- */
+const FP = {};
+async function loadFP(id) {
+  const sb = A.sb && A.sb(); if (!sb || !A.session) return;
+  const { data, error } = await sb.rpc('aeffy_friend_profile', { p_id: id });
+  FP[id] = error ? { err: 1 } : (data || { err: 1 }); FP[id].at = Date.now();
+  const { v, arg } = A.route(); if (v === 'u' && arg.split('~')[0] === id) A.render()
+}
+function mine(tr) {
+  const ix = A._ix || (A._ix = new Map()); if (ix._n !== A.tracks.length) { ix.clear(); for (const t of A.tracks) ix.set(norm(t.name) + '|' + norm(t.artist), t.id); ix._n = A.tracks.length }
+  return ix.get(norm(tr.t) + '|' + norm(tr.a)) || null
+}
+const avBig = (p, shape) => p.avatar_url ? `<svg class="avsvg" viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="fpav"><path d="${A.SH[shape]}"/></clipPath></defs><image href="${esc(p.avatar_url)}" width="100" height="100" preserveAspectRatio="xMidYMid slice" clip-path="url(#fpav)"/></svg>` : `<b>${esc((p.display_name || p.handle || '?').trim().charAt(0).toUpperCase())}</b>`;
+const plCover = (l, cls = '') => l.cover_url ? `<div class="cov ${cls}"><img src="${esc(l.cover_url)}" alt="" loading="lazy"></div>` : `<div class="cov ${cls}" style="background:linear-gradient(140deg,var(--pcl),var(--pc));display:grid;place-items:center">${ms('queue_music', 1)}</div>`;
+
+V.u = arg => {
+  const [id, lid] = (arg || '').split('~');
+  if (!A.session) return top({ back: 1 }) + `<section class="card c">${badge('person')}<h3>Inicia sesión</h3><p>Para ver perfiles de tus amigos necesitas tu cuenta aeffy.</p><button class="btn" data-a="login">Iniciar sesión</button></section>`;
+  const p = FP[id];
+  if (!p || Date.now() - p.at > 60000) loadFP(id);
+  if (!p) return top({ back: 1 }) + `<div class="ban"></div><div class="prof"><div class="avatar">${shp('flower')}</div><h2 class="muted">Cargando…</h2></div>`;
+  if (p.err) return top({ back: 1 }) + `<section class="card c">${badge('lock')}<h3>Este perfil es privado</h3><p>Solo tus amigos pueden ver el perfil y las playlists de otra persona.</p></section>`;
+  if (lid) return listView(p, lid);
+  const me = A.session.user.id === p.id, col = p.color ? `--ph:${+p.color};` : '';
+  const ban = p.banner_url ? `<div class="ban img" style="${col}background-image:url('${esc(p.banner_url)}')"></div>` : `<div class="ban" style="${col}"></div>`;
+  const n = p.now, live = n && n.playing && Date.now() - new Date(n.updated_at) < 15 * 60000;
+  const h = Math.round((p.minutes || 0) / 60);
+  return top({ back: 1 }) + (me ? `<div class="viewas">${ms('visibility')}Así ven tu perfil tus amigos</div>` : '') + ban + `<div class="prof" style="${col}"><div class="avatar">${shp('flower')}${avBig(p, 'flower')}</div><h2>${esc(p.display_name || '@' + p.handle)}</h2>${p.handle ? `<div class="muted">@${esc(p.handle)}</div>` : ''}${p.premium ? `<span class="pbadge">${ms('crown', 1)}Premium</span>` : ''}
+   ${p.bio ? `<p class="pbio">${esc(p.bio)}</p>` : ''}
+   <div class="counts"><div><b>${p.lists.length}</b><span>playlists</span></div><div><b>${p.friends || 0}</b><span>amigos</span></div><div><b>${h}</b><span>horas escuchadas</span></div></div>
+   ${me ? `<button class="btn" data-a="go" data-v="ajustes/perfil">${ms('edit')}Editar perfil</button>` : ''}</div>
+   ${n && n.title ? `<div class="sech"><h2>${live ? 'Escuchando ahora' : 'Lo último que escuchó'}</h2></div><div class="card fpnow">${n.cover ? `<div class="cov s56"><img src="${esc(n.cover)}" alt=""></div>` : `<div class="cov s56 gen">${ms('music_note')}</div>`}<div class="t"><b>${esc(n.title)}</b><span>${esc(n.artist || '')}${n.album ? ' · ' + esc(n.album) : ''}</span><small>${live ? ms('graphic_eq') + 'Sonando ahora' : ''}</small></div></div>` : ''}
+   <div class="sech"><h2>Playlists</h2>${me ? `<p>Tus amigos ven las playlists que tienes marcadas como visibles.</p>` : ''}</div>
+   ${p.lists.length ? `<div class="fpgrid">${p.lists.map(l => `<button class="fpl" data-a="go" data-v="u/${esc(p.id)}~${esc(l.lid)}">${plCover(l)}<b>${esc(l.name)}</b><span>${plural(l.tracks.length, 'canción', 'canciones')}</span></button>`).join('')}</div>` : `<section class="card c">${badge('queue_music')}<h3>${me ? 'Aún no compartes playlists' : 'Todavía no hay playlists'}</h3>${me ? '<p>Crea una playlist en tu Biblioteca y aparecerá aquí.</p>' : ''}</section>`}`
+};
+function listView(p, lid) {
+  const l = p.lists.find(x => x.lid === lid); if (!l) return top({ back: 1 }) + `<section class="card c">${badge('queue_music')}<h3>Esta playlist ya no está</h3></section>`;
+  const ids = []; const rowsH = l.tracks.map((tr, i) => { const id = mine(tr); if (id) ids.push(id); const t = id && A.byId(id);
+    return id ? `<div class="li" data-a="playin" data-id="${id}" data-ctx="fpl" role="button" tabindex="0">${cov(t, 's48')}<div class="t"><b>${esc(tr.t)}</b><span>${esc(tr.a)}</span></div></div>`
+              : `<div class="li off"><div class="cov s48 gen" style="--ch:${A.hueOf(tr.al + tr.a)}">${ms('music_off')}</div><div class="t"><b>${esc(tr.t)}</b><span>${esc(tr.a)} · No la tienes en tu teléfono</span></div></div>` }).join('');
+  A.ctx.fpl = ids;
+  const mine0 = A.session.user.id === p.id;
+  return top({ back: 1 }) + `<div style="text-align:center;margin-top:6px"><div style="width:min(240px,62vw);margin:0 auto">${plCover(l, 'big')}</div></div>
+   <div class="label" style="margin-top:18px;color:var(--mute);text-align:center">Playlist de ${esc(p.display_name || '@' + p.handle)}</div><h1 class="h1" style="font-size:30px;text-align:center">${esc(l.name)}</h1><div class="sub" style="text-align:center">${esc(l.descr || '')}${l.descr ? ' · ' : ''}${plural(l.tracks.length, 'canción', 'canciones')}${mine0 ? '' : ' · tienes ' + ids.length}</div>
+   <div class="row2" style="justify-content:center;margin:14px 0">${ids.length ? `<button class="btn" data-a="playctx" data-ctx="fpl" data-from="${esc(l.name)}">${ms('play_arrow', 1)}Reproducir las que tengo</button>` : ''}${!mine0 && ids.length ? `<button class="btn t" data-a="fpcopy" data-v="${esc(p.id)}~${esc(l.lid)}">${ms('library_add')}Guardar copia</button>` : ''}</div>
+   ${rowsH || `<section class="card c"><p>Esta playlist está vacía.</p></section>`}`
+}
+on('fpcopy', el => { const [id, lid] = el.dataset.v.split('~'); const p = FP[id]; const l = p && p.lists.find(x => x.lid === lid); if (!l) return; const ids = l.tracks.map(mine).filter(Boolean);
+  A.LISTS.unshift({ id: 'l' + Date.now().toString(36), name: l.name, desc: 'De ' + (p.display_name || '@' + p.handle), ids, share: false }); A.saveLists(); toast('Guardada en tu Biblioteca') });
+on('viewas', () => { if (A.session) A.go('u/' + A.session.user.id) });
 }
 /* aeffy · arranque, eventos, disco arrastrable, instalación */
 'use strict';
@@ -1629,7 +1722,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
 {
 const { $, esc, ms, toast, P, on } = A;
 const N = window.AeffyNative;
-A.BUILD = 10;
+A.BUILD = 11;
 A.native = !!N;
 if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }
