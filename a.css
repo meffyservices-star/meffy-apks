@@ -449,3 +449,6 @@ textarea{font:inherit;color:inherit;background:transparent;border:0;outline:0;wi
 
 .sheet.drag{transition:none}
 .sheet .grab{touch-action:none}
+
+@keyframes avspin{to{transform:rotate(360deg)}}@keyframes avbob{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.avanim .avsvg{animation:avbob 3s ease-in-out infinite}.avanim .avsvg path,.avanim .avatar>svg:first-child{transform-origin:50% 50%;animation:avspin 18s linear infinite}

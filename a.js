@@ -1011,7 +1011,7 @@ const SUB = {
      <div class="sg">Color de tu perfil ${lock('profile_color')}</div><div class="swatches" id="pfC">${[['', 'Del tema', 222], ...A.SWATCHES.map(x => [String(x.h), x.n, x.h]), ['330', 'Rosa', 330], ['280', 'Lila', 280]].map(([v, n, h]) => `<button type="button" class="swatch${(me?.color || '') === v ? ' on' : ''}" data-c="${v}"><i><svg viewBox="0 0 100 100"><path d="${A.SH.cookie}" fill="hsl(${h} 70% 70%)"/></svg></i>${n}</button>`).join('')}</div>
      <div class="sg">Quién ve lo que escuchas</div><div class="seg" id="pfV">${[['friends', 'Mis amigos'], ['nobody', 'Nadie']].map(([k, n]) => `<button type="button" data-v="${k}" class="${(me?.visibility || 'friends') === k ? 'on' : ''}">${n}</button>`).join('')}</div><div class="foot"><button class="btn">Guardar</button></div></form>` },
   apariencia: () => head('Apariencia') + `<div class="sg">Tema</div><div class="sgrp"><div class="si"><span class="t"><b>Modo de tema</b><span>Automático sigue el tema claro u oscuro de tu teléfono.</span></span></div><div style="padding:0 16px 14px"><div class="seg">${[['auto', 'brightness_auto', 'Automático'], ['light', 'light_mode', 'Claro'], ['dark', 'dark_mode', 'Oscuro']].map(([k, i, n]) => `<button class="${A.ST.mode === k ? 'on' : ''}" data-a="setv" data-k="mode" data-v="${k}">${ms(i)}${n}</button>`).join('')}</div></div>
-   ${item('', 'Fondo negro puro (AMOLED)', 'Usa negro puro (#000000) en la superficie principal del tema oscuro.', sw('amoled', A.ST.amoled))}${item('', 'Recordar dónde te quedaste', 'Al volver, sigue donde lo dejaste en vez de empezar en Inicio.', sw('remember', A.ST.remember))}</div>
+   ${item('', 'Avatar animado ' + lock('profile_color'), 'Tu foto de perfil se mueve suavecito dentro de su forma.', A.can('profile_color') ? sw('avAnim', A.ST.avAnim) : `<button class="btn t" data-a="go" data-v="premium">Ver</button>`)}${item('', 'Fondo negro puro (AMOLED)', 'Usa negro puro (#000000) en la superficie principal del tema oscuro.', sw('amoled', A.ST.amoled))}${item('', 'Recordar dónde te quedaste', 'Al volver, sigue donde lo dejaste en vez de empezar en Inicio.', sw('remember', A.ST.remember))}</div>
    <div class="sg">Color de la app</div><div class="sgrp"><div class="si"><span class="t"><span>Elige el color base de la interfaz. El reproductor se tiñe además con los colores de cada portada.</span></span></div><div class="swatches">${A.SWATCHES.map(s => `<button class="swatch${A.ST.color === s.k ? ' on' : ''}" data-a="setv" data-k="color" data-v="${s.k}"><i><svg viewBox="0 0 100 100"><defs><linearGradient id="g${s.k}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${s.h} ${Math.round(s.s * 90)}% 86%)"/><stop offset="1" stop-color="hsl(${s.h} ${Math.round(s.s * 60)}% 58%)"/></linearGradient></defs><path d="${A.SH.cookie}" fill="url(#g${s.k})"/></svg></i>${s.n}</button>`).join('')}</div>
    ${item('', 'Color neutral', 'Toda la interfaz en grises. La portada sigue dando color al reproductor.', sw('neutral', A.ST.neutral))}${item('', 'Color de la portada', 'Toda la app toma el color de la portada de la canción que suena, en lugar del color elegido.', sw('coverColor', A.ST.coverColor))}</div>`,
   biblioteca: () => { const folders = [...new Set(A.tracks.map(t => (t.folder || '').split('/')[0]).filter(Boolean))]; return head('Biblioteca local') + `<div class="sg">Carpetas de tu biblioteca</div><div class="sgrp"><div class="si"><span class="t"><span>aeffy guarda una copia de tu música dentro de la app para que suene aunque no tengas internet. Tus archivos originales no se mueven ni cambian.</span></span></div>${folders.length ? folders.map(f => item('folder', esc(f), plural(A.tracks.filter(t => (t.folder || '').startsWith(f)).length, 'canción', 'canciones'))).join('') : item('', 'Aún no hay carpetas: agrega una para empezar.', '')}
@@ -1738,7 +1738,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
 {
 const { $, esc, ms, toast, P, on } = A;
 const N = window.AeffyNative;
-A.BUILD = 13;
+A.BUILD = 17;
 A.native = !!N;
 if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }
@@ -1808,7 +1808,7 @@ if (N) {
   window.AeffyNativeCb = (k, v) => {
     if (k === 'perm') { if (v) { if (Array.isArray(A.ST.folders)) toast('Buscando tu música…'); A.nativeScan() } else { toast('Sin permiso no puedo ver tu música'); A.render() } }
     if (k === 'resume' && A.nativeHasPerm() && Date.now() - lastScan > 5 * 60000) A.nativeScan(true);
-    if (k === 'resume') fetch('/v.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(j => { if (j && j.v && A.BUILD && j.v !== A.BUILD) location.reload() }).catch(() => { });
+    if (k === 'resume') fetch('/v.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(j => { if (j && j.v && A.BUILD && j.v > A.BUILD) A.pendingUpdate = 1 }).catch(() => { });
   };
   on('nperm', () => { try { N.requestPermission() } catch (e) { } });
   on('import-dir', () => { if (!A.nativeHasPerm()) { N.requestPermission(); return } try { A._nall = JSON.parse(N.scan() || '[]') } catch (e) { } A.folderSheet(false) });
@@ -1888,11 +1888,26 @@ const apply = async s => {
   A.paintMini && A.paintMini(); return true
 };
 A.resumeNow = async () => {
-  await new Promise(r => setTimeout(r, 700)); /* esperar respuesta de otra ventana */
+  await new Promise(r => setTimeout(r, 150)); /* esperar respuesta de otra ventana */
   if (handed) { handed.at = Date.now(); if (await apply(handed)) return }
   let s = null; try { s = JSON.parse(localStorage.getItem('ae_now') || 'null') } catch (e) { }
   if (!s) return;
   /* la música del teléfono puede tardar en aparecer: reintento un rato */
   for (let i = 0; i < 8 && !P.cur; i++) { if (await apply(s)) return; await new Promise(r => setTimeout(r, 1500)) }
 };
+}
+
+/* actualizar sin interrumpir: solo cuando la app está en segundo plano y no suena nada */
+{
+const P = A.P;
+const tryUpdate = () => { if (A.pendingUpdate && document.hidden && (!P.cur || P.au.paused)) { A.saveNow && A.saveNow(); location.reload() } };
+document.addEventListener('visibilitychange', tryUpdate);
+P.au.addEventListener('pause', () => setTimeout(tryUpdate, 1500));
+}
+/* Premium: karaoke encendido de entrada y avatar animado */
+{
+if (!localStorage.getItem('ae_kara1')) { localStorage.setItem('ae_kara1', '1'); A.ST.karaoke = true; A.saveSet() }
+const applyAv = () => document.documentElement.classList.toggle('avanim', !!A.ST.avAnim && A.can('profile_color'));
+applyAv(); setInterval(applyAv, 5000);
+document.addEventListener('click', e => { const el = e.target.closest('[data-a="set"][data-k="avAnim"]'); if (el) setTimeout(applyAv, 0) });
 }
