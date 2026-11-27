@@ -162,7 +162,8 @@ A.deleteTrack = async id => {
 A.SWATCHES = [
   { k: 'aeffy', n: 'aeffy', h: 222, s: 1 }, { k: 'indigo', n: 'Índigo', h: 245, s: .9 }, { k: 'pizarra', n: 'Pizarra', h: 210, s: .35 }, { k: 'esmeralda', n: 'Esmeralda', h: 150, s: .8 },
   { k: 'cian', n: 'Cian', h: 188, s: .9 }, { k: 'coral', n: 'Coral', h: 12, s: .9 }, { k: 'ambar', n: 'Ámbar', h: 38, s: .9 }, { k: 'lima', n: 'Lima', h: 82, s: .8 },
-  { k: 'rosa', n: 'Rosa', h: 335, s: .95 }, { k: 'pastelito', n: 'Pastelito', h: 340, s: .7, pastel: 1 }];
+  { k: 'rosa', n: 'Rosa', h: 335, s: .95 }, { k: 'pastelito', n: 'Pastelito', h: 340, s: .7, pastel: 1 },
+  { k: 'chicle', n: 'Rosa chicle', h: 328, s: .8, pastel: 1, ps: 1, pl: 56 }, { k: 'menta', n: 'Menta', h: 160, s: .5, pastel: 1, ps: .7, pl: 36 }];
 A.applyPalette = (h, s) => {
   const r = document.documentElement.style, light = A.ST.mode === 'light' || (A.ST.mode === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
   if (A.ST.neutral) s = .08;
@@ -177,8 +178,9 @@ A.applyPalette = (h, s) => {
   }
   const PV = ['--bg', '--s1', '--s2', '--s3', '--s4', '--line']; PV.forEach(k => r.removeProperty(k));
   if (A._pastel && !A.ST.neutral) {
-    if (light) { [['--bg', '#fff5f8'], ['--s1', '#fdecf2'], ['--s2', '#f9e0ea'], ['--s3', '#f4d2df'], ['--s4', '#ecc0d1'], ['--line', '#efcbd8'], ['--p', 'hsl(340 52% 56%)'], ['--onp', '#fff'], ['--pc', '#f9d7e4'], ['--pcl', '#f3c0d3'], ['--mini', '#f7cfdd'], ['--onpc', 'hsl(340 42% 24%)'], ['--fpbg', 'linear-gradient(180deg,#f6c7d9,#fdeaf1 55%,#fff5f8)']].forEach(([k, v]) => r.setProperty(k, v)) }
-    else { [['--p', 'hsl(340 90% 88%)'], ['--onp', 'hsl(340 45% 22%)'], ['--pc', 'hsl(340 30% 35%)'], ['--pcl', 'hsl(340 32% 45%)'], ['--mini', 'hsl(340 28% 37%)'], ['--onpc', '#fff0f5'], ['--fpbg', 'linear-gradient(180deg,hsl(340 32% 30%) 0%,hsl(340 26% 18%) 55%,hsl(340 20% 11%) 100%)']].forEach(([k, v]) => r.setProperty(k, v)) }
+    const P = A._pastel, ps = P.ps ?? .9, pl = P.pl ?? 56, Q = x => Math.round(x * ps) + '%', H = P.h;
+    if (light) { [['--bg', `hsl(${H} ${Q(80)} 97%)`], ['--s1', `hsl(${H} ${Q(70)} 94%)`], ['--s2', `hsl(${H} ${Q(60)} 90%)`], ['--s3', `hsl(${H} ${Q(52)} 86%)`], ['--s4', `hsl(${H} ${Q(45)} 80%)`], ['--line', `hsl(${H} ${Q(45)} 85%)`], ['--p', `hsl(${H} ${Q(55)} ${pl}%)`], ['--onp', '#fff'], ['--pc', `hsl(${H} ${Q(70)} 88%)`], ['--pcl', `hsl(${H} ${Q(62)} 80%)`], ['--mini', `hsl(${H} ${Q(62)} 85%)`], ['--onpc', `hsl(${H} 42% 20%)`], ['--fpbg', `linear-gradient(180deg,hsl(${H} ${Q(65)} 84%),hsl(${H} ${Q(70)} 94%) 55%,hsl(${H} ${Q(80)} 97%))`]].forEach(([k, v]) => r.setProperty(k, v)) }
+    else { [['--p', `hsl(${H} ${Q(88)} 86%)`], ['--onp', `hsl(${H} 45% 18%)`], ['--pc', `hsl(${H} ${Q(32)} 33%)`], ['--pcl', `hsl(${H} ${Q(34)} 43%)`], ['--mini', `hsl(${H} ${Q(30)} 35%)`], ['--onpc', `hsl(${H} 60% 96%)`], ['--fpbg', `linear-gradient(180deg,hsl(${H} ${Q(34)} 29%) 0%,hsl(${H} ${Q(28)} 18%) 55%,hsl(${H} ${Q(22)} 11%) 100%)`]].forEach(([k, v]) => r.setProperty(k, v)) }
   }
   r.setProperty('--glow', `hsl(${h} ${S(50)} 40% / .35)`);
   const m = $('meta[name=theme-color]'); if (m) m.content = light ? `hsl(${h} 30% 97%)` : '#0e1016';
@@ -186,7 +188,7 @@ A.applyPalette = (h, s) => {
 A.baseColor = () => A.SWATCHES.find(x => x.k === A.ST.color) || A.SWATCHES[0];
 A.repaint = () => {
   const t = A.P && A.byId(A.P.cur); const b = A.baseColor();
-  A._pastel = !!b.pastel && !(t && A.ST.coverColor);
+  A._pastel = b.pastel && !(t && A.ST.coverColor) ? b : null;
   if (t && A.ST.coverColor) A.applyPalette(t.hue ?? b.h, t.sat ?? .6); else A.applyPalette(b.h, b.s);
   document.documentElement.dataset.mode = A.ST.mode === 'auto' ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : A.ST.mode;
   document.documentElement.dataset.amoled = A.ST.amoled ? '1' : '0';
@@ -1729,7 +1731,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
 {
 const { $, esc, ms, toast, P, on } = A;
 const N = window.AeffyNative;
-A.BUILD = 12;
+A.BUILD = 13;
 A.native = !!N;
 if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }
