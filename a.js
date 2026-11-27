@@ -1014,7 +1014,7 @@ const SUB = {
      <div class="row2" style="justify-content:center;margin:0 0 12px"><button type="button" class="btn t" data-a="avshape">${ms('interests')}Forma y animación</button></div><input type="file" id="pfFile" accept="image/*" hidden>
      <label class="fld"><small>Nombre visible</small><input id="pfN" maxlength="40" value="${esc(me?.display_name || '')}"></label>
      <label class="fld"><small>@nombre (sin espacios)</small><input id="pfH" maxlength="24" value="${esc(me?.handle || '')}" autocapitalize="off" autocomplete="off"></label>
-     <label class="fld"><small>Tu frase</small><textarea id="pfB" maxlength="160" rows="3" placeholder="Una frase que te represente" oninput="this.parentNode.querySelector('.pfcnt').textContent=this.value.length+'/160'">${esc(me?.bio || '')}</textarea><span class="pfcnt" style="display:block;text-align:right;font-size:12px;opacity:.7">${(me?.bio || '').length}/160</span></label>
+     <label class="fld"><small>Sobre ti</small><textarea id="pfB" maxlength="160" rows="3" placeholder="Cuéntale a tus amigos qué música te mueve" oninput="this.parentNode.querySelector('.pfcnt').textContent=this.value.length+'/160'">${esc(me?.bio || '')}</textarea><span class="pfcnt" style="display:block;text-align:right;font-size:12px;opacity:.7">${(me?.bio || '').length}/160</span></label>
      <div class="sg">Color de tu perfil ${lock('profile_color')}</div><div class="swatches" id="pfC">${[['', 'Del tema', 222], ...A.SWATCHES.map(x => [String(x.h), x.n, x.h]), ['330', 'Rosa', 330], ['280', 'Lila', 280]].map(([v, n, h]) => `<button type="button" class="swatch${(me?.color || '') === v ? ' on' : ''}" data-c="${v}"><i><svg viewBox="0 0 100 100"><path d="${A.SH.cookie}" fill="hsl(${h} 70% 70%)"/></svg></i>${n}</button>`).join('')}</div>
      <div class="sg">Quién ve lo que escuchas</div><div class="seg" id="pfV">${[['friends', 'Mis amigos'], ['nobody', 'Nadie']].map(([k, n]) => `<button type="button" data-v="${k}" class="${(me?.visibility || 'friends') === k ? 'on' : ''}">${n}</button>`).join('')}</div><div class="foot"><button class="btn">Guardar</button></div></form>` },
   apariencia: () => head('Apariencia') + `<div class="sg">Tema</div><div class="sgrp"><div class="si"><span class="t"><b>Modo de tema</b><span>Automático sigue el tema claro u oscuro de tu teléfono.</span></span></div><div style="padding:0 16px 14px"><div class="seg">${[['auto', 'brightness_auto', 'Automático'], ['light', 'light_mode', 'Claro'], ['dark', 'dark_mode', 'Oscuro']].map(([k, i, n]) => `<button class="${A.ST.mode === k ? 'on' : ''}" data-a="setv" data-k="mode" data-v="${k}">${ms(i)}${n}</button>`).join('')}</div></div>
@@ -1745,7 +1745,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
 {
 const { $, esc, ms, toast, P, on } = A;
 const N = window.AeffyNative;
-A.BUILD = 20;
+A.BUILD = 21;
 A.native = !!N;
 if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }
