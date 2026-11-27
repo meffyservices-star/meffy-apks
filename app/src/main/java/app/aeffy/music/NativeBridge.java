@@ -25,7 +25,7 @@ public class NativeBridge {
 
     NativeBridge(MainActivity a) { act = a; }
 
-    @JavascriptInterface public String version() { return "1.1.0"; }
+    @JavascriptInterface public String version() { return "1.2.0"; }
     @JavascriptInterface public int sdk() { return Build.VERSION.SDK_INT; }
     @JavascriptInterface public boolean hasPermission() { return act.hasMusicPermission(); }
     @JavascriptInterface public void requestPermission() { act.runOnUiThread(act::requestMusicPermission); }
@@ -121,6 +121,31 @@ public class NativeBridge {
         } catch (Exception e) {
             return false;
         }
+    }
+
+
+    /* notificaciones de mensajes */
+    @JavascriptInterface
+    public void notify(String id, String title, String body, String url) {
+        MsgNotify.show(act, id, title, body, url);
+    }
+    @JavascriptInterface
+    public void setDeviceKey(String key) {
+        act.getSharedPreferences("aeffy", 0).edit().putString("devkey", key).apply();
+        MsgJob.schedule(act);
+    }
+    @JavascriptInterface
+    public void notified(long lastId) {
+        android.content.SharedPreferences sp = act.getSharedPreferences("aeffy", 0);
+        if (lastId > sp.getLong("lastmsg", 0)) sp.edit().putLong("lastmsg", lastId).apply();
+    }
+    @JavascriptInterface
+    public boolean canNotify() {
+        return Build.VERSION.SDK_INT < 33 || act.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED;
+    }
+    @JavascriptInterface
+    public void askNotify() {
+        if (Build.VERSION.SDK_INT >= 33) act.runOnUiThread(() -> act.requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 13));
     }
 
     static Uri audioUri(long id) { return ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id); }

@@ -32,6 +32,7 @@ public class MainActivity extends Activity {
     public static final String HOST = "aeffy.vercel.app";
     public static final String HOME = "https://" + HOST + "/?src=app#/inicio";
     static MainActivity instance;
+    volatile boolean resumed;
     WebView web;
     private ValueCallback<Uri[]> fileCallback;
     private static final int REQ_FILES = 11, REQ_PERM = 12;
@@ -221,7 +222,14 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        resumed = true;
         js("window.AeffyNativeCb && AeffyNativeCb('resume', true)");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        resumed = false;
     }
 
     @Override
@@ -246,5 +254,5 @@ public class MainActivity extends Activity {
         return b.append('"').toString();
     }
 
-    static class BuildConfigInfo { static final String VERSION = "1.1.0"; }
+    static class BuildConfigInfo { static final String VERSION = "1.2.0"; }
 }
