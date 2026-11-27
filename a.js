@@ -330,7 +330,7 @@ window.addEventListener('popstate', () => { if (skipPop) { skipPop--; return } i
 
 function top(opts = {}) {
   const left = opts.back ? `<button class="ib" data-a="back" aria-label="Atrás">${ms('arrow_back')}</button>` :
-    `<button class="avatar" data-a="drawer" aria-label="Menú">${shp('cookie')}${A.me ? `<b>${esc(A.initials())}</b>` : (A.session ? '<b>?</b>' : ms('person'))}</button>`;
+    `<button class="avatar" data-a="drawer" aria-label="Menú">${shp('cookie')}${A.me ? `${A.avImg()}` : (A.session ? '<b>?</b>' : ms('person'))}</button>`;
   const upd = !opts.back && A.tracks.length ? `<button class="pill" data-a="import-dir">${ms('add_circle')}Actualizar</button>` : '';
   return `<header class="top">${left}<div class="r">${opts.right || ''}${upd}<button class="ib" data-a="go" data-v="ajustes" aria-label="Ajustes">${ms('settings')}</button></div></header>`
 }
@@ -446,7 +446,7 @@ function vBiblioteca() {
     items.push(`<button class="li" data-a="go" data-v="todas"><div class="ph pc">${ms('music_note', 1)}</div><div class="t"><b>Todas tus canciones</b><span>${ms('push_pin', 1)}${plural(A.tracks.length, 'canción', 'canciones')}</span></div></button>`);
     const folders = new Set(A.tracks.map(t => (t.folder || '').split('/')[0]).filter(Boolean));
     items.push(`<button class="li" data-a="go" data-v="carpetas"><div class="ph">${ms('folder', 1)}</div><div class="t"><b>Carpetas</b><span>${plural(folders.size, 'carpeta', 'carpetas')}</span></div></button>`);
-    A.LISTS.forEach(l => { const it = l.ids.map(A.byId).filter(Boolean); items.push(`<button class="li" data-a="go" data-v="lista/${l.id}">${it.length ? cov(it.find(t => t.cover) || it[0], 's48') : `<div class="ph">${ms('queue_music')}</div>`}<div class="t"><b>${esc(l.name)}</b><span>Playlist · ${plural(it.length, 'canción', 'canciones')}</span></div></button>`) })
+    A.LISTS.forEach(l => { const it = l.ids.map(A.byId).filter(Boolean); items.push(`<button class="li" data-a="go" data-v="lista/${l.id}">${l.cover ? cov(l, 's48') : it.length ? cov(it.find(t => t.cover) || it[0], 's48') : `<div class="ph">${ms('queue_music')}</div>`}<div class="t"><b>${esc(l.name)}</b><span>Playlist · ${plural(it.length, 'canción', 'canciones')}</span></div></button>`) })
   }
   if (libTab === 'playlists') items = items.slice(0, 3).concat(items.slice(3));
   if (!libTab || libTab === 'albumes') al.sort((a, b) => b.added - a.added).forEach(g => items.push(`<button class="li" data-a="go" data-v="album/${esc(encodeURIComponent(g.name))}">${cov(g.cv, 's48')}<div class="t"><b>${esc(g.name)}</b><span>Álbum · ${esc(g.artist)}</span></div></button>`));
@@ -466,7 +466,7 @@ function listPage(title, kind, list, ctx, sub, cvT, extra) {
 }
 function vAlbum(name) { const g = albums().find(a => a.name === name); if (!g) return notFound(); const r = A.ALRATE[g.name]; return listPage(g.name, 'Álbum', g.items, 'album', g.artist + (g.items[0].year ? ' · ' + g.items[0].year : ''), g.cv, `<button class="ib" data-a="ratealbum" data-k="${esc(g.name)}" aria-label="Calificar álbum">${ms('stars', !!r)}</button>`) }
 function vArtista(name) { const a = artists().find(x => x.name === name); if (!a) return notFound(); const it = [...a.items].sort((x, y) => (A.STS.t[y.id] || 0) - (A.STS.t[x.id] || 0)); return listPage(a.name, 'Artista', it, 'artist', fmtL(A.STS.a[a.name] || 0) + ' escuchado', a.cv) }
-function vLista(id) { const l = A.LISTS.find(x => x.id === id); if (!l) return notFound(); const it = l.ids.map(A.byId).filter(Boolean); return listPage(l.name, 'Playlist', it, 'plist', l.desc || '', it.find(t => t.cover), `<button class="ib" data-a="editlist" data-id="${l.id}" aria-label="Editar">${ms('edit')}</button>`) }
+function vLista(id) { const l = A.LISTS.find(x => x.id === id); if (!l) return notFound(); const it = l.ids.map(A.byId).filter(Boolean); return listPage(l.name, 'Playlist', it, 'plist', l.desc || '', l.cover ? { cover: l.cover, hue: l.hue } : it.find(t => t.cover), `<button class="ib" data-a="editlist" data-id="${l.id}" aria-label="Editar">${ms('edit')}</button>`) }
 function vCarpetas() { const m = {}; A.tracks.forEach(t => { const k = t.folder || 'Archivos sueltos'; (m[k] = m[k] || []).push(t) }); return top({ back: 1 }) + `<h1 class="h1">Carpetas</h1>` + (Object.keys(m).length ? Object.entries(m).sort().map(([k, v]) => { setCtx('f:' + k, v); return `<button class="li" data-a="playctx" data-ctx="f:${esc(k)}" data-from="${esc(k)}"><div class="ph">${ms('folder', 1)}</div><div class="t"><b>${esc(k.split('/').pop())}</b><span>${esc(k)} · ${plural(v.length, 'canción', 'canciones')}</span></div>${ms('play_arrow')}</button>` }).join('') : '<p class="muted">Agrega una carpeta desde Biblioteca.</p>') }
 const notFound = () => top({ back: 1 }) + `<section class="card c">${badge('search_off')}<h3>No está</h3><p>Puede que la hayas quitado de tu biblioteca.</p></section>`;
 
@@ -483,7 +483,7 @@ function vSpots() {
 function drawer() {
   const me = A.me; const d = $('#drawer');
   d.innerHTML = `<div class="bk" data-a="closedrawer"></div><nav aria-label="Menú">
-   <button class="who" data-a="dgo" data-v="${me ? 'perfil' : 'cuenta'}"><span class="avatar">${shp('cookie')}${me ? `<b>${esc(A.initials())}</b>` : ms('person')}</span><span><b>${me ? esc(me.display_name || 'Tu perfil') : 'Sin cuenta'}</b><span>${me ? (me.handle ? '@' + esc(me.handle) : 'Ver perfil') : 'Ver perfil'}</span></span></button>
+   <button class="who" data-a="dgo" data-v="${me ? 'perfil' : 'cuenta'}"><span class="avatar">${shp('cookie')}${me ? `${A.avImg()}` : ms('person')}</span><span><b>${me ? esc(me.display_name || 'Tu perfil') : 'Sin cuenta'}</b><span>${me ? (me.handle ? '@' + esc(me.handle) : 'Ver perfil') : 'Ver perfil'}</span></span></button>
    ${[['auto_awesome', 'aeffy Premium', 'premium'], ['bar_chart', 'Estadísticas', 'estadisticas'], ['leaderboard', 'Calificaciones', 'calificaciones'], ['group', 'Amigos', 'amigos'], ['redeem', 'Invita y gana', 'invita'], ['handyman', 'Herramientas', 'herramientas'], ['settings', 'Configuración y privacidad', 'ajustes']].map(([i, n, v]) => `<button class="mi" data-a="dgo" data-v="${v}">${ms(i)}${n}</button>`).join('')}
    ${A.isAdmin ? `<button class="mi" data-a="admin">${ms('admin_panel_settings')}Panel de administradora</button>` : ''}
    <div class="fr"><b style="font-family:var(--hf);font-size:16px">Tus amigos ahora</b><p class="muted small" style="margin:6px 0 0">Cuando tus amigos escuchen algo, aparecerá aquí.</p></div></nav>`;
@@ -607,8 +607,16 @@ function addTo(id) { setTimeout(() => A.sheet(A.shead('playlist_add', 'Agregar a
 on('addto', el => addTo(el.dataset.id));
 on('addtolist', el => { const l = A.LISTS.find(x => x.id === el.dataset.l); if (l && !l.ids.includes(el.dataset.id)) l.ids.push(el.dataset.id); A.saveLists(); A.popLayer(); toast('Agregada a “' + l.name + '”') });
 function listForm(l, id) {
-  const s = A.sheet(A.shead('queue_music', l ? 'Editar playlist' : 'Nueva playlist') + `<form id="lf"><label class="fld"><small>Nombre de la playlist</small><input id="lfn" maxlength="60" required value="${esc(l ? l.name : (id ? A.byId(id).artist + ' Mix' : ''))}"></label><label class="fld"><input id="lfd" maxlength="160" placeholder="Descripción (opcional)" value="${esc(l?.desc || '')}"></label><div class="foot">${l ? `<button type="button" class="btn d" data-a="dellist" data-id="${l.id}">Borrar</button>` : `<button type="button" class="btn t" data-a="closesheet">Cancelar</button>`}<button class="btn">${l ? 'Guardar' : 'Crear'}</button></div></form>`);
-  $('#lf', s).addEventListener('submit', e => { e.preventDefault(); const n = $('#lfn', s).value.trim(); if (!n) return; if (l) { l.name = n; l.desc = $('#lfd', s).value.trim() } else A.LISTS.unshift({ id: 'l' + Date.now().toString(36), name: n, desc: $('#lfd', s).value.trim(), ids: id ? [id] : [] }); A.saveLists(); A.popLayer(); toast(l ? 'Playlist guardada' : 'Playlist creada'); A.render() })
+  let pic = l && l.cover ? { cover: l.cover, hue: l.hue, sat: l.sat } : null;
+  const prev = () => pic ? `<img src="${esc(pic.cover)}" alt="">` : ms('queue_music', 1);
+  const s = A.sheet(A.shead('queue_music', l ? 'Editar playlist' : 'Nueva playlist') + `<form id="lf"><div class="plcov"><div class="cov" id="lfc">${prev()}</div><div style="display:grid;gap:6px;justify-items:start"><button type="button" class="btn t" id="lfp">${ms('add_photo_alternate')}Elegir portada</button><button type="button" class="btn g" id="lfx" style="${pic ? '' : 'display:none'}">Quitar portada</button></div><input type="file" id="lff" accept="image/*" hidden></div><label class="fld"><small>Nombre de la playlist</small><input id="lfn" maxlength="60" required value="${esc(l ? l.name : (id ? A.byId(id).artist + ' Mix' : ''))}"></label><label class="fld"><input id="lfd" maxlength="160" placeholder="Descripción (opcional)" value="${esc(l?.desc || '')}"></label><div class="foot">${l ? `<button type="button" class="btn d" data-a="dellist" data-id="${l.id}">Borrar</button>` : `<button type="button" class="btn t" data-a="closesheet">Cancelar</button>`}<button class="btn">${l ? 'Guardar' : 'Crear'}</button></div></form>`);
+  const f = $('#lff', s);
+  $('#lfp', s).onclick = () => { f.value = ''; f.click() };
+  f.onchange = async () => { const file = f.files[0]; if (!file) return; try { const r = await A.shrinkCover(file); pic = { cover: r.url, hue: r.hue, sat: r.sat }; $('#lfc', s).innerHTML = prev(); $('#lfx', s).style.display = '' } catch (e) { toast('No pude abrir esa imagen') } };
+  $('#lfx', s).onclick = () => { pic = null; $('#lfc', s).innerHTML = prev(); $('#lfx', s).style.display = 'none' };
+  $('#lf', s).addEventListener('submit', e => { e.preventDefault(); const n = $('#lfn', s).value.trim(); if (!n) return; const cv = pic ? { cover: pic.cover, hue: pic.hue, sat: pic.sat } : { cover: null, hue: null, sat: null };
+    if (l) { l.name = n; l.desc = $('#lfd', s).value.trim(); Object.assign(l, cv) } else A.LISTS.unshift({ id: 'l' + Date.now().toString(36), name: n, desc: $('#lfd', s).value.trim(), ids: id ? [id] : [], ...cv });
+    try { A.saveLists() } catch (err) { toast('No hay espacio para esa portada'); return } A.popLayer(); toast(l ? 'Playlist guardada' : 'Playlist creada'); A.render() })
 }
 on('newlist', el => { const id = el.dataset.id; if (layers.length) { A.popLayer(); setTimeout(() => listForm(null, id), 260) } else listForm(null, id) });
 on('editlist', el => listForm(A.LISTS.find(x => x.id === el.dataset.id)));
@@ -675,6 +683,20 @@ A.me = A.lsGet('ae_me', null); A.session = null; A.isAdmin = false;
 
 A.isPremium = () => !!(A.me && A.me.premium_until && new Date(A.me.premium_until) > new Date());
 A.can = f => !A.cfg.premium_features?.[f] || A.isPremium();
+A.avImg = (me = A.me) => me && me.avatar_url ? `<img class="avi" src="${esc(me.avatar_url)}" alt="">` : `<b>${esc(A.initials())}</b>`;
+A.uploadPic = async (file, kind) => {
+  const c = client(); if (!c || !A.session) return null;
+  const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = URL.createObjectURL(file) });
+  const W = kind === 'banner' ? 1200 : 512, H = kind === 'banner' ? 480 : 512;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d'); x.imageSmoothingQuality = 'high';
+  const r = Math.max(W / img.width, H / img.height), w = img.width * r, h = img.height * r; x.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+  const blob = await new Promise(ok => cv.toBlob(ok, 'image/jpeg', .88));
+  const path = A.session.user.id + '/' + kind + '-' + Date.now().toString(36) + '.jpg';
+  const { error } = await c.storage.from('aeffy-avatars').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+  if (error) { toast('No pude subir la foto'); return null }
+  return c.storage.from('aeffy-avatars').getPublicUrl(path).data.publicUrl
+};
+A.saveProfileExtra = async (o) => { const c = client(); const { data, error } = await c.rpc('aeffy_update_profile_extra', { p_bio: o.bio ?? null, p_avatar: o.avatar ?? null, p_banner: o.banner ?? null, p_color: o.color ?? null }); if (error) { toast('No se pudo guardar'); return false } A.me = data; A.lsSet('ae_me', data); return true };
 A.initials = () => { const n = (A.me?.display_name || A.me?.email || '?').trim(); const p = n.split(/\s+/); return ((p[0] || '')[0] + ((p[1] || '')[0] || '')).toUpperCase() || '?' };
 A.daysLeft = () => A.me?.premium_until ? Math.max(0, Math.ceil((new Date(A.me.premium_until) - new Date()) / 864e5)) : 0;
 A.noticeHtml = () => A.cfg.notice?.active && A.cfg.notice.text ? `<div class="notice">${ms('campaign')}<span>${esc(A.cfg.notice.text)}</span></div>` : '';
@@ -817,9 +839,12 @@ on('ppref', () => A.refreshPaypal(false));
 V.perfil = () => {
   if (!A.me) return V.cuenta();
   const me = A.me, st = A.streak(), dist = Object.keys(A.STS.t).length, rated = Object.values(A.META).filter(m => m.rating).length;
-  return top({ back: 1 }) + `<div class="ban"></div><div class="prof"><div class="avatar">${shp('flower')}<b>${esc(A.initials())}</b></div><h2>${esc(me.display_name || 'Tu perfil')}</h2>${A.isPremium() ? `<span class="pbadge">${ms('crown', 1)}Premium</span>` : ''}
+  const col = me.color ? `--ph:${+me.color};` : '';
+  const ban = me.banner_url ? `<div class="ban img" style="${col}background-image:url('${esc(me.banner_url)}')"></div>` : `<div class="ban" style="${col}"></div>`;
+  return top({ back: 1 }) + ban + `<div class="prof" style="${col}"><div class="avatar">${shp('flower')}${A.avImg()}</div><h2>${esc(me.display_name || 'Tu perfil')}</h2>${me.handle ? `<div class="muted">@${esc(me.handle)}</div>` : ''}${A.isPremium() ? `<span class="pbadge">${ms('crown', 1)}Premium</span>` : ''}
+   ${me.bio ? `<p class="pbio">${esc(me.bio)}</p>` : ''}
    <div class="counts"><div><b>${rated}</b><span>reseñas</span></div><div><b>0</b><span>seguidores</span></div><div><b>0</b><span>amigos</span></div></div>
-   <button class="btn t" data-a="go" data-v="ajustes/perfil">${ms('alternate_email')}${me.handle ? '@' + esc(me.handle) : 'Elige tu @nombre'}</button></div>
+   <div class="row2" style="justify-content:center"><button class="btn" data-a="go" data-v="ajustes/perfil">${ms('edit')}Editar perfil</button>${me.handle ? `<button class="btn t" data-a="fr-share">${ms('share')}Compartir</button>` : ''}</div></div>
    <div class="sech"><h2>Sesiones y rachas</h2></div><div class="sgrid">${stt('local_fire_department', 'Días seguidos', plural(st.cur, 'día', 'días'))}${stt('music_note', 'Canciones distintas', dist)}${stt('graphic_eq', 'Sesiones', A.STS.sessions.length)}${stt('timer', 'Racha más larga', plural(st.best, 'día', 'días'))}</div>`
 };
 const stt = (i, l, v, s, cls = '') => `<div class="st ${cls}"><small>${ms(i)}${l}</small><b>${v}</b>${s ? `<span>${s}</span>` : ''}</div>`;
@@ -829,7 +854,7 @@ V.cuenta = () => {
   let h = top({ back: 1 }) + `<h1 class="h1">Cuenta</h1>`;
   if (!A.session) return h + `<section class="card" style="display:flex;gap:14px;align-items:center;margin-top:12px"><span class="avatar" style="width:52px;height:52px">${shp('cookie')}${ms('person')}</span><div style="flex:1"><b style="font-family:var(--hf);font-size:18px">Cuenta aeffy</b><p class="muted small" style="margin:2px 0 10px">Gratis. Sirve para tus amigos y para aeffy Premium. aeffy funciona igual sin cuenta.</p><button class="btn" data-a="login">${ms('login')}Iniciar sesión</button></div></section>`;
   const me = A.me || {};
-  return h + `<section class="card" style="display:flex;gap:14px;align-items:center;margin-top:12px"><span class="avatar" style="width:52px;height:52px">${shp('cookie')}<b>${esc(A.initials())}</b></span><div style="flex:1"><b style="font-family:var(--hf);font-size:18px">Sesión iniciada</b><div class="muted small">Cuenta aeffy</div><button class="btn g" style="padding:0;margin-top:6px" data-a="signout">${ms('logout')}Cerrar sesión</button></div></section>
+  return h + `<section class="card" style="display:flex;gap:14px;align-items:center;margin-top:12px"><span class="avatar" style="width:52px;height:52px">${shp('cookie')}${A.avImg()}</span><div style="flex:1"><b style="font-family:var(--hf);font-size:18px">Sesión iniciada</b><div class="muted small">Cuenta aeffy</div><button class="btn g" style="padding:0;margin-top:6px" data-a="signout">${ms('logout')}Cerrar sesión</button></div></section>
    <div class="sg">Información de la cuenta</div><div class="sgrp">
     <button class="si" data-a="go" data-v="ajustes/perfil"><span class="ic">${ms('badge')}</span><span class="t"><b>Nombre visible</b><span>${esc(me.display_name || 'Sin nombre')}</span></span><span class="chev">${ms('chevron_right')}</span></button>
     <button class="si" data-a="go" data-v="ajustes/perfil"><span class="ic">${ms('alternate_email')}</span><span class="t"><b>Nombre de usuario</b><span>${me.handle ? '@' + esc(me.handle) : 'Elige un nombre y tus invitaciones serán siempre el mismo enlace'}</span></span><span class="chev">${ms('chevron_right')}</span></button>
@@ -913,7 +938,7 @@ on('pickalbum', () => A.sheet(A.shead('album', 'Elige un álbum') + A.albums().m
 on('ratealbum2', el => { A.popLayer(); setTimeout(() => A.ACT.ratealbum(el), 260) });
 
 /* ---------- AMIGOS ---------- */
-V.amigos = () => top({ back: 1 }) + `<h1 class="h1">Amigos</h1>` + (A.session ? `<section class="card" style="background:linear-gradient(160deg,var(--pcl),var(--pc));color:var(--onpc)"><div style="display:flex;gap:14px;align-items:center"><span class="avatar" style="width:56px;height:56px">${shp('cookie')}<b>${esc(A.initials())}</b></span><div><b style="font-family:var(--hf);font-size:20px">${esc(A.me?.display_name || 'Tú')}</b><div style="opacity:.85">${A.me?.handle ? '@' + esc(A.me.handle) : 'Elige tu @nombre para que te encuentren'}</div></div></div><div class="row2" style="margin-top:14px"><button class="btn" data-a="go" data-v="ajustes/perfil">${ms('alternate_email')}${A.me?.handle ? 'Cambiar @nombre' : 'Elegir @nombre'}</button><button class="btn t" data-a="go" data-v="invita">${ms('redeem')}Invita y gana</button></div></section><div class="sech"><h2>Tus amigos</h2><p>Cuando tus amigos escuchen algo, aparecerá aquí.</p></div><section class="card c">${badge('group')}<h3>Aún no tienes amigos aquí</h3><p>Comparte tu enlace para que te agreguen.</p></section>`
+V.amigos = () => top({ back: 1 }) + `<h1 class="h1">Amigos</h1>` + (A.session ? `<section class="card" style="background:linear-gradient(160deg,var(--pcl),var(--pc));color:var(--onpc)"><div style="display:flex;gap:14px;align-items:center"><span class="avatar" style="width:56px;height:56px">${shp('cookie')}${A.avImg()}</span><div><b style="font-family:var(--hf);font-size:20px">${esc(A.me?.display_name || 'Tú')}</b><div style="opacity:.85">${A.me?.handle ? '@' + esc(A.me.handle) : 'Elige tu @nombre para que te encuentren'}</div></div></div><div class="row2" style="margin-top:14px"><button class="btn" data-a="go" data-v="ajustes/perfil">${ms('alternate_email')}${A.me?.handle ? 'Cambiar @nombre' : 'Elegir @nombre'}</button><button class="btn t" data-a="go" data-v="invita">${ms('redeem')}Invita y gana</button></div></section><div class="sech"><h2>Tus amigos</h2><p>Cuando tus amigos escuchen algo, aparecerá aquí.</p></div><section class="card c">${badge('group')}<h3>Aún no tienes amigos aquí</h3><p>Comparte tu enlace para que te agreguen.</p></section>`
   : `<section class="card" style="background:linear-gradient(160deg,var(--pcl),var(--pc));color:var(--onpc);margin-top:12px"><div style="height:90px;display:grid;place-items:center">${ms('group', 1)}</div><h2 style="font-size:24px">Inicia sesión para tener amigos</h2><p style="opacity:.85">Con tu cuenta de aeffy tienes una tarjeta con tu @nombre y un enlace para que te agreguen. Es gratis.</p><button class="btn" data-a="login">${ms('login')}Iniciar sesión</button></section>`);
 
 /* ---------- INVITA Y GANA ---------- */
@@ -934,7 +959,7 @@ on('checkupd', async () => { try { const r = await navigator.serviceWorker?.getR
 
 /* ---------- AJUSTES ---------- */
 const SEC = [
-  ['Cuenta', [['cuenta', 'account_circle', 'Cuenta', 'Sesión, datos de la cuenta y seguridad'], ['privacidad', 'shield', 'Datos y privacidad', ''], ['perfil', 'badge', 'Perfil público', ''], ['premium', 'crown', 'aeffy Premium', '']]],
+  ['Cuenta', [['cuenta', 'account_circle', 'Cuenta', 'Sesión, datos de la cuenta y seguridad'], ['privacidad', 'shield', 'Datos y privacidad', ''], ['perfil', 'badge', 'Editar perfil', 'Foto, portada, nombre y más'], ['premium', 'crown', 'aeffy Premium', '']]],
   ['Aspecto', [['apariencia', 'palette', 'Apariencia', '']]],
   ['Música', [['biblioteca', 'folder', 'Biblioteca local', ''], ['reproduccion', 'play_circle', 'Reproducción', ''], ['eq', 'tune', 'Ecualizador y Tono', ''], ['letra', 'mic', 'Letra', '']]],
   ['Conexiones y datos', [['spots', 'podcasts', 'Spots', ''], ['recast', 'devices', 'aeffy Recast', ''], ['copias', 'inventory_2', 'Copias e historial', '']]],
@@ -944,7 +969,7 @@ V.ajustes = arg => {
   if (arg) return (SUB[arg] || (() => notFound()))();
   const f = sq.trim().toLowerCase();
   let h = top({ back: 1, right: '' }) + `<h1 class="h1" style="font-size:36px">Ajustes</h1><label class="search">${ms('search')}<input id="sq" type="search" placeholder="Buscar ajustes" value="${esc(sq)}"></label>`;
-  if (!f) h += `<button class="si" data-a="setgo" data-v="cuenta" style="background:var(--pc);color:var(--onpc);border-radius:24px"><span class="avatar" style="width:48px;height:48px">${shp('cookie')}${A.me ? `<b>${esc(A.initials())}</b>` : ms('person')}</span><span class="t"><b style="font-family:var(--hf);font-size:18px">${A.me ? esc(A.me.display_name || 'Tu cuenta') : 'Sin cuenta'}</b><span style="color:inherit;opacity:.85">Cuenta · Sesión, datos de la cuenta y seguridad</span></span><span>${ms('chevron_right')}</span></button>`;
+  if (!f) h += `<button class="si" data-a="setgo" data-v="cuenta" style="background:var(--pc);color:var(--onpc);border-radius:24px"><span class="avatar" style="width:48px;height:48px">${shp('cookie')}${A.me ? `${A.avImg()}` : ms('person')}</span><span class="t"><b style="font-family:var(--hf);font-size:18px">${A.me ? esc(A.me.display_name || 'Tu cuenta') : 'Sin cuenta'}</b><span style="color:inherit;opacity:.85">Cuenta · Sesión, datos de la cuenta y seguridad</span></span><span>${ms('chevron_right')}</span></button>`;
   SEC.forEach(([g, items]) => { const it = items.filter(x => !f || (x[2] + ' ' + g).toLowerCase().includes(f)); if (!it.length) return; h += `<div class="sg">${g}</div><div class="sgrp">${it.map(([k, i, n]) => `<button class="si" data-a="setgo" data-v="${k}"><span class="ic">${ms(i)}</span><span class="t"><b>${n}</b></span><span class="chev">${ms('chevron_right')}</span></button>`).join('')}</div>` });
   if (A.isAdmin) h += `<div class="sg">Administración</div><div class="sgrp"><button class="si" data-a="admin"><span class="ic">${ms('admin_panel_settings')}</span><span class="t"><b>Panel de administradora</b><span>Usuarios, Premium, códigos, precios y PayPal</span></span><span class="chev">${ms('chevron_right')}</span></button></div>`;
   return h
@@ -957,7 +982,18 @@ const head = t => top({ back: 1 }) + `<div class="sub" style="margin-top:-4px">A
 const item = (i, b, s, end) => `<div class="si">${i ? `<span class="ic">${ms(i)}</span>` : ''}<span class="t"><b>${b}</b>${s ? `<span>${s}</span>` : ''}</span>${end || ''}</div>`;
 const SUB = {
   privacidad: () => head('Datos y privacidad') + `<div class="sg">Tus datos</div><div class="sgrp">${item('smartphone', 'Tu música se queda contigo', 'Tus canciones, historial y estadísticas viven en este teléfono. aeffy no sube tus archivos a ningún lado.')}${item('cloud', 'Con cuenta', 'Tu perfil, tu @nombre, tus minutos totales y tu Premium se guardan en tu cuenta para seguirte a otros dispositivos.')}${item('visibility', 'Lo que ven tus amigos', 'Qué escuchas ahora y desde hace cuánto.', sw('showFriends', A.ST.showFriends))}</div><div class="sg">Borrar</div><div class="sgrp"><button class="si" data-a="wipe"><span class="ic">${ms('delete_sweep')}</span><span class="t"><b>Borrar biblioteca y estadísticas</b><span>Quita todo lo que agregaste en este teléfono. Tus archivos originales no se tocan.</span></span></button></div>`,
-  perfil: () => { const me = A.me; if (!A.session) return head('Perfil público') + `<div class="sg">Cuenta aeffy</div><div class="sgrp">${item('account_circle', 'Esto va con tu cuenta', 'Sirve para tus amigos y para aeffy Premium.', `<button class="btn" data-a="login">Iniciar sesión</button>`)}</div>`; return head('Perfil público') + `<form id="pf"><label class="fld"><small>Nombre visible</small><input id="pfN" maxlength="40" value="${esc(me?.display_name || '')}"></label><label class="fld"><small>@nombre (sin espacios)</small><input id="pfH" maxlength="24" value="${esc(me?.handle || '')}" autocapitalize="off" autocomplete="off"></label><div class="sg">Quién ve lo que escuchas</div><div class="seg" id="pfV">${[['friends', 'Mis amigos'], ['nobody', 'Nadie']].map(([k, n]) => `<button type="button" data-v="${k}" class="${(me?.visibility || 'friends') === k ? 'on' : ''}">${n}</button>`).join('')}</div><div class="foot"><button class="btn">Guardar</button></div></form>` },
+  perfil: () => { const me = A.me; if (!A.session) return head('Editar perfil') + `<div class="sg">Cuenta aeffy</div><div class="sgrp">${item('account_circle', 'Esto va con tu cuenta', 'Sirve para tus amigos y para aeffy Premium.', `<button class="btn" data-a="login">Iniciar sesión</button>`)}</div>`;
+    const col = me?.color ? `--ph:${+me.color};` : '';
+    return head('Editar perfil') + `<form id="pf">
+     <div class="pfedit"><button type="button" class="ban${me?.banner_url ? ' img' : ''}" id="pfBan" style="${col}${me?.banner_url ? `background-image:url('${esc(me.banner_url)}')` : ''}" data-a="pfpick" data-k="banner"><span class="pfcam">${ms('photo_camera')}Cambiar portada</span></button>
+     <button type="button" class="avatar pfav" id="pfAv" data-a="pfpick" data-k="avatar">${shp('flower')}${A.avImg()}<span class="pfcam2">${ms('photo_camera', 1)}</span></button></div>
+     <div class="row2" style="justify-content:center;margin:6px 0 10px">${me?.avatar_url ? `<button type="button" class="btn g" data-a="pfrm" data-k="avatar">Quitar foto</button>` : ''}${me?.banner_url ? `<button type="button" class="btn g" data-a="pfrm" data-k="banner">Quitar portada</button>` : ''}</div>
+     <input type="file" id="pfFile" accept="image/*" hidden>
+     <label class="fld"><small>Nombre visible</small><input id="pfN" maxlength="40" value="${esc(me?.display_name || '')}"></label>
+     <label class="fld"><small>@nombre (sin espacios)</small><input id="pfH" maxlength="24" value="${esc(me?.handle || '')}" autocapitalize="off" autocomplete="off"></label>
+     <label class="fld"><small>Sobre ti</small><textarea id="pfB" maxlength="160" rows="3" placeholder="Cuéntale a tus amigos qué música te mueve">${esc(me?.bio || '')}</textarea></label>
+     <div class="sg">Color de tu perfil ${lock('profile_color')}</div><div class="swatches" id="pfC">${[['', 'Del tema', 222], ...A.SWATCHES.map(x => [String(x.h), x.n, x.h]), ['330', 'Rosa', 330], ['280', 'Lila', 280]].map(([v, n, h]) => `<button type="button" class="swatch${(me?.color || '') === v ? ' on' : ''}" data-c="${v}"><i><svg viewBox="0 0 100 100"><path d="${A.SH.cookie}" fill="hsl(${h} 70% 70%)"/></svg></i>${n}</button>`).join('')}</div>
+     <div class="sg">Quién ve lo que escuchas</div><div class="seg" id="pfV">${[['friends', 'Mis amigos'], ['nobody', 'Nadie']].map(([k, n]) => `<button type="button" data-v="${k}" class="${(me?.visibility || 'friends') === k ? 'on' : ''}">${n}</button>`).join('')}</div><div class="foot"><button class="btn">Guardar</button></div></form>` },
   apariencia: () => head('Apariencia') + `<div class="sg">Tema</div><div class="sgrp"><div class="si"><span class="t"><b>Modo de tema</b><span>Automático sigue el tema claro u oscuro de tu teléfono.</span></span></div><div style="padding:0 16px 14px"><div class="seg">${[['auto', 'brightness_auto', 'Automático'], ['light', 'light_mode', 'Claro'], ['dark', 'dark_mode', 'Oscuro']].map(([k, i, n]) => `<button class="${A.ST.mode === k ? 'on' : ''}" data-a="setv" data-k="mode" data-v="${k}">${ms(i)}${n}</button>`).join('')}</div></div>
    ${item('', 'Fondo negro puro (AMOLED)', 'Usa negro puro (#000000) en la superficie principal del tema oscuro.', sw('amoled', A.ST.amoled))}${item('', 'Recordar dónde te quedaste', 'Al volver, sigue donde lo dejaste en vez de empezar en Inicio.', sw('remember', A.ST.remember))}</div>
    <div class="sg">Color de la app</div><div class="sgrp"><div class="si"><span class="t"><span>Elige el color base de la interfaz. El reproductor se tiñe además con los colores de cada portada.</span></span></div><div class="swatches">${A.SWATCHES.map(s => `<button class="swatch${A.ST.color === s.k ? ' on' : ''}" data-a="setv" data-k="color" data-v="${s.k}"><i><svg viewBox="0 0 100 100"><defs><linearGradient id="g${s.k}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${s.h} ${Math.round(s.s * 90)}% 86%)"/><stop offset="1" stop-color="hsl(${s.h} ${Math.round(s.s * 60)}% 58%)"/></linearGradient></defs><path d="${A.SH.cookie}" fill="url(#g${s.k})"/></svg></i>${s.n}</button>`).join('')}</div>
@@ -985,8 +1021,17 @@ const SUB = {
    <div class="sg">Importar tu historial ${lock('history_import')}</div><div class="sgrp"><div class="si"><span class="t"><span>Trae lo que escuchaste en otros sitios: tus estadísticas y tus mixes tendrán en cuenta años pasados. Todo se procesa en tu teléfono.</span></span></div>${item('csv', 'Archivo CSV', 'Una fila por escucha, con columnas de fecha, artista y canción (álbum y duración, si los tienes).', `<button class="btn t" data-a="csv">Importar</button>`)}${item('', 'Spotify', 'Pide tus datos en Spotify → Privacidad → «Historial de reproducción ampliado» y sube los JSON.', `<button class="btn t" data-a="spjson">Importar</button>`)}</div>`
 };
 SUB.perfil.after = 1;
+let pfKind = 'avatar';
+on('pfpick', el => { pfKind = el.dataset.k; const i = $('#pfFile'); if (!i) return; i.value = ''; i.onchange = async () => { const file = i.files[0]; if (!file) return; toast('Subiendo foto…'); const url = await A.uploadPic(file, pfKind); if (!url) return; if (await A.saveProfileExtra(pfKind === 'avatar' ? { avatar: url } : { banner: url })) { toast(pfKind === 'avatar' ? 'Foto de perfil lista' : 'Portada lista'); A.render() } }; i.click() });
+on('pfrm', async el => { if (await A.saveProfileExtra(el.dataset.k === 'avatar' ? { avatar: '' } : { banner: '' })) { toast('Listo'); A.render() } });
 A.afterRender = v => {
-  const f = $('#pf'); if (f) { $$('#pfV button').forEach(b => b.onclick = () => { $$('#pfV button').forEach(x => x.classList.toggle('on', x === b)) }); f.onsubmit = async e => { e.preventDefault(); const ok = await A.updateProfile($('#pfN').value, $('#pfH').value, ($('#pfV .on') || {}).dataset?.v); if (ok) toast('Perfil guardado') } }
+  const f = $('#pf'); if (f) {
+    $$('#pfV button').forEach(b => b.onclick = () => { $$('#pfV button').forEach(x => x.classList.toggle('on', x === b)) });
+    $$('#pfC button').forEach(b => b.onclick = () => { if (b.dataset.c && !A.can('profile_color')) { A.go('premium'); return } $$('#pfC button').forEach(x => x.classList.toggle('on', x === b)); const h = b.dataset.c; $('#pfBan').style.setProperty('--ph', h || ''); $('#pfAv').style.setProperty('--ph', h || '') });
+    f.onsubmit = async e => { e.preventDefault(); const b = f.querySelector('.foot .btn'); b.disabled = true;
+      const ok = await A.updateProfile($('#pfN').value, $('#pfH').value, ($('#pfV .on') || {}).dataset?.v);
+      const c = ($('#pfC .on') || {}).dataset?.c ?? ''; const ok2 = ok && await A.saveProfileExtra({ bio: $('#pfB').value, color: A.can('profile_color') ? c : null });
+      b.disabled = false; if (ok && ok2) { toast('Perfil guardado'); A.go('perfil') } } }
 };
 on('set', el => { const k = el.dataset.k; A.ST[k] = k === 'recast' ? A.ST[k] === false : !A.ST[k]; A.saveSet(); el.classList.toggle('on', A.ST[k]); el.setAttribute('aria-checked', A.ST[k]); A.applyAudio(); if (['amoled', 'neutral', 'coverColor'].includes(k)) A.repaint(); if (k === 'crossfade') A.render(); if (k === 'showFriends') A.publishNow && A.publishNow() });
 on('setv', el => { const k = el.dataset.k; A.ST[k] = el.dataset.v; A.saveSet(); A.repaint(); A.applyAudio(); A.render() });
@@ -1225,7 +1270,7 @@ const ago = d => { const s = (Date.now() - new Date(d)) / 1000; if (s < 90) retu
 async function thumb(src, size = 96) { if (!src) return null; try { const i = new Image(); i.src = src; await i.decode(); const c = document.createElement('canvas'); c.width = c.height = size; c.getContext('2d').drawImage(i, 0, 0, size, size); return c.toDataURL('image/jpeg', .7) } catch (e) { return null } }
 const COLORS = ['#ff7eb3', '#8f6bff', '#3b9bf5', '#2fbf8f', '#ffb347', '#ef5d5d', '#6c8cff', '#c06cff'];
 const colorOf = s => COLORS[A.hueOf(s || '') % COLORS.length];
-const av = (name, sz = 40) => `<i class="pav" style="width:${sz}px;height:${sz}px;background:${colorOf(name)}">${esc((name || '?').trim().charAt(0).toUpperCase())}</i>`;
+const av = (name, sz = 40, img) => img ? `<i class="pav" style="width:${sz}px;height:${sz}px;background:url('${esc(img)}') center/cover"></i>` : `<i class="pav" style="width:${sz}px;height:${sz}px;background:${colorOf(name)}">${esc((name || '?').trim().charAt(0).toUpperCase())}</i>`;
 
 /* =================== SPOTS =================== */
 const S = A.spot = { role: null, code: null, ch: null, peers: new Map(), people: [], chat: [], meta: null, vote: null, votes: {}, state: null, me: null, timer: null, started: 0 };
@@ -1373,7 +1418,7 @@ V.spots = () => {
   if (!S.role) {
     let h = spotsHome();
     const fs = (A.FR || []).filter(f => f.status === 'accepted' && f.spot_code);
-    if (fs.length) h += fs.map(f => `<button class="li" data-a="go" data-v="spot/${esc(f.spot_code)}">${av(f.display_name)}<div class="t"><b>Spot de ${esc(f.display_name || '@' + f.handle)}</b><span>${f.title ? ms('graphic_eq') + esc(f.title) + ' · ' + esc(f.artist || '') : 'Abierto ahora'}</span></div><span class="btn t">Entrar</span></button>`).join('');
+    if (fs.length) h += fs.map(f => `<button class="li" data-a="go" data-v="spot/${esc(f.spot_code)}">${av(f.display_name, 40, f.avatar_url)}<div class="t"><b>Spot de ${esc(f.display_name || '@' + f.handle)}</b><span>${f.title ? ms('graphic_eq') + esc(f.title) + ' · ' + esc(f.artist || '') : 'Abierto ahora'}</span></div><span class="btn t">Entrar</span></button>`).join('');
     return h
   }
   const host = S.role === 'host', st = S.state, t = host ? A.byId(P.cur) : st?.t;
@@ -1412,7 +1457,7 @@ A.liveStart = () => {
 setInterval(() => { if (!document.hidden && A.session) A.loadFriends() }, 45000);
 function friendRow(f) {
   const live = f.playing && f.updated_at && Date.now() - new Date(f.updated_at) < 15 * 60000;
-  return `<div class="li">${f.cover ? `<div class="cov s48 round"><img src="${esc(f.cover)}" alt=""></div>` : av(f.display_name, 48)}<div class="t"><b>${esc(f.display_name || '@' + f.handle)}</b><span>${f.title ? (live ? ms('graphic_eq') : '') + esc(f.title) + ' · ' + esc(f.artist || '') + (live ? '' : ' · ' + ago(f.updated_at)) : f.handle ? '@' + esc(f.handle) : ''}</span></div>${f.spot_code ? `<button class="btn t" data-a="go" data-v="spot/${esc(f.spot_code)}">${ms('podcasts')}Spot</button>` : ''}<button class="ib" data-a="fr-menu" data-id="${f.id}" aria-label="Opciones">${ms('more_vert')}</button></div>`
+  return `<div class="li">${f.cover ? `<div class="cov s48 round"><img src="${esc(f.cover)}" alt=""></div>` : av(f.display_name, 48, f.avatar_url)}<div class="t"><b>${esc(f.display_name || '@' + f.handle)}</b><span>${f.title ? (live ? ms('graphic_eq') : '') + esc(f.title) + ' · ' + esc(f.artist || '') + (live ? '' : ' · ' + ago(f.updated_at)) : f.handle ? '@' + esc(f.handle) : ''}</span></div>${f.spot_code ? `<button class="btn t" data-a="go" data-v="spot/${esc(f.spot_code)}">${ms('podcasts')}Spot</button>` : ''}<button class="ib" data-a="fr-menu" data-id="${f.id}" aria-label="Opciones">${ms('more_vert')}</button></div>`
 }
 function paintDrawerFriends() { const d = $('#drawer .fr'); if (!d) return; const L = (A.FR || []).filter(f => f.status === 'accepted' && f.title).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)).slice(0, 6); d.innerHTML = `<b style="font-family:var(--hf);font-size:16px">Tus amigos ahora</b>` + (L.length ? L.map(friendRow).join('') : `<p class="muted small" style="margin:6px 0 0">Cuando tus amigos escuchen algo, aparecerá aquí.</p>`) }
 A.paintDrawerFriends = paintDrawerFriends;
@@ -1421,9 +1466,9 @@ V.amigos = () => {
   if (!A.session) return oldAmigos();
   const FR = A.FR || [], inc = FR.filter(f => f.status === 'pending' && f.incoming), out = FR.filter(f => f.status === 'pending' && !f.incoming), acc = FR.filter(f => f.status === 'accepted').sort((a, b) => (b.playing ? 1 : 0) - (a.playing ? 1 : 0) || new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
   return top({ back: 1 }) + `<h1 class="h1">Amigos</h1>
-   <section class="card" style="background:linear-gradient(160deg,var(--pcl),var(--pc));color:var(--onpc)"><div style="display:flex;gap:14px;align-items:center"><span class="avatar" style="width:56px;height:56px">${shp('cookie')}<b>${esc(A.initials())}</b></span><div><b style="font-family:var(--hf);font-size:20px">${esc(A.me?.display_name || 'Tú')}</b><div style="opacity:.85">${A.me?.handle ? '@' + esc(A.me.handle) : 'Elige tu @nombre para que te encuentren'}</div></div></div>${A.me?.handle ? `<button class="btn" style="margin-top:12px" data-a="fr-share">${ms('share')}Compartir mi @nombre</button>` : `<button class="btn" style="margin-top:12px" data-a="go" data-v="ajustes/perfil">${ms('alternate_email')}Elegir @nombre</button>`}</section>
+   <section class="card" style="background:linear-gradient(160deg,var(--pcl),var(--pc));color:var(--onpc)"><div style="display:flex;gap:14px;align-items:center"><span class="avatar" style="width:56px;height:56px">${shp('cookie')}${A.avImg()}</span><div><b style="font-family:var(--hf);font-size:20px">${esc(A.me?.display_name || 'Tú')}</b><div style="opacity:.85">${A.me?.handle ? '@' + esc(A.me.handle) : 'Elige tu @nombre para que te encuentren'}</div></div></div>${A.me?.handle ? `<button class="btn" style="margin-top:12px" data-a="fr-share">${ms('share')}Compartir mi @nombre</button>` : `<button class="btn" style="margin-top:12px" data-a="go" data-v="ajustes/perfil">${ms('alternate_email')}Elegir @nombre</button>`}</section>
    <form id="frAdd" class="search" style="margin-top:14px">${ms('person_add')}<input id="frH" placeholder="Agrega a alguien por su @nombre" autocapitalize="off" autocomplete="off"><button class="btn t">Agregar</button></form>
-   ${inc.length ? `<div class="sech"><h2>Solicitudes</h2></div>` + inc.map(f => `<div class="li">${av(f.display_name, 48)}<div class="t"><b>${esc(f.display_name || '')}</b><span>@${esc(f.handle || '')} quiere ser tu amigo</span></div><button class="btn" data-a="fr-ok" data-id="${f.id}">Aceptar</button><button class="ib" data-a="fr-del" data-id="${f.id}" aria-label="Rechazar">${ms('close')}</button></div>`).join('') : ''}
+   ${inc.length ? `<div class="sech"><h2>Solicitudes</h2></div>` + inc.map(f => `<div class="li">${av(f.display_name, 48, f.avatar_url)}<div class="t"><b>${esc(f.display_name || '')}</b><span>@${esc(f.handle || '')} quiere ser tu amigo</span></div><button class="btn" data-a="fr-ok" data-id="${f.id}">Aceptar</button><button class="ib" data-a="fr-del" data-id="${f.id}" aria-label="Rechazar">${ms('close')}</button></div>`).join('') : ''}
    <div class="sech"><h2>Lo que escuchan ahora</h2><p>Se actualiza en vivo.</p></div>${acc.length ? acc.map(friendRow).join('') : `<section class="card c">${badge('group')}<h3>Aún no tienes amigos aquí</h3><p>Agrégalos por su @nombre o comparte el tuyo.</p></section>`}
    ${out.length ? `<div class="sech"><h2>Enviadas</h2></div>` + out.map(f => `<div class="li">${av(f.display_name, 40)}<div class="t"><b>${esc(f.display_name || '')}</b><span>Esperando respuesta</span></div><button class="ib" data-a="fr-del" data-id="${f.id}" aria-label="Cancelar">${ms('close')}</button></div>`).join('') : ''}
    <div class="sech"><h2>Invita y gana</h2><p>Gana 12 h de Premium por cada amigo que llegue con tu enlace.</p></div><button class="btn t" data-a="go" data-v="invita">${ms('redeem')}Ver mi enlace</button>`
@@ -1438,7 +1483,7 @@ document.addEventListener('submit', async e => {
 async function accept(id) { await A.sb().from('aeffy_friends').update({ status: 'accepted' }).eq('a', id).eq('b', A.session.user.id); toast('Ahora son amigos'); A.loadFriends() }
 on('fr-ok', el => accept(el.dataset.id));
 on('fr-del', async el => { const me = A.session.user.id, id = el.dataset.id; await A.sb().from('aeffy_friends').delete().or(`and(a.eq.${me},b.eq.${id}),and(a.eq.${id},b.eq.${me})`); A.popLayer && document.querySelector('.scrim') && A.popLayer(); A.loadFriends() });
-on('fr-menu', el => { const f = A.FR.find(x => x.id === el.dataset.id); A.sheet(`<div class="grab"></div><div class="shtrack">${av(f.display_name, 48)}<div><b>${esc(f.display_name || '')}</b><span>@${esc(f.handle || '')}</span></div></div>${f.spot_code ? `<button class="mi" data-a="go" data-v="spot/${esc(f.spot_code)}">${ms('podcasts')}Entrar a su Spot</button>` : ''}${f.title ? `<button class="mi" data-a="fr-find" data-t="${esc(f.title)}">${ms('search')}Buscar “${esc(f.title)}” en mi biblioteca</button>` : ''}<button class="mi bad" data-a="fr-del" data-id="${f.id}">${ms('person_remove')}Quitar de amigos</button>`, { head: false }) });
+on('fr-menu', el => { const f = A.FR.find(x => x.id === el.dataset.id); A.sheet(`<div class="grab"></div><div class="shtrack">${av(f.display_name, 48, f.avatar_url)}<div><b>${esc(f.display_name || '')}</b><span>@${esc(f.handle || '')}</span></div></div>${f.spot_code ? `<button class="mi" data-a="go" data-v="spot/${esc(f.spot_code)}">${ms('podcasts')}Entrar a su Spot</button>` : ''}${f.title ? `<button class="mi" data-a="fr-find" data-t="${esc(f.title)}">${ms('search')}Buscar “${esc(f.title)}” en mi biblioteca</button>` : ''}<button class="mi bad" data-a="fr-del" data-id="${f.id}">${ms('person_remove')}Quitar de amigos</button>`, { head: false }) });
 on('fr-find', el => { A.closeAll(); A.go('buscar'); setTimeout(() => { const i = $('#q'); if (i) { i.value = el.dataset.t; i.dispatchEvent(new Event('input', { bubbles: true })) } }, 50) });
 on('fr-share', async () => { const txt = 'Agrégame en aeffy: @' + A.me.handle + ' ' + location.origin; try { if (navigator.share) await navigator.share({ text: txt }); else { await navigator.clipboard.writeText(txt); toast('Copiado') } } catch (e) { } });
 
@@ -1583,7 +1628,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
 {
 const { $, esc, ms, toast, P, on } = A;
 const N = window.AeffyNative;
-A.BUILD = 8;
+A.BUILD = 9;
 A.native = !!N;
 if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }

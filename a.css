@@ -418,3 +418,20 @@ canvas.spec{width:100%;height:200px;border-radius:16px;background:#000;display:b
 .trbtn.on{color:var(--p)}
 
 .si.fold .ck{width:28px;height:28px;border-radius:9px;border:2px solid var(--dim);display:grid;place-items:center;flex:none;color:transparent;transition:.15s}.si.fold .ck .ms{font-size:20px}.si.fold.on .ck{background:var(--p);border-color:var(--p);color:var(--onp,#fff)}
+.ban.img{background-size:cover;background-position:center}
+.ban[style*="--ph"]:not(.img){background:linear-gradient(120deg,hsl(var(--ph) 70% 80%),hsl(var(--ph) 55% 58%))}
+.prof[style*="--ph"] .avatar svg,.pfav[style*="--ph"] svg{fill:hsl(var(--ph) 60% 62%)}
+.avatar img.avi{position:absolute;inset:8%;width:84%;height:84%;border-radius:50%;object-fit:cover}
+.pbio{max-width:420px;margin:8px auto 0;line-height:1.45;color:var(--mute);white-space:pre-line}
+.pfedit{position:relative;margin-bottom:58px}
+.pfedit .ban{width:100%;display:block;border:0;cursor:pointer}
+.pfcam{position:absolute;right:10px;top:10px;display:flex;gap:6px;align-items:center;background:rgba(0,0,0,.55);color:#fff;font-size:13px;padding:7px 12px;border-radius:999px}
+.pfav{position:absolute!important;left:50%;bottom:-52px;transform:translateX(-50%);width:104px!important;height:104px!important;border:0;background:none;cursor:pointer}
+.pfav svg{fill:var(--p)}.pfav b{font-size:34px;color:var(--onp)}
+.pfcam2{position:absolute;right:2px;bottom:4px;width:34px;height:34px;border-radius:50%;background:var(--p);color:var(--onp);display:grid;place-items:center;border:3px solid var(--bg)}
+.pfcam2 .ms{font-size:18px}
+textarea{font:inherit;color:inherit;background:transparent;border:0;outline:0;width:100%;resize:none}
+.plcov{display:flex;gap:14px;align-items:center;margin:4px 0 12px}
+.plcov .cov{width:88px;height:88px;border-radius:18px;flex:none;overflow:hidden;background:linear-gradient(140deg,var(--pcl),var(--pc));display:grid;place-items:center}
+.plcov .cov img{width:100%;height:100%;object-fit:cover}
+.fld textarea{font-family:var(--bf,inherit);line-height:1.4}
