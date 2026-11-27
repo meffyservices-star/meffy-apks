@@ -699,7 +699,7 @@ A.me = A.lsGet('ae_me', null); A.session = null; A.isAdmin = false;
 A.isPremium = () => !!(A.me && A.me.premium_until && new Date(A.me.premium_until) > new Date());
 A.can = f => !A.cfg.premium_features?.[f] || A.isPremium();
 let avN = 0;
-A.avImg = (me = A.me, shape = 'cookie') => { if (!me || !me.avatar_url) return `<b>${esc(A.initials())}</b>`; const id = 'avc' + (++avN); return `<svg class="avsvg" viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="${id}"><path d="${A.SH[shape] || A.SH.cookie}"/></clipPath></defs><image href="${esc(me.avatar_url)}" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id})"/></svg>` };
+A.avImg = (me = A.me, shape = 'cookie') => { const an = me && me.avatar_anim && A.isPremium() ? ' an-' + esc(me.avatar_anim) : ''; if (!me || !me.avatar_url) return `<b class="${an}">${esc(A.initials())}</b>`; const id = 'avc' + (++avN); return `<svg class="avsvg${an}" viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="${id}"><path d="${A.SH[shape] || A.SH.cookie}"/></clipPath></defs><image href="${esc(me.avatar_url)}" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id})"/></svg>` };
 A.uploadPic = async (file, kind) => {
   const c = client(); if (!c || !A.session) return null;
   const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = URL.createObjectURL(file) });
@@ -1011,7 +1011,7 @@ const SUB = {
      <div class="sg">Color de tu perfil ${lock('profile_color')}</div><div class="swatches" id="pfC">${[['', 'Del tema', 222], ...A.SWATCHES.map(x => [String(x.h), x.n, x.h]), ['330', 'Rosa', 330], ['280', 'Lila', 280]].map(([v, n, h]) => `<button type="button" class="swatch${(me?.color || '') === v ? ' on' : ''}" data-c="${v}"><i><svg viewBox="0 0 100 100"><path d="${A.SH.cookie}" fill="hsl(${h} 70% 70%)"/></svg></i>${n}</button>`).join('')}</div>
      <div class="sg">Quién ve lo que escuchas</div><div class="seg" id="pfV">${[['friends', 'Mis amigos'], ['nobody', 'Nadie']].map(([k, n]) => `<button type="button" data-v="${k}" class="${(me?.visibility || 'friends') === k ? 'on' : ''}">${n}</button>`).join('')}</div><div class="foot"><button class="btn">Guardar</button></div></form>` },
   apariencia: () => head('Apariencia') + `<div class="sg">Tema</div><div class="sgrp"><div class="si"><span class="t"><b>Modo de tema</b><span>Automático sigue el tema claro u oscuro de tu teléfono.</span></span></div><div style="padding:0 16px 14px"><div class="seg">${[['auto', 'brightness_auto', 'Automático'], ['light', 'light_mode', 'Claro'], ['dark', 'dark_mode', 'Oscuro']].map(([k, i, n]) => `<button class="${A.ST.mode === k ? 'on' : ''}" data-a="setv" data-k="mode" data-v="${k}">${ms(i)}${n}</button>`).join('')}</div></div>
-   ${item('', 'Avatar animado ' + lock('profile_color'), 'Tu foto de perfil se mueve suavecito dentro de su forma.', A.can('profile_color') ? sw('avAnim', A.ST.avAnim) : `<button class="btn t" data-a="go" data-v="premium">Ver</button>`)}${item('', 'Fondo negro puro (AMOLED)', 'Usa negro puro (#000000) en la superficie principal del tema oscuro.', sw('amoled', A.ST.amoled))}${item('', 'Recordar dónde te quedaste', 'Al volver, sigue donde lo dejaste en vez de empezar en Inicio.', sw('remember', A.ST.remember))}</div>
+   ${A.avAnimPicker ? A.avAnimPicker() : ''}${item('', 'Fondo negro puro (AMOLED)', 'Usa negro puro (#000000) en la superficie principal del tema oscuro.', sw('amoled', A.ST.amoled))}${item('', 'Recordar dónde te quedaste', 'Al volver, sigue donde lo dejaste en vez de empezar en Inicio.', sw('remember', A.ST.remember))}</div>
    <div class="sg">Color de la app</div><div class="sgrp"><div class="si"><span class="t"><span>Elige el color base de la interfaz. El reproductor se tiñe además con los colores de cada portada.</span></span></div><div class="swatches">${A.SWATCHES.map(s => `<button class="swatch${A.ST.color === s.k ? ' on' : ''}" data-a="setv" data-k="color" data-v="${s.k}"><i><svg viewBox="0 0 100 100"><defs><linearGradient id="g${s.k}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${s.h} ${Math.round(s.s * 90)}% 86%)"/><stop offset="1" stop-color="hsl(${s.h} ${Math.round(s.s * 60)}% 58%)"/></linearGradient></defs><path d="${A.SH.cookie}" fill="url(#g${s.k})"/></svg></i>${s.n}</button>`).join('')}</div>
    ${item('', 'Color neutral', 'Toda la interfaz en grises. La portada sigue dando color al reproductor.', sw('neutral', A.ST.neutral))}${item('', 'Color de la portada', 'Toda la app toma el color de la portada de la canción que suena, en lugar del color elegido.', sw('coverColor', A.ST.coverColor))}</div>`,
   biblioteca: () => { const folders = [...new Set(A.tracks.map(t => (t.folder || '').split('/')[0]).filter(Boolean))]; return head('Biblioteca local') + `<div class="sg">Carpetas de tu biblioteca</div><div class="sgrp"><div class="si"><span class="t"><span>aeffy guarda una copia de tu música dentro de la app para que suene aunque no tengas internet. Tus archivos originales no se mueven ni cambian.</span></span></div>${folders.length ? folders.map(f => item('folder', esc(f), plural(A.tracks.filter(t => (t.folder || '').startsWith(f)).length, 'canción', 'canciones'))).join('') : item('', 'Aún no hay carpetas: agrega una para empezar.', '')}
@@ -1286,7 +1286,7 @@ const ago = d => { const s = (Date.now() - new Date(d)) / 1000; if (s < 90) retu
 async function thumb(src, size = 96) { if (!src) return null; try { const i = new Image(); i.src = src; await i.decode(); const c = document.createElement('canvas'); c.width = c.height = size; c.getContext('2d').drawImage(i, 0, 0, size, size); return c.toDataURL('image/jpeg', .7) } catch (e) { return null } }
 const COLORS = ['#ff7eb3', '#8f6bff', '#3b9bf5', '#2fbf8f', '#ffb347', '#ef5d5d', '#6c8cff', '#c06cff'];
 const colorOf = s => COLORS[A.hueOf(s || '') % COLORS.length];
-const av = (name, sz = 40, img) => img ? `<i class="pav" style="width:${sz}px;height:${sz}px;background:url('${esc(img)}') center/cover"></i>` : `<i class="pav" style="width:${sz}px;height:${sz}px;background:${colorOf(name)}">${esc((name || '?').trim().charAt(0).toUpperCase())}</i>`;
+const av = (name, sz = 40, img, an) => an ? `<span class="anw an-${esc(an)}">${av(name, sz, img)}</span>` : img ? `<i class="pav" style="width:${sz}px;height:${sz}px;background:url('${esc(img)}') center/cover"></i>` : `<i class="pav" style="width:${sz}px;height:${sz}px;background:${colorOf(name)}">${esc((name || '?').trim().charAt(0).toUpperCase())}</i>`;
 
 /* =================== SPOTS =================== */
 const S = A.spot = { role: null, code: null, ch: null, peers: new Map(), people: [], chat: [], meta: null, vote: null, votes: {}, state: null, me: null, timer: null, started: 0 };
@@ -1434,7 +1434,7 @@ V.spots = () => {
   if (!S.role) {
     let h = spotsHome();
     const fs = (A.FR || []).filter(f => f.status === 'accepted' && f.spot_code);
-    if (fs.length) h += fs.map(f => `<button class="li" data-a="go" data-v="spot/${esc(f.spot_code)}">${av(f.display_name, 40, f.avatar_url)}<div class="t"><b>Spot de ${esc(f.display_name || '@' + f.handle)}</b><span>${f.title ? ms('graphic_eq') + esc(f.title) + ' · ' + esc(f.artist || '') : 'Abierto ahora'}</span></div><span class="btn t">Entrar</span></button>`).join('');
+    if (fs.length) h += fs.map(f => `<button class="li" data-a="go" data-v="spot/${esc(f.spot_code)}">${av(f.display_name, 40, f.avatar_url, f.avatar_anim)}<div class="t"><b>Spot de ${esc(f.display_name || '@' + f.handle)}</b><span>${f.title ? ms('graphic_eq') + esc(f.title) + ' · ' + esc(f.artist || '') : 'Abierto ahora'}</span></div><span class="btn t">Entrar</span></button>`).join('');
     return h
   }
   const host = S.role === 'host', st = S.state, t = host ? A.byId(P.cur) : st?.t;
@@ -1473,7 +1473,7 @@ A.liveStart = () => {
 setInterval(() => { if (!document.hidden && A.session) A.loadFriends() }, 45000);
 function friendRow(f) {
   const live = f.playing && f.updated_at && Date.now() - new Date(f.updated_at) < 15 * 60000;
-  return `<div class="li" data-a="go" data-v="u/${esc(f.id)}" role="button" tabindex="0">${f.cover ? `<div class="cov s48 round"><img src="${esc(f.cover)}" alt=""></div>` : av(f.display_name, 48, f.avatar_url)}<div class="t"><b>${esc(f.display_name || '@' + f.handle)}</b><span>${f.title ? (live ? ms('graphic_eq') : '') + esc(f.title) + ' · ' + esc(f.artist || '') + (live ? '' : ' · ' + ago(f.updated_at)) : f.handle ? '@' + esc(f.handle) : ''}</span></div>${f.spot_code ? `<button class="btn t" data-a="go" data-v="spot/${esc(f.spot_code)}">${ms('podcasts')}Spot</button>` : ''}<button class="ib" data-a="fr-menu" data-id="${f.id}" aria-label="Opciones">${ms('more_vert')}</button></div>`
+  return `<div class="li" data-a="go" data-v="u/${esc(f.id)}" role="button" tabindex="0">${f.cover ? `<div class="cov s48 round"><img src="${esc(f.cover)}" alt=""></div>` : av(f.display_name, 48, f.avatar_url, f.avatar_anim)}<div class="t"><b>${esc(f.display_name || '@' + f.handle)}</b><span>${f.title ? (live ? ms('graphic_eq') : '') + esc(f.title) + ' · ' + esc(f.artist || '') + (live ? '' : ' · ' + ago(f.updated_at)) : f.handle ? '@' + esc(f.handle) : ''}</span></div>${f.spot_code ? `<button class="btn t" data-a="go" data-v="spot/${esc(f.spot_code)}">${ms('podcasts')}Spot</button>` : ''}<button class="ib" data-a="fr-menu" data-id="${f.id}" aria-label="Opciones">${ms('more_vert')}</button></div>`
 }
 function paintDrawerFriends() { const d = $('#drawer .fr'); if (!d) return; const L = (A.FR || []).filter(f => f.status === 'accepted' && f.title).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)).slice(0, 6); d.innerHTML = `<b style="font-family:var(--hf);font-size:16px">Tus amigos ahora</b>` + (L.length ? L.map(friendRow).join('') : `<p class="muted small" style="margin:6px 0 0">Cuando tus amigos escuchen algo, aparecerá aquí.</p>`) }
 A.paintDrawerFriends = paintDrawerFriends;
@@ -1484,7 +1484,7 @@ V.amigos = () => {
   return top({ back: 1 }) + `<h1 class="h1">Amigos</h1>
    <section class="card" style="background:linear-gradient(160deg,var(--pcl),var(--pc));color:var(--onpc)"><div style="display:flex;gap:14px;align-items:center"><span class="avatar" style="width:56px;height:56px">${shp('cookie')}${A.avImg()}</span><div><b style="font-family:var(--hf);font-size:20px">${esc(A.me?.display_name || 'Tú')}</b><div style="opacity:.85">${A.me?.handle ? '@' + esc(A.me.handle) : 'Elige tu @nombre para que te encuentren'}</div></div></div>${A.me?.handle ? `<button class="btn" style="margin-top:12px" data-a="fr-share">${ms('share')}Compartir mi @nombre</button>` : `<button class="btn" style="margin-top:12px" data-a="go" data-v="ajustes/perfil">${ms('alternate_email')}Elegir @nombre</button>`}</section>
    <form id="frAdd" class="search" style="margin-top:14px">${ms('person_add')}<input id="frH" placeholder="Agrega a alguien por su @nombre" autocapitalize="off" autocomplete="off"><button class="btn t">Agregar</button></form>
-   ${inc.length ? `<div class="sech"><h2>Solicitudes</h2></div>` + inc.map(f => `<div class="li">${av(f.display_name, 48, f.avatar_url)}<div class="t"><b>${esc(f.display_name || '')}</b><span>@${esc(f.handle || '')} quiere ser tu amigo</span></div><button class="btn" data-a="fr-ok" data-id="${f.id}">Aceptar</button><button class="ib" data-a="fr-del" data-id="${f.id}" aria-label="Rechazar">${ms('close')}</button></div>`).join('') : ''}
+   ${inc.length ? `<div class="sech"><h2>Solicitudes</h2></div>` + inc.map(f => `<div class="li">${av(f.display_name, 48, f.avatar_url, f.avatar_anim)}<div class="t"><b>${esc(f.display_name || '')}</b><span>@${esc(f.handle || '')} quiere ser tu amigo</span></div><button class="btn" data-a="fr-ok" data-id="${f.id}">Aceptar</button><button class="ib" data-a="fr-del" data-id="${f.id}" aria-label="Rechazar">${ms('close')}</button></div>`).join('') : ''}
    <div class="sech"><h2>Lo que escuchan ahora</h2><p>Se actualiza en vivo.</p></div>${acc.length ? acc.map(friendRow).join('') : `<section class="card c">${badge('group')}<h3>Aún no tienes amigos aquí</h3><p>Agrégalos por su @nombre o comparte el tuyo.</p></section>`}
    ${out.length ? `<div class="sech"><h2>Enviadas</h2></div>` + out.map(f => `<div class="li">${av(f.display_name, 40)}<div class="t"><b>${esc(f.display_name || '')}</b><span>Esperando respuesta</span></div><button class="ib" data-a="fr-del" data-id="${f.id}" aria-label="Cancelar">${ms('close')}</button></div>`).join('') : ''}
    <div class="sech"><h2>Invita y gana</h2><p>Gana 12 h de Premium por cada amigo que llegue con tu enlace.</p></div><button class="btn t" data-a="go" data-v="invita">${ms('redeem')}Ver mi enlace</button>`
@@ -1499,7 +1499,7 @@ document.addEventListener('submit', async e => {
 async function accept(id) { await A.sb().from('aeffy_friends').update({ status: 'accepted' }).eq('a', id).eq('b', A.session.user.id); toast('Ahora son amigos'); A.loadFriends() }
 on('fr-ok', el => accept(el.dataset.id));
 on('fr-del', async el => { const me = A.session.user.id, id = el.dataset.id; await A.sb().from('aeffy_friends').delete().or(`and(a.eq.${me},b.eq.${id}),and(a.eq.${id},b.eq.${me})`); A.popLayer && document.querySelector('.scrim') && A.popLayer(); A.loadFriends() });
-on('fr-menu', el => { const f = A.FR.find(x => x.id === el.dataset.id); A.sheet(`<div class="grab"></div><div class="shtrack">${av(f.display_name, 48, f.avatar_url)}<div><b>${esc(f.display_name || '')}</b><span>@${esc(f.handle || '')}</span></div></div>${f.spot_code ? `<button class="mi" data-a="go" data-v="spot/${esc(f.spot_code)}">${ms('podcasts')}Entrar a su Spot</button>` : ''}${f.title ? `<button class="mi" data-a="fr-find" data-t="${esc(f.title)}">${ms('search')}Buscar “${esc(f.title)}” en mi biblioteca</button>` : ''}<button class="mi bad" data-a="fr-del" data-id="${f.id}">${ms('person_remove')}Quitar de amigos</button>`, { head: false }) });
+on('fr-menu', el => { const f = A.FR.find(x => x.id === el.dataset.id); A.sheet(`<div class="grab"></div><div class="shtrack">${av(f.display_name, 48, f.avatar_url, f.avatar_anim)}<div><b>${esc(f.display_name || '')}</b><span>@${esc(f.handle || '')}</span></div></div>${f.spot_code ? `<button class="mi" data-a="go" data-v="spot/${esc(f.spot_code)}">${ms('podcasts')}Entrar a su Spot</button>` : ''}${f.title ? `<button class="mi" data-a="fr-find" data-t="${esc(f.title)}">${ms('search')}Buscar “${esc(f.title)}” en mi biblioteca</button>` : ''}<button class="mi bad" data-a="fr-del" data-id="${f.id}">${ms('person_remove')}Quitar de amigos</button>`, { head: false }) });
 on('fr-find', el => { A.closeAll(); A.go('buscar'); setTimeout(() => { const i = $('#q'); if (i) { i.value = el.dataset.t; i.dispatchEvent(new Event('input', { bubbles: true })) } }, 50) });
 on('fr-share', async () => { const txt = 'Agrégame en aeffy: @' + A.me.handle + ' ' + location.origin; try { if (navigator.share) await navigator.share({ text: txt }); else { await navigator.clipboard.writeText(txt); toast('Copiado') } } catch (e) { } });
 
@@ -1601,7 +1601,7 @@ const ls0 = A.liveStart;
 A.liveStart = () => { ls0 && ls0(); setTimeout(A.syncLists, 4000) };
 
 /* ---------- perfil de un amigo (y "así te ven") ---------- */
-const FP = {};
+const FP = A.FP = {};
 async function loadFP(id) {
   const sb = A.sb && A.sb(); if (!sb || !A.session) return;
   const { data, error } = await sb.rpc('aeffy_friend_profile', { p_id: id });
@@ -1612,7 +1612,7 @@ function mine(tr) {
   const ix = A._ix || (A._ix = new Map()); if (ix._n !== A.tracks.length) { ix.clear(); for (const t of A.tracks) ix.set(norm(t.name) + '|' + norm(t.artist), t.id); ix._n = A.tracks.length }
   return ix.get(norm(tr.t) + '|' + norm(tr.a)) || null
 }
-const avBig = (p, shape) => p.avatar_url ? `<svg class="avsvg" viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="fpav"><path d="${A.SH[shape]}"/></clipPath></defs><image href="${esc(p.avatar_url)}" width="100" height="100" preserveAspectRatio="xMidYMid slice" clip-path="url(#fpav)"/></svg>` : `<b>${esc((p.display_name || p.handle || '?').trim().charAt(0).toUpperCase())}</b>`;
+const avBig = (p, shape) => p.avatar_url ? `<svg class="avsvg${p.avatar_anim ? ' an-' + esc(p.avatar_anim) : ''}" viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="fpav"><path d="${A.SH[shape]}"/></clipPath></defs><image href="${esc(p.avatar_url)}" width="100" height="100" preserveAspectRatio="xMidYMid slice" clip-path="url(#fpav)"/></svg>` : `<b>${esc((p.display_name || p.handle || '?').trim().charAt(0).toUpperCase())}</b>`;
 const plCover = (l, cls = '') => l.cover_url ? `<div class="cov ${cls}"><img src="${esc(l.cover_url)}" alt="" loading="lazy"></div>` : `<div class="cov ${cls}" style="background:linear-gradient(140deg,var(--pcl),var(--pc));display:grid;place-items:center">${ms('queue_music', 1)}</div>`;
 
 V.u = arg => {
@@ -1738,7 +1738,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
 {
 const { $, esc, ms, toast, P, on } = A;
 const N = window.AeffyNative;
-A.BUILD = 17;
+A.BUILD = 18;
 A.native = !!N;
 if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }
@@ -1907,7 +1907,207 @@ P.au.addEventListener('pause', () => setTimeout(tryUpdate, 1500));
 /* Premium: karaoke encendido de entrada y avatar animado */
 {
 if (!localStorage.getItem('ae_kara1')) { localStorage.setItem('ae_kara1', '1'); A.ST.karaoke = true; A.saveSet() }
-const applyAv = () => document.documentElement.classList.toggle('avanim', !!A.ST.avAnim && A.can('profile_color'));
-applyAv(); setInterval(applyAv, 5000);
-document.addEventListener('click', e => { const el = e.target.closest('[data-a="set"][data-k="avAnim"]'); if (el) setTimeout(applyAv, 0) });
+}
+
+/* aeffy · Notas en tu perfil (con estilos de imagen Premium) y avatar animado que ven tus amigos */
+'use strict';
+{
+const { $, $$, esc, ms, toast, P, on } = A;
+const V = A.views;
+const STY = [['simple', 'Simple', 0], ['degradado', 'Degradado', 1], ['portada', 'Portada', 1], ['polaroid', 'Polaroid', 1], ['cuaderno', 'Cuaderno', 1], ['pixel', 'Pixel', 1]];
+const ago = d => { const s = (Date.now() - new Date(d)) / 1000; if (s < 90) return 'ahora'; if (s < 3600) return 'hace ' + Math.round(s / 60) + ' min'; if (s < 86400) return 'hace ' + Math.round(s / 3600) + ' h'; if (s < 86400 * 30) return 'hace ' + Math.round(s / 86400) + ' d'; return new Date(d).toLocaleDateString('es', { day: 'numeric', month: 'short' }) };
+const myId = () => A.session && A.session.user && A.session.user.id;
+A.FP = A.FP || {};
+async function loadNotes(id, force) {
+  const sb = A.sb && A.sb(); if (!sb || !A.session || !id) return;
+  const c = A.FP[id]; if (!force && c && Date.now() - c.at < 60000) return;
+  const { data, error } = await sb.rpc('aeffy_friend_profile', { p_id: id });
+  if (!error && data) { A.FP[id] = Object.assign(data, { at: Date.now() }); const { v } = A.route(); if (v === 'perfil' || v === 'u') A.render() }
+}
+A.loadNotes = loadNotes;
+
+function noteHTML(n, own, i) {
+  const st = n.style || 'simple', cov = n.cover ? esc(n.cover) : '';
+  const song = n.title ? `<div class="ns">${st !== 'polaroid' ? (cov ? `<img src="${cov}" alt="">` : `<span class="gen">${ms('music_note')}</span>`) : ''}<div><b>${esc(n.title)}</b><span>${esc(n.artist || '')}</span></div></div>` : '';
+  const bg = st === 'portada' && cov ? ` style="background-image:url('${cov}')"` : '';
+  return `<article class="note st-${esc(st)}"${bg}>${st === 'polaroid' ? `<div class="ph" style="${cov ? `background-image:url('${cov}')` : 'background:linear-gradient(140deg,var(--pcl),var(--pc))'}"></div>` : ''}<p class="nb">${esc(n.body)}</p>${song}
+   <div class="nf"><span>${ago(n.at || n.created_at)}</span><span class="sp"></span><button class="ib" data-a="note-img" data-i="${i}" data-own="${own ? 1 : 0}" aria-label="Guardar como imagen">${ms('image')}</button>${own ? `<button class="ib" data-a="note-del" data-id="${n.id}" aria-label="Borrar nota">${ms('delete')}</button>` : ''}</div></article>`
+}
+let shown = [];
+function notesSection(p, own) {
+  const list = (p && p.notes) || []; shown = list;
+  const head = `<div class="sech"><h2>Notas</h2>${own ? `<p>Lo que escribas aquí lo ven tus amigos en tu perfil.</p>` : ''}</div>`;
+  const add = own ? `<button class="btn" style="margin-bottom:12px" data-a="note-new">${ms('edit_note')}Escribir una nota</button>` : '';
+  if (!p) return head + add + `<p class="muted small">Cargando notas…</p>`;
+  return head + add + (list.length ? `<div class="notes">${list.map((n, i) => noteHTML(n, own, i)).join('')}</div>` : `<p class="muted small">${own ? 'Todavía no escribes ninguna nota.' : 'Todavía no hay notas.'}</p>`)
+}
+
+/* en tu perfil */
+const perfil0 = V.perfil;
+V.perfil = arg => {
+  let h = perfil0(arg); if (!A.me || !A.session) return h;
+  const id = myId(); loadNotes(id);
+  const sec = notesSection(A.FP[id], true), k = '<div class="sech"><h2>Sesiones y rachas';
+  return h.includes(k) ? h.replace(k, sec + k) : h + sec
+};
+/* en el perfil de un amigo (y en "Cómo me ven") */
+const u0 = V.u;
+V.u = arg => {
+  let h = u0(arg); const [id, lid] = (arg || '').split('~'); const p = A.FP[id];
+  if (lid || !p || p.err || !p.id) return h;
+  const sec = notesSection(p, false), k = '<div class="sech"><h2>Playlists';
+  return h.includes(k) ? h.replace(k, sec + k) : h + sec
+};
+
+/* escribir una nota */
+async function smallCover(src) {
+  if (!src) return null;
+  try { const im = new Image(); im.crossOrigin = 'anonymous'; im.src = src; await im.decode(); const c = document.createElement('canvas'); c.width = c.height = 200; const x = c.getContext('2d'); const s = Math.min(im.width, im.height); x.drawImage(im, (im.width - s) / 2, (im.height - s) / 2, s, s, 0, 0, 200, 200); return c.toDataURL('image/jpeg', .72) } catch (e) { return null }
+}
+on('note-new', async () => {
+  if (!A.session) { A.loginSheet ? A.loginSheet('in') : A.go('cuenta'); return }
+  const t = A.byId(P.cur), prem = A.isPremium();
+  const cov = t ? await smallCover(t.cover) : null;
+  let style = 'simple', withSong = !!t;
+  const s = A.sheet(A.shead('edit_note', 'Nueva nota', prem ? 'Publica todas las que quieras.' : 'Sin Premium puedes publicar 1 nota al día.') + `
+   <textarea class="ntx" id="ntx" maxlength="280" placeholder="¿Qué estás sintiendo con tu música?"></textarea><div class="ncnt" id="ncnt">0/280</div>
+   ${t ? `<label class="si" style="padding:8px 0;display:flex;gap:10px;align-items:center"><input type="checkbox" id="nsong" checked><span><b style="display:block">Agregar la canción que suena</b><span class="muted small">${esc(t.name)} · ${esc(t.artist)}</span></span></label>` : ''}
+   <div class="small muted" style="margin-top:6px">Estilo ${prem ? '' : '· los estilos de imagen son de Premium'}</div>
+   <div class="stpick" id="npick">${STY.map(([k, n, pr]) => `<button type="button" data-k="${k}" class="${k === 'simple' ? 'on' : ''}">${pr && !prem ? ms('lock') : ''}${n}</button>`).join('')}</div>
+   <div id="nprev"></div>
+   <div class="foot"><button class="btn t" data-a="closesheet">Cancelar</button><button class="btn" id="npub">${ms('send')}Publicar</button></div>`);
+  const prev = () => { const body = $('#ntx', s).value.trim() || 'Así se verá tu nota.'; $('#ncnt', s).textContent = $('#ntx', s).value.length + '/280'; $('#nprev', s).innerHTML = `<div class="small muted" style="margin:6px 0">Vista previa</div>` + noteHTML({ body, style, title: withSong ? t.name : null, artist: withSong ? t.artist : null, cover: withSong ? cov : null, at: new Date() }, false, -1).replace(/<div class="nf">[\s\S]*<\/div><\/article>$/, '</article>') };
+  prev();
+  $('#ntx', s).addEventListener('input', prev);
+  const cb = $('#nsong', s); if (cb) cb.addEventListener('change', () => { withSong = cb.checked; prev() });
+  $('#npick', s).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; const k = b.dataset.k, pr = STY.find(x => x[0] === k)[2]; if (pr && !prem) { A.popLayer(); setTimeout(() => A.go('premium'), 260); toast('Los estilos de imagen son de aeffy Premium'); return } style = k; $$('#npick button', s).forEach(x => x.classList.toggle('on', x === b)); prev() });
+  $('#npub', s).addEventListener('click', async e => {
+    const body = $('#ntx', s).value.trim(); if (!body) { toast('Escribe algo primero'); return }
+    const b = e.currentTarget; b.disabled = true;
+    const { error } = await A.sb().rpc('aeffy_post_note', { p_body: body, p_title: withSong ? t.name : null, p_artist: withSong ? t.artist : null, p_cover: withSong ? cov : null, p_style: style });
+    b.disabled = false;
+    if (error) { toast(/LIMITE/.test(error.message) ? 'Sin Premium puedes publicar 1 nota al día' : 'No pude publicar la nota'); return }
+    A.popLayer(); toast('Nota publicada'); await loadNotes(myId(), true); A.render()
+  });
+  setTimeout(() => $('#ntx', s).focus(), 250)
+});
+on('note-del', async el => {
+  const s = A.sheet(A.shead('delete', '¿Borrar esta nota?', 'Tus amigos ya no la verán. No se puede deshacer.') + `<div class="foot"><button class="btn t" data-a="closesheet">Cancelar</button><button class="btn" id="ndel">Borrar</button></div>`);
+  $('#ndel', s).onclick = async () => { await A.sb().rpc('aeffy_delete_note', { p_id: +el.dataset.id }); A.popLayer(); toast('Nota borrada'); await loadNotes(myId(), true); A.render() }
+});
+
+/* guardar una nota como imagen, con su estilo */
+function wrap(x, text, maxW) { const out = []; for (const para of text.split('\n')) { let line = ''; for (const w of para.split(' ')) { const t = line ? line + ' ' + w : w; if (x.measureText(t).width > maxW && line) { out.push(line); line = w } else line = t } out.push(line) } return out }
+async function loadImg(src) { if (!src) return null; try { const im = new Image(); im.crossOrigin = 'anonymous'; im.src = src; await im.decode(); return im } catch (e) { return null } }
+function rr(x, X, Y, W, H, r) { x.beginPath(); x.roundRect ? x.roundRect(X, Y, W, H, r) : x.rect(X, Y, W, H) }
+async function noteImage(n, who) {
+  const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  const cs = getComputedStyle(document.documentElement), col = k => cs.getPropertyValue(k).trim() || '#ff8fc0';
+  const st = n.style || 'simple', im = await loadImg(n.cover);
+  let ink = '#fff', font = '700 58px Nunito, sans-serif', pad = 110, top = 230;
+  if (st === 'degradado' || st === 'simple') { const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, col('--pcl')); g.addColorStop(.6, col('--pc')); g.addColorStop(1, col('--p')); x.fillStyle = st === 'simple' ? col('--bg') : g; x.fillRect(0, 0, W, H); ink = st === 'simple' ? col('--on') || '#fff' : col('--onpc') || '#111' }
+  if (st === 'portada') { x.fillStyle = '#111'; x.fillRect(0, 0, W, H); if (im) { x.filter = 'blur(40px) brightness(.55) saturate(1.4)'; x.drawImage(im, -200, -200, W + 400, H + 400); x.filter = 'none'; x.save(); rr(x, 240, 140, 600, 600, 40); x.clip(); x.drawImage(im, 240, 140, 600, 600); x.restore() } top = 820 }
+  if (st === 'cuaderno') { x.fillStyle = '#fffaf0'; x.fillRect(0, 0, W, H); x.fillStyle = '#f3c9d8'; for (let y = 120; y < H; y += 72) x.fillRect(0, y, W, 3); x.fillStyle = '#ffb3c8'; x.fillRect(120, 0, 5, H); ink = '#3b2f2f'; font = '600 56px Fredoka, sans-serif'; pad = 170 }
+  if (st === 'pixel') { x.imageSmoothingEnabled = false; x.fillStyle = '#2b1d3a'; x.fillRect(0, 0, W, H); x.fillStyle = '#ff8fc0'; x.fillRect(30, 30, W - 60, 16); x.fillRect(30, H - 46, W - 60, 16); x.fillRect(30, 30, 16, H - 60); x.fillRect(W - 46, 30, 16, H - 60); font = '700 52px monospace' }
+  if (st === 'polaroid') { x.fillStyle = col('--bg'); x.fillRect(0, 0, W, H); x.save(); x.translate(W / 2, H / 2); x.rotate(-.025); x.fillStyle = '#fff'; x.shadowColor = 'rgba(0,0,0,.35)'; x.shadowBlur = 40; x.fillRect(-400, -560, 800, 1120); x.shadowBlur = 0; if (im) x.drawImage(im, -350, -510, 700, 700); else { x.fillStyle = col('--pc'); x.fillRect(-350, -510, 700, 700) } x.restore(); ink = '#222'; font = '600 46px Fredoka, sans-serif'; pad = 220; top = 970 }
+  x.fillStyle = ink; x.font = font; x.textBaseline = 'top';
+  const lines = wrap(x, n.body, W - pad * 2).slice(0, st === 'polaroid' ? 4 : 10), lh = parseInt(font.match(/(\d+)px/)[1]) * 1.3;
+  lines.forEach((l, i) => x.fillText(l, pad, top + i * lh));
+  let y = top + lines.length * lh + 40;
+  if (n.title && st !== 'polaroid' && st !== 'portada') { if (im) { x.save(); rr(x, pad, y, 120, 120, 20); x.clip(); x.drawImage(im, pad, y, 120, 120); x.restore() } x.font = '700 40px Nunito, sans-serif'; x.fillText(n.title.slice(0, 34), pad + (im ? 150 : 0), y + 18); x.globalAlpha = .75; x.font = '500 34px Nunito, sans-serif'; x.fillText((n.artist || '').slice(0, 40), pad + (im ? 150 : 0), y + 70); x.globalAlpha = 1 }
+  if (n.title && (st === 'polaroid' || st === 'portada')) { x.globalAlpha = .8; x.font = '600 34px Nunito, sans-serif'; x.fillText('♪ ' + (n.title + ' · ' + (n.artist || '')).slice(0, 48), pad, y) ; x.globalAlpha = 1 }
+  x.globalAlpha = .7; x.font = '700 34px Nunito, sans-serif'; x.fillText((who ? '@' + who + ' · ' : '') + 'aeffy', st === 'cuaderno' ? 170 : 80, H - 110); x.globalAlpha = 1;
+  return new Promise(r => c.toBlob(r, 'image/png'))
+}
+on('note-img', async el => {
+  const n = shown[+el.dataset.i]; if (!n) return;
+  if (n.style !== 'simple' && !A.isPremium() && el.dataset.own === '1') { /* sus propias notas con estilo ya las pagó */ }
+  toast('Preparando la imagen…');
+  const who = el.dataset.own === '1' ? A.me?.handle : (A.FP[A.route().arg.split('~')[0]] || {}).handle;
+  const b = await noteImage(n, who); if (!b) { toast('No pude crear la imagen'); return }
+  const name = 'nota-aeffy-' + Date.now() + '.png';
+  try { if (!window.AeffyNative && navigator.canShare && navigator.canShare({ files: [new File([b], name, { type: 'image/png' })] })) { await navigator.share({ files: [new File([b], name, { type: 'image/png' })] }); return } } catch (e) { if (e && e.name === 'AbortError') return }
+  await A.saveBlob(b, name); toast('Imagen guardada')
+});
+
+/* avatar animado: se guarda en tu cuenta y lo ven tus amigos */
+const ANS = [['', 'Quieto'], ['girar', 'Girar'], ['latir', 'Latir'], ['flotar', 'Flotar'], ['brillo', 'Brillo']];
+A.avAnimPicker = () => {
+  const cur = (A.me && A.me.avatar_anim) || '', prem = A.isPremium();
+  return `<div class="si"><span class="t"><b>Avatar animado ${prem ? '' : ms('lock')}</b><span>${A.session ? 'Tu foto se mueve en tu perfil y tus amigos también lo ven.' : 'Inicia sesión para animar tu avatar.'}</span></span></div><div class="anpick">${ANS.map(([k, n]) => `<button class="${cur === k ? 'on' : ''}" data-a="avanim" data-v="${k}"><span class="dot${k ? ' an-' + k : ''}"></span>${n}</button>`).join('')}</div>`
+};
+on('avanim', async el => {
+  if (!A.session) { A.loginSheet ? A.loginSheet('in') : A.go('cuenta'); return }
+  const v = el.dataset.v; if (v && !A.isPremium()) { A.go('premium'); toast('Animar tu avatar es de aeffy Premium'); return }
+  const { data, error } = await A.sb().rpc('aeffy_set_avatar_anim', { p_anim: v });
+  if (error) { toast('No pude guardarlo'); return }
+  A.me.avatar_anim = data || null; A.lsSet('ae_me', A.me); A.render(); toast(v ? 'Listo, tu avatar ya se mueve' : 'Avatar quieto')
+});
+}
+
+/* aeffy · Compartir canción o un pedazo de letra como historia bonita (1080×1920) */
+'use strict';
+{
+const { $, $$, esc, ms, toast, P, on } = A;
+const SST = [['portada', 'Portada'], ['color', 'Color'], ['vinilo', 'Vinilo'], ['minimal', 'Minimal']];
+async function img(src) { if (!src) return null; try { const i = new Image(); i.crossOrigin = 'anonymous'; i.src = src; await i.decode(); return i } catch (e) { return null } }
+function rr(x, X, Y, W, H, r) { x.beginPath(); x.roundRect ? x.roundRect(X, Y, W, H, r) : x.rect(X, Y, W, H) }
+function wrap(x, text, maxW) { const out = []; let line = ''; for (const w of text.split(' ')) { const t = line ? line + ' ' + w : w; if (x.measureText(t).width > maxW && line) { out.push(line); line = w } else line = t } if (line) out.push(line); return out }
+function fit(x, text, maxW, size, weight = 800, fam = 'Nunito, sans-serif') { let s = size; do { x.font = `${weight} ${s}px ${fam}`; s -= 2 } while (x.measureText(text).width > maxW && s > 28); return s + 2 }
+async function story(t, style, lines) {
+  const W = 1080, H = 1920, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  const im = await img(t.cover), h = t.hue ?? A.hueOf(t.album + t.artist), sa = Math.round((t.sat ?? .6) * 100);
+  const c1 = `hsl(${h} ${sa}% 62%)`, c2 = `hsl(${h} ${sa}% 30%)`, c3 = `hsl(${(h + 40) % 360} ${sa}% 18%)`;
+  let ink = '#fff';
+  if (style === 'portada') { x.fillStyle = c2; x.fillRect(0, 0, W, H); if (im) { x.filter = 'blur(60px) brightness(.6) saturate(1.5)'; x.drawImage(im, -300, -300, W + 600, H + 600); x.filter = 'none' } }
+  else if (style === 'color') { const g = x.createLinearGradient(0, 0, W * .4, H); g.addColorStop(0, c1); g.addColorStop(.55, c2); g.addColorStop(1, c3); x.fillStyle = g; x.fillRect(0, 0, W, H) }
+  else if (style === 'vinilo') { x.fillStyle = c3; x.fillRect(0, 0, W, H); const g = x.createRadialGradient(W / 2, H * .3, 50, W / 2, H * .3, 900); g.addColorStop(0, c2); g.addColorStop(1, 'transparent'); x.fillStyle = g; x.fillRect(0, 0, W, H) }
+  else { x.fillStyle = '#0f0f13'; x.fillRect(0, 0, W, H) }
+  const lyr = lines && lines.length;
+  const cs = lyr ? 300 : 760, cx = (W - cs) / 2, cy = lyr ? 230 : 330;
+  if (style === 'vinilo' && !lyr) {
+    const R = 400, X0 = W / 2 + 120, Y0 = cy + cs / 2; x.fillStyle = '#111'; x.beginPath(); x.arc(X0, Y0, R, 0, 7); x.fill(); x.strokeStyle = 'rgba(255,255,255,.07)'; x.lineWidth = 2; for (let r = 150; r < R; r += 14) { x.beginPath(); x.arc(X0, Y0, r, 0, 7); x.stroke() } x.fillStyle = c1; x.beginPath(); x.arc(X0, Y0, 120, 0, 7); x.fill(); x.fillStyle = '#111'; x.beginPath(); x.arc(X0, Y0, 14, 0, 7); x.fill();
+    x.save(); x.shadowColor = 'rgba(0,0,0,.5)'; x.shadowBlur = 50; rr(x, 120, cy + 60, 640, 640, 24); x.fillStyle = c2; x.fill(); x.shadowBlur = 0; x.clip(); if (im) x.drawImage(im, 120, cy + 60, 640, 640); x.restore()
+  } else {
+    x.save(); x.shadowColor = 'rgba(0,0,0,.45)'; x.shadowBlur = 60; x.shadowOffsetY = 20; rr(x, cx, cy, cs, cs, lyr ? 28 : 44); x.fillStyle = c2; x.fill(); x.shadowColor = 'transparent'; x.clip(); if (im) x.drawImage(im, cx, cy, cs, cs); x.restore()
+  }
+  x.fillStyle = ink; x.textAlign = 'center'; x.textBaseline = 'top';
+  if (lyr) {
+    let y = cy + cs + 50; x.font = '800 44px Nunito, sans-serif'; x.fillText(t.name.slice(0, 40), W / 2, y); x.globalAlpha = .75; x.font = '600 36px Nunito, sans-serif'; x.fillText(t.artist.slice(0, 44), W / 2, y + 60); x.globalAlpha = 1;
+    const box = { X: 90, Y: y + 160, W: W - 180 };
+    x.font = '800 64px Fredoka, Nunito, sans-serif'; let L = []; for (const l of lines) L.push(...wrap(x, l, box.W - 120));
+    let fs = 64; while (L.length * fs * 1.28 > H - box.Y - 320 && fs > 36) { fs -= 4; x.font = `800 ${fs}px Fredoka, Nunito, sans-serif`; L = []; for (const l of lines) L.push(...wrap(x, l, box.W - 120)) }
+    const bh = L.length * fs * 1.28 + 120; rr(x, box.X, box.Y, box.W, bh, 48); x.fillStyle = style === 'minimal' ? '#1c1c22' : 'rgba(255,255,255,.16)'; x.fill();
+    x.fillStyle = '#fff'; x.textAlign = 'left'; L.forEach((l, i) => x.fillText(l, box.X + 60, box.Y + 60 + i * fs * 1.28)); x.textAlign = 'center'
+  } else {
+    let y = (style === 'vinilo' ? cy + 760 : cy + cs) + 80; const s = fit(x, t.name, W - 160, 76); x.fillText(t.name, W / 2, y); x.globalAlpha = .8; fit(x, t.artist, W - 160, 46, 600); x.fillText(t.artist, W / 2, y + s * 1.25); x.globalAlpha = .55; fit(x, t.album || '', W - 160, 36, 600); x.fillText(t.album || '', W / 2, y + s * 1.25 + 64); x.globalAlpha = 1
+  }
+  x.globalAlpha = .85; x.font = '800 40px Nunito, sans-serif'; x.fillText((A.me?.handle ? '@' + A.me.handle + ' · ' : '') + 'escuchando en aeffy', W / 2, H - 170); x.globalAlpha = 1;
+  return new Promise(r => c.toBlob(r, 'image/png'))
+}
+A.storyImage = story;
+async function deliver(b, t) {
+  const name = 'aeffy-' + (t.name || 'cancion').replace(/[^\w\-]+/g, '_').slice(0, 30) + '.png', f = new File([b], name, { type: 'image/png' });
+  try { if (!window.AeffyNative && navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], text: `${t.name} · ${t.artist}` }); return } } catch (e) { if (e && e.name === 'AbortError') return }
+  await A.saveBlob(b, name); toast(window.AeffyNative ? 'Imagen guardada: súbela a tu historia' : 'Imagen descargada')
+}
+on('share', async el => {
+  const t = A.byId(el.dataset.id || P.cur); if (!t) return; if (document.querySelector('.scrim')) { A.popLayer(); await new Promise(r => setTimeout(r, 260)) }
+  const L = A.parseLRC(A.lyricsOf(t)); const lines = (L.length ? L.map(l => l.x) : A.lyricsOf(t).split(/\r?\n/)).map(s => s.trim()).filter(Boolean);
+  let mode = 'cancion', style = 'portada', pick = new Set(), url = null, busy = 0;
+  const s = A.sheet(A.shead('ios_share', 'Compartir', esc(t.name) + ' · ' + esc(t.artist)) + `
+   <div class="seg" id="shm" style="margin-bottom:10px"><button class="on" data-m="cancion">${ms('music_note')}Canción</button><button data-m="letra"${lines.length ? '' : ' disabled'}>${ms('lyrics')}Letra</button></div>
+   <div class="stpick" id="shs">${SST.map(([k, n]) => `<button data-k="${k}" class="${k === style ? 'on' : ''}">${n}</button>`).join('')}</div>
+   <div id="shl" style="display:none"><div class="small muted" style="margin:4px 0 6px">Toca hasta 5 líneas</div><div id="shll" style="max-height:200px;overflow-y:auto;display:grid;gap:6px"></div></div>
+   <div style="display:grid;place-items:center;margin:10px 0"><img id="shp" alt="Vista previa" style="width:min(56vw,240px);aspect-ratio:9/16;border-radius:18px;background:var(--s2);object-fit:cover;box-shadow:0 8px 24px rgba(0,0,0,.35)"></div>
+   <div class="foot"><button class="btn t" id="shlink">${ms('link')}Solo texto</button><button class="btn" id="shgo">${ms('ios_share')}Compartir</button></div>`);
+  const paintLines = () => { $('#shll', s).innerHTML = lines.map((l, i) => `<button class="mi" data-i="${i}" style="padding:10px 12px;border-radius:14px;${pick.has(i) ? 'background:var(--pc);color:var(--onpc)' : 'background:var(--s2)'}">${esc(l)}</button>`).join('') };
+  const render = async () => { const my = ++busy; const sel = mode === 'letra' ? [...pick].sort((a, b) => a - b).map(i => lines[i]) : null; const b = await story(t, style, mode === 'letra' ? (sel.length ? sel : lines.slice(0, 2)) : null); if (my !== busy || !b) return; if (url) URL.revokeObjectURL(url); url = URL.createObjectURL(b); $('#shp', s).src = url; s._blob = b };
+  $('#shm', s).addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.disabled) return; mode = b.dataset.m; $$('#shm button', s).forEach(x => x.classList.toggle('on', x === b)); $('#shl', s).style.display = mode === 'letra' ? '' : 'none'; if (mode === 'letra') { if (!pick.size) { const c = P.cur === t.id ? L.findIndex((l, i) => l.t <= P.au.currentTime && (!L[i + 1] || L[i + 1].t > P.au.currentTime)) : -1; [0, 1].forEach(k => { const i = Math.max(0, c) + k; if (i < lines.length) pick.add(i) }) } paintLines() } render() });
+  $('#shs', s).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; style = b.dataset.k; $$('#shs button', s).forEach(x => x.classList.toggle('on', x === b)); render() });
+  $('#shll', s).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; e.stopPropagation(); e.preventDefault(); const i = +b.dataset.i; if (pick.has(i)) pick.delete(i); else { if (pick.size >= 5) { toast('Máximo 5 líneas'); return } pick.add(i) } paintLines(); render() }, true);
+  $('#shgo', s).addEventListener('click', async () => { if (!s._blob) await render(); deliver(s._blob, t) });
+  $('#shlink', s).addEventListener('click', async () => { const txt = `Estoy escuchando ${t.name} de ${t.artist} en aeffy`; try { if (navigator.share) await navigator.share({ text: txt, url: location.origin }); else { await navigator.clipboard.writeText(txt + ' ' + location.origin); toast('Copiado para compartir') } } catch (e) { } });
+  render()
+});
 }

@@ -450,5 +450,35 @@ textarea{font:inherit;color:inherit;background:transparent;border:0;outline:0;wi
 .sheet.drag{transition:none}
 .sheet .grab{touch-action:none}
 
-@keyframes avspin{to{transform:rotate(360deg)}}@keyframes avbob{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
-.avanim .avsvg{animation:avbob 3s ease-in-out infinite}.avanim .avsvg path,.avanim .avatar>svg:first-child{transform-origin:50% 50%;animation:avspin 18s linear infinite}
+/* avatar animado (Premium, lo ven tus amigos) */
+@keyframes anspin{to{transform:rotate(360deg)}}@keyframes anbeat{0%,100%{transform:scale(1)}15%{transform:scale(1.08)}30%{transform:scale(.98)}45%{transform:scale(1.05)}}
+@keyframes anfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}@keyframes anglow{0%,100%{filter:drop-shadow(0 0 0 transparent)}50%{filter:drop-shadow(0 0 10px var(--p,#ff8fc0)) drop-shadow(0 0 4px var(--p,#ff8fc0))}}
+.avatar:has(.an-girar)>svg:first-child,.an-girar clipPath path{transform-box:view-box;transform-origin:50% 50%;animation:anspin 16s linear infinite}
+.avatar:has(.an-latir),.anw.an-latir{animation:anbeat 1.6s ease-in-out infinite}
+.avatar:has(.an-flotar),.anw.an-flotar{animation:anfloat 3s ease-in-out infinite}
+.avatar:has(.an-brillo),.anw.an-brillo{animation:anglow 2.4s ease-in-out infinite}
+.anw{display:inline-flex;border-radius:50%;flex:none}
+.anw.an-girar .pav{animation:anspin 16s linear infinite}
+.anpick{display:flex;gap:8px;flex-wrap:wrap;padding:0 16px 14px}.anpick button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 12px;border-radius:18px;background:var(--s2);min-width:64px;font-size:13px}.anpick button.on{background:var(--pc);color:var(--onpc)}
+.anpick .dot{width:30px;height:30px;border-radius:50%;background:linear-gradient(140deg,var(--pcl),var(--pc))}
+.anpick .an-girar.dot{border-radius:38%;animation:anspin 4s linear infinite}.anpick .an-latir.dot{animation:anbeat 1.6s infinite}.anpick .an-flotar.dot{animation:anfloat 2s infinite}.anpick .an-brillo.dot{animation:anglow 2s infinite}
+@media (prefers-reduced-motion:reduce){.avatar,.anw,.avatar>svg,.avsvg path{animation:none!important}}
+/* karaoke: la línea que suena brilla */
+.ly p.on{text-shadow:0 0 18px color-mix(in srgb,currentColor 55%,transparent)}
+.ly p .w.s{text-shadow:0 0 14px color-mix(in srgb,currentColor 70%,transparent),0 0 3px color-mix(in srgb,currentColor 50%,transparent)}
+/* notas */
+.notes{display:grid;gap:12px}
+.note{position:relative;border-radius:24px;padding:16px;overflow:hidden;background:var(--s1)}
+.note .nb{font-size:17px;line-height:1.35;white-space:pre-wrap;word-break:break-word;margin:0}
+.note .ns{display:flex;gap:10px;align-items:center;margin-top:12px;font-size:13px}.note .ns img,.note .ns .gen{width:40px;height:40px;border-radius:10px;object-fit:cover;flex:none;background:rgba(0,0,0,.2);display:grid;place-items:center}
+.note .ns b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.note .ns span{opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}.note .ns>div{min-width:0;flex:1}
+.note .nf{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;opacity:.75}.note .nf .sp{flex:1}.note .nf .ib{width:34px;height:34px}
+.note.st-portada{color:#fff;background:#222 center/cover;isolation:isolate;min-height:190px;display:flex;flex-direction:column;justify-content:flex-end}
+.note.st-portada::before{content:"";position:absolute;inset:0;background:inherit;filter:blur(18px) saturate(1.4) brightness(.6);transform:scale(1.2);z-index:-1}
+.note.st-degradado{color:var(--onpc);background:linear-gradient(150deg,var(--pcl),var(--pc) 55%,var(--p))}
+.note.st-cuaderno{color:#3b2f2f;background:#fffaf0 repeating-linear-gradient(transparent 0 27px,#f3c9d8 27px 28px);font-family:'Fredoka',var(--hf)}.note.st-cuaderno::after{content:"";position:absolute;left:30px;top:0;bottom:0;width:2px;background:#ffb3c8}.note.st-cuaderno>*{padding-left:26px}
+.note.st-pixel{color:#fff;background:#2b1d3a;font-family:monospace;box-shadow:inset 0 0 0 4px #ff8fc0,inset 0 0 0 8px #2b1d3a,inset 0 0 0 10px #ffd1e3;border-radius:6px;image-rendering:pixelated}.note.st-pixel .nb{font-size:16px;letter-spacing:.5px}
+.note.st-polaroid{background:#fff;color:#222;border-radius:6px;padding:12px 12px 18px;box-shadow:0 6px 18px rgba(0,0,0,.25);transform:rotate(-1.2deg)}.note.st-polaroid .ph{aspect-ratio:1;border-radius:2px;background:#ddd center/cover;margin-bottom:10px}.note.st-polaroid .nb{font-family:'Fredoka',var(--hf)}
+.stpick{display:flex;gap:8px;overflow-x:auto;padding:4px 0 10px}.stpick button{flex:none;padding:8px 14px;border-radius:999px;background:var(--s2);font-size:14px;display:flex;align-items:center;gap:4px}.stpick button.on{background:var(--pc);color:var(--onpc)}.stpick .ms{font-size:16px}
+.ntx{width:100%;min-height:110px;border:0;border-radius:18px;background:var(--s2);color:inherit;padding:14px;font:inherit;font-size:16px;resize:vertical}
+.ncnt{text-align:right;font-size:12px;opacity:.7;margin-top:4px}
