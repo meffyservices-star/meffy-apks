@@ -494,7 +494,7 @@ function drawer() {
   const me = A.me; const d = $('#drawer');
   d.innerHTML = `<div class="bk" data-a="closedrawer"></div><nav aria-label="Menú">
    <button class="who" data-a="dgo" data-v="${me ? 'perfil' : 'cuenta'}"><span class="avatar">${shp('cookie')}${me ? `${A.avImg()}` : ms('person')}</span><span><b>${me ? esc(me.display_name || 'Tu perfil') : 'Sin cuenta'}</b><span>${me ? (me.handle ? '@' + esc(me.handle) : 'Ver perfil') : 'Ver perfil'}</span></span></button>
-   ${[['auto_awesome', 'aeffy Premium', 'premium'], ['bar_chart', 'Estadísticas', 'estadisticas'], ['leaderboard', 'Calificaciones', 'calificaciones'], ['group', 'Amigos', 'amigos'], ['redeem', 'Invita y gana', 'invita'], ['handyman', 'Herramientas', 'herramientas'], ['settings', 'Configuración y privacidad', 'ajustes']].map(([i, n, v]) => `<button class="mi" data-a="dgo" data-v="${v}">${ms(i)}${n}</button>`).join('')}
+   ${[['auto_awesome', 'aeffy Premium', 'premium'], ['bar_chart', 'Estadísticas', 'estadisticas'], ['leaderboard', 'Calificaciones', 'calificaciones'], ['group', 'Amigos', 'amigos'], ['chat', 'Mensajes' + (A.unreadTotal && A.unreadTotal() ? ' (' + A.unreadTotal() + ')' : ''), 'mensajes'], ['redeem', 'Invita y gana', 'invita'], ['handyman', 'Herramientas', 'herramientas'], ['settings', 'Configuración y privacidad', 'ajustes']].map(([i, n, v]) => `<button class="mi" data-a="dgo" data-v="${v}">${ms(i)}${n}</button>`).join('')}
    ${A.isAdmin ? `<button class="mi" data-a="admin">${ms('admin_panel_settings')}Panel de administradora</button>` : ''}
    <div class="fr"><b style="font-family:var(--hf);font-size:16px">Tus amigos ahora</b><p class="muted small" style="margin:6px 0 0">Cuando tus amigos escuchen algo, aparecerá aquí.</p></div></nav>`;
   d.classList.add('open'); A.pushLayer(() => d.classList.remove('open')); A.paintDrawerFriends && A.paintDrawerFriends(); A.loadFriends && A.loadFriends()
@@ -1041,7 +1041,7 @@ const SUB = {
     const col = me?.color ? `--ph:${+me.color};` : '';
     return head('Editar perfil') + `<form id="pf">
      <div class="pfedit"><button type="button" class="ban${me?.banner_url ? ' img' : ''}" id="pfBan" style="${col}${me?.banner_url ? `background-image:url('${esc(me.banner_url)}')` : ''}" data-a="pfpick" data-k="banner"><span class="pfcam">${ms('photo_camera')}Cambiar portada</span></button>
-     <button type="button" class="avatar pfav" id="pfAv" data-a="pfpick" data-k="avatar">${shp('flower')}${A.avImg(A.me, 'flower')}<span class="pfcam2">${ms('photo_camera', 1)}</span></button></div>
+     <button type="button" class="avatar pfav" id="pfAv" data-a="avmenu">${shp('flower')}${A.avImg(A.me, 'flower')}<span class="pfcam2">${ms('photo_camera', 1)}</span></button></div>
      <div class="row2" style="justify-content:center;margin:6px 0 10px">${me?.avatar_url ? `<button type="button" class="btn g" data-a="pfrm" data-k="avatar">Quitar foto</button>` : ''}${me?.banner_url ? `<button type="button" class="btn g" data-a="pfrm" data-k="banner">Quitar portada</button>` : ''}</div>
      <div class="row2" style="justify-content:center;margin:0 0 12px"><button type="button" class="btn t" data-a="avshape">${ms('interests')}Forma y animación</button></div><input type="file" id="pfFile" accept="image/*" hidden>
      <label class="fld"><small>Nombre visible</small><input id="pfN" maxlength="40" value="${esc(me?.display_name || '')}"></label>
@@ -1512,7 +1512,7 @@ A.liveStart = () => {
 setInterval(() => { if (!document.hidden && A.session) A.loadFriends() }, 45000);
 function friendRow(f) {
   const live = f.playing && f.updated_at && Date.now() - new Date(f.updated_at) < 15 * 60000;
-  return `<div class="li" data-a="go" data-v="u/${esc(f.id)}" role="button" tabindex="0">${f.cover ? `<div class="cov s48 round"><img src="${esc(f.cover)}" alt=""></div>` : av(f.display_name, 48, f.avatar_url, f.avatar_anim)}<div class="t"><b>${esc(f.display_name || '@' + f.handle)}</b><span>${f.title ? (live ? ms('graphic_eq') : '') + esc(f.title) + ' · ' + esc(f.artist || '') + (live ? '' : ' · ' + ago(f.updated_at)) : f.handle ? '@' + esc(f.handle) : ''}</span></div>${f.spot_code ? `<button class="btn t" data-a="go" data-v="spot/${esc(f.spot_code)}">${ms('podcasts')}Spot</button>` : ''}<button class="ib" data-a="fr-menu" data-id="${f.id}" aria-label="Opciones">${ms('more_vert')}</button></div>`
+  return `<div class="li" data-a="go" data-v="u/${esc(f.id)}" role="button" tabindex="0">${f.cover ? `<div class="cov s48 round"><img src="${esc(f.cover)}" alt=""></div>` : av(f.display_name, 48, f.avatar_url, f.avatar_anim)}<div class="t"><b>${esc(f.display_name || '@' + f.handle)}</b><span>${f.title ? (live ? ms('graphic_eq') : '') + esc(f.title) + ' · ' + esc(f.artist || '') + (live ? '' : ' · ' + ago(f.updated_at)) : f.handle ? '@' + esc(f.handle) : ''}</span></div>${f.spot_code ? `<button class="btn t" data-a="go" data-v="spot/${esc(f.spot_code)}">${ms('podcasts')}Spot</button>` : ''}${f.status === 'accepted' ? `<button class="ib" data-a="go" data-v="chat/${esc(f.id)}" aria-label="Mandar mensaje">${ms('chat_bubble')}${A.unreadFrom && A.unreadFrom(f.id) ? '<i class="udot"></i>' : ''}</button>` : ''}<button class="ib" data-a="fr-menu" data-id="${f.id}" aria-label="Opciones">${ms('more_vert')}</button></div>`
 }
 function paintDrawerFriends() { const d = $('#drawer .fr'); if (!d) return; const L = (A.FR || []).filter(f => f.status === 'accepted' && f.title).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)).slice(0, 6); d.innerHTML = `<b style="font-family:var(--hf);font-size:16px">Tus amigos ahora</b>` + (L.length ? L.map(friendRow).join('') : `<p class="muted small" style="margin:6px 0 0">Cuando tus amigos escuchen algo, aparecerá aquí.</p>`) }
 A.paintDrawerFriends = paintDrawerFriends;
@@ -1669,7 +1669,7 @@ V.u = arg => {
   return top({ back: 1 }) + (me ? `<div class="viewas">${ms('visibility')}Así ven tu perfil tus amigos</div>` : '') + ban + `<div class="prof" style="${col}"><div class="avatar">${shp('flower')}${avBig(p, 'flower')}</div><h2>${esc(p.display_name || '@' + p.handle)}</h2>${p.handle ? `<div class="muted">@${esc(p.handle)}</div>` : ''}${p.premium ? `<span class="pbadge">${ms('crown', 1)}Premium</span>` : ''}
    ${p.bio ? `<p class="pbio">${esc(p.bio)}</p>` : ''}
    <div class="counts"><div><b>${p.lists.length}</b><span>playlists</span></div><div><b>${p.friends || 0}</b><span>amigos</span></div><div><b>${h}</b><span>horas escuchadas</span></div></div>
-   ${me ? `<button class="btn" data-a="go" data-v="ajustes/perfil">${ms('edit')}Editar perfil</button>` : ''}</div>
+   ${me ? `<button class="btn" data-a="go" data-v="ajustes/perfil">${ms('edit')}Editar perfil</button>` : `<button class="btn" data-a="go" data-v="chat/${esc(p.id)}">${ms('chat_bubble')}Mandar mensaje</button>`}</div>
    ${n && n.title ? `<div class="sech"><h2>${live ? 'Escuchando ahora' : 'Lo último que escuchó'}</h2></div><div class="card fpnow">${n.cover ? `<div class="cov s56"><img src="${esc(n.cover)}" alt=""></div>` : `<div class="cov s56 gen">${ms('music_note')}</div>`}<div class="t"><b>${esc(n.title)}</b><span>${esc(n.artist || '')}${n.album ? ' · ' + esc(n.album) : ''}</span><small>${live ? ms('graphic_eq') + 'Sonando ahora' : ''}</small></div></div>` : ''}
    <div class="sech"><h2>Playlists</h2>${me ? `<p>Tus amigos ven las playlists que tienes marcadas como visibles.</p>` : ''}</div>
    ${p.lists.length ? `<div class="fpgrid">${p.lists.map(l => `<button class="fpl" data-a="go" data-v="u/${esc(p.id)}~${esc(l.lid)}">${plCover(l)}<b>${esc(l.name)}</b><span>${plural(l.tracks.length, 'canción', 'canciones')}</span></button>`).join('')}</div>` : `<section class="card c">${badge('queue_music')}<h3>${me ? 'Aún no compartes playlists' : 'Todavía no hay playlists'}</h3>${me ? '<p>Crea una playlist en tu Biblioteca y aparecerá aquí.</p>' : ''}</section>`}`
@@ -1777,7 +1777,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
 {
 const { $, esc, ms, toast, P, on } = A;
 const N = window.AeffyNative;
-A.BUILD = 22;
+A.BUILD = 24;
 A.native = !!N;
 if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }
@@ -2290,14 +2290,14 @@ on('avshape', () => {
   const spec = () => base + (extra.length ? '|' + extra.join(',') : '');
   const ico = k => `<svg viewBox="0 0 100 100"><path d="${A.shapePath(k)}"/></svg>`;
   const s = A.sheet(A.shead('interests', 'Forma y animación', 'Tu avatar pasa por estas formas y tus amigos lo ven moverse.') + `
-   <svg class="shp-prev" viewBox="0 0 100 100" id="shpv"><path class="bgp" d="${A.shapePath(base)}" fill="var(--pc)"/></svg>
+   <svg class="shp-prev" viewBox="0 0 100 100" id="shpv"><defs><clipPath id="shpclip"><path d="${A.shapePath(base)}"/></clipPath></defs><path class="bgp" d="${A.shapePath(base)}" fill="var(--pc)"/>${A.me && A.me.avatar_url ? `<image href="${esc(A.me.avatar_url)}" width="100" height="100" preserveAspectRatio="xMidYMid slice" clip-path="url(#shpclip)"/>` : `<text x="50" y="62" text-anchor="middle" font-size="34" font-weight="800" fill="var(--onpc)">${esc(A.initials())}</text>`}</svg><p class="small muted" id="shph" style="text-align:center;margin:0 0 8px"></p>
    <div class="sg">Forma</div><div class="shp-grid" id="shpb"></div>
    <div class="sg">Animación ${prem ? '' : ms('lock')}</div><p class="muted small" style="margin:0">Toca hasta 6 formas más, en el orden en que quieres que aparezcan.${prem ? '' : ' Es de aeffy Premium.'}</p><div class="shp-grid" id="shpa"></div>
    <div class="foot"><button type="button" class="btn t" id="shpx">Quitar animación</button><button type="button" class="btn" id="shpok">Listo</button></div>`);
   const paint = () => {
     $('#shpb', s).innerHTML = Object.entries(SHAPES).map(([k, [n]]) => `<button type="button" data-k="${k}" class="${k === base ? 'on' : ''}">${ico(k)}${n}</button>`).join('');
     $('#shpa', s).innerHTML = Object.entries(SHAPES).map(([k, [n]]) => { const i = extra.indexOf(k); return `<button type="button" data-k="${k}" class="${i >= 0 ? 'on' : ''}">${i >= 0 ? `<span class="n">${i + 1}</span>` : ''}${ico(k)}${n}</button>` }).join('');
-    $('#shpv', s).dataset.av = spec(); $('#shpv', s)._k = ''; $('#shpv', s)._base = ''
+    $('#shpv', s).dataset.av = spec(); $('#shpv', s)._k = ''; $('#shpv', s)._base = ''; $('#shph', s).textContent = extra.length ? 'Así se mueve tu avatar' : (prem ? 'Para que se mueva, toca formas en Animación ↓' : 'Así se ve tu avatar')
   };
   paint();
   $('#shpb', s).onclick = e => { const b = e.target.closest('button'); if (!b) return; base = b.dataset.k; paint() };
@@ -2310,4 +2310,180 @@ on('avshape', () => {
   };
 });
 A.avAnimPicker = () => '';
+}
+
+/* aeffy · Mensajes con amigos: texto, canciones y stickers propios (como Spotify + WhatsApp) */
+'use strict';
+{
+const { $, $$, esc, ms, toast, P, on } = A;
+const V = A.views;
+const myId = () => A.session && A.session.user && A.session.user.id;
+const BASE = 'https://nhyxgfnjjzrdwshiuoyo.supabase.co/storage/v1/object/public/aeffy-avatars/';
+let CH = [], MSG = {}, STK = null, cur = null, chan = null;
+const fr = id => (A.FR || []).find(f => f.id === id) || (A.FP && A.FP[id]) || {};
+const nm = f => f.display_name || (f.handle ? '@' + f.handle : 'Amigo');
+const avOf = (f, sz) => A.shapeAv ? A.shapeAv(nm(f), sz, f.avatar_url, f.avatar_anim || 'circulo') : '';
+const hm = d => new Date(d).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+const day = d => { const x = new Date(d), t = new Date(); const y = new Date(t - 864e5); return x.toDateString() === t.toDateString() ? 'Hoy' : x.toDateString() === y.toDateString() ? 'Ayer' : x.toLocaleDateString('es', { day: 'numeric', month: 'long' }) };
+const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\(.*?\)|\[.*?\]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+const mineTrack = m => A.tracks.find(t => norm(t.name) === norm(m.title) && norm(t.artist) === norm(m.artist)) || A.tracks.find(t => norm(t.name) === norm(m.title));
+A.unreadFrom = id => (CH.find(c => c.friend === id) || {}).unread || 0;
+A.unreadTotal = () => CH.reduce((a, c) => a + (c.unread || 0), 0);
+
+let chLoading = 0, chAt = 0;
+async function loadChats(force) { const sb = A.sb && A.sb(); if (!sb || !A.session || chLoading) return; if (!force && Date.now() - chAt < 4000) return; chLoading = 1; chAt = Date.now(); try { const { data } = await sb.rpc('aeffy_chats'); if (data) { const changed = JSON.stringify(data) !== JSON.stringify(CH); CH = data; paintBadge(); const { v } = A.route(); if (changed && v === 'mensajes') A.render() } } finally { chLoading = 0 } }
+A.loadChats = loadChats;
+function paintBadge() { const n = A.unreadTotal(); document.documentElement.style.setProperty('--unread', n ? `"${n}"` : '""'); $$('[data-a="dgo"][data-v="mensajes"]').forEach(b => { b.lastChild.textContent = 'Mensajes' + (n ? ' (' + n + ')' : '') }) }
+async function loadMsgs(id) {
+  const sb = A.sb(), me = myId();
+  const { data, error } = await sb.from('aeffy_messages').select('*').or(`and(sender.eq.${me},receiver.eq.${id}),and(sender.eq.${id},receiver.eq.${me})`).order('created_at', { ascending: false }).limit(200);
+  MSG[id] = error ? (MSG[id] || []) : (data || []).reverse(); paintMsgs(id, true);
+  if ((CH.find(c => c.friend === id) || {}).unread) { await sb.rpc('aeffy_read_chat', { p_with: id }); loadChats(true) }
+}
+function live() {
+  const sb = A.sb && A.sb(); if (!sb || !A.session) return; if (chan) sb.removeChannel(chan); const me = myId();
+  chan = sb.channel('aeffy-dm-' + me).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'aeffy_messages', filter: 'receiver=eq.' + me }, ({ new: m }) => {
+    const L = MSG[m.sender]; if (L && !L.find(x => x.id === m.id)) L.push(m);
+    if (cur === m.sender && !document.hidden) { paintMsgs(m.sender, true); sb.rpc('aeffy_read_chat', { p_with: m.sender }) }
+    else { const tx = m.kind === 'text' ? m.body.slice(0, 120) : m.kind === 'song' ? '🎵 Te mandó una canción' : 'Te mandó un sticker'; if (document.hidden && A.notifyMsg) A.notifyMsg(m, nm(fr(m.sender)), tx); else toast(`${nm(fr(m.sender))}: ${tx}`); loadChats() }
+    try { window.AeffyNative && AeffyNative.notified && AeffyNative.notified(m.id) } catch (e) { }
+    if (navigator.vibrate) try { navigator.vibrate(30) } catch (e) { }
+  }).subscribe();
+  loadChats(true)
+}
+const ls0 = A.liveStart; A.liveStart = () => { ls0 && ls0(); setTimeout(live, 1500) };
+if (A.session) setTimeout(live, 2500);
+setInterval(() => { if (!document.hidden && A.session) loadChats() }, 60000);
+
+/* lista de conversaciones */
+V.mensajes = () => {
+  if (!A.session) return `<section class="card c"><h3>Inicia sesión</h3><p>Para mandar mensajes a tus amigos necesitas tu cuenta aeffy.</p><button class="btn" data-a="login">Iniciar sesión</button></section>`;
+  loadChats();
+  const acc = (A.FR || []).filter(f => f.status === 'accepted'), seen = new Set(CH.map(c => c.friend));
+  const prev = c => c.last_kind === 'text' ? esc((c.last_from_me ? 'Tú: ' : '') + (c.last_body || '')) : c.last_kind === 'song' ? (c.last_from_me ? 'Tú: ' : '') + '🎵 Canción' : (c.last_from_me ? 'Tú: ' : '') + 'Sticker';
+  return `<div class="top"><button class="ib" data-a="back" aria-label="Atrás">${ms('arrow_back')}</button></div><h1 class="h1">Mensajes</h1>
+   ${CH.length ? CH.map(c => { const f = fr(c.friend); return `<div class="li" data-a="go" data-v="chat/${esc(c.friend)}" role="button" tabindex="0">${avOf(f, 48)}<div class="t"><b>${esc(nm(f))}</b><span${c.unread ? ' style="font-weight:800;opacity:1"' : ''}>${prev(c)}</span></div><small class="muted">${c.unread ? `<i class="ucount">${c.unread}</i>` : hm(c.last_at)}</small></div>` }).join('') : `<p class="muted">Todavía no tienes conversaciones.</p>`}
+   ${acc.filter(f => !seen.has(f.id)).length ? `<div class="sech"><h2>Escríbele a</h2></div>` + acc.filter(f => !seen.has(f.id)).map(f => `<div class="li" data-a="go" data-v="chat/${esc(f.id)}" role="button" tabindex="0">${avOf(f, 44)}<div class="t"><b>${esc(nm(f))}</b><span>${f.handle ? '@' + esc(f.handle) : ''}</span></div>${ms('chat_bubble')}</div>`).join('') : ''}`
+};
+
+/* conversación */
+V.chat = id => {
+  if (!A.session) return V.mensajes();
+  cur = id; document.body.classList.add('chatmode');
+  const f = fr(id); const liveNow = f.playing && f.updated_at && Date.now() - new Date(f.updated_at) < 15 * 60000;
+  if (!MSG[id]) setTimeout(() => loadMsgs(id), 0); else setTimeout(() => { paintMsgs(id, true); loadMsgs(id) }, 0);
+  return `<div class="chh"><button class="ib" data-a="back" aria-label="Atrás">${ms('arrow_back')}</button><button class="chwho" data-a="go" data-v="u/${esc(id)}">${avOf(f, 44)}<span><b>${esc(nm(f))}</b><small>${f.title ? (liveNow ? ms('graphic_eq') : ms('history')) + esc(f.title) + ' — ' + esc(f.artist || '') : f.handle ? '@' + esc(f.handle) : ''}</small></span></button></div>
+   <div class="chl" id="chl"><div class="chintro">${avOf(f, 96)}<b>${esc(nm(f))}</b><button class="btn t" data-a="go" data-v="u/${esc(id)}">Ir al perfil</button></div><div id="chm"></div></div>
+   <form class="chin" id="chin"><input id="chtx" placeholder="Escribe un mensaje…" autocomplete="off" maxlength="2000"><button type="button" class="ib" data-a="ch-song" aria-label="Mandar canción">${ms('add')}</button><button type="button" class="ib" data-a="ch-stk" aria-label="Stickers">${ms('add_reaction')}</button><button class="ib snd" aria-label="Enviar">${ms('send', 1)}</button></form>`
+};
+function bubble(m, me) {
+  const mine = m.sender === me;
+  if (m.kind === 'sticker') return `<div class="mb ${mine ? 'me' : ''} stk"><img src="${esc(m.meta.url)}" alt="Sticker" loading="lazy"><small>${hm(m.created_at)}</small></div>`;
+  if (m.kind === 'song') { const t = mineTrack(m.meta || {}); return `<div class="mb ${mine ? 'me' : ''} song"><div class="sc">${m.meta.cover ? `<img src="${esc(m.meta.cover)}" alt="">` : `<span class="gen">${ms('music_note')}</span>`}<div><b>${esc(m.meta.title || '')}</b><span>${esc(m.meta.artist || '')}</span></div></div>${t ? `<button class="btn t sm" data-a="ch-play" data-id="${t.id}">${ms('play_arrow', 1)}Reproducir</button>` : `<span class="muted small">No está en tu biblioteca</span>`}<small>${hm(m.created_at)}</small></div>` }
+  return `<div class="mb ${mine ? 'me' : ''}"><p>${esc(m.body)}</p><small>${hm(m.created_at)}</small></div>`
+}
+function paintMsgs(id, scroll) {
+  if (cur !== id) return; const box = $('#chm'); if (!box) return; const me = myId(); let last = '';
+  box.innerHTML = (MSG[id] || []).map(m => { const d = day(m.created_at); const sep = d !== last ? `<div class="chday">${d}</div>` : ''; last = d; return sep + bubble(m, me) }).join('') || `<p class="muted small" style="text-align:center">Salúdale 👋</p>`;
+  if (scroll) { const l = $('#chl'); if (l) requestAnimationFrame(() => l.scrollTop = l.scrollHeight) }
+}
+const send = async (kind, body, meta) => {
+  const id = cur; if (!id) return; const tmp = { id: 'tmp' + Date.now(), sender: myId(), receiver: id, kind, body, meta: meta || {}, created_at: new Date().toISOString() };
+  (MSG[id] = MSG[id] || []).push(tmp); paintMsgs(id, true);
+  const { data, error } = await A.sb().rpc('aeffy_send_message', { p_to: id, p_kind: kind, p_body: body || null, p_meta: meta || {} });
+  const L = MSG[id], i = L.indexOf(tmp);
+  if (error) { if (i >= 0) L.splice(i, 1); paintMsgs(id); toast(/NO_AMIGOS/.test(error.message) ? 'Solo puedes escribirle a tus amigos' : /LENTO/.test(error.message) ? 'Vas muy rápido, espera un momento' : 'No se envió: ' + error.message.slice(0, 60)); return }
+  if (i >= 0) L[i] = data; paintMsgs(id); loadChats(true)
+};
+document.addEventListener('submit', e => { if (e.target.id !== 'chin') return; e.preventDefault(); const i = $('#chtx'); const v = i.value.trim(); if (!v) return; i.value = ''; send('text', v) }, true);
+on('ch-play', el => { const ids = A.tracks.map(t => t.id); A.playList([el.dataset.id], 0, 'Mensajes') });
+
+/* salir del chat: vuelve el reproductor de abajo */
+const r0 = A.render; A.render = (...a) => { const { v } = A.route(); if (v !== 'chat') { document.body.classList.remove('chatmode'); cur = null } return r0(...a) };
+
+/* mandar canción */
+on('ch-song', () => {
+  const now = A.byId(P.cur); let q = '';
+  const s = A.sheet(A.shead('music_note', 'Mandar una canción') + `<div class="search">${ms('search')}<input id="csq" placeholder="Buscar en tu biblioteca" autocomplete="off"></div><div id="csl" class="wkl"></div>`);
+  const paint = () => { const L = (q ? A.tracks.filter(t => norm(t.name + ' ' + t.artist).includes(norm(q))) : [now, ...A.tracks.filter(t => t !== now)].filter(Boolean)).slice(0, 80); $('#csl', s).innerHTML = L.map(t => `<button class="wk" data-id="${t.id}">${t.cover ? `<img src="${esc(t.cover)}" alt="">` : `<span class="gen">${ms('music_note')}</span>`}<div><b>${esc(t.name)}</b><span>${t === now ? 'Sonando ahora · ' : ''}${esc(t.artist)}</span></div>${ms('send')}</button>`).join('') || '<p class="muted small">No encontré esa canción.</p>' };
+  paint(); $('#csq', s).oninput = e => { q = e.target.value; paint() };
+  $('#csl', s).onclick = async e => { const b = e.target.closest('.wk'); if (!b) return; const t = A.byId(b.dataset.id); A.popLayer(); const cov = A.smallCover ? await A.smallCover(t.cover) : null; send('song', null, { title: t.name, artist: t.artist, album: t.album, cover: cov }) }
+});
+
+/* stickers: el primero siempre es «Agregar sticker» */
+async function loadStk() { const { data } = await A.sb().from('aeffy_stickers').select('*').order('created_at', { ascending: false }); STK = data || []; return STK }
+async function makeSticker(file) {
+  const sb = A.sb(), me = myId(); let blob = file, ext = 'gif', type = 'image/gif';
+  if (file.type !== 'image/gif') { const im = new Image(); im.src = URL.createObjectURL(file); await im.decode(); const c = document.createElement('canvas'), S = 320, k = Math.min(S / im.width, S / im.height, 1); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); blob = await new Promise(r => c.toBlob(r, 'image/webp', .9)); ext = 'webp'; type = 'image/webp' }
+  else if (file.size > 2.5e6) { toast('Ese GIF es muy pesado (máximo 2,5 MB)'); return null }
+  const path = me + '/st-' + Date.now().toString(36) + '.' + ext;
+  const { error } = await sb.storage.from('aeffy-avatars').upload(path, blob, { contentType: type }); if (error) { toast('No pude subir el sticker'); return null }
+  const url = sb.storage.from('aeffy-avatars').getPublicUrl(path).data.publicUrl;
+  const r = await sb.rpc('aeffy_add_sticker', { p_url: url }); if (r.error) { toast(/LLENO/.test(r.error.message) ? 'Ya tienes 300 stickers' : 'No pude guardarlo'); return null }
+  STK = [r.data, ...(STK || [])]; return r.data
+}
+on('ch-stk', async () => {
+  let edit = false;
+  const s = A.sheet(`<div class="sthd"><b>Tus stickers</b><button class="btn g sm" id="ste">Editar</button></div><div class="stg" id="stg"><p class="muted small">Cargando…</p></div><input type="file" id="stf" accept="image/png,image/webp,image/gif,image/jpeg" multiple hidden>`, { head: false });
+  const paint = () => { $('#stg', s).innerHTML = `<button class="stadd" id="sta">${ms('add_photo_alternate')}<span>Agregar sticker</span></button>` + (STK || []).map((x, i) => `<button class="sti${edit ? ' ed' : ''}" data-i="${i}"><img src="${esc(x.url)}" alt="" loading="lazy">${edit ? `<i>${ms('close')}</i>` : ''}</button>`).join('') };
+  if (!STK) await loadStk(); paint();
+  $('#ste', s).onclick = () => { edit = !edit; $('#ste', s).textContent = edit ? 'Listo' : 'Editar'; paint() };
+  $('#stf', s).onchange = async e => { const fs = [...e.target.files].slice(0, 10); if (!fs.length) return; toast(fs.length > 1 ? `Agregando ${fs.length} stickers…` : 'Agregando sticker…'); for (const f of fs) await makeSticker(f); paint(); toast('Listo, ya están en tus stickers') };
+  $('#stg', s).onclick = async e => {
+    if (e.target.closest('#sta')) { $('#stf', s).value = ''; $('#stf', s).click(); return }
+    const b = e.target.closest('.sti'); if (!b) return; const x = STK[+b.dataset.i];
+    if (edit) { await A.sb().rpc('aeffy_del_sticker', { p_id: x.id }); STK = STK.filter(y => y !== x); paint(); return }
+    A.popLayer(); send('sticker', null, { url: x.url })
+  };
+  /* también puedes guardar un sticker que te mandaron: mantén presionado */
+});
+on('stk-save', async el => { const url = el.dataset.url; if (!url || !url.startsWith(BASE)) return; const r = await A.sb().rpc('aeffy_add_sticker', { p_url: url }); toast(r.error ? 'Solo puedes guardar stickers subidos por ti' : 'Sticker guardado') });
+}
+
+/* aeffy · notificaciones de mensajes, menú de foto como Sosu (foto, GIF, portada, iniciales) */
+'use strict';
+{
+const { $, $$, esc, ms, toast, P, on } = A;
+const N = window.AeffyNative;
+/* avisar de un mensaje: en la app de Android con su notificación; en el navegador con la del sistema */
+A.notifyMsg = async (m, who, text) => {
+  const url = location.origin + '/#/chat/' + m.sender;
+  try { if (N && N.notify) { N.notify('m' + m.sender, who, text, url); return } } catch (e) { }
+  try { if ('Notification' in window && Notification.permission === 'granted') { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) reg.showNotification(who, { body: text, tag: 'm' + m.sender, icon: '/icons/icon-192.png', data: { url } }); else new Notification(who, { body: text, tag: 'm' + m.sender }) } } catch (e) { }
+};
+/* registrar este teléfono para avisar aunque aeffy esté cerrada */
+const regDev = async () => {
+  if (!N || !N.setDeviceKey || !A.session) return;
+  let k = localStorage.getItem('ae_devkey'); if (!k) { const a = new Uint8Array(24); crypto.getRandomValues(a); k = [...a].map(x => x.toString(16).padStart(2, '0')).join(''); localStorage.setItem('ae_devkey', k) }
+  const { error } = await A.sb().rpc('aeffy_register_device', { p_key: k }); if (!error) N.setDeviceKey(k)
+};
+const ls1 = A.liveStart; A.liveStart = () => { ls1 && ls1(); setTimeout(regDev, 3000) };
+if (A.session) setTimeout(regDev, 5000);
+/* si la app es vieja (sin notificaciones), avisar que hay versión nueva para instalar */
+if (N && !N.notify && !sessionStorage.getItem('ae_apkmsg')) { sessionStorage.setItem('ae_apkmsg', '1'); setTimeout(() => toast('Hay una versión nueva de la app con notificaciones: descárgala en aeffy.vercel.app/descargar'), 6000) }
+
+/* menú de la foto de perfil */
+const upRaw = async (file, kind) => { const sb = A.sb(), me = A.session.user.id; if (file.size > 3e6) { toast('Ese GIF pesa más de 3 MB'); return null } const path = me + '/' + kind + '-' + Date.now().toString(36) + '.gif'; const { error } = await sb.storage.from('aeffy-avatars').upload(path, file, { contentType: 'image/gif' }); if (error) { toast('No pude subir el GIF'); return null } return sb.storage.from('aeffy-avatars').getPublicUrl(path).data.publicUrl };
+const setAv = async url => { if (url && await A.saveProfileExtra({ avatar: url })) { toast('Foto de perfil lista'); A.render() } };
+const pick = accept => new Promise(r => { const i = document.createElement('input'); i.type = 'file'; i.accept = accept; i.onchange = () => r(i.files[0] || null); i.click() });
+on('avmenu', () => {
+  const prem = A.isPremium();
+  A.sheet(`<div class="shtrack"><b style="font-size:18px">Foto de perfil</b></div>
+   <button class="mi" data-a="av-photo">${ms('upload')}Subir una foto</button>
+   <button class="mi" data-a="av-gif">${ms('gif_box')}Subir un GIF${prem ? '' : ' ' + ms('lock')}</button>
+   <button class="mi" data-a="av-cover">${ms('album')}Portada de un álbum</button>
+   <button class="mi" data-a="av-ini">${ms('text_fields')}Usar iniciales</button>
+   <button class="mi" data-a="av-shape">${ms('interests')}Forma y animación</button>`, { head: false })
+});
+on('av-photo', async () => { A.popLayer(); const f = await pick('image/png,image/jpeg,image/webp'); if (!f) return; toast('Subiendo foto…'); setAv(await A.uploadPic(f, 'avatar')) });
+on('av-gif', async () => { A.popLayer(); if (!A.isPremium()) { toast('El avatar con GIF es de aeffy Premium'); A.go('premium'); return } const f = await pick('image/gif'); if (!f) return; if (f.type !== 'image/gif') { toast('Elige un archivo .gif'); return } toast('Subiendo GIF…'); setAv(await upRaw(f, 'avatar')) });
+on('av-ini', async () => { A.popLayer(); if (await A.saveProfileExtra({ avatar: '' })) { toast('Ahora se ven tus iniciales'); A.render() } });
+on('av-shape', () => { A.popLayer(); setTimeout(() => A.ACT.avshape(), 260) });
+on('av-cover', () => {
+  A.popLayer();
+  const al = {}; for (const t of A.tracks) if (t.cover && !al[t.album]) al[t.album] = t;
+  const L = Object.values(al).slice(0, 120);
+  setTimeout(() => { const s = A.sheet(A.shead('album', 'Portada de un álbum') + `<div class="stg" id="avc">${L.map((t, i) => `<button data-i="${i}" style="padding:0"><img src="${esc(t.cover)}" alt="" style="width:100%;height:100%;object-fit:cover"></button>`).join('') || '<p class="muted small">Todavía no tienes álbumes con portada.</p>'}</div>`);
+    $('#avc', s).onclick = async e => { const b = e.target.closest('button'); if (!b) return; const t = L[+b.dataset.i]; A.popLayer(); toast('Poniendo la portada…'); try { const blob = await (await fetch(t.cover)).blob(); setAv(await A.uploadPic(new File([blob], 'cover.jpg', { type: blob.type || 'image/jpeg' }), 'avatar')) } catch (err) { toast('No pude usar esa portada') } } }, 260)
+});
 }
