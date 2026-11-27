@@ -1778,7 +1778,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
 {
 const { $, esc, ms, toast, P, on } = A;
 const N = window.AeffyNative;
-A.BUILD = 25;
+A.BUILD = 26;
 A.native = !!N;
 if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }
@@ -2386,7 +2386,7 @@ function bubble(m, me) {
 function paintMsgs(id, scroll) {
   if (cur !== id) return; const box = $('#chm'); if (!box) return; const me = myId(); let last = '';
   box.innerHTML = (MSG[id] || []).map(m => { const d = day(m.created_at); const sep = d !== last ? `<div class="chday">${d}</div>` : ''; last = d; return sep + bubble(m, me) }).join('') || `<p class="muted small" style="text-align:center">Salúdale 👋</p>`;
-  if (scroll) { const l = $('#chl'); if (l) requestAnimationFrame(() => l.scrollTop = l.scrollHeight) }
+  if (scroll) { const end = () => { const h = document.scrollingElement || document.documentElement; h.style.scrollBehavior = 'auto'; h.scrollTop = h.scrollHeight; h.style.scrollBehavior = '' }; end(); requestAnimationFrame(end); setTimeout(end, 120); box.querySelectorAll('img').forEach(i => { if (!i.complete) i.addEventListener('load', () => { const h = document.scrollingElement; if (h.scrollHeight - h.scrollTop - innerHeight < 400) end() }, { once: true }) }) }
 }
 const send = async (kind, body, meta) => {
   const id = cur; if (!id) return; const tmp = { id: 'tmp' + Date.now(), sender: myId(), receiver: id, kind, body, meta: meta || {}, created_at: new Date().toISOString() };
