@@ -683,7 +683,8 @@ A.me = A.lsGet('ae_me', null); A.session = null; A.isAdmin = false;
 
 A.isPremium = () => !!(A.me && A.me.premium_until && new Date(A.me.premium_until) > new Date());
 A.can = f => !A.cfg.premium_features?.[f] || A.isPremium();
-A.avImg = (me = A.me) => me && me.avatar_url ? `<img class="avi" src="${esc(me.avatar_url)}" alt="">` : `<b>${esc(A.initials())}</b>`;
+let avN = 0;
+A.avImg = (me = A.me, shape = 'cookie') => { if (!me || !me.avatar_url) return `<b>${esc(A.initials())}</b>`; const id = 'avc' + (++avN); return `<svg class="avsvg" viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="${id}"><path d="${A.SH[shape] || A.SH.cookie}"/></clipPath></defs><image href="${esc(me.avatar_url)}" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id})"/></svg>` };
 A.uploadPic = async (file, kind) => {
   const c = client(); if (!c || !A.session) return null;
   const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = URL.createObjectURL(file) });
@@ -841,7 +842,7 @@ V.perfil = () => {
   const me = A.me, st = A.streak(), dist = Object.keys(A.STS.t).length, rated = Object.values(A.META).filter(m => m.rating).length;
   const col = me.color ? `--ph:${+me.color};` : '';
   const ban = me.banner_url ? `<div class="ban img" style="${col}background-image:url('${esc(me.banner_url)}')"></div>` : `<div class="ban" style="${col}"></div>`;
-  return top({ back: 1 }) + ban + `<div class="prof" style="${col}"><div class="avatar">${shp('flower')}${A.avImg()}</div><h2>${esc(me.display_name || 'Tu perfil')}</h2>${me.handle ? `<div class="muted">@${esc(me.handle)}</div>` : ''}${A.isPremium() ? `<span class="pbadge">${ms('crown', 1)}Premium</span>` : ''}
+  return top({ back: 1 }) + ban + `<div class="prof" style="${col}"><div class="avatar">${shp('flower')}${A.avImg(A.me, 'flower')}</div><h2>${esc(me.display_name || 'Tu perfil')}</h2>${me.handle ? `<div class="muted">@${esc(me.handle)}</div>` : ''}${A.isPremium() ? `<span class="pbadge">${ms('crown', 1)}Premium</span>` : ''}
    ${me.bio ? `<p class="pbio">${esc(me.bio)}</p>` : ''}
    <div class="counts"><div><b>${rated}</b><span>reseñas</span></div><div><b>0</b><span>seguidores</span></div><div><b>0</b><span>amigos</span></div></div>
    <div class="row2" style="justify-content:center"><button class="btn" data-a="go" data-v="ajustes/perfil">${ms('edit')}Editar perfil</button>${me.handle ? `<button class="btn t" data-a="fr-share">${ms('share')}Compartir</button>` : ''}</div></div>
@@ -986,7 +987,7 @@ const SUB = {
     const col = me?.color ? `--ph:${+me.color};` : '';
     return head('Editar perfil') + `<form id="pf">
      <div class="pfedit"><button type="button" class="ban${me?.banner_url ? ' img' : ''}" id="pfBan" style="${col}${me?.banner_url ? `background-image:url('${esc(me.banner_url)}')` : ''}" data-a="pfpick" data-k="banner"><span class="pfcam">${ms('photo_camera')}Cambiar portada</span></button>
-     <button type="button" class="avatar pfav" id="pfAv" data-a="pfpick" data-k="avatar">${shp('flower')}${A.avImg()}<span class="pfcam2">${ms('photo_camera', 1)}</span></button></div>
+     <button type="button" class="avatar pfav" id="pfAv" data-a="pfpick" data-k="avatar">${shp('flower')}${A.avImg(A.me, 'flower')}<span class="pfcam2">${ms('photo_camera', 1)}</span></button></div>
      <div class="row2" style="justify-content:center;margin:6px 0 10px">${me?.avatar_url ? `<button type="button" class="btn g" data-a="pfrm" data-k="avatar">Quitar foto</button>` : ''}${me?.banner_url ? `<button type="button" class="btn g" data-a="pfrm" data-k="banner">Quitar portada</button>` : ''}</div>
      <input type="file" id="pfFile" accept="image/*" hidden>
      <label class="fld"><small>Nombre visible</small><input id="pfN" maxlength="40" value="${esc(me?.display_name || '')}"></label>
@@ -1628,7 +1629,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
 {
 const { $, esc, ms, toast, P, on } = A;
 const N = window.AeffyNative;
-A.BUILD = 9;
+A.BUILD = 10;
 A.native = !!N;
 if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }
