@@ -14,6 +14,8 @@ import android.view.View;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.PermissionRequest;
+import android.webkit.ServiceWorkerClient;
+import android.webkit.ServiceWorkerController;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -61,6 +63,21 @@ public class MainActivity extends Activity {
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
         if (Build.VERSION.SDK_INT >= 26) web.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, false);
 
+        // Si la página tiene un service worker, sus pedidos no pasan por el WebViewClient: también los atendemos aquí
+        if (Build.VERSION.SDK_INT >= 24) {
+            try {
+                ServiceWorkerController.getInstance().setServiceWorkerClient(new ServiceWorkerClient() {
+                    @Override
+                    public WebResourceResponse shouldInterceptRequest(WebResourceRequest req) {
+                        Uri u = req.getUrl();
+                        if (HOST.equals(u.getHost()) && u.getPath() != null && u.getPath().startsWith("/__native/")) {
+                            return NativeServer.handle(MainActivity.this, u, req.getRequestHeaders());
+                        }
+                        return null;
+                    }
+                });
+            } catch (Exception ignored) { }
+        }
         web.addJavascriptInterface(new NativeBridge(this), "AeffyNative");
         web.setWebViewClient(new WebViewClient() {
             @Override

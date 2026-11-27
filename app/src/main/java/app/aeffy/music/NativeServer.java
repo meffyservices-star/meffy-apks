@@ -41,6 +41,8 @@ public class NativeServer {
         Map<String, String> h = new HashMap<>();
         h.put("Access-Control-Allow-Origin", "*");
         h.put("Cache-Control", "no-store");
+        h.put("X-Aeffy", "1");
+        h.put("Access-Control-Expose-Headers", "X-Aeffy, Content-Range, Content-Length");
         return h;
     }
 
