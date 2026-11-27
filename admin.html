@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es" data-mode="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0e1016">
+<title>Panel · aeffy</title>
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0&display=block">
+<link rel="stylesheet" href="/a.css?v=1">
+<style>
+.page{padding-bottom:60px}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(min-width:560px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.u{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.u .t{flex:1;display:grid}.u .t b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.u .t span{font-size:13px;color:var(--mute)}
+.tag{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;background:var(--s3)}
+.tag.p{background:#5b2a3c;color:#ffd7e3}.tag.b{background:var(--dangerbg);color:#ffdad6}
+.code{font-family:ui-monospace,monospace;font-weight:700;letter-spacing:.06em}
+.steps2 li{margin:6px 0;color:var(--mute)}
+.steps2 b{color:var(--on)}
+</style>
+</head>
+<body>
+<div id="app"><main class="page" id="page"><p class="muted" style="padding:40px 0;text-align:center">Cargando…</p></main></div>
+<div class="toast" id="toast" role="status"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="/admin.js?v=1"></script>
+</body>
+</html>

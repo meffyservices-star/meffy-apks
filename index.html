@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es" data-mode="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e1016">
+<meta name="description" content="aeffy: tu música local, como suena de verdad. Estadísticas reales, letras sincronizadas y la portada tiñendo toda la app.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="aeffy">
+<title>aeffy</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Figtree:wght@400;500;600;700&family=Great+Vibes&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0&display=block">
+<link rel="stylesheet" href="/a.css?v=1">
+</head>
+<body>
+<div id="app"><main class="page" id="page"></main></div>
+<div class="dock">
+ <div class="mini" id="mini" role="button" aria-label="Abrir reproductor"></div>
+ <nav class="bnav" id="bnav" aria-label="Principal">
+  <button data-a="tab" data-v="inicio"><i><span class="ms">home</span></i>Inicio</button>
+  <button data-a="tab" data-v="buscar"><i><span class="ms">search</span></i>Buscar</button>
+  <button data-a="tab" data-v="biblioteca"><i><span class="ms">album</span></i>Biblioteca</button>
+  <button data-a="tab" data-v="spots"><i><span class="ms">podcasts</span></i>Spots</button>
+ </nav>
+</div>
+<section class="fp" id="fp" aria-label="Reproductor"></section>
+<div class="drawer" id="drawer"></div>
+<div class="toast" id="toast" role="status"></div>
+<div class="bar0" id="bar0"></div>
+<div class="drop hide" id="drop">Suelta tu música aquí</div>
+<input type="file" id="fIn" class="vh" multiple accept="audio/*,.mp3,.flac,.wav,.ogg,.opus,.m4a,.aac,.lrc">
+<input type="file" id="dIn" class="vh" multiple webkitdirectory>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="/a.js?v=1"></script>
+</body>
+</html>
