@@ -450,19 +450,6 @@ textarea{font:inherit;color:inherit;background:transparent;border:0;outline:0;wi
 .sheet.drag{transition:none}
 .sheet .grab{touch-action:none}
 
-/* avatar animado (Premium, lo ven tus amigos) */
-@keyframes anspin{to{transform:rotate(360deg)}}@keyframes anbeat{0%,100%{transform:scale(1)}15%{transform:scale(1.08)}30%{transform:scale(.98)}45%{transform:scale(1.05)}}
-@keyframes anfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}@keyframes anglow{0%,100%{filter:drop-shadow(0 0 0 transparent)}50%{filter:drop-shadow(0 0 10px var(--p,#ff8fc0)) drop-shadow(0 0 4px var(--p,#ff8fc0))}}
-.avatar:has(.an-girar)>svg:first-child,.an-girar clipPath path{transform-box:view-box;transform-origin:50% 50%;animation:anspin 16s linear infinite}
-.avatar:has(.an-latir),.anw.an-latir{animation:anbeat 1.6s ease-in-out infinite}
-.avatar:has(.an-flotar),.anw.an-flotar{animation:anfloat 3s ease-in-out infinite}
-.avatar:has(.an-brillo),.anw.an-brillo{animation:anglow 2.4s ease-in-out infinite}
-.anw{display:inline-flex;border-radius:50%;flex:none}
-.anw.an-girar .pav{animation:anspin 16s linear infinite}
-.anpick{display:flex;gap:8px;flex-wrap:wrap;padding:0 16px 14px}.anpick button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 12px;border-radius:18px;background:var(--s2);min-width:64px;font-size:13px}.anpick button.on{background:var(--pc);color:var(--onpc)}
-.anpick .dot{width:30px;height:30px;border-radius:50%;background:linear-gradient(140deg,var(--pcl),var(--pc))}
-.anpick .an-girar.dot{border-radius:38%;animation:anspin 4s linear infinite}.anpick .an-latir.dot{animation:anbeat 1.6s infinite}.anpick .an-flotar.dot{animation:anfloat 2s infinite}.anpick .an-brillo.dot{animation:anglow 2s infinite}
-@media (prefers-reduced-motion:reduce){.avatar,.anw,.avatar>svg,.avsvg path{animation:none!important}}
 /* karaoke: la línea que suena brilla */
 /* notas */
 .notes{display:grid;gap:12px}
@@ -489,3 +476,7 @@ textarea{font:inherit;color:inherit;background:transparent;border:0;outline:0;wi
 .wk{display:flex;gap:12px;align-items:center;width:100%;padding:10px;border-radius:16px;background:var(--s2);text-align:left;margin-bottom:8px}.wk img,.wk .gen{width:46px;height:46px;border-radius:10px;object-fit:cover;flex:none;background:rgba(0,0,0,.2);display:grid;place-items:center}.wk>div{flex:1;min-width:0}.wk b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wk span{font-size:13px;opacity:.7}
 .wkl{max-height:46vh;overflow-y:auto;margin-top:8px}
 .upbar{position:fixed;left:12px;right:12px;bottom:calc(150px + var(--sab,0px));z-index:70;display:flex;align-items:center;gap:10px;padding:10px 12px 10px 16px;border-radius:20px;background:var(--pc);color:var(--onpc);box-shadow:0 8px 24px rgba(0,0,0,.35);font-weight:700;max-width:560px;margin:0 auto}.upbar span{flex:1}.upbar .btn{background:var(--onpc);color:var(--pc);height:38px;padding:0 14px}
+
+.anw{display:inline-block;flex:none}.anw svg{width:100%;height:100%;display:block}
+.shp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;margin:8px 0 14px}.shp-grid button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:16px;background:var(--s2);font-size:12px;position:relative}.shp-grid button.on{background:var(--pc);color:var(--onpc)}.shp-grid svg{width:36px;height:36px}.shp-grid svg path{fill:currentColor;opacity:.85}.shp-grid .n{position:absolute;top:4px;right:6px;font-size:11px;font-weight:800}
+.shp-prev{width:120px;height:120px;margin:4px auto 10px;display:block}

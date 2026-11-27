@@ -569,7 +569,7 @@ function syncLyrics(c) {
   if (kara && i >= 0 && ps[i]) {
     /* relleno suave letra por letra, como Sosu: avanza al ritmo de la línea con un borde difuminado */
     const st = LY[i].t, nx = (LY[i + 1] || { t: st + 6 }).t, ws = ps[i]._ws || (ps[i]._ws = $$('.w', ps[i])), tot = ws.reduce((a, w) => a + w.textContent.length + 1, 0) || 1;
-    const dur = Math.max(.6, Math.min(nx - st - .15, tot * .085 + .4)), f = Math.max(0, Math.min(1, (c - st) / dur)) * tot;
+    const dur = Math.max(.8, Math.min((nx - st) * .94 - .1, tot * .2 + 1.2)), f = Math.max(0, Math.min(1, (c - st) / dur)) * tot;
     let acc = 0; for (const w of ws) { const n = w.textContent.length + 1, pr = Math.max(0, Math.min(1, (f - acc) / n)); acc += n; const v = (pr * 112 - 6).toFixed(1) + '%'; if (w._v !== v) { w._v = v; w.style.setProperty('--p', v) } }
   }
   if (i === lyI) return; lyI = i; ps.forEach((p, k) => p.classList.toggle('on', k === i));
@@ -706,7 +706,7 @@ A.me = A.lsGet('ae_me', null); A.session = null; A.isAdmin = false;
 A.isPremium = () => !!(A.me && A.me.premium_until && new Date(A.me.premium_until) > new Date());
 A.can = f => !A.cfg.premium_features?.[f] || A.isPremium();
 let avN = 0;
-A.avImg = (me = A.me, shape = 'cookie') => { const an = me && me.avatar_anim && A.isPremium() ? ' an-' + esc(me.avatar_anim) : ''; if (!me || !me.avatar_url) return `<b class="${an}">${esc(A.initials())}</b>`; const id = 'avc' + (++avN); return `<svg class="avsvg${an}" viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="${id}"><path d="${A.SH[shape] || A.SH.cookie}"/></clipPath></defs><image href="${esc(me.avatar_url)}" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id})"/></svg>` };
+A.avImg = (me = A.me, shape = 'cookie') => { const sp = me && me.avatar_anim ? String(me.avatar_anim) : '', an = sp ? ` data-av="${esc(sp)}"` : ''; if (sp && A.shapePath) shape = '@' + sp.split('|')[0]; if (!me || !me.avatar_url) return `<b${an}>${esc(A.initials())}</b>`; const id = 'avc' + (++avN); return `<svg class="avsvg"${an} viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="${id}"><path d="${shape[0] === '@' && A.shapePath ? A.shapePath(shape.slice(1)) : (A.SH[shape] || A.SH.cookie)}"/></clipPath></defs><image href="${esc(me.avatar_url)}" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id})"/></svg>` };
 A.uploadPic = async (file, kind) => {
   const c = client(); if (!c || !A.session) return null;
   const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = URL.createObjectURL(file) });
@@ -1011,14 +1011,14 @@ const SUB = {
      <div class="pfedit"><button type="button" class="ban${me?.banner_url ? ' img' : ''}" id="pfBan" style="${col}${me?.banner_url ? `background-image:url('${esc(me.banner_url)}')` : ''}" data-a="pfpick" data-k="banner"><span class="pfcam">${ms('photo_camera')}Cambiar portada</span></button>
      <button type="button" class="avatar pfav" id="pfAv" data-a="pfpick" data-k="avatar">${shp('flower')}${A.avImg(A.me, 'flower')}<span class="pfcam2">${ms('photo_camera', 1)}</span></button></div>
      <div class="row2" style="justify-content:center;margin:6px 0 10px">${me?.avatar_url ? `<button type="button" class="btn g" data-a="pfrm" data-k="avatar">Quitar foto</button>` : ''}${me?.banner_url ? `<button type="button" class="btn g" data-a="pfrm" data-k="banner">Quitar portada</button>` : ''}</div>
-     <input type="file" id="pfFile" accept="image/*" hidden>
+     <div class="row2" style="justify-content:center;margin:0 0 12px"><button type="button" class="btn t" data-a="avshape">${ms('interests')}Forma y animación</button></div><input type="file" id="pfFile" accept="image/*" hidden>
      <label class="fld"><small>Nombre visible</small><input id="pfN" maxlength="40" value="${esc(me?.display_name || '')}"></label>
      <label class="fld"><small>@nombre (sin espacios)</small><input id="pfH" maxlength="24" value="${esc(me?.handle || '')}" autocapitalize="off" autocomplete="off"></label>
-     <label class="fld"><small>Sobre ti</small><textarea id="pfB" maxlength="160" rows="3" placeholder="Cuéntale a tus amigos qué música te mueve">${esc(me?.bio || '')}</textarea></label>
+     <label class="fld"><small>Tu frase</small><textarea id="pfB" maxlength="160" rows="3" placeholder="Una frase que te represente" oninput="this.parentNode.querySelector('.pfcnt').textContent=this.value.length+'/160'">${esc(me?.bio || '')}</textarea><span class="pfcnt" style="display:block;text-align:right;font-size:12px;opacity:.7">${(me?.bio || '').length}/160</span></label>
      <div class="sg">Color de tu perfil ${lock('profile_color')}</div><div class="swatches" id="pfC">${[['', 'Del tema', 222], ...A.SWATCHES.map(x => [String(x.h), x.n, x.h]), ['330', 'Rosa', 330], ['280', 'Lila', 280]].map(([v, n, h]) => `<button type="button" class="swatch${(me?.color || '') === v ? ' on' : ''}" data-c="${v}"><i><svg viewBox="0 0 100 100"><path d="${A.SH.cookie}" fill="hsl(${h} 70% 70%)"/></svg></i>${n}</button>`).join('')}</div>
      <div class="sg">Quién ve lo que escuchas</div><div class="seg" id="pfV">${[['friends', 'Mis amigos'], ['nobody', 'Nadie']].map(([k, n]) => `<button type="button" data-v="${k}" class="${(me?.visibility || 'friends') === k ? 'on' : ''}">${n}</button>`).join('')}</div><div class="foot"><button class="btn">Guardar</button></div></form>` },
   apariencia: () => head('Apariencia') + `<div class="sg">Tema</div><div class="sgrp"><div class="si"><span class="t"><b>Modo de tema</b><span>Automático sigue el tema claro u oscuro de tu teléfono.</span></span></div><div style="padding:0 16px 14px"><div class="seg">${[['auto', 'brightness_auto', 'Automático'], ['light', 'light_mode', 'Claro'], ['dark', 'dark_mode', 'Oscuro']].map(([k, i, n]) => `<button class="${A.ST.mode === k ? 'on' : ''}" data-a="setv" data-k="mode" data-v="${k}">${ms(i)}${n}</button>`).join('')}</div></div>
-   ${A.avAnimPicker ? A.avAnimPicker() : ''}${item('', 'Fondo negro puro (AMOLED)', 'Usa negro puro (#000000) en la superficie principal del tema oscuro.', sw('amoled', A.ST.amoled))}${item('', 'Recordar dónde te quedaste', 'Al volver, sigue donde lo dejaste en vez de empezar en Inicio.', sw('remember', A.ST.remember))}</div>
+   ${item('', 'Fondo negro puro (AMOLED)', 'Usa negro puro (#000000) en la superficie principal del tema oscuro.', sw('amoled', A.ST.amoled))}${item('', 'Recordar dónde te quedaste', 'Al volver, sigue donde lo dejaste en vez de empezar en Inicio.', sw('remember', A.ST.remember))}</div>
    <div class="sg">Color de la app</div><div class="sgrp"><div class="si"><span class="t"><span>Elige el color base de la interfaz. El reproductor se tiñe además con los colores de cada portada.</span></span></div><div class="swatches">${A.SWATCHES.map(s => `<button class="swatch${A.ST.color === s.k ? ' on' : ''}" data-a="setv" data-k="color" data-v="${s.k}"><i><svg viewBox="0 0 100 100"><defs><linearGradient id="g${s.k}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${s.h} ${Math.round(s.s * 90)}% 86%)"/><stop offset="1" stop-color="hsl(${s.h} ${Math.round(s.s * 60)}% 58%)"/></linearGradient></defs><path d="${A.SH.cookie}" fill="url(#g${s.k})"/></svg></i>${s.n}</button>`).join('')}</div>
    ${item('', 'Color neutral', 'Toda la interfaz en grises. La portada sigue dando color al reproductor.', sw('neutral', A.ST.neutral))}${item('', 'Color de la portada', 'Toda la app toma el color de la portada de la canción que suena, en lugar del color elegido.', sw('coverColor', A.ST.coverColor))}</div>`,
   biblioteca: () => { const folders = [...new Set(A.tracks.map(t => (t.folder || '').split('/')[0]).filter(Boolean))]; return head('Biblioteca local') + `<div class="sg">Carpetas de tu biblioteca</div><div class="sgrp"><div class="si"><span class="t"><span>aeffy guarda una copia de tu música dentro de la app para que suene aunque no tengas internet. Tus archivos originales no se mueven ni cambian.</span></span></div>${folders.length ? folders.map(f => item('folder', esc(f), plural(A.tracks.filter(t => (t.folder || '').startsWith(f)).length, 'canción', 'canciones'))).join('') : item('', 'Aún no hay carpetas: agrega una para empezar.', '')}
@@ -1293,7 +1293,7 @@ const ago = d => { const s = (Date.now() - new Date(d)) / 1000; if (s < 90) retu
 async function thumb(src, size = 96) { if (!src) return null; try { const i = new Image(); i.src = src; await i.decode(); const c = document.createElement('canvas'); c.width = c.height = size; c.getContext('2d').drawImage(i, 0, 0, size, size); return c.toDataURL('image/jpeg', .7) } catch (e) { return null } }
 const COLORS = ['#ff7eb3', '#8f6bff', '#3b9bf5', '#2fbf8f', '#ffb347', '#ef5d5d', '#6c8cff', '#c06cff'];
 const colorOf = s => COLORS[A.hueOf(s || '') % COLORS.length];
-const av = (name, sz = 40, img, an) => an ? `<span class="anw an-${esc(an)}">${av(name, sz, img)}</span>` : img ? `<i class="pav" style="width:${sz}px;height:${sz}px;background:url('${esc(img)}') center/cover"></i>` : `<i class="pav" style="width:${sz}px;height:${sz}px;background:${colorOf(name)}">${esc((name || '?').trim().charAt(0).toUpperCase())}</i>`;
+const av = (name, sz = 40, img, an) => an && A.shapeAv ? A.shapeAv(name, sz, img, an) : img ? `<i class="pav" style="width:${sz}px;height:${sz}px;background:url('${esc(img)}') center/cover"></i>` : `<i class="pav" style="width:${sz}px;height:${sz}px;background:${colorOf(name)}">${esc((name || '?').trim().charAt(0).toUpperCase())}</i>`;
 
 /* =================== SPOTS =================== */
 const S = A.spot = { role: null, code: null, ch: null, peers: new Map(), people: [], chat: [], meta: null, vote: null, votes: {}, state: null, me: null, timer: null, started: 0 };
@@ -1619,7 +1619,7 @@ function mine(tr) {
   const ix = A._ix || (A._ix = new Map()); if (ix._n !== A.tracks.length) { ix.clear(); for (const t of A.tracks) ix.set(norm(t.name) + '|' + norm(t.artist), t.id); ix._n = A.tracks.length }
   return ix.get(norm(tr.t) + '|' + norm(tr.a)) || null
 }
-const avBig = (p, shape) => p.avatar_url ? `<svg class="avsvg${p.avatar_anim ? ' an-' + esc(p.avatar_anim) : ''}" viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="fpav"><path d="${A.SH[shape]}"/></clipPath></defs><image href="${esc(p.avatar_url)}" width="100" height="100" preserveAspectRatio="xMidYMid slice" clip-path="url(#fpav)"/></svg>` : `<b>${esc((p.display_name || p.handle || '?').trim().charAt(0).toUpperCase())}</b>`;
+const avBig = (p, shape) => p.avatar_url ? `<svg class="avsvg"${p.avatar_anim ? ` data-av="${esc(p.avatar_anim)}"` : ''} viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="fpav"><path d="${p.avatar_anim && A.shapePath ? A.shapePath(String(p.avatar_anim).split('|')[0]) : A.SH[shape]}"/></clipPath></defs><image href="${esc(p.avatar_url)}" width="100" height="100" preserveAspectRatio="xMidYMid slice" clip-path="url(#fpav)"/></svg>` : `<b${p.avatar_anim ? ` data-av="${esc(p.avatar_anim)}"` : ''}>${esc((p.display_name || p.handle || '?').trim().charAt(0).toUpperCase())}</b>`;
 const plCover = (l, cls = '') => l.cover_url ? `<div class="cov ${cls}"><img src="${esc(l.cover_url)}" alt="" loading="lazy"></div>` : `<div class="cov ${cls}" style="background:linear-gradient(140deg,var(--pcl),var(--pc));display:grid;place-items:center">${ms('queue_music', 1)}</div>`;
 
 V.u = arg => {
@@ -1745,7 +1745,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
 {
 const { $, esc, ms, toast, P, on } = A;
 const N = window.AeffyNative;
-A.BUILD = 19;
+A.BUILD = 20;
 A.native = !!N;
 if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }
@@ -2208,4 +2208,74 @@ setInterval(showUp, 4000); document.addEventListener('visibilitychange', showUp)
 /* también lo revisa en el navegador, no solo en la app */
 const chk = () => fetch('/v.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(j => { if (j && j.v && A.BUILD && j.v > A.BUILD) A.pendingUpdate = 1 }).catch(() => { });
 setTimeout(chk, 8000); setInterval(chk, 10 * 60000);
+}
+
+/* aeffy · Forma del avatar y animación que pasa de una forma a otra (como Sosu) */
+'use strict';
+{
+const { $, $$, esc, ms, toast, on } = A;
+const N = 144, TAU = Math.PI * 2;
+const poly = (k, R, rot = -Math.PI / 2, soft = .25) => a => { const seg = TAU / k, x = ((a - rot) % seg + seg) % seg - seg / 2; const r = R * Math.cos(Math.PI / k) / Math.cos(x); return r * (1 - soft) + R * .9 * soft };
+const wave = (n, amp, r0 = 46) => a => r0 + amp * Math.cos(n * a);
+const SHAPES = {
+  circulo: ['Círculo', () => 46], galleta: ['Galleta', wave(9, 3.2)], flor: ['Flor', wave(6, 7, 42)], sol: ['Sol', wave(8, 2.6, 47)], suave: ['Suave', wave(4, 1.6)],
+  trebol: ['Trébol', wave(4, 8, 40)], estallido: ['Estallido', wave(12, 3.6, 46)], cuadrado: ['Cuadrado', poly(4, 50, Math.PI / 4, .3)], diamante: ['Diamante', poly(4, 50, 0, .3)],
+  triangulo: ['Triángulo', poly(3, 54, -Math.PI / 2, .35)], pentagono: ['Pentágono', poly(5, 50, -Math.PI / 2, .25)], hexagono: ['Hexágono', poly(6, 49, 0, .2)], ola: ['Ola', wave(5, 4.5, 45)]
+};
+const radii = name => { const f = (SHAPES[name] || SHAPES.flor)[1]; const out = new Float32Array(N + 1); for (let i = 0; i <= N; i++) out[i] = Math.min(49, f(i / N * TAU)); return out };
+const cache = {}; const R = n => cache[n] || (cache[n] = radii(n));
+const toPath = rs => { let d = ''; for (let i = 0; i <= N; i++) { const a = i / N * TAU; d += (i ? 'L' : 'M') + (50 + rs[i] * Math.cos(a)).toFixed(1) + ' ' + (50 + rs[i] * Math.sin(a)).toFixed(1) } return d + 'Z' };
+A.shapePath = name => toPath(R(SHAPES[name] ? name : 'flor'));
+A.SHAPES = SHAPES;
+const parse = sp => { const [b, rest] = String(sp || '').split('|'); const base = SHAPES[b] ? b : 'flor'; const seq = [base, ...(rest ? rest.split(',').filter(k => SHAPES[k]) : [])]; return { base, seq } };
+/* avatar de amigos en listas */
+let sid = 0;
+A.shapeAv = (name, sz, img, sp) => { const id = 'sav' + (++sid), d = A.shapePath(parse(sp).base); const ini = esc((name || '?').trim().charAt(0).toUpperCase()); return `<span class="anw" style="width:${sz}px;height:${sz}px"><svg viewBox="0 0 100 100" data-av="${esc(sp)}" aria-hidden="true"><defs><clipPath id="${id}"><path d="${d}"/></clipPath></defs><path class="bgp" d="${d}" fill="hsl(${A.hueOf ? A.hueOf(name || '') : 300} 55% 60%)"/>${img ? `<image href="${esc(img)}" width="100" height="100" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id})"/>` : `<text x="50" y="62" text-anchor="middle" font-size="36" font-weight="800" fill="#fff">${ini}</text>`}</svg></span>` };
+
+/* animador: cada forma se queda un momento y luego se transforma suave en la siguiente */
+const HOLD = 1.4, MORPH = .9, ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const targets = el => { const out = []; const cp = el.tagName === 'svg' ? el.querySelector('clipPath path') : null; if (cp) out.push(cp); const bg = el.querySelector && el.querySelector('.bgp'); if (bg) out.push(bg); const host = el.closest('.avatar,.pfav'); if (host) { const sv = host.querySelector(':scope > svg:first-child path'); if (sv && !out.includes(sv)) out.push(sv) } return out };
+function frame(now) {
+  if (!document.hidden) {
+    const t = now / 1000;
+    for (const el of document.querySelectorAll('[data-av]')) {
+      const { seq } = parse(el.dataset.av); const tg = targets(el); if (!tg.length) continue;
+      let d;
+      if (seq.length < 2 || reduce) { d = el._base === seq[0] ? null : A.shapePath(seq[0]); el._base = seq[0] }
+      else { const per = HOLD + MORPH, ph = t % (per * seq.length), i = Math.floor(ph / per), local = ph - i * per; const a = R(seq[i]), b = R(seq[(i + 1) % seq.length]); if (local < HOLD) { const k = 'h' + i; if (el._k === k) continue; el._k = k; d = toPath(a) } else { el._k = ''; const f = ease((local - HOLD) / MORPH), rs = new Float32Array(N + 1); for (let j = 0; j <= N; j++) rs[j] = a[j] + (b[j] - a[j]) * f; d = toPath(rs) } }
+      if (d) for (const p of tg) p.setAttribute('d', d)
+    }
+  }
+  requestAnimationFrame(frame)
+}
+requestAnimationFrame(frame);
+
+/* hoja "Forma y animación" */
+on('avshape', () => {
+  if (!A.session) { A.loginSheet ? A.loginSheet('in') : A.go('cuenta'); return }
+  const prem = A.isPremium(); let { base, seq } = parse(A.me && A.me.avatar_anim); let extra = seq.slice(1);
+  const spec = () => base + (extra.length ? '|' + extra.join(',') : '');
+  const ico = k => `<svg viewBox="0 0 100 100"><path d="${A.shapePath(k)}"/></svg>`;
+  const s = A.sheet(A.shead('interests', 'Forma y animación', 'Tu avatar pasa por estas formas y tus amigos lo ven moverse.') + `
+   <svg class="shp-prev" viewBox="0 0 100 100" id="shpv"><path class="bgp" d="${A.shapePath(base)}" fill="var(--pc)"/></svg>
+   <div class="sg">Forma</div><div class="shp-grid" id="shpb"></div>
+   <div class="sg">Animación ${prem ? '' : ms('lock')}</div><p class="muted small" style="margin:0">Toca hasta 6 formas más, en el orden en que quieres que aparezcan.${prem ? '' : ' Es de aeffy Premium.'}</p><div class="shp-grid" id="shpa"></div>
+   <div class="foot"><button type="button" class="btn t" id="shpx">Quitar animación</button><button type="button" class="btn" id="shpok">Listo</button></div>`);
+  const paint = () => {
+    $('#shpb', s).innerHTML = Object.entries(SHAPES).map(([k, [n]]) => `<button type="button" data-k="${k}" class="${k === base ? 'on' : ''}">${ico(k)}${n}</button>`).join('');
+    $('#shpa', s).innerHTML = Object.entries(SHAPES).map(([k, [n]]) => { const i = extra.indexOf(k); return `<button type="button" data-k="${k}" class="${i >= 0 ? 'on' : ''}">${i >= 0 ? `<span class="n">${i + 1}</span>` : ''}${ico(k)}${n}</button>` }).join('');
+    $('#shpv', s).dataset.av = spec(); $('#shpv', s)._k = ''; $('#shpv', s)._base = ''
+  };
+  paint();
+  $('#shpb', s).onclick = e => { const b = e.target.closest('button'); if (!b) return; base = b.dataset.k; paint() };
+  $('#shpa', s).onclick = e => { const b = e.target.closest('button'); if (!b) return; if (!prem) { toast('La animación del avatar es de aeffy Premium'); return } const k = b.dataset.k, i = extra.indexOf(k); if (i >= 0) extra.splice(i, 1); else { if (extra.length >= 6) { toast('Máximo 6 formas'); return } extra.push(k) } paint() };
+  $('#shpx', s).onclick = () => { extra = []; paint() };
+  $('#shpok', s).onclick = async () => {
+    const b = $('#shpok', s); b.disabled = true; b.textContent = 'Guardando…';
+    try { const { data, error } = await A.sb().rpc('aeffy_set_avatar_anim', { p_anim: spec() }); if (error) throw error; A.me.avatar_anim = data || null; A.lsSet('ae_me', A.me); A.popLayer(); toast('Avatar guardado'); A.render() }
+    catch (err) { toast('No pude guardarlo: ' + String(err && err.message || err).slice(0, 80)); b.disabled = false; b.textContent = 'Listo' }
+  };
+});
+A.avAnimPicker = () => '';
 }
