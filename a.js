@@ -102,8 +102,8 @@ function loadImg(blob) { return new Promise((res, rej) => { const u = URL.create
 A.loadImg = loadImg;
 function rgb2hsl(r, g, b) { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let h = 0, s = 0; const l = (mx + mn) / 2; if (mx !== mn) { const d = mx - mn; s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60 } return [Math.round(h), s, l] }
 A.shrinkCover = async blob => {
-const i = await loadImg(blob); const c = document.createElement('canvas'); c.width = c.height = 360; const x = c.getContext('2d'); const s = Math.min(i.width, i.height); x.drawImage(i, (i.width - s) / 2, (i.height - s) / 2, s, s, 0, 0, 360, 360);
-const url = c.toDataURL('image/jpeg', .84); const d = document.createElement('canvas'); d.width = d.height = 24; const y = d.getContext('2d'); y.drawImage(c, 0, 0, 24, 24); const px = y.getImageData(0, 0, 24, 24).data;
+const i = await loadImg(blob); const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; const s = Math.min(i.width, i.height); x.drawImage(i, (i.width - s) / 2, (i.height - s) / 2, s, s, 0, 0, 512, 512);
+const url = c.toDataURL('image/jpeg', .9); const d = document.createElement('canvas'); d.width = d.height = 24; const y = d.getContext('2d'); y.drawImage(c, 0, 0, 24, 24); const px = y.getImageData(0, 0, 24, 24).data;
 const bins = new Array(36).fill(0).map(() => ({ w: 0, s: 0 })); let gray = 0, tot = 0;
 for (let k = 0; k < px.length; k += 4) { const [h, s, l] = rgb2hsl(px[k], px[k + 1], px[k + 2]); const w = s * (1 - Math.abs(l - .5) * 1.6); tot++; if (s < .15 || l < .08 || l > .94) { gray++; continue } const b = bins[Math.floor(h / 10) % 36]; b.w += w; b.s += s * w }
 let best = 0; bins.forEach((b, i) => { const w3 = b.w + bins[(i + 35) % 36].w * .5 + bins[(i + 1) % 36].w * .5; if (w3 > bins[best].w + bins[(best + 35) % 36].w * .5 + bins[(best + 1) % 36].w * .5) best = i });
@@ -127,7 +127,7 @@ const id = 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7
 const b = base(f.name); let artist = '', name = b; const m = b.match(/^(.+?)\s+-\s+(.+)$/); if (m) { artist = m[1]; name = m[2] } name = name.replace(/^\d{1,3}[\s.\-_]+/, '') || b;
 const parts = (f.webkitRelativePath || '').split('/'); const folder = parts.length > 1 ? parts.slice(0, -1).join('/') : '';
 const t = { id, file: f.name, folder, size: f.size, name: tg.title || name, artist: tg.artist || artist || 'Artista desconocido', albumArtist: tg.albumArtist || '', album: tg.album || (folder ? parts[parts.length - 2] : '') || 'Sin álbum', year: tg.year || '', track: parseInt(tg.track) || 0, genre: tg.genre || '', label: tg.label || '', isrc: tg.isrc || '', ext: (f.name.split('.').pop() || '').toUpperCase(), sr: tg.sr || 0, bits: tg.bits || 0, addedAt: Date.now(), cover: null, hue: null, sat: null, lrc: lrcs[b.toLowerCase()] || '', uslt: tg.lyrics || '', dur: 0 };
-if (tg.pic) { try { const c = await A.shrinkCover(tg.pic); t.cover = c.url; t.hue = c.hue; t.sat = c.sat } catch (e) { } }
+if (tg.pic) { try { const c = await A.shrinkCover(tg.pic); t.cover = c.url; t.hue = c.hue; t.sat = c.sat; await tx('blob', 'readwrite', s => s.put(tg.pic, 'cv:' + id)) } catch (e) { } }
 if (t.hue == null) { t.hue = hueOf(t.album + t.artist); t.sat = .55 }
 t.dur = await A.probeDur(f);
 A.MEMBLOB.set(id, f); A.tracks.push(t); await A.saveTrack(t); await tx('blob', 'readwrite', s => s.put(f, id));
@@ -171,7 +171,7 @@ document.documentElement.dataset.mode = A.ST.mode === 'auto' ? (matchMedia('(pre
 document.documentElement.dataset.amoled = A.ST.amoled ? '1' : '0';
 };
 A.cov = (t, cls = '') => {
-if (t && t.cover) return `<div class="cov ${cls}"><img src="${esc(t.cover)}" alt="" loading="lazy" decoding="async"></div>`;
+if (t && t.cover) return `<div class="cov ${cls}"><img src="${esc(t.cover)}" alt="" loading="lazy" decoding="async"${/\bhi\b/.test(cls) && t.id ? ` data-hi="${t.id}"` : ''}></div>`;
 if (!t) return `<div class="cov ${cls}">${ms('music_note')}</div>`;
 return `<div class="cov gen ${cls}" style="--ch:${t.hue ?? hueOf((t.album || '') + (t.artist || ''))}">${ms('music_note')}</div>`
 };
@@ -265,6 +265,17 @@ A.topBy = (o, n) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n);
 A.peakHour = () => { let m = 0, h = -1; A.STS.h.forEach((v, i) => { if (v > m) { m = v; h = i } }); return h };
 A.partOfDay = h => h < 6 ? 'madrugada' : h < 12 ? 'mañana' : h < 19 ? 'tarde' : 'noche';
 A.totalSecs = () => Object.values(A.STS.d).reduce((a, b) => a + b, 0);
+const HI = new Map();
+A.hiCover = async id => {
+if (HI.has(id)) return HI.get(id);
+const p = (async () => {
+let b = await tx('blob', 'readonly', s => s.get('cv:' + id));
+if (!b) { const a = A.MEMBLOB.get(id) || await tx('blob', 'readonly', s => s.get(id)); if (a) { try { const tg = await A.readTags(a); if (tg.pic) { b = tg.pic; tx('blob', 'readwrite', s => s.put(b, 'cv:' + id)) } } catch (e) { } } }
+return b ? URL.createObjectURL(b) : null
+})();
+HI.set(id, p); return p
+};
+A.upgradeCovers = (root = document) => { root.querySelectorAll('img[data-hi]').forEach(async img => { const u = await A.hiCover(img.dataset.hi); if (u && img.isConnected) img.src = u }) };
 'use strict';
 {
 const { $, $$, esc, ms, fmt, fmtL, dkey, shuffled, toast, shp, cov, P } = A;
@@ -279,8 +290,9 @@ A.back = () => { if (history.length > 1 && history.state) history.back(); else A
 let lastTab = 'inicio';
 const layers = [];
 A.pushLayer = close => { layers.push(close); history.pushState({ layer: layers.length, p: A.route().v }, '', location.hash) };
-A.popLayer = () => { if (layers.length) history.back() };
-window.addEventListener('popstate', () => { if (layers.length) { const c = layers.pop(); c(); return } A.render() });
+let skipPop = 0;
+A.popLayer = () => { if (!layers.length) return; const c = layers.pop(); c(); skipPop++; history.back() };
+window.addEventListener('popstate', () => { if (skipPop) { skipPop--; return } if (layers.length) { const c = layers.pop(); c(); return } A.render() });
 function top(opts = {}) {
 const left = opts.back ? `<button class="ib" data-a="back" aria-label="Atrás">${ms('arrow_back')}</button>` :
 `<button class="avatar" data-a="drawer" aria-label="Menú">${shp('cookie')}${A.me ? `<b>${esc(A.initials())}</b>` : (A.session ? '<b>?</b>' : ms('person'))}</button>`;
@@ -314,7 +326,7 @@ function deck() {
 const t = A.byId(P.cur) || A.byId(A.STS.recent[0]) || A.tracks[0]; if (!t) return '';
 const playing = P.cur && !P.au.paused;
 return `<section class="deck" id="deck"><div class="tt${playing ? ' spin' : ''}" id="tt" data-a="${P.cur ? 'openfp' : 'resume'}"><span class="pw"></span><span class="brand">AEFFY · TT-1</span>
-<div class="plat"><div class="vinyl"><div class="lab">${t.cover ? `<img src="${esc(t.cover)}" alt="">` : ''}</div></div></div>
+<div class="plat"><div class="vinyl"><div class="lab">${t.cover ? `<img src="${esc(t.cover)}" alt="" data-hi="${t.id}">` : ''}</div></div></div>
 <div class="arm"><svg viewBox="0 0 40 160"><circle cx="28" cy="14" r="11" fill="#c9ccd4"/><circle cx="28" cy="14" r="5" fill="#7d818b"/><path d="M28 18 L26 118 L14 140" stroke="#d9dce3" stroke-width="5" fill="none" stroke-linecap="round"/><rect x="6" y="136" width="14" height="20" rx="3" fill="#b8bcc6" transform="rotate(30 13 146)"/></svg></div>
 <div class="slider"></div><div class="knob"></div><div class="dots"><i></i><i></i></div></div>
 <div class="info"><div><div class="lbl">${playing ? ms('equalizer') + 'Sonando ahora' : ms('more_horiz') + 'Continuar escuchando'}</div><h3>${esc(t.name)}</h3><div class="ar">${esc(t.artist)}</div><div class="lyr" id="deckLyr"></div></div>
@@ -400,7 +412,7 @@ ${A.tracks.length || A.LISTS.length ? items.join('') : `<section class="card c">
 }
 function listPage(title, kind, list, ctx, sub, cvT, extra) {
 const tot = list.reduce((a, t) => a + (t.dur || 0), 0); setCtx(ctx, list);
-return top({ back: 1 }) + `<div style="text-align:center;margin-top:6px"><div style="width:min(240px,62vw);margin:0 auto">${cvT ? cov(cvT) : `<div class="cov" style="border-radius:20px;background:linear-gradient(140deg,var(--pcl),var(--pc))">${ms(kind === 'Me gusta' ? 'favorite' : 'queue_music', 1)}</div>`}</div></div>
+return top({ back: 1 }) + `<div style="text-align:center;margin-top:6px"><div style="width:min(240px,62vw);margin:0 auto">${cvT ? cov(cvT, 'hi') : `<div class="cov" style="border-radius:20px;background:linear-gradient(140deg,var(--pcl),var(--pc))">${ms(kind === 'Me gusta' ? 'favorite' : 'queue_music', 1)}</div>`}</div></div>
 <div class="label" style="margin-top:18px;color:var(--mute)">${esc(kind)}</div><h1 class="h1" style="font-size:30px">${esc(title)}</h1><div class="sub">${esc(sub || '')}${list.length ? ' · ' + plural(list.length, 'canción', 'canciones') + ' · ' + fmtL(tot) : ''}</div>
 <div class="carh" style="align-items:center;margin:14px 0"><div class="row2">${extra || ''}<button class="ib" data-a="ctxmenu" data-ctx="${ctx}" aria-label="Más">${ms('more_horiz')}</button></div><div class="row2" style="align-items:center"><button class="ib" data-a="playctx" data-ctx="${ctx}" data-shuf="1" data-from="${esc(title)}" aria-label="Aleatorio">${ms('shuffle')}</button><button class="ck s56" data-a="playctx" data-ctx="${ctx}" data-from="${esc(title)}" aria-label="Reproducir">${shp('cookie')}${ms('play_arrow', 1)}</button></div></div>
 ${list.length ? rows(list, ctx, kind === 'Álbum') : `<p class="muted">Todavía no hay canciones aquí.</p>`}`
@@ -414,7 +426,7 @@ function vSpots() {
 return top() + `<h1 class="h1">Spots</h1><div class="sub">Escuchen lo mismo, al mismo tiempo, cada quien en su casa</div>
 <section class="card" style="margin-top:16px;background:linear-gradient(160deg,var(--pcl),var(--pc));color:var(--onpc)"><div class="label" style="color:inherit">${ms('podcasts')}Spot</div><h2 style="font-size:28px;margin:8px 0 4px">Spot de ${esc(A.me?.display_name || 'Anfitrión')}</h2><p style="opacity:.85;margin:0 0 14px">${A.isPremium() ? 'Hasta 12 personas, sin límite de tiempo' : 'Hasta 4 personas · 1 h al día'}</p><button class="btn" data-a="spot-create">${ms('add')}Crear Spot</button></section>
 <div class="sech"><h2>Cómo funciona</h2></div>
-<div class="sgrp">${[['link', 'Comparte tu enlace', 'Tus amigos entran desde el navegador o desde aeffy.'], ['how_to_vote', 'Voten canciones', 'Cada quien propone y vota qué suena después.'], ['group', 'Quién puede entrar', 'Abierto a amigos, con tu permiso o solo con invitación.']].map(([i, b, s]) => `<div class="si"><span class="ic">${ms(i)}</span><span class="t"><b>${b}</b><span>${s}</span></span></div>`).join('')}</div>
+<div class="sgrp">${[['link', 'Comparte tu enlace', 'Tus amigos entran desde el navegador o desde aeffy.'], ['how_to_vote', 'Voten lo que suena', 'Lancen una votación y cada quien califica la canción.'], ['group', 'Quién puede entrar', 'Abierto a amigos, con tu permiso o solo con invitación.']].map(([i, b, s]) => `<div class="si"><span class="ic">${ms(i)}</span><span class="t"><b>${b}</b><span>${s}</span></span></div>`).join('')}</div>
 <div class="sech"><h2>Spots de tus amigos</h2><p>Cuando un amigo abra un Spot, aparecerá aquí.</p></div>`
 }
 function drawer() {
@@ -439,7 +451,7 @@ A.render = () => {
 const { v, arg } = A.route(); if (TABS.includes(v)) lastTab = v;
 const f = A.views[v] || vInicio; $('#page').innerHTML = f(arg);
 $$('#bnav button').forEach(b => b.classList.toggle('on', b.dataset.v === (TABS.includes(v) ? v : lastTab)));
-A.paintMini(); A.afterRender && A.afterRender(v)
+A.paintMini(); A.afterRender && A.afterRender(v); A.upgradeCovers()
 };
 A.paintMini = () => {
 const t = A.byId(P.cur), m = $('#mini'), playing = P.cur && !P.au.paused;
@@ -454,13 +466,13 @@ const t = A.byId(P.cur); if (!t) return '';
 const r = (A.META[t.id] && A.META[t.id].rating) || 0, playing = !P.au.paused;
 return `<div class="in"><div class="fph"><button class="ib" data-a="closefp" aria-label="Cerrar">${ms('keyboard_arrow_down')}</button><div class="c"><small>Reproduciendo desde${P.from.startsWith('Álbum') ? ' álbum' : ''}:</small><b>${esc(P.from.replace(/^Álbum · /, ''))}</b></div><button class="ib" data-a="menu" data-id="${t.id}" aria-label="Opciones">${ms('more_horiz')}</button></div>
 <div class="compact">${cov(t)}<div class="t"><b>${esc(t.name)}</b><span>${esc(t.artist)}</span><span class="proc">Procesado</span></div><button class="ib trbtn${A.ST.showTr ? ' on' : ''}" data-a="trly" aria-label="Traducir letra">${ms('translate')}</button><button class="ib" data-a="prev">${ms('skip_previous', 1)}</button><button class="ck s40${playing ? ' on' : ''}" data-a="toggle">${shp('cookie')}${ms(playing ? 'pause' : 'play_arrow', 1)}</button><button class="ib" data-a="next">${ms('skip_next', 1)}</button></div>
-<div class="stage"><div class="bigcov">${cov(t)}</div><div class="ly" id="ly"></div><div class="qv" id="qv"></div>
+<div class="stage"><div class="bigcov">${cov(t, 'hi')}</div><div class="ly" id="ly"></div><div class="qv" id="qv"></div>
 <div class="meta"><div><h2>${esc(t.name)}</h2><p>${esc(t.artist)}</p></div><div class="side2"><button class="ib" data-a="fav" data-id="${t.id}" aria-label="Me gusta">${ms('favorite', A.isFav(t.id))}</button><button class="ib" data-a="enqueue-menu" data-id="${t.id}" aria-label="Agregar a playlist">${ms('playlist_add')}</button></div></div>
 <div class="prog"><div class="wave" id="wave" role="slider" aria-label="Posición" tabindex="0"><svg id="wsvg"></svg><span class="th" id="wth"></span></div><div class="times"><span id="tc">0:00</span><span class="fmt">${ms('graphic_eq')}${esc([t.ext, t.bits ? t.bits + '-bit' : '', t.sr ? (t.sr / 1000).toFixed(1).replace('.0', '') + ' kHz' : ''].filter(Boolean).join(' · ') || 'Local')}</span><span id="td">${fmt(t.dur)}</span></div></div>
 <div class="tp"><button class="ib${P.shuffle ? ' on' : ''}" data-a="shuffle" aria-label="Aleatorio">${ms('shuffle')}</button><button class="ib" data-a="prev" aria-label="Anterior">${ms('skip_previous', 1)}</button><button class="ck s80${playing ? ' on' : ''}" data-a="toggle" id="fpPlay" aria-label="Reproducir o pausar">${shp('cookie')}${ms(playing ? 'pause' : 'play_arrow', 1)}</button><button class="ib" data-a="next" aria-label="Siguiente">${ms('skip_next', 1)}</button><button class="ib${P.repeat ? ' on' : ''}${P.repeat === 2 ? ' rep1' : ''}" data-a="repeat" aria-label="Repetir">${ms(P.repeat === 2 ? 'repeat_one' : 'repeat')}</button></div></div>
 <div class="tbar"><button data-a="recast" aria-label="Dispositivos">${ms('devices')}</button><button data-a="rate" data-id="${t.id}" class="${r ? 'on' : ''}" aria-label="Calificar">${ms('filter_vintage', !!r)}${r ? r : ''}</button><button data-a="fpmode" data-v="lyrics" class="${fpMode === 'lyrics' ? 'on' : ''}" aria-label="Letra">${ms('mic')}</button><button data-a="fpmode" data-v="queue" class="${fpMode === 'queue' ? 'on' : ''}" aria-label="Cola">${ms('format_list_bulleted')}</button></div></div>`
 }
-A.paintFp = () => { const f = $('#fp'); if (!f.classList.contains('open')) return; f.innerHTML = fpHtml(); f.className = 'fp open' + (fpMode ? ' panel ' + fpMode : ''); if (fpMode === 'lyrics') buildLyrics(); if (fpMode === 'queue') buildQueue(); drawWave() };
+A.paintFp = () => { const f = $('#fp'); if (!f.classList.contains('open')) return; f.innerHTML = fpHtml(); f.className = 'fp open' + (fpMode ? ' panel ' + fpMode : ''); A.upgradeCovers(f); if (fpMode === 'lyrics') buildLyrics(); if (fpMode === 'queue') buildQueue(); drawWave() };
 A.openFp = () => { if (!P.cur) return; const f = $('#fp'); f.classList.add('open'); A.paintFp(); A.pushLayer(() => { f.classList.remove('open') }) };
 on('openfp', A.openFp); on('closefp', () => A.popLayer());
 on('fpmode', el => { fpMode = fpMode === el.dataset.v ? '' : el.dataset.v; A.paintFp() });
@@ -496,7 +508,7 @@ function buildQueue() { const el = $('#qv'); if (!el) return; setCtx('queue', P.
 on('shufq', () => { P.queue = [...P.queue.slice(0, P.qi + 1), ...shuffled(P.queue.slice(P.qi + 1))]; buildQueue() });
 A.onTime = c => { A.updProg(c); if (fpMode === 'lyrics') syncLyrics(c); deckLyric(c) };
 A.onPlayState = () => { A.paintMini(); const playing = !P.au.paused; $$('.ck[data-a="toggle"],.ck[data-a="resume"]').forEach(b => { b.classList.toggle('on', playing); const i = b.querySelector('.ms'); if (i) i.textContent = playing ? 'pause' : 'play_arrow' }); const tt = $('#tt'); if (tt) tt.classList.toggle('spin', playing); const lb = $('#deck .lbl'); if (lb) lb.innerHTML = playing ? ms('equalizer') + 'Sonando ahora' : ms('more_horiz') + 'Continuar escuchando' };
-A.onTrack = () => { A.paintMini(); A.paintFp(); const { v } = A.route(); if (v === 'inicio') { const d = $('#deck'); if (d) d.outerHTML = deck() } $$('.li[data-id]').forEach(r => r.classList.toggle('on', r.dataset.id === P.cur)) };
+A.onTrack = () => { A.paintMini(); A.paintFp(); const { v } = A.route(); if (v === 'inicio') { const d = $('#deck'); if (d) { d.outerHTML = deck(); A.upgradeCovers() } } $$('.li[data-id]').forEach(r => r.classList.toggle('on', r.dataset.id === P.cur)) };
 A.sheet = (html, opts = {}) => {
 const s = document.createElement('div'); s.className = 'scrim'; s.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">${opts.head === false ? '<div class="grab"></div>' : ''}${html}</div>`; document.body.appendChild(s);
 requestAnimationFrame(() => s.classList.add('open'));
@@ -789,7 +801,7 @@ on('ratealbum2', el => { A.popLayer(); setTimeout(() => A.ACT.ratealbum(el), 260
 V.amigos = () => top({ back: 1 }) + `<h1 class="h1">Amigos</h1>` + (A.session ? `<section class="card" style="background:linear-gradient(160deg,var(--pcl),var(--pc));color:var(--onpc)"><div style="display:flex;gap:14px;align-items:center"><span class="avatar" style="width:56px;height:56px">${shp('cookie')}<b>${esc(A.initials())}</b></span><div><b style="font-family:var(--hf);font-size:20px">${esc(A.me?.display_name || 'Tú')}</b><div style="opacity:.85">${A.me?.handle ? '@' + esc(A.me.handle) : 'Elige tu @nombre para que te encuentren'}</div></div></div><div class="row2" style="margin-top:14px"><button class="btn" data-a="go" data-v="ajustes/perfil">${ms('alternate_email')}${A.me?.handle ? 'Cambiar @nombre' : 'Elegir @nombre'}</button><button class="btn t" data-a="go" data-v="invita">${ms('redeem')}Invita y gana</button></div></section><div class="sech"><h2>Tus amigos</h2><p>Cuando tus amigos escuchen algo, aparecerá aquí.</p></div><section class="card c">${badge('group')}<h3>Aún no tienes amigos aquí</h3><p>Comparte tu enlace para que te agreguen.</p></section>`
 : `<section class="card" style="background:linear-gradient(160deg,var(--pcl),var(--pc));color:var(--onpc);margin-top:12px"><div style="height:90px;display:grid;place-items:center">${ms('group', 1)}</div><h2 style="font-size:24px">Inicia sesión para tener amigos</h2><p style="opacity:.85">Con tu cuenta de aeffy tienes una tarjeta con tu @nombre y un enlace para que te agreguen. Es gratis.</p><button class="btn" data-a="login">${ms('login')}Iniciar sesión</button></section>`);
 V.invita = () => {
-const link = A.me?.handle ? location.origin + '/?ref=' + A.me.handle : '';
+const link = A.me?.handle ? 'https://aeffy.vercel.app/invita/' + A.me.handle : '';
 setTimeout(async () => { const r = await A.invites(); const a = $('#invJ'), b = $('#invC'), c = $('#invH'); if (a) { a.textContent = r.joined; b.textContent = r.confirmed; c.textContent = r.confirmed * 12 + ' h' } }, 0);
 return top({ back: 1 }) + `<section class="card" style="margin-top:8px;background:linear-gradient(160deg,var(--pcl),hsl(calc(var(--h) + 40) 30% 28%));color:var(--onpc)">${badge('redeem', 'sm')}<h2 style="font-size:26px;margin:14px 0 6px">Invita y gana Premium</h2><p style="opacity:.85;margin:0 0 14px">Cada amigo que llegue con tu enlace, inicie sesión y escuche 30 minutos te da 12 h de aeffy Premium.</p><div class="carh" style="align-items:flex-end"><div style="display:flex;align-items:baseline;gap:8px"><b id="invC" style="font-family:var(--hf);font-size:48px">0</b><span>amigos confirmados</span></div><div style="text-align:right"><b id="invH" style="font-family:var(--hf);font-size:20px">0 h</b><div class="small" style="opacity:.8">de Premium ganadas</div></div></div></section>
 <section class="card" style="margin-top:12px"><h3>Tu enlace de invitación</h3>${!A.session ? `<p class="muted small">Inicia sesión para tener tu enlace.</p><button class="btn" data-a="login">Iniciar sesión</button>` : link ? `<div class="search" style="margin:10px 0 0"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(link)}</span><button class="btn t" data-a="copyinv" data-v="${esc(link)}">${ms('content_copy')}Copiar</button></div>` : `<p class="muted small">Elige tu @usuario en tu perfil y aquí aparecerá tu enlace.</p><button class="btn t" data-a="go" data-v="ajustes/perfil">Elegir @usuario</button>`}</section>
@@ -1077,6 +1089,7 @@ const S = A.spot = { role: null, code: null, ch: null, peers: new Map(), people:
 const myKey = () => S.me || (S.me = (A.session ? 'u-' + A.session.user.id.slice(0, 8) : 'g') + '-' + rid(5));
 function send(event, payload) { if (S.ch) S.ch.send({ type: 'broadcast', event, payload }) }
 A.spotCreate = async () => {
+if (!A.inApp) { A.downloadSheet('Los Spots se crean y se escuchan solo en la app aeffy.'); return }
 if (!A.session) { A.loginSheet('in'); return }
 if (S.role) { A.go('spots'); return }
 const sb = A.sb(); const code = rid(6); const max = Math.min(A.ST.spotPeople || 4, A.isPremium() ? (A.cfg.limits?.premium_spot_people || 12) : (A.cfg.limits?.free_spot_people || 4));
@@ -1117,6 +1130,7 @@ const a = $('#spotAudio'); if (a) { a.srcObject = null; a.remove() }
 Object.assign(S, { role: null, code: null, ch: null, people: [], state: null, meta: null, vote: null, guestPc: null })
 }
 A.spotJoin = async (code, name) => {
+if (!A.inApp) { A.downloadSheet('Este Spot se escucha en la app aeffy.'); return }
 const sb = A.sb(); if (!sb) { toast('Sin conexión'); return }
 const { data: sp } = await sb.from('aeffy_spots').select('*').eq('code', code).maybeSingle();
 if (!sp || !sp.active) { toast('Ese Spot ya se cerró'); return }
@@ -1197,6 +1211,7 @@ function voteBox() { if (!S.vote) return ''; const vs = Object.values(S.votes); 
 on('sp-revote', voteSheet);
 V.spot = code => {
 if (S.role && S.code === code) return V.spots();
+if (!A.inApp) return top({ back: 1 }) + `<section class="card" style="margin-top:12px;background:linear-gradient(160deg,var(--pcl),var(--pc));color:var(--onpc);text-align:center">${badge('podcasts')}<h2 style="font-size:24px;margin:14px 0 6px">Te invitaron a un Spot</h2><p style="opacity:.85">Los Spots se escuchan en la app aeffy para Android. Descárgala y vuelve a abrir este enlace.</p><a class="btn big" href="${A.APK}">${ms('download')}Descargar aeffy</a>${/android/i.test(navigator.userAgent) ? `<a class="btn g" style="display:flex;margin-top:8px" href="intent://${location.host}/#/spot/${esc(code)}#Intent;scheme=https;package=app.aeffy.music;end">Ya la tengo: abrir el Spot</a>` : ''}</section>`;
 setTimeout(async () => { const sb = A.sb(); if (!sb) return; const { data } = await sb.from('aeffy_spots').select('name,active,max_people,only_users').eq('code', code).maybeSingle(); const b = $('#spInfo'); if (!b) return; if (!data || !data.active) b.innerHTML = `<p class="muted">Este Spot ya se cerró.</p>`; else b.innerHTML = `<h2 style="font-size:26px;margin:6px 0">${esc(data.name)}</h2><p style="opacity:.85">Escuchen lo mismo, al mismo tiempo. Hasta ${data.max_people} personas.</p>${A.session ? '' : `<label class="fld" style="background:rgba(0,0,0,.2)"><small style="color:inherit">Tu nombre</small><input id="spName" maxlength="30" value="${esc(localStorage.getItem('ae_spotname') || '')}" placeholder="Cómo te verán en el Spot"></label>`}<button class="btn big" data-a="sp-joinbtn" data-code="${esc(code)}">${ms('headphones')}Unirme y escuchar</button>${data.only_users && !A.session ? '<p class="small">Este Spot pide iniciar sesión.</p>' : ''}` }, 0);
 return top({ back: 1 }) + `<section class="card" style="margin-top:12px;background:linear-gradient(160deg,var(--pcl),var(--pc));color:var(--onpc)"><div class="label" style="color:inherit">${ms('podcasts')}Spot</div><div id="spInfo"><p>Buscando el Spot…</p></div></section><p class="muted small" style="margin-top:12px">El audio llega en directo desde el teléfono de quien abrió el Spot. Usa audífonos o parlante y sube el volumen.</p>`
 };
@@ -1366,13 +1381,12 @@ document.addEventListener('touchmove', e => { const t = e.touches[0]; if (drag) 
 document.addEventListener('touchend', e => { clearTimeout(pressT); pressT = null; if (drag) { const t = e.changedTouches[0]; endDrag(t.clientX, t.clientY) } });
 document.addEventListener('contextmenu', e => { if (e.target.closest('.tile[data-a="playalbum"]')) e.preventDefault() });
 document.addEventListener('mousedown', e => { const tile = e.target.closest('.tile[data-a="playalbum"]'); if (!tile || e.button) return; e.preventDefault(); sx = e.clientX; sy = e.clientY; const mv = ev => { if (!drag && Math.hypot(ev.clientX - sx, ev.clientY - sy) > 12) startDrag(tile, ev.clientX, ev.clientY); else moveDrag(ev.clientX, ev.clientY) }; const up = ev => { removeEventListener('mousemove', mv); removeEventListener('mouseup', up); if (drag) endDrag(ev.clientX, ev.clientY) }; addEventListener('mousemove', mv); addEventListener('mouseup', up) });
-let deferred = null;
-const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; if (A.route().v === 'inicio') A.render() });
-addEventListener('appinstalled', () => { deferred = null; toast('aeffy quedó instalada'); A.render() });
-A.installHtml = () => { if (standalone() || localStorage.getItem('ae_noinst')) return ''; if (!deferred && !ios) return ''; return `<div class="install">${A.logo(40)}<div class="t"><b>Instala aeffy</b><br><span class="muted small">${ios ? 'Toca Compartir y luego «Agregar a inicio».' : 'Tenla como app en tu pantalla de inicio.'}</span></div>${deferred ? `<button class="btn" data-a="install">Instalar</button>` : ''}<button class="ib" data-a="noinst" aria-label="Cerrar">${ms('close')}</button></div>` };
-A.on('install', async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; A.render() });
+{ const q = new URLSearchParams(location.search); if (q.get('src') === 'twa' || document.referrer.startsWith('android-app://')) { try { localStorage.setItem('ae_inapp', '1') } catch (e) { } } }
+A.inApp = (() => { try { return localStorage.getItem('ae_inapp') === '1' } catch (e) { return false } })();
+A.APK = '/aeffy.apk';
+addEventListener('beforeinstallprompt', e => e.preventDefault());
+A.installHtml = () => { if (A.inApp || localStorage.getItem('ae_noinst')) return ''; return `<div class="install">${A.logo(40)}<div class="t"><b>Descarga aeffy para Android</b><br><span class="muted small">La app completa, con Spots para escuchar con tus amigos.</span></div><a class="btn" href="${A.APK}">Descargar</a><button class="ib" data-a="noinst" aria-label="Cerrar">${ms('close')}</button></div>` };
+A.downloadSheet = why => A.sheet(A.shead('android', 'Descarga aeffy', why || 'Esto funciona en la app aeffy para Android.') + `<a class="btn big" style="width:100%" href="${A.APK}">${ms('download')}Descargar aeffy para Android</a><p class="small muted" style="margin:12px 0 0">Abre el archivo aeffy.apk y, si Android te lo pide, permite instalar apps de esta fuente.</p>${/android/i.test(navigator.userAgent) ? `<a class="btn g" style="width:100%;margin-top:6px" href="intent://${location.host}/${location.hash}#Intent;scheme=https;package=app.aeffy.music;end">Ya la tengo: abrir aeffy</a>` : ''}`);
 A.on('noinst', () => { localStorage.setItem('ae_noinst', 1); A.render() });
 if ('serviceWorker' in navigator && location.protocol === 'https:') addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => { }));
 A.liveNotify = () => { A.publishNow && A.publishNow(); A.recastTrack && A.recastTrack(); A.spotPush && A.spotPush(); if (A.route().v === 'spots' && A.spot?.role === 'host') A.spotPaint() };
