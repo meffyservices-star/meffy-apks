@@ -691,10 +691,24 @@ async function loadMe() {
   if (A.liveStart) A.liveStart();
 }
 A.refreshMe = async () => { await loadMe(); A.render() };
+/* correos de aeffy (se envían con el Gmail de Meffy) */
+A.mail = async body => { try { const r = await fetch('https://meffy-store.vercel.app/api/aeffy-mail', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); return await r.json() } catch (e) { return null } };
+async function confirmFromLink(c) {
+  const p = new URLSearchParams(location.search); const th = p.get('ok'), k = p.get('k'); if (!th || !k) return;
+  p.delete('ok'); p.delete('k'); history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : '') + location.hash);
+  const { error } = await c.auth.verifyOtp({ token_hash: th, type: k === 'recovery' ? 'recovery' : k === 'magiclink' ? 'magiclink' : 'signup' });
+  if (error) { toast(/expired|invalid/i.test(error.message) ? 'Ese enlace ya se usó o venció. Pide otro correo.' : 'No pude confirmar: ' + error.message); return }
+  if (k === 'recovery') setTimeout(() => A.newPassSheet(), 400); else toast('¡Tu cuenta está confirmada! Ya entraste');
+}
+A.newPassSheet = () => {
+  const s = A.sheet(A.shead('lock_reset', 'Elige tu nueva contraseña', 'Escríbela y guárdala. La usarás para entrar a aeffy.') + `<form id="np"><label class="fld"><small>Nueva contraseña</small><input id="npP" type="password" minlength="6" required autocomplete="new-password" placeholder="Mínimo 6 caracteres"></label><button class="btn big" style="width:100%">Guardar</button><p class="small muted" id="npM" style="text-align:center;min-height:20px"></p></form>`);
+  $('#np', s).addEventListener('submit', async ev => { ev.preventDefault(); const { error } = await client().auth.updateUser({ password: $('#npP', s).value }); if (error) { $('#npM', s).textContent = error.message; return } A.popLayer(); toast('Contraseña cambiada') })
+};
 A.cloudInit = async () => {
   const p = new URLSearchParams(location.search); if (p.get('ref')) localStorage.setItem('ae_ref', p.get('ref'));
   const c = client(); if (!c) return;
   try { await loadCfg() } catch (e) { }
+  try { await confirmFromLink(c) } catch (e) { }
   const { data } = await c.auth.getSession(); A.session = data.session; await loadMe();
   c.auth.onAuthStateChange(async (ev, s) => { const had = !!A.session; A.session = s; if (ev === 'SIGNED_IN' || ev === 'SIGNED_OUT' || (!had && s)) { await loadMe(); A.render() } });
   syncMinutes(); setInterval(syncMinutes, 5 * 60000);
@@ -712,12 +726,16 @@ A.loginSheet = (mode = 'in') => {
    <p class="small muted" id="lgM" style="text-align:center;min-height:20px"></p>
    <div style="text-align:center"><button type="button" class="btn g" id="lgT">${mode === 'up' ? '¿Ya tienes cuenta? Entra' : '¿No tienes cuenta? Créala gratis'}</button><button type="button" class="btn g" id="lgR">Olvidé mi contraseña</button></div></form>`);
   $('#lgT', s).onclick = () => { A.popLayer(); setTimeout(() => A.loginSheet(mode === 'up' ? 'in' : 'up'), 260) };
-  $('#lgR', s).onclick = async () => { const e = $('#lgE', s).value.trim(); if (!e) { $('#lgM', s).textContent = 'Escribe tu correo arriba'; return } const c = client(); await c.auth.resetPasswordForEmail(e, { redirectTo: location.origin + '/#/cuenta' }); $('#lgM', s).textContent = 'Te enviamos un correo para cambiarla' };
+  $('#lgR', s).onclick = async () => { const e = $('#lgE', s).value.trim(); if (!e) { $('#lgM', s).textContent = 'Escribe tu correo arriba'; return } const r = await A.mail({ kind: 'recovery', email: e }); if (r && r.error) { $('#lgM', s).textContent = r.error; return } if (!r || r.fallback) { const c = client(); await c.auth.resetPasswordForEmail(e, { redirectTo: location.origin + '/#/cuenta' }) } $('#lgM', s).textContent = 'Si ese correo tiene cuenta, te llegará un correo de aeffy para cambiarla. Revisa también Spam.' };
   $('#lg', s).addEventListener('submit', async ev => {
     ev.preventDefault(); const c = client(); if (!c) { toast('Sin conexión'); return }
     const e = $('#lgE', s).value.trim(), pw = $('#lgP', s).value, b = $('#lgB', s), m = $('#lgM', s); b.disabled = true; m.textContent = '';
     try {
-      if (mode === 'up') { const { data, error } = await c.auth.signUp({ email: e, password: pw, options: { emailRedirectTo: location.origin } }); if (error) throw error; if (!data.session) { m.textContent = 'Te enviamos un correo para confirmar tu cuenta. Ábrelo y vuelve aquí para entrar.'; b.disabled = false; return } }
+      if (mode === 'up') {
+        const r = await A.mail({ kind: 'signup', email: e, password: pw });
+        if (r && r.ok) { m.textContent = 'Listo: te enviamos un correo de aeffy a ' + e + '. Ábrelo y toca Confirmar mi cuenta. Si no lo ves, revisa Spam o Promociones.'; b.disabled = false; return }
+        if (r && r.error) throw new Error(r.error);
+        const { data, error } = await c.auth.signUp({ email: e, password: pw, options: { emailRedirectTo: location.origin } }); if (error) throw error; if (!data.session) { m.textContent = 'Te enviamos un correo para confirmar tu cuenta. Ábrelo y vuelve aquí para entrar.'; b.disabled = false; return } }
       else { const { error } = await c.auth.signInWithPassword({ email: e, password: pw }); if (error) throw error }
       A.popLayer(); toast('¡Listo, ya entraste!')
     } catch (err) { m.textContent = /Invalid login/i.test(err.message) ? 'Correo o contraseña incorrectos' : /registered/i.test(err.message) ? 'Ese correo ya tiene cuenta: entra' : /confirm/i.test(err.message) ? 'Primero confirma tu correo' : err.message; b.disabled = false }
@@ -1565,6 +1583,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
 {
 const { $, esc, ms, toast, P, on } = A;
 const N = window.AeffyNative;
+A.BUILD = 7;
 A.native = !!N;
 if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }
@@ -1632,6 +1651,7 @@ if (N) {
   window.AeffyNativeCb = (k, v) => {
     if (k === 'perm') { if (v) { if (Array.isArray(A.ST.folders)) toast('Buscando tu música…'); A.nativeScan() } else { toast('Sin permiso no puedo ver tu música'); A.render() } }
     if (k === 'resume' && A.nativeHasPerm() && Date.now() - lastScan > 5 * 60000) A.nativeScan(true);
+    if (k === 'resume') fetch('/v.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(j => { if (j && j.v && A.BUILD && j.v !== A.BUILD) location.reload() }).catch(() => { });
   };
   on('nperm', () => { try { N.requestPermission() } catch (e) { } });
   on('import-dir', () => { if (!A.nativeHasPerm()) { N.requestPermission(); return } try { A._nall = JSON.parse(N.scan() || '[]') } catch (e) { } A.folderSheet(false) });
