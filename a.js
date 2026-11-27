@@ -565,10 +565,17 @@ function buildLyrics() {
 function syncLyrics(c) {
   if (!LY.length) return; let i = -1; for (let k = 0; k < LY.length; k++) { if (LY[k].t <= c + .2) i = k; else break }
   const ps = $$('#ly p[data-i]');
-  if (A.ST.karaoke && A.can('karaoke') && i >= 0 && ps[i]) { const st = LY[i].t, en = (LY[i + 1] || { t: st + 4 }).t, ws = $$('.w', ps[i]), f = (c - st) / Math.max(.5, en - st); ws.forEach((w, k) => w.classList.toggle('s', k / ws.length <= f)) }
+  const kara = A.ST.karaoke && A.can('karaoke'), lyEl = $('#ly'); if (lyEl) lyEl.classList.toggle('kara', !!kara);
+  if (kara && i >= 0 && ps[i]) {
+    /* relleno suave letra por letra, como Sosu: avanza al ritmo de la línea con un borde difuminado */
+    const st = LY[i].t, nx = (LY[i + 1] || { t: st + 6 }).t, ws = ps[i]._ws || (ps[i]._ws = $$('.w', ps[i])), tot = ws.reduce((a, w) => a + w.textContent.length + 1, 0) || 1;
+    const dur = Math.max(.6, Math.min(nx - st - .15, tot * .085 + .4)), f = Math.max(0, Math.min(1, (c - st) / dur)) * tot;
+    let acc = 0; for (const w of ws) { const n = w.textContent.length + 1, pr = Math.max(0, Math.min(1, (f - acc) / n)); acc += n; const v = (pr * 112 - 6).toFixed(1) + '%'; if (w._v !== v) { w._v = v; w.style.setProperty('--p', v) } }
+  }
   if (i === lyI) return; lyI = i; ps.forEach((p, k) => p.classList.toggle('on', k === i));
   if (i >= 0 && ps[i]) { const el = $('#ly'); el.scrollTo({ top: ps[i].offsetTop - el.clientHeight / 2.6, behavior: 'smooth' }) }
 }
+(function kloop() { try { if (fpMode === 'lyrics' && P.cur && !P.au.paused && !document.hidden && A.ST.karaoke) syncLyrics(P.au.currentTime) } catch (e) { } requestAnimationFrame(kloop) })();
 function deckLyric(c) { const d = $('#deckLyr'); if (!d) return; const t = A.byId(P.cur); if (!t) return; const L = t._ly && t._lysrc === A.lyricsOf(t) ? t._ly : (t._lysrc = A.lyricsOf(t), t._ly = A.parseLRC(t._lysrc)); let x = ''; for (const l of L) { if (l.t <= c + .2) x = l.x; else break } d.textContent = x }
 on('trly', async () => { const t = A.byId(P.cur); if (!t) return; if (A.ST.showTr) { A.ST.showTr = false; A.saveSet(); A.paintFp(); return } if (!A.lyricsOf(t)) { toast('Esta canción no tiene letra todavía'); return } const r = await A.translateLyrics(t); if (r) { A.ST.showTr = true; A.saveSet(); A.paintFp() } });
 on('lyseek', el => { const l = LY[+el.dataset.i]; if (l) P.au.currentTime = l.t });
@@ -588,9 +595,9 @@ A.sheet = (html, opts = {}) => {
   s.addEventListener('click', e => { if (e.target === s) A.popLayer() });
   /* deslizar hacia abajo para cerrar */
   const sh = s.querySelector('.sheet'); let y0 = null, dy = 0, fromTop = false;
-  sh.addEventListener('touchstart', e => { const t = e.target; fromTop = !!t.closest('.grab,.shead,.shtrack'); if (!fromTop && sh.scrollTop > 0) { y0 = null; return } if (t.closest('input,textarea,select,.rate,[type=range]')) { y0 = null; return } y0 = e.touches[0].clientY; dy = 0 }, { passive: true });
-  sh.addEventListener('touchmove', e => { if (y0 === null) return; dy = e.touches[0].clientY - y0; if (dy <= 0 || (!fromTop && sh.scrollTop > 0)) { dy = 0; sh.style.transform = ''; return } e.preventDefault(); sh.classList.add('drag'); sh.style.transform = `translateY(${dy}px)`; s.style.opacity = Math.max(.3, 1 - dy / 500) }, { passive: false });
-  sh.addEventListener('touchend', () => { if (y0 === null) return; y0 = null; sh.classList.remove('drag'); if (dy > 90) { sh.style.transform = 'translateY(100%)'; A.popLayer() } else { sh.style.transform = ''; s.style.opacity = '' } dy = 0 });
+  sh.addEventListener('touchstart', e => { const t = e.target; fromTop = !!t.closest('.grab,.shead,.shtrack'); if (!fromTop && sh.scrollTop > 0) { y0 = null; return } if (t.closest('input,textarea,select,button,label,.rate,[type=range]') && !t.closest('.grab')) { y0 = null; return } y0 = e.touches[0].clientY; dy = 0 }, { passive: true });
+  sh.addEventListener('touchmove', e => { if (y0 === null) return; dy = e.touches[0].clientY - y0; if (dy < 12 || (!fromTop && sh.scrollTop > 0)) { if (dy <= 0) { dy = 0; sh.style.transform = '' } return } e.preventDefault(); sh.classList.add('drag'); sh.style.transform = `translateY(${dy}px)`; s.style.opacity = Math.max(.3, 1 - dy / 500) }, { passive: false });
+  sh.addEventListener('touchend', () => { if (y0 === null) return; y0 = null; sh.classList.remove('drag'); if (dy < 12) { sh.style.transform = ''; s.style.opacity = ''; dy = 0; return } if (dy > 90) { sh.style.transform = 'translateY(100%)'; A.popLayer() } else { sh.style.transform = ''; s.style.opacity = '' } dy = 0 });
   A.pushLayer(close); const f = s.querySelector('input,textarea'); if (f) setTimeout(() => f.focus(), 200); return s
 };
 A.closeSheet = () => A.popLayer();
@@ -1738,7 +1745,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
 {
 const { $, esc, ms, toast, P, on } = A;
 const N = window.AeffyNative;
-A.BUILD = 18;
+A.BUILD = 19;
 A.native = !!N;
 if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }
@@ -1924,11 +1931,13 @@ async function loadNotes(id, force) {
   const { data, error } = await sb.rpc('aeffy_friend_profile', { p_id: id });
   if (!error && data) { A.FP[id] = Object.assign(data, { at: Date.now() }); const { v } = A.route(); if (v === 'perfil' || v === 'u') A.render() }
 }
-A.loadNotes = loadNotes;
+A.loadNotes = loadNotes; A.noteHTML = (n, own, i) => noteHTML(n, own, i); A.smallCover = src => smallCover(src);
 
+const dots = r => `<span class="rdots" aria-label="${r} de 10">${[0, 1, 2, 3, 4].map(i => { const f = r - i * 2; return `<i class="${f >= 2 ? 'f' : f === 1 ? 'h' : ''}"></i>` }).join('')}</span>`;
+A.rateDots = dots;
 function noteHTML(n, own, i) {
   const st = n.style || 'simple', cov = n.cover ? esc(n.cover) : '';
-  const song = n.title ? `<div class="ns">${st !== 'polaroid' ? (cov ? `<img src="${cov}" alt="">` : `<span class="gen">${ms('music_note')}</span>`) : ''}<div><b>${esc(n.title)}</b><span>${esc(n.artist || '')}</span></div></div>` : '';
+  const song = n.title ? `<div class="ns">${st !== 'polaroid' ? (cov ? `<img src="${cov}" alt="">` : `<span class="gen">${ms(n.kind === 'album' ? 'album' : 'music_note')}</span>`) : ''}<div><b>${esc(n.title)}</b><span>${n.kind === 'album' ? 'Álbum · ' : ''}${esc(n.artist || '')}</span></div>${n.rating != null ? dots(n.rating) : ''}</div>` : '';
   const bg = st === 'portada' && cov ? ` style="background-image:url('${cov}')"` : '';
   return `<article class="note st-${esc(st)}"${bg}>${st === 'polaroid' ? `<div class="ph" style="${cov ? `background-image:url('${cov}')` : 'background:linear-gradient(140deg,var(--pcl),var(--pc))'}"></div>` : ''}<p class="nb">${esc(n.body)}</p>${song}
    <div class="nf"><span>${ago(n.at || n.created_at)}</span><span class="sp"></span><button class="ib" data-a="note-img" data-i="${i}" data-own="${own ? 1 : 0}" aria-label="Guardar como imagen">${ms('image')}</button>${own ? `<button class="ib" data-a="note-del" data-id="${n.id}" aria-label="Borrar nota">${ms('delete')}</button>` : ''}</div></article>`
@@ -1936,10 +1945,10 @@ function noteHTML(n, own, i) {
 let shown = [];
 function notesSection(p, own) {
   const list = (p && p.notes) || []; shown = list;
-  const head = `<div class="sech"><h2>Notas</h2>${own ? `<p>Lo que escribas aquí lo ven tus amigos en tu perfil.</p>` : ''}</div>`;
-  const add = own ? `<button class="btn" style="margin-bottom:12px" data-a="note-new">${ms('edit_note')}Escribir una nota</button>` : '';
-  if (!p) return head + add + `<p class="muted small">Cargando notas…</p>`;
-  return head + add + (list.length ? `<div class="notes">${list.map((n, i) => noteHTML(n, own, i)).join('')}</div>` : `<p class="muted small">${own ? 'Todavía no escribes ninguna nota.' : 'Todavía no hay notas.'}</p>`)
+  const head = `<div class="sech"><h2>Reseñas</h2>${own ? `<p>Reseña lo que ya calificaste. Tus amigos lo ven en tu perfil.</p>` : ''}</div>`;
+  const add = own ? `<button class="btn" style="margin-bottom:12px" data-a="note-new">${ms('rate_review')}Escribir una reseña</button>` : '';
+  if (!p) return head + add + `<p class="muted small">Cargando reseñas…</p>`;
+  return head + add + (list.length ? `<div class="notes">${list.map((n, i) => noteHTML(n, own, i)).join('')}</div>` : `<p class="muted small">${own ? 'Todavía no escribes ninguna reseña.' : 'Todavía no hay reseñas.'}</p>`)
 }
 
 /* en tu perfil */
@@ -2110,4 +2119,93 @@ on('share', async el => {
   $('#shlink', s).addEventListener('click', async () => { const txt = `Estoy escuchando ${t.name} de ${t.artist} en aeffy`; try { if (navigator.share) await navigator.share({ text: txt, url: location.origin }); else { await navigator.clipboard.writeText(txt + ' ' + location.origin); toast('Copiado para compartir') } } catch (e) { } });
   render()
 });
+}
+
+/* aeffy · Reseñas como en Sosu: solo de lo que ya calificaste (canción, o álbum con el 80 % calificado) */
+'use strict';
+{
+const { $, $$, esc, ms, toast, P, on } = A;
+const STY = [['simple', 'Simple', 0], ['degradado', 'Degradado', 1], ['portada', 'Portada', 1], ['polaroid', 'Polaroid', 1], ['cuaderno', 'Cuaderno', 1], ['pixel', 'Pixel', 1]];
+const myId = () => A.session && A.session.user && A.session.user.id;
+function works() {
+  const songs = A.tracks.filter(t => A.META[t.id] && A.META[t.id].rating).map(t => ({ kind: 'cancion', key: t.id, title: t.name, artist: t.artist, cover: t.cover, rating: A.META[t.id].rating }));
+  const alb = {}; for (const t of A.tracks) { const k = t.album || 'Sin álbum'; (alb[k] = alb[k] || []).push(t) }
+  const albums = [];
+  for (const [k, ts] of Object.entries(alb)) {
+    if (k === 'Sin álbum') continue; const rated = ts.filter(t => A.META[t.id] && A.META[t.id].rating);
+    const need = ts.length === 1 ? 1 : Math.ceil(ts.length * .8);
+    const avg = rated.length ? Math.round(rated.reduce((a, t) => a + A.META[t.id].rating, 0) / rated.length) : 0;
+    albums.push({ kind: 'album', key: k, title: k, artist: ts[0].albumArtist || ts[0].artist, cover: (ts.find(t => t.cover) || {}).cover, rating: (A.ALRATE && A.ALRATE[k]) || avg, ok: rated.length >= need, have: rated.length, need, total: ts.length })
+  }
+  albums.sort((a, b) => (b.ok - a.ok) || b.have / b.total - a.have / a.total);
+  return { songs: songs.sort((a, b) => b.rating - a.rating), albums }
+}
+const wkRow = (w, i) => `<button class="wk" data-i="${i}"${w.kind === 'album' && !w.ok ? ' data-lock="1" style="opacity:.55"' : ''}>${w.cover ? `<img src="${esc(w.cover)}" alt="">` : `<span class="gen">${ms(w.kind === 'album' ? 'album' : 'music_note')}</span>`}<div><b>${esc(w.title)}</b><span>${w.kind === 'album' && !w.ok ? `Calificaste ${w.have} de ${w.total} · te faltan ${w.need - w.have}` : esc(w.artist || '')}</span></div>${w.rating ? A.rateDots(w.rating) : ''}</button>`;
+
+on('note-new', async () => {
+  if (!A.session) { A.loginSheet ? A.loginSheet('in') : A.go('cuenta'); return }
+  const W = works(); let tab = 'cancion', q = '';
+  const s = A.sheet(A.shead('rate_review', 'Elegir obra', 'Reseña una canción que calificaste, o un álbum con al menos el 80 % de sus canciones calificadas.') + `
+   <div class="seg" id="wkt"><button class="on" data-t="cancion">${ms('music_note')}Canciones</button><button data-t="album">${ms('album')}Álbumes</button></div>
+   <div class="search" style="margin-top:10px">${ms('search')}<input id="wkq" placeholder="Buscar" autocomplete="off"></div>
+   <div class="wkl" id="wkl"></div>`);
+  let list = [];
+  const paint = () => { list = (tab === 'cancion' ? W.songs : W.albums).filter(w => !q || (w.title + ' ' + w.artist).toLowerCase().includes(q)); $('#wkl', s).innerHTML = list.length ? list.map(wkRow).join('') : `<p class="muted small" style="text-align:center;padding:20px 0">${tab === 'cancion' ? 'Todavía no calificas canciones. Toca ⋮ en una canción → Calificar.' : 'No hay álbumes todavía.'}</p>` };
+  paint();
+  $('#wkt', s).onclick = e => { const b = e.target.closest('button'); if (!b) return; tab = b.dataset.t; $$('#wkt button', s).forEach(x => x.classList.toggle('on', x === b)); paint() };
+  $('#wkq', s).oninput = e => { q = e.target.value.trim().toLowerCase(); paint() };
+  $('#wkl', s).onclick = e => { const b = e.target.closest('.wk'); if (!b) return; const w = list[+b.dataset.i]; if (b.dataset.lock) { toast(`Califica ${w.need - w.have} canción${w.need - w.have === 1 ? '' : 'es'} más de este álbum para reseñarlo`); return } A.popLayer(); setTimeout(() => compose(w), 280) };
+});
+
+async function compose(w) {
+  const prem = A.isPremium(); const cov = await A.smallCover(w.cover); let style = 'simple', sending = false;
+  const s = A.sheet(A.shead('rate_review', 'Tu reseña', prem ? 'Publica todas las que quieras.' : 'Sin Premium puedes publicar 1 reseña al día.') + `
+   <div class="wk" style="pointer-events:none">${cov ? `<img src="${cov}" alt="">` : `<span class="gen">${ms(w.kind === 'album' ? 'album' : 'music_note')}</span>`}<div><b>${esc(w.title)}</b><span>${w.kind === 'album' ? 'Álbum · ' : ''}${esc(w.artist || '')}</span></div>${w.rating ? A.rateDots(w.rating) : ''}</div>
+   <textarea class="ntx" id="ntx" maxlength="500" placeholder="¿Qué te hizo sentir?"></textarea><div class="ncnt" id="ncnt">0/500</div>
+   <div class="small muted" style="margin-top:6px">Estilo${prem ? '' : ' · los estilos de imagen son de Premium'}</div>
+   <div class="stpick" id="npick">${STY.map(([k, n, pr]) => `<button type="button" data-k="${k}" class="${k === 'simple' ? 'on' : ''}">${pr && !prem ? ms('lock') : ''}${n}</button>`).join('')}</div>
+   <div id="nprev"></div>
+   <div class="foot"><button type="button" class="btn t" data-a="closesheet">Cancelar</button><button type="button" class="btn" id="npub">${ms('send')}Publicar</button></div>`);
+  const prev = () => { const body = $('#ntx', s).value.trim() || 'Así se verá tu reseña.'; $('#ncnt', s).textContent = $('#ntx', s).value.length + '/500'; $('#nprev', s).innerHTML = `<div class="small muted" style="margin:6px 0">Vista previa</div>` + A.noteHTML({ body, style, kind: w.kind, rating: w.rating, title: w.title, artist: w.artist, cover: cov, at: new Date() }, false, -1).replace(/<div class="nf">[\s\S]*<\/div><\/article>$/, '</article>') };
+  prev(); $('#ntx', s).addEventListener('input', prev);
+  $('#npick', s).onclick = e => { const b = e.target.closest('button'); if (!b) return; const k = b.dataset.k, pr = STY.find(x => x[0] === k)[2]; if (pr && !prem) { toast('Los estilos de imagen son de aeffy Premium'); return } style = k; $$('#npick button', s).forEach(x => x.classList.toggle('on', x === b)); prev() };
+  const pub = async () => {
+    if (sending) return; const body = $('#ntx', s).value.trim(); if (!body) { toast('Escribe tu reseña primero'); return }
+    sending = true; const b = $('#npub', s); b.disabled = true; b.textContent = 'Publicando…';
+    try {
+      const { error } = await A.sb().rpc('aeffy_post_review', { p_body: body, p_kind: w.kind, p_title: w.title, p_artist: w.artist || '', p_cover: cov, p_rating: w.rating || null, p_style: style });
+      if (error) throw error;
+      A.popLayer(); toast('Reseña publicada'); await A.loadNotes(myId(), true); A.render()
+    } catch (err) { const m = String(err && err.message || err); toast(/LIMITE/.test(m) ? 'Sin Premium puedes publicar 1 reseña al día' : /fetch|network/i.test(m) ? 'Sin conexión: inténtalo otra vez' : 'No pude publicarla: ' + m.slice(0, 80)); b.disabled = false; b.innerHTML = ms('send') + 'Publicar'; sending = false }
+  };
+  /* toque directo en el botón, además del clic, para que nunca se pierda */
+  const btn = $('#npub', s); btn.addEventListener('click', pub); btn.addEventListener('touchend', e => { e.preventDefault(); pub() });
+  setTimeout(() => $('#ntx', s).focus(), 250)
+}
+
+/* avatar animado: respuesta inmediata al tocar y errores claros */
+const avOld = A.ACT['avanim'];
+on('avanim', async el => {
+  if (!A.session) { toast('Inicia sesión para animar tu avatar'); A.loginSheet ? A.loginSheet('in') : A.go('cuenta'); return }
+  const v = el.dataset.v; if (v && !A.isPremium()) { toast('Animar tu avatar es de aeffy Premium'); A.go('premium'); return }
+  $$('.anpick button').forEach(b => b.classList.toggle('on', b === el));
+  try {
+    const { data, error } = await A.sb().rpc('aeffy_set_avatar_anim', { p_anim: v }); if (error) throw error;
+    A.me.avatar_anim = data || null; A.lsSet('ae_me', A.me); toast(v ? 'Listo, tu avatar ya se mueve' : 'Avatar quieto'); A.render()
+  } catch (err) { toast('No pude guardarlo: ' + String(err && err.message || err).slice(0, 80)); A.render() }
+});
+
+/* hay versión nueva: aviso con botón, sin recargar sola mientras usas la app */
+let shownUp = false;
+const showUp = () => {
+  if (shownUp || !A.pendingUpdate || document.hidden) return; shownUp = true;
+  const d = document.createElement('div'); d.className = 'upbar'; d.innerHTML = `${ms('system_update')}<span>Hay una versión nueva de aeffy</span><button class="btn" id="upgo">Actualizar</button><button class="ib" id="upx" aria-label="Luego">${ms('close')}</button>`;
+  document.body.appendChild(d);
+  d.querySelector('#upgo').onclick = () => { A.saveNow && A.saveNow(); try { sessionStorage.setItem('ae_resume_play', P.cur && !P.au.paused ? '1' : '') } catch (e) { } location.reload() };
+  d.querySelector('#upx').onclick = () => d.remove();
+};
+setInterval(showUp, 4000); document.addEventListener('visibilitychange', showUp);
+/* también lo revisa en el navegador, no solo en la app */
+const chk = () => fetch('/v.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(j => { if (j && j.v && A.BUILD && j.v > A.BUILD) A.pendingUpdate = 1 }).catch(() => { });
+setTimeout(chk, 8000); setInterval(chk, 10 * 60000);
 }
