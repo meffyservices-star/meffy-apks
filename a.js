@@ -585,6 +585,11 @@ A.sheet = (html, opts = {}) => {
   requestAnimationFrame(() => s.classList.add('open'));
   const close = () => { s.classList.remove('open'); setTimeout(() => s.remove(), 250) };
   s.addEventListener('click', e => { if (e.target === s) A.popLayer() });
+  /* deslizar hacia abajo para cerrar */
+  const sh = s.querySelector('.sheet'); let y0 = null, dy = 0, fromTop = false;
+  sh.addEventListener('touchstart', e => { const t = e.target; fromTop = !!t.closest('.grab,.shead,.shtrack'); if (!fromTop && sh.scrollTop > 0) { y0 = null; return } if (t.closest('input,textarea,select,.rate,[type=range]')) { y0 = null; return } y0 = e.touches[0].clientY; dy = 0 }, { passive: true });
+  sh.addEventListener('touchmove', e => { if (y0 === null) return; dy = e.touches[0].clientY - y0; if (dy <= 0 || (!fromTop && sh.scrollTop > 0)) { dy = 0; sh.style.transform = ''; return } e.preventDefault(); sh.classList.add('drag'); sh.style.transform = `translateY(${dy}px)`; s.style.opacity = Math.max(.3, 1 - dy / 500) }, { passive: false });
+  sh.addEventListener('touchend', () => { if (y0 === null) return; y0 = null; sh.classList.remove('drag'); if (dy > 90) { sh.style.transform = 'translateY(100%)'; A.popLayer() } else { sh.style.transform = ''; s.style.opacity = '' } dy = 0 });
   A.pushLayer(close); const f = s.querySelector('input,textarea'); if (f) setTimeout(() => f.focus(), 200); return s
 };
 A.closeSheet = () => A.popLayer();

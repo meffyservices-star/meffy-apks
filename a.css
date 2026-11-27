@@ -240,8 +240,8 @@ html[data-mode="light"] .sheet{background:var(--bg)}
 .shead{position:relative;margin:0 -18px 10px;padding:16px 18px 6px;text-align:center;overflow:hidden}
 .shead::before{content:"";position:absolute;inset:0;background-image:linear-gradient(var(--s1) 1px,transparent 1px),linear-gradient(90deg,var(--s1) 1px,transparent 1px);background-size:12px 12px;opacity:.0}
 .pix{position:absolute;inset:0;background:radial-gradient(circle at 50% 0,transparent,var(--bg) 85%),repeating-linear-gradient(0deg,transparent 0 9px,hsl(var(--h) 10% 20% / .7) 9px 12px),repeating-linear-gradient(90deg,transparent 0 9px,hsl(var(--h) 10% 20% / .7) 9px 12px);opacity:.55;pointer-events:none}
-.shead .lg{position:absolute;left:14px;top:12px;width:34px;height:34px}
-.shead .x{position:absolute;right:12px;top:10px;background:var(--s3)}
+.shead .lg{position:absolute;left:14px;top:12px;width:34px;height:34px;z-index:2}
+.shead .x{position:absolute;right:12px;top:10px;background:var(--s3);z-index:3}
 .shead .ico{font-size:34px;color:var(--p);margin-top:10px;position:relative}
 .shead h2{font-size:22px;margin-top:8px;position:relative}
 .shead p{position:relative;color:var(--mute);font-size:14px;margin:8px auto 0;max-width:420px}
@@ -446,3 +446,6 @@ textarea{font:inherit;color:inherit;background:transparent;border:0;outline:0;wi
 .cov.big{width:100%;aspect-ratio:1;border-radius:24px;overflow:hidden}.cov.big img{width:100%;height:100%;object-fit:cover}
 .li.off{opacity:.5}
 .ck2{width:24px;height:24px;accent-color:var(--p);flex:none}
+
+.sheet.drag{transition:none}
+.sheet .grab{touch-action:none}
