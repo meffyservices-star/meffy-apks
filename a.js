@@ -772,18 +772,50 @@ A.loginSheet = (mode = 'in') => {
    <div style="text-align:center"><button type="button" class="btn g" id="lgT">${mode === 'up' ? '¿Ya tienes cuenta? Entra' : '¿No tienes cuenta? Créala gratis'}</button><button type="button" class="btn g" id="lgR">Olvidé mi contraseña</button></div></form>`);
   $('#lgT', s).onclick = () => { A.popLayer(); setTimeout(() => A.loginSheet(mode === 'up' ? 'in' : 'up'), 260) };
   $('#lgR', s).onclick = async () => { const e = $('#lgE', s).value.trim(); if (!e) { $('#lgM', s).textContent = 'Escribe tu correo arriba'; return } const r = await A.mail({ kind: 'recovery', email: e }); if (r && r.error) { $('#lgM', s).textContent = r.error; return } if (!r || r.fallback) { const c = client(); await c.auth.resetPasswordForEmail(e, { redirectTo: location.origin + '/#/cuenta' }) } $('#lgM', s).textContent = 'Si ese correo tiene cuenta, te llegará un correo de aeffy para cambiarla. Revisa también Spam.' };
+  /* pantalla clara de "revisa tu correo" después de registrarte */
+  const showWait = (e, pw, viaMail) => {
+    const sh = s.querySelector('.sheet'); const dom = (e.split('@')[1] || '').toLowerCase();
+    const open = /gmail|googlemail/.test(dom) ? 'https://mail.google.com/mail/u/0/#search/aeffy' : /outlook|hotmail|live|msn/.test(dom) ? 'https://outlook.live.com/mail/' : /yahoo/.test(dom) ? 'https://mail.yahoo.com/' : /icloud|me\.com/.test(dom) ? 'https://www.icloud.com/mail' : '';
+    sh.innerHTML = A.shead('mark_email_unread', 'Revisa tu correo', 'Tu cuenta ya casi está lista.') + `
+     <div style="text-align:center;margin:6px 0 14px"><div style="font-size:15px">Te enviamos un correo a</div><b style="font-size:18px;word-break:break-all">${esc(e)}</b></div>
+     <div class="card" style="display:grid;gap:12px">${[['mail', 'Abre el correo de aeffy', 'Puede tardar 1 o 2 minutos en llegar. Si no lo ves, revisa Spam o Promociones.'], ['task_alt', 'Toca «Confirmar mi cuenta»', 'Ese botón activa tu cuenta.'], ['login', 'Vuelve aquí', 'Toca «Ya lo confirmé» y entras con tu correo y contraseña.']].map(([i, t, d], k) => `<div style="display:flex;gap:12px;align-items:flex-start"><span class="badge sm" style="flex:none"><b style="font-size:16px">${k + 1}</b></span><span><b style="display:block">${t}</b><span class="muted small">${d}</span></span></div>`).join('')}</div>
+     <p class="small" id="wtM" style="text-align:center;min-height:20px;margin:12px 0 4px"></p>
+     <button class="btn big" style="width:100%" id="wtOk">${ms('login')}Ya lo confirmé, entrar</button>
+     <div class="row2" style="margin-top:10px">${open ? `<a class="btn t" href="${open}" target="_blank" rel="noopener" id="wtOpen">${ms('open_in_new')}Abrir mi correo</a>` : ''}<button class="btn t" id="wtRe">${ms('refresh')}Reenviar correo</button></div>
+     <button class="btn g" style="width:100%;margin-top:8px" id="wtBack">Usar otro correo</button>`;
+    const M = sh.querySelector('#wtM'); let busy = false;
+    const tryIn = async quiet => {
+      if (busy) return; busy = true; const c = client();
+      try { const { error } = await c.auth.signInWithPassword({ email: e, password: pw }); if (error) throw error; A.popLayer(); toast('¡Cuenta confirmada! Ya entraste') }
+      catch (err) { if (!quiet) M.textContent = /confirm/i.test(err.message) ? 'Todavía no está confirmada. Abre el correo y toca «Confirmar mi cuenta».' : /Invalid login/i.test(err.message) ? 'Correo o contraseña incorrectos' : err.message }
+      busy = false
+    };
+    sh.querySelector('#wtOk').onclick = () => tryIn(false);
+    if (open) sh.querySelector('#wtOpen').onclick = e2 => { if (window.AeffyNative) { e2.preventDefault(); try { AeffyNative.openExternal(open) } catch (x) { location.href = open } } };
+    let wait = 0; const reBtn = sh.querySelector('#wtRe');
+    reBtn.onclick = async () => {
+      if (wait) return; reBtn.disabled = true; M.textContent = 'Enviando…';
+      try { const r = viaMail ? await A.mail({ kind: 'signup', email: e, password: pw }) : null; if (!viaMail || !(r && r.ok)) { const { error } = await client().auth.resend({ type: 'signup', email: e, options: { emailRedirectTo: location.origin } }); if (error) throw error } M.textContent = 'Te lo enviamos otra vez. Revisa también Spam.' }
+      catch (err) { M.textContent = 'No pude reenviarlo: ' + err.message }
+      wait = 60; const t = setInterval(() => { wait--; reBtn.innerHTML = wait > 0 ? `${ms('schedule')}Reenviar en ${wait}s` : `${ms('refresh')}Reenviar correo`; if (wait <= 0) { clearInterval(t); reBtn.disabled = false } }, 1000)
+    };
+    sh.querySelector('#wtBack').onclick = () => { A.popLayer(); setTimeout(() => A.loginSheet('up'), 260) };
+    /* cuando vuelves de tu correo, intenta entrar solo */
+    const onBack = () => { if (!document.hidden && document.body.contains(sh)) tryIn(true) };
+    document.addEventListener('visibilitychange', onBack);
+  };
   $('#lg', s).addEventListener('submit', async ev => {
     ev.preventDefault(); const c = client(); if (!c) { toast('Sin conexión'); return }
     const e = $('#lgE', s).value.trim(), pw = $('#lgP', s).value, b = $('#lgB', s), m = $('#lgM', s); b.disabled = true; m.textContent = '';
     try {
       if (mode === 'up') {
         const r = await A.mail({ kind: 'signup', email: e, password: pw });
-        if (r && r.ok) { m.textContent = 'Listo: te enviamos un correo de aeffy a ' + e + '. Ábrelo y toca Confirmar mi cuenta. Si no lo ves, revisa Spam o Promociones.'; b.disabled = false; return }
+        if (r && r.ok) { showWait(e, pw, true); return }
         if (r && r.error) throw new Error(r.error);
-        const { data, error } = await c.auth.signUp({ email: e, password: pw, options: { emailRedirectTo: location.origin } }); if (error) throw error; if (!data.session) { m.textContent = 'Te enviamos un correo para confirmar tu cuenta. Ábrelo y vuelve aquí para entrar.'; b.disabled = false; return } }
+        const { data, error } = await c.auth.signUp({ email: e, password: pw, options: { emailRedirectTo: location.origin } }); if (error) throw error; if (!data.session) { showWait(e, pw, false); return } }
       else { const { error } = await c.auth.signInWithPassword({ email: e, password: pw }); if (error) throw error }
       A.popLayer(); toast('¡Listo, ya entraste!')
-    } catch (err) { m.textContent = /Invalid login/i.test(err.message) ? 'Correo o contraseña incorrectos' : /registered/i.test(err.message) ? 'Ese correo ya tiene cuenta: entra' : /confirm/i.test(err.message) ? 'Primero confirma tu correo' : err.message; b.disabled = false }
+    } catch (err) { if (/confirm/i.test(err.message)) { showWait(e, pw, false); return } m.textContent = /Invalid login/i.test(err.message) ? 'Correo o contraseña incorrectos' : /registered/i.test(err.message) ? 'Ese correo ya tiene cuenta: entra' : err.message; b.disabled = false }
   })
 };
 A.signOut = async () => { const c = client(); if (c) await c.auth.signOut(); A.me = null; A.isAdmin = false; A.lsSet('ae_me', null); A.render(); toast('Cerraste sesión') };
@@ -1745,7 +1777,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
 {
 const { $, esc, ms, toast, P, on } = A;
 const N = window.AeffyNative;
-A.BUILD = 21;
+A.BUILD = 22;
 A.native = !!N;
 if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }
