@@ -1583,7 +1583,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
 {
 const { $, esc, ms, toast, P, on } = A;
 const N = window.AeffyNative;
-A.BUILD = 7;
+A.BUILD = 8;
 A.native = !!N;
 if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }
@@ -1591,7 +1591,7 @@ if (N) {
   document.documentElement.classList.add('native');
   /* dentro de la app no usamos service worker: tapaba la música del teléfono */
   try { if (navigator.serviceWorker) navigator.serviceWorker.getRegistrations().then(rs => { rs.forEach(r => r.unregister()); if (navigator.serviceWorker.controller && !sessionStorage.getItem('ae_swoff')) { sessionStorage.setItem('ae_swoff', '1'); setTimeout(() => location.reload(), 150) } }) } catch (e) { }
-  if (!localStorage.getItem('ae_artfix')) { localStorage.setItem('ae_artfix', '1'); A._artfix = 1 }
+  A._artfix = !localStorage.getItem('ae_artfix3');
 
   const delT = A.deleteTrack;
   A.deleteTrack = async id => { const t = A.byId(id); await delT(id); if (t && t.native) { A.meta(id).hidden = 1; A.saveMeta() } };
@@ -1632,7 +1632,9 @@ if (N) {
   let painting = false;
   async function paintCovers() {
     if (painting) return; painting = true; const done = {};
-    if (A._artfix) { A._artfix = 0; for (const t of A.tracks) if (t.native && t.noArt) { delete t.noArt; t.cover = null } }
+    const sw = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+    if (A._artfix && !sw) { A._artfix = 0; localStorage.setItem('ae_artfix3', '1'); for (const t of A.tracks) if (t.native && t.noArt) { delete t.noArt; t.cover = null } }
+    if (sw) { painting = false; return }
     const todo = A.tracks.filter(t => t.native && t.cover === null && !t.noArt);
     let n = 0;
     for (const t of todo) {
@@ -1641,8 +1643,8 @@ if (N) {
       try {
         const r = await fetch('/__native/art/' + t.nid + '?s=512');
         if (r.ok) { const c = await A.shrinkCover(await r.blob()); done[key] = { cover: c.url, hue: c.hue, sat: c.sat }; Object.assign(t, done[key]) }
-        else { t.noArt = 1; t.hue = A.hueOf(t.album + t.artist); t.sat = .55; done[key] = { noArt: 1, hue: t.hue, sat: .55 } }
-      } catch (e) { t.noArt = 1 }
+        else if (r.headers.get('x-aeffy') || r.status === 404 && !r.headers.get('server')) { t.noArt = 1; t.hue = A.hueOf(t.album + t.artist); t.sat = .55; done[key] = { noArt: 1, hue: t.hue, sat: .55 } }
+      } catch (e) { }
       A.saveTrack(t);
       if (++n % 12 === 0) { A.render(); await new Promise(r => setTimeout(r, 30)) }
     }
