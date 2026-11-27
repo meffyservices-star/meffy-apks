@@ -161,7 +161,8 @@ A.deleteTrack = async id => {
 /* ---------- color: la portada tiñe toda la app ---------- */
 A.SWATCHES = [
   { k: 'aeffy', n: 'aeffy', h: 222, s: 1 }, { k: 'indigo', n: 'Índigo', h: 245, s: .9 }, { k: 'pizarra', n: 'Pizarra', h: 210, s: .35 }, { k: 'esmeralda', n: 'Esmeralda', h: 150, s: .8 },
-  { k: 'cian', n: 'Cian', h: 188, s: .9 }, { k: 'coral', n: 'Coral', h: 12, s: .9 }, { k: 'ambar', n: 'Ámbar', h: 38, s: .9 }, { k: 'lima', n: 'Lima', h: 82, s: .8 }];
+  { k: 'cian', n: 'Cian', h: 188, s: .9 }, { k: 'coral', n: 'Coral', h: 12, s: .9 }, { k: 'ambar', n: 'Ámbar', h: 38, s: .9 }, { k: 'lima', n: 'Lima', h: 82, s: .8 },
+  { k: 'rosa', n: 'Rosa', h: 335, s: .95 }, { k: 'pastelito', n: 'Pastelito', h: 340, s: .7, pastel: 1 }];
 A.applyPalette = (h, s) => {
   const r = document.documentElement.style, light = A.ST.mode === 'light' || (A.ST.mode === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
   if (A.ST.neutral) s = .08;
@@ -174,12 +175,18 @@ A.applyPalette = (h, s) => {
     r.setProperty('--p', `hsl(${h} ${S(92)} 84%)`); r.setProperty('--onp', `hsl(${h} ${S(55)} 16%)`); r.setProperty('--pc', `hsl(${h} ${S(34)} 33%)`); r.setProperty('--pcl', `hsl(${h} ${S(30)} 42%)`);
     r.setProperty('--mini', `hsl(${h} ${S(32)} 36%)`); r.setProperty('--onpc', '#f2f4ff'); r.setProperty('--fpbg', `linear-gradient(180deg,hsl(${h} ${S(42)} 27%) 0%,hsl(${h} ${S(36)} 17%) 55%,hsl(${h} ${S(26)} 11%) 100%)`)
   }
+  const PV = ['--bg', '--s1', '--s2', '--s3', '--s4', '--line']; PV.forEach(k => r.removeProperty(k));
+  if (A._pastel && !A.ST.neutral) {
+    if (light) { [['--bg', '#fff5f8'], ['--s1', '#fdecf2'], ['--s2', '#f9e0ea'], ['--s3', '#f4d2df'], ['--s4', '#ecc0d1'], ['--line', '#efcbd8'], ['--p', 'hsl(340 52% 56%)'], ['--onp', '#fff'], ['--pc', '#f9d7e4'], ['--pcl', '#f3c0d3'], ['--mini', '#f7cfdd'], ['--onpc', 'hsl(340 42% 24%)'], ['--fpbg', 'linear-gradient(180deg,#f6c7d9,#fdeaf1 55%,#fff5f8)']].forEach(([k, v]) => r.setProperty(k, v)) }
+    else { [['--p', 'hsl(340 90% 88%)'], ['--onp', 'hsl(340 45% 22%)'], ['--pc', 'hsl(340 30% 35%)'], ['--pcl', 'hsl(340 32% 45%)'], ['--mini', 'hsl(340 28% 37%)'], ['--onpc', '#fff0f5'], ['--fpbg', 'linear-gradient(180deg,hsl(340 32% 30%) 0%,hsl(340 26% 18%) 55%,hsl(340 20% 11%) 100%)']].forEach(([k, v]) => r.setProperty(k, v)) }
+  }
   r.setProperty('--glow', `hsl(${h} ${S(50)} 40% / .35)`);
   const m = $('meta[name=theme-color]'); if (m) m.content = light ? `hsl(${h} 30% 97%)` : '#0e1016';
 };
 A.baseColor = () => A.SWATCHES.find(x => x.k === A.ST.color) || A.SWATCHES[0];
 A.repaint = () => {
   const t = A.P && A.byId(A.P.cur); const b = A.baseColor();
+  A._pastel = !!b.pastel && !(t && A.ST.coverColor);
   if (t && A.ST.coverColor) A.applyPalette(t.hue ?? b.h, t.sat ?? .6); else A.applyPalette(b.h, b.s);
   document.documentElement.dataset.mode = A.ST.mode === 'auto' ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : A.ST.mode;
   document.documentElement.dataset.amoled = A.ST.amoled ? '1' : '0';
@@ -1722,7 +1729,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
 {
 const { $, esc, ms, toast, P, on } = A;
 const N = window.AeffyNative;
-A.BUILD = 11;
+A.BUILD = 12;
 A.native = !!N;
 if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }
