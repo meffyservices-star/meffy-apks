@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AeffyTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/aeffy_bg</item>
+        <item name="android:statusBarColor">@color/aeffy_bg</item>
+        <item name="android:navigationBarColor">@color/aeffy_bg</item>
+        <item name="android:colorPrimary">#5B86F5</item>
+        <item name="android:colorAccent">#A9C4FF</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowSplashScreenBackground">@color/aeffy_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/aeffy_bg</item>
+    </style>
+</resources>
