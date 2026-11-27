@@ -1588,7 +1588,10 @@ if (N) {
   const extOf = (mime, name) => { const m = { 'audio/mpeg': 'MP3', 'audio/flac': 'FLAC', 'audio/x-flac': 'FLAC', 'audio/mp4': 'M4A', 'audio/aac': 'AAC', 'audio/ogg': 'OGG', 'audio/opus': 'OPUS', 'audio/wav': 'WAV', 'audio/x-wav': 'WAV' }[mime]; return m || ((name || '').split('.').pop() || '').toUpperCase() };
   A.nativeScan = async (quiet) => {
     if (scanning || !A.nativeHasPerm()) return; scanning = true; lastScan = Date.now();
-    let list = []; try { list = JSON.parse(N.scan() || '[]') } catch (e) { list = [] }
+    let all = []; try { all = JSON.parse(N.scan() || '[]') } catch (e) { all = [] }
+    A._nall = all;
+    if (!Array.isArray(A.ST.folders)) { scanning = false; if (all.length) { A.folderSheet(true); return } }
+    const list = all.filter(m => A.inFolders(m.path || ''));
     const seen = new Set(); let added = 0, removed = 0;
     for (const m of list) {
       const id = 'n' + m.id; seen.add(id); if (A.META[id] && A.META[id].hidden) continue;
@@ -1600,7 +1603,7 @@ if (N) {
     }
     for (const t of [...A.tracks]) if (t.native && !seen.has(t.id)) { A.tracks = A.tracks.filter(x => x !== t); A.tx('meta', 'readwrite', s => s.delete(t.id)); removed++ }
     scanning = false; A.render();
-    if (!quiet || added) toast(added ? `Encontré ${added} ${added === 1 ? 'canción' : 'canciones'}` : list.length ? 'Tu biblioteca está al día' : 'No encontré música en el teléfono');
+    if (!quiet || added || removed) toast(added ? `Encontré ${added} ${added === 1 ? 'canción' : 'canciones'}` : removed ? `Quité ${removed} ${removed === 1 ? 'canción' : 'canciones'} de otras carpetas` : list.length ? 'Tu biblioteca está al día' : all.length ? 'No hay música en las carpetas que elegiste' : 'No encontré música en el teléfono');
     paintCovers()
   };
   /* portadas y colores, de a poco y por álbum */
@@ -1623,11 +1626,32 @@ if (N) {
     painting = false; if (n) A.render()
   }
   window.AeffyNativeCb = (k, v) => {
-    if (k === 'perm') { if (v) { toast('Buscando tu música…'); A.nativeScan() } else { toast('Sin permiso no puedo ver tu música'); A.render() } }
+    if (k === 'perm') { if (v) { if (Array.isArray(A.ST.folders)) toast('Buscando tu música…'); A.nativeScan() } else { toast('Sin permiso no puedo ver tu música'); A.render() } }
     if (k === 'resume' && A.nativeHasPerm() && Date.now() - lastScan > 5 * 60000) A.nativeScan(true);
   };
   on('nperm', () => { try { N.requestPermission() } catch (e) { } });
-  on('import-dir', () => { if (A.nativeHasPerm()) { toast('Buscando música nueva…'); A.nativeScan() } else N.requestPermission() });
+  on('import-dir', () => { if (!A.nativeHasPerm()) { N.requestPermission(); return } try { A._nall = JSON.parse(N.scan() || '[]') } catch (e) { } A.folderSheet(false) });
+  on('nrescan', () => { if (A.nativeHasPerm()) { toast('Buscando música nueva…'); A.nativeScan() } else N.requestPermission() });
+
+  /* carpetas: aeffy solo lee las que elijas */
+  const rootOf = p => { const s = (p || '').split('/').filter(Boolean); if (!s.length) return ''; if (/^android$/i.test(s[0])) return s.slice(0, Math.min(s.length, 4)).join('/'); return s[0] };
+  const SKIP = /whatsapp|telegram|signal|messenger|record|grabaci|ringtone|tono|notification|notificacion|alarm|call|llamada|voice|voz|podcast|audiobook|android\/data|android\/media\/com\.(?!.*music)/i;
+  const LIKE = /^(music|m[uú]sica|musicas|download|downloads|descargas|audio|audios|songs|canciones|mp3|flac)$/i;
+  const nice = r => { const s = r.split('/'); if (/^android$/i.test(s[0])) { const pk = (s[2] || '').split('.').pop(); return (s[3] || pk || r).replace(/^\w/, c => c.toUpperCase()) } return r };
+  A.inFolders = path => { const f = A.ST.folders; if (!Array.isArray(f)) return true; return f.some(r => path === r || path.startsWith(r + '/')) };
+  let pick = null;
+  A.folderSheet = first => {
+    const all = A._nall || []; const cnt = {};
+    for (const m of all) { const r = rootOf(m.path); cnt[r] = (cnt[r] || 0) + 1 }
+    const roots = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]);
+    if (Array.isArray(A.ST.folders)) pick = new Set(A.ST.folders.filter(r => r in cnt));
+    else { pick = new Set(roots.filter(r => LIKE.test(r))); if (!pick.size) roots.filter(r => !SKIP.test(r)).forEach(r => pick.add(r)) }
+    const row = r => `<button class="si fold${pick.has(r) ? ' on' : ''}" data-a="nfold" data-v="${esc(r)}"><span class="ic">${ms(SKIP.test(r) ? 'forum' : 'folder')}</span><span class="t"><b>${esc(nice(r) || 'Almacenamiento principal')}</b><span>${cnt[r]} ${cnt[r] === 1 ? 'audio' : 'audios'}${r && nice(r) !== r ? ' · ' + esc(r) : ''}</span></span><span class="ck">${ms('check')}</span></button>`;
+    A.sheet(A.shead('folder_open', 'Elige tus carpetas de música', 'aeffy solo leerá las canciones de las carpetas que marques. Las demás, como audios de WhatsApp o grabaciones, quedan fuera.') +
+      `<div style="max-height:46vh;overflow:auto;margin:4px 0">${roots.length ? roots.map(row).join('') : '<p class="muted" style="padding:16px">No encontré audios en el teléfono.</p>'}</div><div class="foot">${first ? '' : '<button class="btn t" data-a="closesheet">Cancelar</button>'}<button class="btn" data-a="nfoldok">Listo</button></div>`)
+  };
+  on('nfold', el => { const r = el.dataset.v; if (pick.has(r)) pick.delete(r); else pick.add(r); el.classList.toggle('on', pick.has(r)) });
+  on('nfoldok', () => { if (!pick || !pick.size) { toast('Marca al menos una carpeta'); return } A.ST.folders = [...pick]; A.saveSet(); A.popLayer(); toast('Buscando tu música…'); A.nativeScan() });
 
   /* notificación y pantalla de bloqueo */
   const prevNotify = A.liveNotify;
@@ -1637,7 +1661,7 @@ if (N) {
   /* pantalla de inicio sin permiso: como Sosu */
   const vInicio = A.views.inicio;
   A.views.inicio = arg => {
-    let h = vInicio(arg);
+    let h = vInicio(arg).replace('data-a="import-dir"><span class="ms" aria-hidden="true">add_circle</span>Actualizar', 'data-a="nrescan"><span class="ms" aria-hidden="true">add_circle</span>Actualizar');
     if (!A.nativeHasPerm()) h = h.replace(/<section class="card c">[\s\S]*?Tu tocadiscos te espera[\s\S]*?<\/section>/, `<section class="card c">${A.badge('album')}<h3>Tu tocadiscos te espera</h3><p>Permite que aeffy vea la música de tu teléfono y aquí sonará. Tus archivos no se mueven ni se suben a ningún lado.</p><button class="btn" data-a="nperm">${ms('library_music')}Permitir acceso a mi música</button></section>`);
     return h
   };

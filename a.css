@@ -416,3 +416,5 @@ canvas.spec{width:100%;height:200px;border-radius:16px;background:#000;display:b
 .ly p small.tr{display:block;font-family:var(--bf);font-size:15px;font-weight:500;opacity:.8;margin-top:4px}
 .fp:not(.lyrics) .trbtn{display:none}
 .trbtn.on{color:var(--p)}
+
+.si.fold .ck{width:28px;height:28px;border-radius:9px;border:2px solid var(--dim);display:grid;place-items:center;flex:none;color:transparent;transition:.15s}.si.fold .ck .ms{font-size:20px}.si.fold.on .ck{background:var(--p);border-color:var(--p);color:var(--onp,#fff)}
