@@ -755,7 +755,8 @@ A.cloudInit = async () => {
   try { await loadCfg() } catch (e) { }
   try { await confirmFromLink(c) } catch (e) { }
   const { data } = await c.auth.getSession(); A.session = data.session; await loadMe();
-  c.auth.onAuthStateChange(async (ev, s) => { const had = !!A.session; A.session = s; if (ev === 'SIGNED_IN' || ev === 'SIGNED_OUT' || (!had && s)) { await loadMe(); A.render() } });
+  /* importante: nunca pedir datos dentro de este aviso (traba todas las consultas); se hace un instante después y solo si cambió la cuenta */
+  c.auth.onAuthStateChange((ev, s) => { const prev = A.session && A.session.user && A.session.user.id, now = s && s.user && s.user.id; A.session = s; if (prev !== now || ev === 'SIGNED_OUT') setTimeout(async () => { try { await loadMe() } catch (e) { } A.render() }, 0) });
   syncMinutes(); setInterval(syncMinutes, 5 * 60000);
   A.render()
 };
@@ -1777,7 +1778,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
 {
 const { $, esc, ms, toast, P, on } = A;
 const N = window.AeffyNative;
-A.BUILD = 24;
+A.BUILD = 25;
 A.native = !!N;
 if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }
