@@ -193,9 +193,10 @@ const lo = actx.createBiquadFilter(); lo.type = 'lowshelf'; lo.frequency.value =
 n.connect(lo); lo.connect(mid); mid.connect(hi); tone = [lo, mid, hi]; n = hi;
 panN = actx.createStereoPanner ? actx.createStereoPanner() : null; if (panN) { n.connect(panN); n = panN }
 compN = actx.createDynamicsCompressor(); fadeN = actx.createGain(); gainN = actx.createGain();
-n.connect(fadeN); fadeN.connect(gainN); gainN.connect(actx.destination); A.applyAudio()
+n.connect(fadeN); fadeN.connect(gainN); gainN.connect(actx.destination); try { A._dest = actx.createMediaStreamDestination() } catch (e) { } A.applyAudio()
 } catch (e) { }
 };
+A.spotStream = () => { A.initAudio(); if (actx && actx.state === 'suspended') actx.resume(); return A._dest ? A._dest.stream : null };
 A.applyAudio = () => {
 if (!actx) return; const S = A.ST;
 eqN.forEach((b, i) => b.gain.value = S.eqOn ? (S.eq[i] || 0) : 0);
@@ -204,6 +205,7 @@ if (panN) panN.pan.value = S.balance;
 const boost = S.eqOn ? Math.max(0, ...S.eq) : 0; let g = S.constVol ? Math.pow(10, -boost / 20) : 1;
 try { gainN.disconnect() } catch (e) { }
 if (S.limiter || S.normalize) { compN.threshold.value = S.limiter ? -3 : -14; compN.ratio.value = S.limiter ? 20 : 3; gainN.connect(compN); compN.connect(actx.destination) } else gainN.connect(actx.destination);
+if (A._dest) gainN.connect(A._dest);
 const lvl = { silencioso: .7, normal: 1, alto: 1.2 }[S.rgLevel] || 1; gainN.gain.value = g * (S.normalize ? lvl : 1);
 };
 async function blobFor(t) { let b = A.MEMBLOB.get(t.id); if (!b) { b = await tx('blob', 'readonly', s => s.get(t.id)); if (b) A.MEMBLOB.set(t.id, b) } return b }
@@ -216,17 +218,17 @@ try { await P.au.play() } catch (e) { }
 if (fadeN && A.ST.crossfade) fadeN.gain.setTargetAtTime(1, actx.currentTime, .4);
 const S = A.STS; S.recent = [t.id, ...S.recent.filter(x => x !== t.id)].slice(0, 60); S.plays[t.id] = (S.plays[t.id] || 0) + 1; A.saveStats();
 A.meta(t.id).last = Date.now(); A.saveMeta();
-setMedia(t); A.repaint(); A.onTrack && A.onTrack(t); if (A.ST.autoLyrics) A.fetchLyrics(t);
+setMedia(t); A.repaint(); A.onTrack && A.onTrack(t); A.liveNotify && A.liveNotify(); if (A.ST.autoLyrics) A.fetchLyrics(t);
 };
 A.playList = (ids, start, from) => { if (!ids.length) return; start = Math.max(0, start || 0); let q = [...ids], i = start; if (P.shuffle) { const first = q[start]; q = [first, ...shuffled(q.filter((x, k) => k !== start))]; i = 0 } P.queue = q; P.from = from || 'Tu biblioteca'; A.playIdx(i) };
 A.toggle = () => { if (!P.cur) { if (A.tracks.length) A.playList(A.tracks.map(t => t.id), 0, 'Tu biblioteca'); return } if (actx && actx.state === 'suspended') actx.resume(); P.au.paused ? P.au.play().catch(() => { }) : P.au.pause() };
 A.next = () => { if (P.qi < P.queue.length - 1) A.playIdx(P.qi + 1); else if (P.repeat === 1 && P.queue.length) A.playIdx(0); else { P.au.pause(); P.au.currentTime = 0 } };
 A.prev = () => { if (P.au.currentTime > 3) { P.au.currentTime = 0; return } if (P.qi > 0) A.playIdx(P.qi - 1); else P.au.currentTime = 0 };
 P.au.addEventListener('ended', () => { if (P.repeat === 2) { P.au.currentTime = 0; P.au.play().catch(() => { }) } else A.next() });
-P.au.addEventListener('play', () => { A.onPlayState && A.onPlayState(); if (!P.sess) P.sess = { s: Date.now(), l: 0 } });
-P.au.addEventListener('pause', () => { A.onPlayState && A.onPlayState(); endSession(); A.saveStats() });
+P.au.addEventListener('play', () => { A.onPlayState && A.onPlayState(); A.liveNotify && A.liveNotify(); if (!P.sess) P.sess = { s: Date.now(), l: 0 } });
+P.au.addEventListener('pause', () => { A.onPlayState && A.onPlayState(); A.liveNotify && A.liveNotify(); endSession(); A.saveStats() });
 P.au.addEventListener('loadedmetadata', () => { const t = A.byId(P.cur); if (t && isFinite(P.au.duration) && Math.abs((t.dur || 0) - P.au.duration) > 1) { t.dur = P.au.duration; A.saveTrack(t) } });
-P.au.addEventListener('seeked', () => { P.last = P.au.currentTime });
+P.au.addEventListener('seeked', () => { P.last = P.au.currentTime; A.liveNotify && A.liveNotify() });
 function endSession() { if (P.sess && P.sess.l > 20) { A.STS.sessions.push({ d: dkey(new Date(P.sess.s)), l: Math.round(P.sess.l) }); if (A.STS.sessions.length > 400) A.STS.sessions.shift() } P.sess = null }
 P.au.addEventListener('timeupdate', () => {
 const c = P.au.currentTime, d = c - P.last; P.last = c;
@@ -422,7 +424,7 @@ d.innerHTML = `<div class="bk" data-a="closedrawer"></div><nav aria-label="Menú
 ${[['auto_awesome', 'aeffy Premium', 'premium'], ['bar_chart', 'Estadísticas', 'estadisticas'], ['leaderboard', 'Calificaciones', 'calificaciones'], ['group', 'Amigos', 'amigos'], ['redeem', 'Invita y gana', 'invita'], ['handyman', 'Herramientas', 'herramientas'], ['settings', 'Configuración y privacidad', 'ajustes']].map(([i, n, v]) => `<button class="mi" data-a="dgo" data-v="${v}">${ms(i)}${n}</button>`).join('')}
 ${A.isAdmin ? `<button class="mi" data-a="admin">${ms('admin_panel_settings')}Panel de administradora</button>` : ''}
 <div class="fr"><b style="font-family:var(--hf);font-size:16px">Tus amigos ahora</b><p class="muted small" style="margin:6px 0 0">Cuando tus amigos escuchen algo, aparecerá aquí.</p></div></nav>`;
-d.classList.add('open'); A.pushLayer(() => d.classList.remove('open'))
+d.classList.add('open'); A.pushLayer(() => d.classList.remove('open')); A.paintDrawerFriends && A.paintDrawerFriends(); A.loadFriends && A.loadFriends()
 }
 on('drawer', drawer);
 on('closedrawer', () => A.popLayer());
@@ -451,7 +453,7 @@ function fpHtml() {
 const t = A.byId(P.cur); if (!t) return '';
 const r = (A.META[t.id] && A.META[t.id].rating) || 0, playing = !P.au.paused;
 return `<div class="in"><div class="fph"><button class="ib" data-a="closefp" aria-label="Cerrar">${ms('keyboard_arrow_down')}</button><div class="c"><small>Reproduciendo desde${P.from.startsWith('Álbum') ? ' álbum' : ''}:</small><b>${esc(P.from.replace(/^Álbum · /, ''))}</b></div><button class="ib" data-a="menu" data-id="${t.id}" aria-label="Opciones">${ms('more_horiz')}</button></div>
-<div class="compact">${cov(t)}<div class="t"><b>${esc(t.name)}</b><span>${esc(t.artist)}</span><span class="proc">Procesado</span></div><button class="ib" data-a="prev">${ms('skip_previous', 1)}</button><button class="ck s40${playing ? ' on' : ''}" data-a="toggle">${shp('cookie')}${ms(playing ? 'pause' : 'play_arrow', 1)}</button><button class="ib" data-a="next">${ms('skip_next', 1)}</button></div>
+<div class="compact">${cov(t)}<div class="t"><b>${esc(t.name)}</b><span>${esc(t.artist)}</span><span class="proc">Procesado</span></div><button class="ib trbtn${A.ST.showTr ? ' on' : ''}" data-a="trly" aria-label="Traducir letra">${ms('translate')}</button><button class="ib" data-a="prev">${ms('skip_previous', 1)}</button><button class="ck s40${playing ? ' on' : ''}" data-a="toggle">${shp('cookie')}${ms(playing ? 'pause' : 'play_arrow', 1)}</button><button class="ib" data-a="next">${ms('skip_next', 1)}</button></div>
 <div class="stage"><div class="bigcov">${cov(t)}</div><div class="ly" id="ly"></div><div class="qv" id="qv"></div>
 <div class="meta"><div><h2>${esc(t.name)}</h2><p>${esc(t.artist)}</p></div><div class="side2"><button class="ib" data-a="fav" data-id="${t.id}" aria-label="Me gusta">${ms('favorite', A.isFav(t.id))}</button><button class="ib" data-a="enqueue-menu" data-id="${t.id}" aria-label="Agregar a playlist">${ms('playlist_add')}</button></div></div>
 <div class="prog"><div class="wave" id="wave" role="slider" aria-label="Posición" tabindex="0"><svg id="wsvg"></svg><span class="th" id="wth"></span></div><div class="times"><span id="tc">0:00</span><span class="fmt">${ms('graphic_eq')}${esc([t.ext, t.bits ? t.bits + '-bit' : '', t.sr ? (t.sr / 1000).toFixed(1).replace('.0', '') + ' kHz' : ''].filter(Boolean).join(' · ') || 'Local')}</span><span id="td">${fmt(t.dur)}</span></div></div>
@@ -474,8 +476,9 @@ document.addEventListener('keydown', e => { if (e.target.id === 'wave') { if (e.
 let LY = [], lyI = -1;
 function buildLyrics() {
 const t = A.byId(P.cur), el = $('#ly'); if (!t || !el) return; const src = A.lyricsOf(t); LY = A.parseLRC(src); lyI = -1;
-if (LY.length) { el.classList.remove('plain'); el.innerHTML = LY.map((l, i) => `<p data-a="lyseek" data-i="${i}">${A.ST.karaoke && A.can('karaoke') ? (l.x || '♪').split(' ').map(w => `<span class="w">${esc(w)}</span>`).join(' ') : esc(l.x || '·')}</p>`).join(''); syncLyrics(P.au.currentTime) }
-else if (src.trim()) { el.classList.add('plain'); el.innerHTML = src.split(/\r?\n/).map(l => `<p>${esc(l) || '&nbsp;'}</p>`).join('') }
+const TR = A.ST.showTr ? ((A.META[t.id] || {}).tr || {})[A.trLang ? A.trLang() : 'es'] : null;
+if (LY.length) { el.classList.remove('plain'); el.innerHTML = LY.map((l, i) => `<p data-a="lyseek" data-i="${i}">${A.ST.karaoke && A.can('karaoke') ? (l.x || '·').split(' ').map(w => `<span class="w">${esc(w)}</span>`).join(' ') : esc(l.x || '·')}${TR && TR[i] ? `<small class="tr">${esc(TR[i])}</small>` : ''}</p>`).join(''); syncLyrics(P.au.currentTime) }
+else if (src.trim()) { el.classList.add('plain'); el.innerHTML = src.split(/\r?\n/).map((l, i) => `<p>${esc(l) || '&nbsp;'}${TR && TR[i] ? `<small class="tr">${esc(TR[i])}</small>` : ''}</p>`).join('') }
 else { el.innerHTML = `<p class="empty">Buscando la letra…</p>`; A.fetchLyrics(t, true).then(txt => { if (P.cur === t.id && fpMode === 'lyrics') { if (txt) buildLyrics(); else el.innerHTML = `<p class="empty">No encontré la letra de esta canción.<br><br><button class="btn t" data-a="editly" data-id="${t.id}">${ms('edit')}Agregar letra</button></p>` } }) }
 }
 function syncLyrics(c) {
@@ -486,6 +489,7 @@ if (i === lyI) return; lyI = i; ps.forEach((p, k) => p.classList.toggle('on', k 
 if (i >= 0 && ps[i]) { const el = $('#ly'); el.scrollTo({ top: ps[i].offsetTop - el.clientHeight / 2.6, behavior: 'smooth' }) }
 }
 function deckLyric(c) { const d = $('#deckLyr'); if (!d) return; const t = A.byId(P.cur); if (!t) return; const L = t._ly && t._lysrc === A.lyricsOf(t) ? t._ly : (t._lysrc = A.lyricsOf(t), t._ly = A.parseLRC(t._lysrc)); let x = ''; for (const l of L) { if (l.t <= c + .2) x = l.x; else break } d.textContent = x }
+on('trly', async () => { const t = A.byId(P.cur); if (!t) return; if (A.ST.showTr) { A.ST.showTr = false; A.saveSet(); A.paintFp(); return } if (!A.lyricsOf(t)) { toast('Esta canción no tiene letra todavía'); return } const r = await A.translateLyrics(t); if (r) { A.ST.showTr = true; A.saveSet(); A.paintFp() } });
 on('lyseek', el => { const l = LY[+el.dataset.i]; if (l) P.au.currentTime = l.t });
 A.onLyrics = t => { if (t.id === P.cur && fpMode === 'lyrics') buildLyrics() };
 function buildQueue() { const el = $('#qv'); if (!el) return; setCtx('queue', P.queue.map(A.byId).filter(Boolean)); el.innerHTML = `<div class="qh"><h3>A continuación</h3><button class="btn g" data-a="shufq">${ms('shuffle')}Mezclar todo</button></div><p class="muted small" style="margin:0 0 8px">${plural(Math.max(0, P.queue.length - P.qi - 1), 'canción', 'canciones')} en cola</p>` + P.queue.slice(P.qi).map(id => { const t = A.byId(id); return t ? row(t, 'queue') : '' }).join('') }
@@ -548,7 +552,6 @@ paint(); $('#rt', s).addEventListener('click', e => { const b = e.target.closest
 }
 on('rate', el => { const id = el.dataset.id; if (layers.length && !$('#fp').classList.contains('open') || $('.scrim')) { A.popLayer(); setTimeout(() => rateSheet(id), 260) } else rateSheet(id) });
 on('ratealbum', el => { const k = el.dataset.k; let v = A.ALRATE[k] || 0; const s = A.sheet(A.shead('album', 'Calificar álbum', esc(k)) + `<div class="rate" id="rt"></div><div class="small" id="rtl" style="text-align:center"></div><div class="foot"><button class="btn" data-a="closesheet">Listo</button></div>`); const paint = () => { $('#rt', s).innerHTML = [0, 1, 2, 3, 4].map(i => { const f = v - i * 2; return `<button class="${f >= 2 ? 'f' : f === 1 ? 'h' : ''}" data-i="${i}"></button>` }).join(''); $('#rtl', s).innerHTML = v ? `<b>${v} de 10</b>` : 'Medio círculo = 1 punto · lleno = 2' }; paint(); $('#rt', s).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; const i = +b.dataset.i, f = v - i * 2; v = f >= 2 ? i * 2 + 1 : f === 1 ? i * 2 : i * 2 + 2; A.ALRATE[k] = v; A.saveAlRate(); paint() }) });
-on('recast', () => A.sheet(A.shead('devices', 'aeffy Recast') + `<div class="card" style="display:flex;gap:14px;align-items:center;background:var(--s2)"><div class="ph" style="width:56px;height:56px;border-radius:16px;background:var(--s3);display:grid;place-items:center">${ms('smartphone')}</div><div><div class="label" style="color:var(--mute)">${ms('equalizer')}Escuchando ahora en:</div><b style="font-size:18px">${esc(A.me?.display_name || 'Este dispositivo')}</b><div class="small" style="color:var(--p)">${ms('volume_up')} Su propio altavoz</div></div></div><div class="sech"><h2 style="font-size:17px">Dispositivos locales</h2></div><div class="mi">${ms('cast')}<span>Usa el botón de transmitir de tu teléfono para enviar el audio a un parlante o TV.</span></div>`));
 on('info', el => { const t = A.byId(el.dataset.id); const r = (k, v) => v ? `<div class="si"><span class="t"><span>${k}</span><b>${esc(v)}</b></span></div>` : ''; A.popLayer(); setTimeout(() => A.sheet(A.shead('info', 'Información de la pista') + `<div class="sgrp">${r('Título', t.name)}${r('Artista', t.artist)}${r('Álbum', t.album)}${r('Año', t.year)}${r('Género', t.genre)}${r('Formato', [t.ext, t.bits ? t.bits + '-bit' : '', t.sr ? t.sr + ' Hz' : ''].filter(Boolean).join(' · '))}${r('Duración', fmt(t.dur))}${r('Tamaño', t.size ? (t.size / 1048576).toFixed(1) + ' MB' : '')}${r('Archivo', t.file)}${r('Carpeta', t.folder)}${r('Escuchada', fmtL(A.STS.t[t.id] || 0) + ' · ' + (A.STS.plays[t.id] || 0) + ' veces')}</div>`), 260) });
 on('delask', el => { const id = el.dataset.id; A.popLayer(); setTimeout(() => A.sheet(A.shead('delete', '¿Eliminar del disco?', 'Se quita de aeffy y de tus playlists. Tu archivo original en el teléfono no se toca.') + `<div class="foot"><button class="btn t" data-a="closesheet">Cancelar</button><button class="btn" style="background:var(--danger);color:#410" data-a="delok" data-id="${id}">Eliminar</button></div>`), 260) });
 on('delok', async el => { await A.deleteTrack(el.dataset.id); A.popLayer(); toast('Eliminada'); A.render() });
@@ -590,7 +593,7 @@ A.can = f => !A.cfg.premium_features?.[f] || A.isPremium();
 A.initials = () => { const n = (A.me?.display_name || A.me?.email || '?').trim(); const p = n.split(/\s+/); return ((p[0] || '')[0] + ((p[1] || '')[0] || '')).toUpperCase() || '?' };
 A.daysLeft = () => A.me?.premium_until ? Math.max(0, Math.ceil((new Date(A.me.premium_until) - new Date()) / 864e5)) : 0;
 A.noticeHtml = () => A.cfg.notice?.active && A.cfg.notice.text ? `<div class="notice">${ms('campaign')}<span>${esc(A.cfg.notice.text)}</span></div>` : '';
-function client() { if (sb) return sb; if (!window.supabase) return null; sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }); return sb }
+function client() { if (sb) return sb; if (!window.supabase) return null; sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' } }); return sb }
 A.sb = client;
 async function loadCfg() { const c = client(); if (!c) return; const { data } = await c.from('aeffy_config').select('key,value'); if (data) { data.forEach(r => A.cfg[r.key] = r.value); A.lsSet('ae_cfg', A.cfg) } }
 async function loadMe() {
@@ -599,6 +602,7 @@ const { data, error } = await c.rpc('aeffy_ensure_profile'); if (!error && data)
 const ref = localStorage.getItem('ae_ref'); if (ref) { await c.rpc('aeffy_set_ref', { p_handle: ref }); localStorage.removeItem('ae_ref') }
 const ad = await c.rpc('aeffy_claim_admin'); A.isAdmin = !!ad.data;
 if (A.me && A.me.paypal_sub_id) refreshPaypal(true);
+if (A.liveStart) A.liveStart();
 }
 A.refreshMe = async () => { await loadMe(); A.render() };
 A.cloudInit = async () => {
@@ -615,6 +619,7 @@ A.loginSheet = (mode = 'in') => {
 const s = A.sheet(A.shead('account_circle', 'Entra a aeffy', 'Tu cuenta guarda tu perfil, tus estadísticas y tu Premium, y te sigue a tus otros dispositivos.') + `
 <form id="lg"><label class="fld"><small>Correo electrónico</small><input id="lgE" type="email" autocomplete="email" required placeholder="tu@correo.com"></label>
 <label class="fld"><small>Contraseña</small><input id="lgP" type="password" autocomplete="${mode === 'up' ? 'new-password' : 'current-password'}" minlength="6" required placeholder="Mínimo 6 caracteres"></label>
+<button type="button" class="btn big t" style="width:100%;margin-bottom:10px" data-a="google"><svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continuar con Google</button><div class="small muted" style="text-align:center;margin:0 0 10px">o con tu correo</div>
 <button class="btn big" style="width:100%" id="lgB">${mode === 'up' ? 'Crear cuenta' : 'Entrar'}</button>
 <p class="small muted" id="lgM" style="text-align:center;min-height:20px"></p>
 <div style="text-align:center"><button type="button" class="btn g" id="lgT">${mode === 'up' ? '¿Ya tienes cuenta? Entra' : '¿No tienes cuenta? Créala gratis'}</button><button type="button" class="btn g" id="lgR">Olvidé mi contraseña</button></div></form>`);
@@ -771,7 +776,7 @@ const avg = rated.length ? rated.reduce((a, [, m]) => a + m.rating, 0) / rated.l
 const circ = v => [0, 1, 2, 3, 4].map(i => { const f = v - i * 2; return `<span style="display:inline-block;width:18px;height:18px;border-radius:50%;border:2px solid var(--p);background:${f >= 2 ? 'var(--p)' : f === 1 ? 'linear-gradient(90deg,var(--p) 50%,transparent 50%)' : 'none'}"></span>` }).join(' ');
 let h = top({ back: 1 }) + `<div style="display:flex;gap:14px;align-items:center">${badge('leaderboard', 'sm')}<div><h1 class="h1" style="margin:0">Calificaciones</h1><div class="sub">Tus rankings de canciones y álbumes, y las votaciones de tus Spots</div></div></div>
 <div class="chips" style="margin:14px 0"><button class="chip${rtTab === 'mis' ? ' on' : ''}" data-a="rttab" data-v="mis">${ms('stars')}Mis calificaciones</button><button class="chip${rtTab === 'spots' ? ' on' : ''}" data-a="rttab" data-v="spots">${ms('groups')}De los Spots</button></div>`;
-if (rtTab === 'spots') return h + `<div class="sgrid">${stt('how_to_vote', 'Votaciones', 0)}${stt('thumb_up', 'Votos recibidos', 0)}</div><section class="card c" style="margin-top:14px">${badge('groups')}<h3>Aún no hay votaciones</h3><p>Abre un Spot y lanza una votación desde la barra de reproducción. Las votaciones de los Spots en los que participas también se guardan aquí.</p></section>`;
+if (rtTab === 'spots') { const V2 = A._votes || []; if (!A._votesLoaded && A.session) { A._votesLoaded = 1; A.sb().from('aeffy_spot_votes').select('*').order('at', { ascending: false }).limit(200).then(({ data }) => { A._votes = data || []; A.render() }) } const mine = V2.filter(x => x.voter_id === A.session?.user.id), recv = V2.filter(x => x.host_id === A.session?.user.id && x.voter_id !== A.session?.user.id); const avg = recv.length ? recv.reduce((a, b) => a + b.value, 0) / recv.length : 0; return h + `<div class="sgrid">${stt('how_to_vote', 'Votaciones', mine.length)}${stt('thumb_up', 'Votos recibidos', recv.length)}<div class="st" style="grid-column:1/-1"><small>${ms('functions')}Media general</small><b>${avg ? avg.toFixed(1).replace('.', ',') : '—'}</b></div></div>` + (V2.length ? `<div class="sech"><h2>Votaciones de los Spots</h2><p>Cada votación guarda quién votó y cuánto</p></div>` + V2.map(x => `<div class="li"><div class="ph">${ms('how_to_vote')}</div><div class="t"><b>${esc(x.title || '')}</b><span>${esc(x.voter_name || '')} · ${esc(x.artist || '')}</span></div><span class="end"><b style="color:var(--p);font-size:16px">${x.value}</b>/10</span></div>`).join('') : `<section class="card c" style="margin-top:14px">${badge('groups')}<h3>Aún no hay votaciones</h3><p>Abre un Spot y toca «Lanzar votación». Las votaciones de los Spots en los que participas también se guardan aquí.</p></section>`) }
 h += `<div class="sgrid">${stt('music_note', 'Canciones calificadas', rated.length)}${stt('album', 'Álbumes', al.length)}<div class="st" style="grid-column:1/-1"><small>${ms('functions')}Tu media</small><b>${avg ? avg.toFixed(1).replace('.', ',') : '—'}</b><div style="margin-top:6px">${circ(Math.round(avg))}</div></div></div>`;
 if (t) h += `<section class="card" style="margin-top:14px;background:var(--pc);color:var(--onpc)"><div class="label" style="color:inherit">Sonando ahora</div><div class="li">${cov(t, 's48')}<div class="t"><b>${esc(t.name)}</b><span style="color:inherit;opacity:.8">${esc(t.artist)}</span></div><button class="btn t" data-a="rate" data-id="${t.id}">${(A.META[t.id] || {}).rating ? (A.META[t.id].rating + ' de 10') : 'Calificar'}</button></div></section>`;
 h += `<div class="sech carh"><h2>Tus canciones</h2></div>` + (rated.length ? rated.sort((a, b) => b[1].rating - a[1].rating).map(([id, m]) => { const x = A.byId(id); return `<div class="li" data-a="rate" data-id="${id}">${cov(x, 's48')}<div class="t"><b>${esc(x.name)}</b><span>${esc(x.artist)}</span></div><span class="end"><b style="color:var(--p);font-size:16px">${m.rating}</b>/10</span></div>` }).join('') : `<p class="muted small">Califica desde el reproductor con el botón de la flor.</p>`);
@@ -840,8 +845,9 @@ letra: () => head('Letra') + `<div class="sg">Cómo se ven</div><div class="sgrp
 spots: () => head('Spots') + `<div class="sg">Personaliza tu Spot</div><section class="card" style="background:linear-gradient(160deg,var(--pcl),var(--pc));color:var(--onpc)"><div class="label" style="color:inherit">${ms('podcasts')}Spot</div><h2 style="font-size:24px;margin:6px 0">Spot de ${esc(A.me?.display_name || 'Anfitrión')}</h2><span class="small">${A.ST.spotPeople} personas</span></section>
 <div class="sg">¿Quién puede entrar?</div><div class="sgrp">${[['open', 'Abierto a amigos', 'Tus amigos ven tu Spot en su Inicio y entran sin invitación.'], ['ask', 'Amigos, con tu permiso', 'Te llega un aviso para aceptar o rechazar.'], ['invite', 'Solo con invitación', 'Entra quien tenga el enlace.']].map(([k, b, s]) => `<button class="si" data-a="setv" data-k="spotMode" data-v="${k}"><span class="ic">${ms((A.ST.spotMode || 'open') === k ? 'radio_button_checked' : 'radio_button_unchecked')}</span><span class="t"><b>${b}</b><span>${s}</span></span></button>`).join('')}</div>
 <div class="sg">Capacidad</div><div class="sgrp">${item('groups', 'Hasta ' + A.ST.spotPeople + ' personas', 'Cuántas personas caben en tus Spots, contándote.', `<select data-set="spotPeople" style="background:var(--s3);border:0;border-radius:10px;height:36px;padding:0 10px">${[2, 3, 4, ...(A.can('spots_12') ? [6, 8, 10, 12] : [])].map(v => `<option${+A.ST.spotPeople === v ? ' selected' : ''}>${v}</option>`).join('')}</select>`)}</div>
+<div class="sg">Permisos</div><div class="sgrp">${item('', 'Solo usuarios registrados', 'Los invitados entran con su cuenta de aeffy.', sw('spotOnlyUsers', A.ST.spotOnlyUsers))}${item('', 'Los invitados pueden controlar la reproducción', 'Pausar, saltar y volver atrás.', sw('spotControl', A.ST.spotControl))}</div>
 <div class="sg">Cola de los Spots que creas</div><div class="sgrp">${item('', 'Reglas inteligentes', 'Las canciones se turnan entre las personas del Spot.', sw('smartQueue', A.ST.smartQueue))}</div>`,
-recast: () => head('aeffy Recast') + `<div class="sg">Este dispositivo</div><div class="sgrp">${item('cast', 'Usar aeffy Recast', 'Envía la música a parlantes y televisores con el botón de transmitir de tu teléfono, mientras aeffy sigue siendo el control.', sw('recast', A.ST.recast))}</div>`,
+recast: () => head('aeffy Recast') + `<div class="sg">Este dispositivo</div><div class="sgrp">${item('cast', 'Usar aeffy Recast', 'Controla aeffy desde tus otros dispositivos con la misma cuenta, y pasa la música de uno a otro.', sw('recast', A.ST.recast !== false))}<div style="padding:0 16px 14px"><label class="fld"><small>Nombre de este dispositivo</small><input id="devName" value="${esc(localStorage.getItem('ae_devname') || '')}" placeholder="Ej.: Teléfono de Mefi"></label></div></div>`,
 copias: () => head('Copias e historial') + `<div class="sg">Copias de seguridad</div><div class="sgrp"><div class="si"><span class="t"><span>Tu historial, reproducciones, favoritos, calificaciones y playlists viven en este teléfono. Una copia los guarda en un archivo para recuperarlos si cambias de teléfono. Tu música no se copia.</span></span></div><div style="padding:0 16px 14px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" data-a="backup">${ms('save')}Crear copia ahora</button><button class="btn o" data-a="restore">${ms('upload')}Restaurar una copia…</button></div>${item('', 'Copia automática diaria', 'Última: ' + (localStorage.getItem('ae_lastbk') || 'nunca'), sw('backupAuto', A.ST.backupAuto))}</div>
 <div class="sg">Importar tu historial ${lock('history_import')}</div><div class="sgrp"><div class="si"><span class="t"><span>Trae lo que escuchaste en otros sitios: tus estadísticas y tus mixes tendrán en cuenta años pasados. Todo se procesa en tu teléfono.</span></span></div>${item('csv', 'Archivo CSV', 'Una fila por escucha, con columnas de fecha, artista y canción (álbum y duración, si los tienes).', `<button class="btn t" data-a="csv">Importar</button>`)}${item('', 'Spotify', 'Pide tus datos en Spotify → Privacidad → «Historial de reproducción ampliado» y sube los JSON.', `<button class="btn t" data-a="spjson">Importar</button>`)}</div>`
 };
@@ -849,7 +855,7 @@ SUB.perfil.after = 1;
 A.afterRender = v => {
 const f = $('#pf'); if (f) { $$('#pfV button').forEach(b => b.onclick = () => { $$('#pfV button').forEach(x => x.classList.toggle('on', x === b)) }); f.onsubmit = async e => { e.preventDefault(); const ok = await A.updateProfile($('#pfN').value, $('#pfH').value, ($('#pfV .on') || {}).dataset?.v); if (ok) toast('Perfil guardado') } }
 };
-on('set', el => { const k = el.dataset.k; A.ST[k] = !A.ST[k]; A.saveSet(); el.classList.toggle('on', A.ST[k]); el.setAttribute('aria-checked', A.ST[k]); A.applyAudio(); if (['amoled', 'neutral', 'coverColor'].includes(k)) A.repaint(); if (k === 'crossfade') A.render() });
+on('set', el => { const k = el.dataset.k; A.ST[k] = k === 'recast' ? A.ST[k] === false : !A.ST[k]; A.saveSet(); el.classList.toggle('on', A.ST[k]); el.setAttribute('aria-checked', A.ST[k]); A.applyAudio(); if (['amoled', 'neutral', 'coverColor'].includes(k)) A.repaint(); if (k === 'crossfade') A.render(); if (k === 'showFriends') A.publishNow && A.publishNow() });
 on('setv', el => { const k = el.dataset.k; A.ST[k] = el.dataset.v; A.saveSet(); A.repaint(); A.applyAudio(); A.render() });
 document.addEventListener('input', e => {
 const t = e.target;
@@ -1058,6 +1064,265 @@ toast('Listo: tus archivos con etiquetas nuevas se están descargando')
 }
 'use strict';
 {
+const { $, $$, esc, ms, fmt, toast, shp, cov, P, on, top, badge } = A;
+const V = A.views;
+const ICE = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }] };
+const rid = n => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('');
+const ago = d => { const s = (Date.now() - new Date(d)) / 1000; if (s < 90) return 'ahora'; if (s < 3600) return 'hace ' + Math.round(s / 60) + ' min'; if (s < 86400) return 'hace ' + Math.round(s / 3600) + ' h'; return 'hace ' + Math.round(s / 86400) + ' d' };
+async function thumb(src, size = 96) { if (!src) return null; try { const i = new Image(); i.src = src; await i.decode(); const c = document.createElement('canvas'); c.width = c.height = size; c.getContext('2d').drawImage(i, 0, 0, size, size); return c.toDataURL('image/jpeg', .7) } catch (e) { return null } }
+const COLORS = ['#ff7eb3', '#8f6bff', '#3b9bf5', '#2fbf8f', '#ffb347', '#ef5d5d', '#6c8cff', '#c06cff'];
+const colorOf = s => COLORS[A.hueOf(s || '') % COLORS.length];
+const av = (name, sz = 40) => `<i class="pav" style="width:${sz}px;height:${sz}px;background:${colorOf(name)}">${esc((name || '?').trim().charAt(0).toUpperCase())}</i>`;
+const S = A.spot = { role: null, code: null, ch: null, peers: new Map(), people: [], chat: [], meta: null, vote: null, votes: {}, state: null, me: null, timer: null, started: 0 };
+const myKey = () => S.me || (S.me = (A.session ? 'u-' + A.session.user.id.slice(0, 8) : 'g') + '-' + rid(5));
+function send(event, payload) { if (S.ch) S.ch.send({ type: 'broadcast', event, payload }) }
+A.spotCreate = async () => {
+if (!A.session) { A.loginSheet('in'); return }
+if (S.role) { A.go('spots'); return }
+const sb = A.sb(); const code = rid(6); const max = Math.min(A.ST.spotPeople || 4, A.isPremium() ? (A.cfg.limits?.premium_spot_people || 12) : (A.cfg.limits?.free_spot_people || 4));
+const name = 'Spot de ' + (A.me?.display_name || 'Anfitrión');
+const { error } = await sb.from('aeffy_spots').insert({ code, host_id: A.session.user.id, name, mode: A.ST.spotMode || 'open', max_people: max, only_users: !!A.ST.spotOnlyUsers, allow_control: !!A.ST.spotControl });
+if (error) { toast('No pude crear el Spot'); return }
+A.initAudio(); if (!A.spotStream()) { toast('Este navegador no puede transmitir audio'); }
+Object.assign(S, { role: 'host', code, meta: { name, max_people: max, allow_control: !!A.ST.spotControl, host: A.me?.display_name }, chat: [], peers: new Map(), started: Date.now(), votes: {}, vote: null });
+join(code, { name: A.me?.display_name || 'Anfitrión', host: true });
+S.timer = setInterval(hostTick, 5000); A.publishNow(); A.go('spots'); toast('Tu Spot está abierto')
+};
+function hostTick() {
+pushState();
+if (!A.isPremium()) { const k = 'ae_spotmin_' + A.dkey(new Date()); const m = (+localStorage.getItem(k) || 0) + 5 / 60; localStorage.setItem(k, m); if (m >= 60) { toast('Se acabó la hora gratis de Spots de hoy'); A.spotEnd(); } }
+}
+async function pushState() {
+if (S.role !== 'host') return; const t = A.byId(P.cur);
+const st = { t: t ? { hue: t.hue, sat: t.sat, name: t.name, artist: t.artist, album: t.album, dur: t.dur || P.au.duration || 0, cover: t._thumb || (t._thumb = await thumb(t.cover, 160)) } : null, pos: P.au.currentTime || 0, playing: !!(t && !P.au.paused), at: Date.now(), next: P.queue.slice(P.qi + 1, P.qi + 6).map(id => { const x = A.byId(id); return x ? { name: x.name, artist: x.artist } : null }).filter(Boolean), meta: S.meta };
+S.state = st; send('state', st)
+}
+A.spotPush = () => { if (S.role === 'host') pushState() };
+function offerTo(key) {
+const stream = A.spotStream(); if (!stream) return; const pc = new RTCPeerConnection(ICE); S.peers.set(key, pc);
+stream.getAudioTracks().forEach(tr => pc.addTrack(tr, stream));
+pc.onicecandidate = e => { if (e.candidate) send('sig', { to: key, from: myKey(), kind: 'ice', data: e.candidate.toJSON() }) };
+pc.onconnectionstatechange = () => { if (['failed', 'closed'].includes(pc.connectionState)) { S.peers.delete(key) } A.spotPaint() };
+pc.createOffer().then(o => pc.setLocalDescription(o)).then(() => send('sig', { to: key, from: myKey(), kind: 'offer', data: pc.localDescription.toJSON() }))
+}
+A.spotEnd = async () => {
+if (!S.role) return; const was = S.role, code = S.code;
+if (was === 'host') { send('end', {}); try { await A.sb().from('aeffy_spots').update({ active: false, ended_at: new Date().toISOString() }).eq('code', code) } catch (e) { } }
+leave(); if (was === 'host') toast('Cerraste tu Spot'); A.publishNow(); A.render()
+};
+function leave() {
+clearInterval(S.timer); S.peers.forEach(pc => pc.close()); S.peers.clear();
+if (S.ch) { try { S.ch.untrack(); A.sb().removeChannel(S.ch) } catch (e) { } }
+const a = $('#spotAudio'); if (a) { a.srcObject = null; a.remove() }
+Object.assign(S, { role: null, code: null, ch: null, people: [], state: null, meta: null, vote: null, guestPc: null })
+}
+A.spotJoin = async (code, name) => {
+const sb = A.sb(); if (!sb) { toast('Sin conexión'); return }
+const { data: sp } = await sb.from('aeffy_spots').select('*').eq('code', code).maybeSingle();
+if (!sp || !sp.active) { toast('Ese Spot ya se cerró'); return }
+if (sp.only_users && !A.session) { A.loginSheet('in'); return }
+if (S.role) leave();
+if (!P.au.paused) P.au.pause();
+let a = $('#spotAudio'); if (!a) { a = document.createElement('audio'); a.id = 'spotAudio'; a.autoplay = true; a.playsInline = true; document.body.appendChild(a) }
+a.muted = false; a.play().catch(() => { });
+Object.assign(S, { role: 'guest', code, meta: sp, chat: [], votes: {}, vote: null, state: null });
+localStorage.setItem('ae_spotname', name);
+join(code, { name, host: false, app: matchMedia('(display-mode: standalone)').matches ? 'aeffy' : 'web' }); A.render()
+};
+function onSig(p) {
+if (p.to !== myKey()) return;
+if (S.role === 'guest') {
+if (p.kind === 'offer') {
+if (S.guestPc) S.guestPc.close(); const pc = S.guestPc = new RTCPeerConnection(ICE);
+pc.ontrack = e => { const a = $('#spotAudio'); if (a) { a.srcObject = e.streams[0]; a.play().catch(() => { S.needTap = true; A.spotPaint() }) } };
+pc.onicecandidate = e => { if (e.candidate) send('sig', { to: p.from, from: myKey(), kind: 'ice', data: e.candidate.toJSON() }) };
+pc.onconnectionstatechange = () => { S.conn = pc.connectionState; A.spotPaint() };
+pc.setRemoteDescription(p.data).then(() => pc.createAnswer()).then(ans => pc.setLocalDescription(ans)).then(() => send('sig', { to: p.from, from: myKey(), kind: 'answer', data: pc.localDescription.toJSON() }))
+} else if (p.kind === 'ice' && S.guestPc) S.guestPc.addIceCandidate(p.data).catch(() => { })
+} else if (S.role === 'host') {
+const pc = S.peers.get(p.from); if (!pc) return;
+if (p.kind === 'answer') pc.setRemoteDescription(p.data).catch(() => { });
+if (p.kind === 'ice') pc.addIceCandidate(p.data).catch(() => { })
+}
+}
+function join(code, info) {
+const sb = A.sb(); const key = myKey();
+const ch = S.ch = sb.channel('aeffy-spot-' + code, { config: { broadcast: { self: false }, presence: { key } } });
+ch.on('presence', { event: 'sync' }, () => {
+const st = ch.presenceState(); S.people = Object.entries(st).map(([k, v]) => ({ key: k, ...(v[0] || {}) })).sort((a, b) => (b.host ? 1 : 0) - (a.host ? 1 : 0) || (a.at || 0) - (b.at || 0));
+if (S.role === 'host') {
+const guests = S.people.filter(x => !x.host); const max = S.meta.max_people || 4;
+guests.forEach((g, i) => { if (i + 1 >= max) { send('full', { to: g.key }); return } if (!S.peers.has(g.key)) offerTo(g.key) });
+[...S.peers.keys()].forEach(k => { if (!st[k]) { S.peers.get(k).close(); S.peers.delete(k) } });
+pushState()
+}
+A.spotPaint()
+});
+ch.on('broadcast', { event: 'sig' }, ({ payload }) => onSig(payload));
+ch.on('broadcast', { event: 'state' }, ({ payload }) => { if (S.role === 'guest') { const ch2 = !S.state || !S.state.t || !payload.t || S.state.t.name !== payload.t.name; S.state = payload; if (ch2 && payload.t) { guestLyrics(payload.t); if (payload.t.hue != null && A.ST.coverColor) A.applyPalette(payload.t.hue, payload.t.sat ?? .6) } A.spotPaint() } });
+ch.on('broadcast', { event: 'hello' }, () => { if (S.role === 'host') pushState() });
+ch.on('broadcast', { event: 'chat' }, ({ payload }) => { S.chat.push(payload); S.chat = S.chat.slice(-80); A.spotPaint(true) });
+ch.on('broadcast', { event: 'react' }, ({ payload }) => floatReact(payload.i));
+ch.on('broadcast', { event: 'vote_start' }, ({ payload }) => { S.vote = payload; S.votes = {}; A.spotPaint(); voteSheet() });
+ch.on('broadcast', { event: 'vote' }, ({ payload }) => { if (S.vote && payload.id === S.vote.id) { S.votes[payload.key] = payload; A.spotPaint() } });
+ch.on('broadcast', { event: 'ctrl' }, ({ payload }) => { if (S.role === 'host' && S.meta.allow_control) { ({ toggle: A.toggle, next: A.next, prev: A.prev })[payload.c]?.(); setTimeout(pushState, 300) } });
+ch.on('broadcast', { event: 'full' }, ({ payload }) => { if (payload.to === myKey()) { toast('El Spot está lleno'); leave(); A.render() } });
+ch.on('broadcast', { event: 'end' }, () => { if (S.role === 'guest') { toast('La anfitriona cerró el Spot'); leave(); A.render() } });
+ch.subscribe(async status => { if (status === 'SUBSCRIBED') { await ch.track({ ...info, at: Date.now() }); if (S.role === 'guest') send('hello', {}) } })
+}
+async function guestLyrics(t) { S.lyr = []; try { const q = new URLSearchParams({ artist_name: t.artist, track_name: t.name }); let r = await fetch('https://lrclib.net/api/get?' + q); let j = r.ok ? await r.json() : null; if (!j || !j.syncedLyrics) { r = await fetch('https://lrclib.net/api/search?' + new URLSearchParams({ q: t.artist + ' ' + t.name })); const arr = r.ok ? await r.json() : []; j = arr.find(x => x.syncedLyrics) || null } if (j && j.syncedLyrics) S.lyr = A.parseLRC(j.syncedLyrics) } catch (e) { } }
+setInterval(() => { if (S.role !== 'guest' || !S.state) return; const st = S.state, pos = st.pos + (st.playing ? (Date.now() - st.at) / 1000 : 0); const b = $('#spProg'); if (b && st.t?.dur) b.style.width = Math.min(100, pos / st.t.dur * 100) + '%'; const tc = $('#spTime'); if (tc) tc.textContent = fmt(pos) + ' / ' + fmt(st.t?.dur); const ly = $('#spLyr'); if (ly && S.lyr?.length) { let x = ''; for (const l of S.lyr) { if (l.t <= pos + .3) x = l.x; else break } ly.textContent = x } }, 500);
+function voteSheet() {
+const v = S.vote; if (!v) return; let val = 0;
+const s = A.sheet(A.shead('how_to_vote', 'Votación del Spot', esc(v.title) + ' · ' + esc(v.artist)) + `<div class="rate" id="vrt"></div><div class="small" id="vrl" style="text-align:center">Medio círculo = 1 punto · lleno = 2</div><div class="foot"><button class="btn" id="vok" disabled>Votar</button></div>`);
+const paint = () => { $('#vrt', s).innerHTML = [0, 1, 2, 3, 4].map(i => { const f = val - i * 2; return `<button class="${f >= 2 ? 'f' : f === 1 ? 'h' : ''}" data-i="${i}" aria-label="Círculo ${i + 1}"></button>` }).join(''); $('#vrl', s).innerHTML = val ? `<b>${val} de 10</b>` : 'Medio círculo = 1 punto · lleno = 2'; $('#vok', s).disabled = !val };
+paint(); $('#vrt', s).onclick = e => { const b = e.target.closest('button'); if (!b) return; const i = +b.dataset.i, f = val - i * 2; val = f >= 2 ? i * 2 + 1 : f === 1 ? i * 2 : i * 2 + 2; paint() };
+$('#vok', s).onclick = async () => { const name = A.me?.display_name || localStorage.getItem('ae_spotname') || 'Invitado'; const pl = { id: v.id, key: myKey(), value: val, name }; S.votes[myKey()] = pl; send('vote', pl); try { await A.sb().from('aeffy_spot_votes').insert({ spot_code: S.code, host_id: S.meta.host_id || (S.role === 'host' ? A.session.user.id : null), voter_id: A.session?.user.id || null, voter_name: name, title: v.title, artist: v.artist, value: val }) } catch (e) { } A.popLayer(); A.spotPaint(); toast('Voto enviado') }
+}
+function floatReact(i) { const e = document.createElement('span'); e.className = 'ms f react'; e.textContent = i; e.style.left = (20 + Math.random() * 60) + '%'; document.body.appendChild(e); setTimeout(() => e.remove(), 2200) }
+on('sp-react', el => { floatReact(el.dataset.v); send('react', { i: el.dataset.v }) });
+on('sp-vote', () => { const t = S.role === 'host' ? A.byId(P.cur) : S.state?.t; if (!t) { toast('No hay nada sonando'); return } S.vote = { id: rid(6), title: t.name, artist: t.artist }; S.votes = {}; send('vote_start', S.vote); voteSheet(); A.spotPaint() });
+on('sp-ctrl', el => { if (S.role === 'host') { ({ toggle: A.toggle, next: A.next, prev: A.prev })[el.dataset.v](); setTimeout(pushState, 300) } else send('ctrl', { c: el.dataset.v }) });
+on('sp-create', () => A.spotCreate());
+on('spot-create', () => A.spotCreate());
+on('sp-end', () => A.spotEnd());
+on('sp-leave', () => { leave(); toast('Saliste del Spot'); A.render() });
+on('sp-copy', async () => { const url = location.origin + '/#/spot/' + S.code; try { if (navigator.share) await navigator.share({ title: S.meta?.name || 'Spot de aeffy', text: 'Ven a escuchar conmigo en aeffy', url }); else { await navigator.clipboard.writeText(url); toast('Enlace copiado') } } catch (e) { } });
+on('sp-tap', () => { const a = $('#spotAudio'); a && a.play().then(() => { S.needTap = false; A.spotPaint() }).catch(() => { }) });
+on('sp-joinbtn', el => { const n = ($('#spName') || {}).value?.trim() || A.me?.display_name || 'Invitado'; A.spotJoin(el.dataset.code, n.slice(0, 30)) });
+document.addEventListener('submit', e => { if (e.target.id === 'spChat') { e.preventDefault(); const i = $('#spMsg'); const t = i.value.trim(); if (!t) return; const m = { n: A.me?.display_name || localStorage.getItem('ae_spotname') || 'Invitado', t: t.slice(0, 280), at: Date.now() }; S.chat.push(m); send('chat', m); i.value = ''; A.spotPaint(true) } });
+function people() { const max = S.meta?.max_people || 4; const L = S.people; return `<div class="people">${L.map(p => `<div class="p">${av(p.name)}<div class="t"><b>${esc(p.name)}</b><span class="muted small">${p.host ? 'Anfitriona' : p.app === 'aeffy' ? 'Desde aeffy' : 'Desde el navegador'}${p.key === myKey() ? ' · tú' : ''}</span></div>${S.role === 'host' && !p.host ? `<span class="small muted">${S.peers.get(p.key)?.connectionState === 'connected' ? ms('graphic_eq') : '…'}</span>` : ''}</div>`).join('')}${L.length < max ? `<div class="p"><i class="pav free">${ms('person_add')}</i><span class="muted">${max - L.length} ${max - L.length === 1 ? 'plaza libre' : 'plazas libres'}</span></div>` : ''}</div>` }
+function chatBox() { return `<section class="card" style="margin-top:12px"><h3 style="margin-bottom:8px">Chat</h3><div class="chat" id="spChatList">${S.chat.map(m => `<div class="msg">${av(m.n, 28)}<div><b>${esc(m.n)}</b><p>${esc(m.t)}</p></div></div>`).join('') || '<p class="muted small">Saluda a la gente del Spot.</p>'}</div><form id="spChat" class="search" style="margin:10px 0 0"><input id="spMsg" maxlength="280" placeholder="Escribe un mensaje" autocomplete="off"><button class="ib" aria-label="Enviar">${ms('send')}</button></form><div class="row2" style="margin-top:10px">${['favorite', 'local_fire_department', 'celebration', 'music_note', 'sentiment_very_satisfied'].map(i => `<button class="ib t" data-a="sp-react" data-v="${i}" aria-label="Reaccionar">${ms(i, 1)}</button>`).join('')}</div></section>` }
+function voteBox() { if (!S.vote) return ''; const vs = Object.values(S.votes); const avg = vs.length ? (vs.reduce((a, b) => a + b.value, 0) / vs.length) : 0; return `<section class="card" style="margin-top:12px;background:var(--pc);color:var(--onpc)"><div class="label" style="color:inherit">${ms('how_to_vote')}Votación</div><b style="font-size:17px">${esc(S.vote.title)}</b><div class="small" style="opacity:.85">${vs.length} ${vs.length === 1 ? 'voto' : 'votos'}${vs.length ? ' · media ' + avg.toFixed(1).replace('.', ',') + ' de 10' : ''}</div>${!S.votes[myKey()] ? `<button class="btn" style="margin-top:10px" data-a="sp-revote">Votar</button>` : ''}</section>` }
+on('sp-revote', voteSheet);
+V.spot = code => {
+if (S.role && S.code === code) return V.spots();
+setTimeout(async () => { const sb = A.sb(); if (!sb) return; const { data } = await sb.from('aeffy_spots').select('name,active,max_people,only_users').eq('code', code).maybeSingle(); const b = $('#spInfo'); if (!b) return; if (!data || !data.active) b.innerHTML = `<p class="muted">Este Spot ya se cerró.</p>`; else b.innerHTML = `<h2 style="font-size:26px;margin:6px 0">${esc(data.name)}</h2><p style="opacity:.85">Escuchen lo mismo, al mismo tiempo. Hasta ${data.max_people} personas.</p>${A.session ? '' : `<label class="fld" style="background:rgba(0,0,0,.2)"><small style="color:inherit">Tu nombre</small><input id="spName" maxlength="30" value="${esc(localStorage.getItem('ae_spotname') || '')}" placeholder="Cómo te verán en el Spot"></label>`}<button class="btn big" data-a="sp-joinbtn" data-code="${esc(code)}">${ms('headphones')}Unirme y escuchar</button>${data.only_users && !A.session ? '<p class="small">Este Spot pide iniciar sesión.</p>' : ''}` }, 0);
+return top({ back: 1 }) + `<section class="card" style="margin-top:12px;background:linear-gradient(160deg,var(--pcl),var(--pc));color:var(--onpc)"><div class="label" style="color:inherit">${ms('podcasts')}Spot</div><div id="spInfo"><p>Buscando el Spot…</p></div></section><p class="muted small" style="margin-top:12px">El audio llega en directo desde el teléfono de quien abrió el Spot. Usa audífonos o parlante y sube el volumen.</p>`
+};
+const spotsHome = V.spots;
+V.spots = () => {
+if (!S.role) {
+let h = spotsHome();
+const fs = (A.FR || []).filter(f => f.status === 'accepted' && f.spot_code);
+if (fs.length) h += fs.map(f => `<button class="li" data-a="go" data-v="spot/${esc(f.spot_code)}">${av(f.display_name)}<div class="t"><b>Spot de ${esc(f.display_name || '@' + f.handle)}</b><span>${f.title ? ms('graphic_eq') + esc(f.title) + ' · ' + esc(f.artist || '') : 'Abierto ahora'}</span></div><span class="btn t">Entrar</span></button>`).join('');
+return h
+}
+const host = S.role === 'host', st = S.state, t = host ? A.byId(P.cur) : st?.t;
+const covH = host ? (t ? cov(t) : cov(null)) : (t?.cover ? `<div class="cov"><img src="${esc(t.cover)}" alt=""></div>` : cov(null));
+return top() + `<div class="carh" style="align-items:center"><h1 class="h1">${host ? 'Tu Spot' : esc(S.meta?.name || 'Spot')}</h1><span class="lock" style="background:var(--p);color:var(--onp)">${ms('sensors')}En vivo</span></div>
+<section class="card" style="background:linear-gradient(160deg,var(--pcl),var(--pc));color:var(--onpc)"><div style="display:flex;gap:14px;align-items:center"><div style="width:96px">${covH}</div><div style="flex:1;min-width:0"><div class="label" style="color:inherit">${ms('equalizer')}${t ? 'Sonando a la vez' : 'Nada sonando'}</div><h2 style="font-size:20px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t?.name || (host ? 'Pon una canción' : 'Esperando a la anfitriona'))}</h2><div style="opacity:.85">${esc(t?.artist || '')}</div><div class="lyr" id="spLyr" style="font-style:italic;font-weight:600;font-size:14px;margin-top:4px;min-height:20px"></div></div></div>
+${!host ? `<div style="height:4px;background:rgba(0,0,0,.25);border-radius:4px;margin-top:12px;overflow:hidden"><i id="spProg" style="display:block;height:100%;background:var(--p);width:0"></i></div><div class="small" id="spTime" style="opacity:.8;margin-top:4px"></div>` : ''}
+${host || S.meta?.allow_control ? `<div class="row2" style="justify-content:center;margin-top:12px"><button class="ib" data-a="sp-ctrl" data-v="prev">${ms('skip_previous', 1)}</button><button class="ck s56" data-a="sp-ctrl" data-v="toggle">${shp('cookie')}${ms(host ? (P.au.paused ? 'play_arrow' : 'pause') : (st?.playing ? 'pause' : 'play_arrow'), 1)}</button><button class="ib" data-a="sp-ctrl" data-v="next">${ms('skip_next', 1)}</button></div>` : ''}
+${S.needTap ? `<button class="btn" style="margin-top:12px" data-a="sp-tap">${ms('volume_up')}Toca para escuchar</button>` : ''}
+${!host && S.conn && S.conn !== 'connected' ? `<p class="small" style="margin:10px 0 0">${S.conn === 'failed' ? 'No se pudo conectar el audio con tu red. Prueba con otra red wifi o datos.' : 'Conectando el audio…'}</p>` : ''}</section>
+${host ? `<section class="card" style="margin-top:12px"><h3>Invita a tus amigos</h3><p class="muted small">Envíales este enlace: lo abren en el navegador y ya están dentro.</p><div class="search" style="margin:8px 0 0"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(location.host + '/#/spot/' + S.code)}</span><button class="btn t" data-a="sp-copy">${ms('content_copy')}Copiar enlace</button></div></section>` : ''}
+<section class="card" style="margin-top:12px"><div class="carh"><div><h3>En el Spot</h3><p>${S.people.length} de ${S.meta?.max_people || 4} personas escuchando</p></div><button class="btn t" data-a="sp-vote">${ms('how_to_vote')}Lanzar votación</button></div>${people()}</section>
+${voteBox()}${chatBox()}
+<div class="foot"><button class="btn d" data-a="${host ? 'sp-end' : 'sp-leave'}">${ms(host ? 'stop_circle' : 'logout')}${host ? 'Cerrar el Spot' : 'Salir del Spot'}</button></div>`
+};
+A.spotPaint = chatOnly => { const { v, arg } = A.route(); if (v !== 'spots' && !(v === 'spot' && arg === S.code)) return; if (chatOnly) { const l = $('#spChatList'); if (l) { l.innerHTML = S.chat.map(m => `<div class="msg">${av(m.n, 28)}<div><b>${esc(m.n)}</b><p>${esc(m.t)}</p></div></div>`).join(''); l.scrollTop = l.scrollHeight; return } } const f = document.activeElement?.id === 'spMsg' ? $('#spMsg').value : null; A.render(); if (f !== null) { const i = $('#spMsg'); if (i) { i.value = f; i.focus() } } };
+A.FR = [];
+A.loadFriends = async () => { const sb = A.sb(); if (!sb || !A.session) { A.FR = []; return } const { data } = await sb.rpc('aeffy_friend_list'); A.FR = data || []; const { v } = A.route(); if (v === 'amigos' || v === 'spots') A.render(); paintDrawerFriends() };
+let lastPub = 0, pubT = null;
+A.publishNow = () => { clearTimeout(pubT); pubT = setTimeout(doPublish, Date.now() - lastPub > 4000 ? 50 : 4000) };
+async function doPublish() {
+const sb = A.sb(); if (!sb || !A.session) return; lastPub = Date.now(); const t = A.byId(P.cur);
+const show = A.ST.showFriends !== false;
+const row = { user_id: A.session.user.id, title: show && t ? t.name : null, artist: show && t ? t.artist : null, album: show && t ? t.album : null, cover: show && t ? (t._thumb || (t._thumb = await thumb(t.cover, 160))) : null, playing: show && !!t && !P.au.paused, spot_code: S.role === 'host' ? S.code : null, updated_at: new Date().toISOString() };
+try { await sb.from('aeffy_now').upsert(row) } catch (e) { }
+}
+let frCh = null;
+A.liveStart = () => {
+const sb = A.sb(); if (!sb || !A.session) return;
+A.loadFriends(); if (frCh) sb.removeChannel(frCh);
+frCh = sb.channel('aeffy-fr-' + A.session.user.id).on('postgres_changes', { event: '*', schema: 'public', table: 'aeffy_now' }, () => A.loadFriends()).on('postgres_changes', { event: '*', schema: 'public', table: 'aeffy_friends' }, () => A.loadFriends()).subscribe();
+recastStart(); A.publishNow()
+};
+setInterval(() => { if (!document.hidden && A.session) A.loadFriends() }, 45000);
+function friendRow(f) {
+const live = f.playing && f.updated_at && Date.now() - new Date(f.updated_at) < 15 * 60000;
+return `<div class="li">${f.cover ? `<div class="cov s48 round"><img src="${esc(f.cover)}" alt=""></div>` : av(f.display_name, 48)}<div class="t"><b>${esc(f.display_name || '@' + f.handle)}</b><span>${f.title ? (live ? ms('graphic_eq') : '') + esc(f.title) + ' · ' + esc(f.artist || '') + (live ? '' : ' · ' + ago(f.updated_at)) : f.handle ? '@' + esc(f.handle) : ''}</span></div>${f.spot_code ? `<button class="btn t" data-a="go" data-v="spot/${esc(f.spot_code)}">${ms('podcasts')}Spot</button>` : ''}<button class="ib" data-a="fr-menu" data-id="${f.id}" aria-label="Opciones">${ms('more_vert')}</button></div>`
+}
+function paintDrawerFriends() { const d = $('#drawer .fr'); if (!d) return; const L = (A.FR || []).filter(f => f.status === 'accepted' && f.title).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)).slice(0, 6); d.innerHTML = `<b style="font-family:var(--hf);font-size:16px">Tus amigos ahora</b>` + (L.length ? L.map(friendRow).join('') : `<p class="muted small" style="margin:6px 0 0">Cuando tus amigos escuchen algo, aparecerá aquí.</p>`) }
+A.paintDrawerFriends = paintDrawerFriends;
+const oldAmigos = V.amigos;
+V.amigos = () => {
+if (!A.session) return oldAmigos();
+const FR = A.FR || [], inc = FR.filter(f => f.status === 'pending' && f.incoming), out = FR.filter(f => f.status === 'pending' && !f.incoming), acc = FR.filter(f => f.status === 'accepted').sort((a, b) => (b.playing ? 1 : 0) - (a.playing ? 1 : 0) || new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
+return top({ back: 1 }) + `<h1 class="h1">Amigos</h1>
+<section class="card" style="background:linear-gradient(160deg,var(--pcl),var(--pc));color:var(--onpc)"><div style="display:flex;gap:14px;align-items:center"><span class="avatar" style="width:56px;height:56px">${shp('cookie')}<b>${esc(A.initials())}</b></span><div><b style="font-family:var(--hf);font-size:20px">${esc(A.me?.display_name || 'Tú')}</b><div style="opacity:.85">${A.me?.handle ? '@' + esc(A.me.handle) : 'Elige tu @nombre para que te encuentren'}</div></div></div>${A.me?.handle ? `<button class="btn" style="margin-top:12px" data-a="fr-share">${ms('share')}Compartir mi @nombre</button>` : `<button class="btn" style="margin-top:12px" data-a="go" data-v="ajustes/perfil">${ms('alternate_email')}Elegir @nombre</button>`}</section>
+<form id="frAdd" class="search" style="margin-top:14px">${ms('person_add')}<input id="frH" placeholder="Agrega a alguien por su @nombre" autocapitalize="off" autocomplete="off"><button class="btn t">Agregar</button></form>
+${inc.length ? `<div class="sech"><h2>Solicitudes</h2></div>` + inc.map(f => `<div class="li">${av(f.display_name, 48)}<div class="t"><b>${esc(f.display_name || '')}</b><span>@${esc(f.handle || '')} quiere ser tu amigo</span></div><button class="btn" data-a="fr-ok" data-id="${f.id}">Aceptar</button><button class="ib" data-a="fr-del" data-id="${f.id}" aria-label="Rechazar">${ms('close')}</button></div>`).join('') : ''}
+<div class="sech"><h2>Lo que escuchan ahora</h2><p>Se actualiza en vivo.</p></div>${acc.length ? acc.map(friendRow).join('') : `<section class="card c">${badge('group')}<h3>Aún no tienes amigos aquí</h3><p>Agrégalos por su @nombre o comparte el tuyo.</p></section>`}
+${out.length ? `<div class="sech"><h2>Enviadas</h2></div>` + out.map(f => `<div class="li">${av(f.display_name, 40)}<div class="t"><b>${esc(f.display_name || '')}</b><span>Esperando respuesta</span></div><button class="ib" data-a="fr-del" data-id="${f.id}" aria-label="Cancelar">${ms('close')}</button></div>`).join('') : ''}
+<div class="sech"><h2>Invita y gana</h2><p>Gana 12 h de Premium por cada amigo que llegue con tu enlace.</p></div><button class="btn t" data-a="go" data-v="invita">${ms('redeem')}Ver mi enlace</button>`
+};
+document.addEventListener('submit', async e => {
+if (e.target.id !== 'frAdd') return; e.preventDefault(); const sb = A.sb(); const h = $('#frH').value.trim().replace(/^@/, '').toLowerCase(); if (!h) return;
+const { data } = await sb.rpc('aeffy_find', { p_handle: h }); const u = data && data[0];
+if (!u) { toast('No encontré a @' + h); return } if (u.id === A.session.user.id) { toast('Ese eres tú'); return }
+const ex = (A.FR || []).find(f => f.id === u.id); if (ex) { if (ex.incoming && ex.status === 'pending') { await accept(u.id) } else toast(ex.status === 'accepted' ? 'Ya son amigos' : 'Ya le enviaste solicitud'); return }
+const { error } = await sb.from('aeffy_friends').insert({ a: A.session.user.id, b: u.id }); if (error) toast('No se pudo enviar'); else { toast('Solicitud enviada a @' + u.handle); A.loadFriends() }
+});
+async function accept(id) { await A.sb().from('aeffy_friends').update({ status: 'accepted' }).eq('a', id).eq('b', A.session.user.id); toast('Ahora son amigos'); A.loadFriends() }
+on('fr-ok', el => accept(el.dataset.id));
+on('fr-del', async el => { const me = A.session.user.id, id = el.dataset.id; await A.sb().from('aeffy_friends').delete().or(`and(a.eq.${me},b.eq.${id}),and(a.eq.${id},b.eq.${me})`); A.popLayer && document.querySelector('.scrim') && A.popLayer(); A.loadFriends() });
+on('fr-menu', el => { const f = A.FR.find(x => x.id === el.dataset.id); A.sheet(`<div class="grab"></div><div class="shtrack">${av(f.display_name, 48)}<div><b>${esc(f.display_name || '')}</b><span>@${esc(f.handle || '')}</span></div></div>${f.spot_code ? `<button class="mi" data-a="go" data-v="spot/${esc(f.spot_code)}">${ms('podcasts')}Entrar a su Spot</button>` : ''}${f.title ? `<button class="mi" data-a="fr-find" data-t="${esc(f.title)}">${ms('search')}Buscar “${esc(f.title)}” en mi biblioteca</button>` : ''}<button class="mi bad" data-a="fr-del" data-id="${f.id}">${ms('person_remove')}Quitar de amigos</button>`, { head: false }) });
+on('fr-find', el => { A.closeAll(); A.go('buscar'); setTimeout(() => { const i = $('#q'); if (i) { i.value = el.dataset.t; i.dispatchEvent(new Event('input', { bubbles: true })) } }, 50) });
+on('fr-share', async () => { const txt = 'Agrégame en aeffy: @' + A.me.handle + ' ' + location.origin; try { if (navigator.share) await navigator.share({ text: txt }); else { await navigator.clipboard.writeText(txt); toast('Copiado') } } catch (e) { } });
+const devId = localStorage.getItem('ae_dev') || (() => { const d = rid(8); localStorage.setItem('ae_dev', d); return d })();
+const devName = () => localStorage.getItem('ae_devname') || ((/android/i.test(navigator.userAgent) ? 'Android' : /iphone/i.test(navigator.userAgent) ? 'iPhone' : /ipad/i.test(navigator.userAgent) ? 'iPad' : /windows/i.test(navigator.userAgent) ? 'Computador Windows' : /mac/i.test(navigator.userAgent) ? 'Mac' : 'Este dispositivo'));
+const R = A.recast = { ch: null, devs: [] };
+function recastStart() {
+const sb = A.sb(); if (!sb || !A.session || A.ST.recast === false) return; if (R.ch) sb.removeChannel(R.ch);
+const ch = R.ch = sb.channel('aeffy-recast-' + A.session.user.id, { config: { broadcast: { self: false }, presence: { key: devId } } });
+ch.on('presence', { event: 'sync' }, () => { const st = ch.presenceState(); R.devs = Object.entries(st).map(([k, v]) => ({ id: k, ...(v[0] || {}) })).filter(d => d.id !== devId); paintRecast() });
+ch.on('broadcast', { event: 'cmd' }, ({ payload: p }) => {
+if (p.to !== devId) return;
+if (p.c === 'toggle') A.toggle(); if (p.c === 'next') A.next(); if (p.c === 'prev') A.prev(); if (p.c === 'pause') P.au.pause();
+if (p.c === 'play') { const t = A.tracks.find(x => x.name.toLowerCase() === (p.t.name || '').toLowerCase() && x.artist.toLowerCase() === (p.t.artist || '').toLowerCase()) || A.tracks.find(x => x.name.toLowerCase() === (p.t.name || '').toLowerCase()); if (t) { A.playList(A.tracks.map(x => x.id), A.tracks.indexOf(t), 'aeffy Recast'); setTimeout(() => { P.au.currentTime = p.pos || 0 }, 600); toast('Sonando aquí desde otro dispositivo') } else { ch.send({ type: 'broadcast', event: 'nf', payload: { to: p.from, name: p.t.name } }) } }
+});
+ch.on('broadcast', { event: 'nf' }, ({ payload }) => { if (payload.to === devId) toast('Ese dispositivo no tiene “' + payload.name + '” en su biblioteca') });
+ch.subscribe(s => { if (s === 'SUBSCRIBED') recastTrack() })
+}
+let rcT = null;
+function recastTrack() { clearTimeout(rcT); rcT = setTimeout(() => { if (!R.ch) return; const t = A.byId(P.cur); R.ch.track({ name: devName(), title: t?.name || null, artist: t?.artist || null, playing: !!t && !P.au.paused, pos: P.au.currentTime || 0, at: Date.now() }) }, 300) }
+A.recastTrack = recastTrack;
+function recastSheetHtml() {
+const t = A.byId(P.cur);
+return A.shead('devices', 'aeffy Recast') + `<div class="card" style="display:flex;gap:14px;align-items:center;background:var(--s2)"><div style="width:56px;height:56px;border-radius:16px;background:var(--s3);display:grid;place-items:center">${ms('smartphone')}</div><div style="flex:1;min-width:0"><div class="label" style="color:var(--mute)">${ms('equalizer')}Escuchando ahora en:</div><b style="font-size:18px">${esc(devName())}</b><div class="small" style="color:var(--p)">${ms('volume_up')} Su propio altavoz</div><span class="lock" style="background:var(--s3);color:var(--on);margin-top:6px">Este dispositivo</span></div></div>
+<div class="sech"><h2 style="font-size:17px">Tus otros dispositivos</h2><p>${A.session ? 'Con la misma cuenta y aeffy abierta' : 'Inicia sesión en tus dispositivos con la misma cuenta'}</p></div><div id="rcList">${recastList()}</div>
+${A.session ? '' : `<button class="btn" data-a="login">${ms('login')}Iniciar sesión</button>`}
+<div class="sech"><h2 style="font-size:17px">Parlantes y TV</h2></div><div class="mi">${ms('cast')}<span class="small">Para un parlante o TV, usa el botón de transmitir o Bluetooth de tu teléfono: aeffy sigue siendo el control.</span></div>`
+}
+function recastList() { if (!A.session) return ''; if (!R.devs.length) return `<div class="mi">${ms('wifi_tethering')}<span class="muted">Buscando dispositivos…</span></div>`; return R.devs.map(d => `<div class="card" style="background:var(--s2);margin-bottom:8px;padding:12px"><div style="display:flex;gap:12px;align-items:center"><span class="ms">${/Android|iPhone/.test(d.name) ? 'smartphone' : 'computer'}</span><div style="flex:1;min-width:0"><b>${esc(d.name)}</b><div class="small muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.title ? (d.playing ? ms('graphic_eq') : ms('pause')) + ' ' + esc(d.title) + ' · ' + esc(d.artist || '') : 'Sin reproducir'}</div></div></div><div class="row2" style="margin-top:8px"><button class="ib t" data-a="rc" data-c="prev" data-to="${d.id}" aria-label="Anterior">${ms('skip_previous', 1)}</button><button class="ib t" data-a="rc" data-c="toggle" data-to="${d.id}" aria-label="Reproducir o pausar">${ms(d.playing ? 'pause' : 'play_arrow', 1)}</button><button class="ib t" data-a="rc" data-c="next" data-to="${d.id}" aria-label="Siguiente">${ms('skip_next', 1)}</button>${P.cur ? `<button class="btn t" data-a="rc-send" data-to="${d.id}">${ms('cast')}Mandar allá</button>` : ''}${d.title ? `<button class="btn t" data-a="rc-take" data-to="${d.id}">${ms('download')}Traer aquí</button>` : ''}</div></div>`).join('') }
+function paintRecast() { const l = $('#rcList'); if (l) l.innerHTML = recastList() }
+on('recast', () => { if (A.session && !R.ch) recastStart(); A.sheet(recastSheetHtml()) });
+on('rc', el => { R.ch && R.ch.send({ type: 'broadcast', event: 'cmd', payload: { to: el.dataset.to, from: devId, c: el.dataset.c } }) });
+on('rc-send', el => { const t = A.byId(P.cur); R.ch.send({ type: 'broadcast', event: 'cmd', payload: { to: el.dataset.to, from: devId, c: 'play', t: { name: t.name, artist: t.artist }, pos: P.au.currentTime } }); P.au.pause(); toast('Mandando la música…') });
+on('rc-take', el => { const d = R.devs.find(x => x.id === el.dataset.to); const t = A.tracks.find(x => x.name.toLowerCase() === (d.title || '').toLowerCase()); if (!t) { toast('No tienes “' + d.title + '” en este dispositivo'); return } R.ch.send({ type: 'broadcast', event: 'cmd', payload: { to: d.id, from: devId, c: 'pause' } }); A.playList(A.tracks.map(x => x.id), A.tracks.indexOf(t), 'aeffy Recast'); setTimeout(() => { P.au.currentTime = (d.pos || 0) + (d.playing ? (Date.now() - d.at) / 1000 : 0) }, 600); A.popLayer() });
+const SW = { en: ['the', 'you', 'and', 'i', 'me', 'my', 'is', 'to', 'love', 'it', 'in', 'on', 'your', 'we', 'be', 'don\'t', 'can'], es: ['el', 'la', 'que', 'de', 'y', 'yo', 'tu', 'te', 'me', 'mi', 'no', 'en', 'un', 'una', 'por', 'con', 'es', 'quiero'], pt: ['o', 'a', 'que', 'de', 'e', 'eu', 'você', 'não', 'meu', 'é', 'com', 'um', 'uma', 'pra', 'te', 'do', 'da'], fr: ['le', 'la', 'je', 'tu', 'et', 'de', 'que', 'pas', 'les', 'mon', 'moi', 'est', 'un', 'une', 'dans', 'c\'est'], it: ['il', 'la', 'che', 'di', 'e', 'io', 'tu', 'non', 'mi', 'ti', 'un', 'una', 'per', 'sono', 'è', 'con'], de: ['der', 'die', 'das', 'und', 'ich', 'du', 'nicht', 'ist', 'mich', 'mein', 'ein', 'eine', 'zu', 'mit', 'auf'] };
+A.detectLang = txt => {
+if (/[぀-ヿ]/.test(txt)) return 'ja'; if (/[가-힯]/.test(txt)) return 'ko'; if (/[一-鿿]/.test(txt)) return 'zh'; if (/[Ѐ-ӿ]/.test(txt)) return 'ru'; if (/[؀-ۿ]/.test(txt)) return 'ar'; if (/[฀-๿]/.test(txt)) return 'th';
+const w = txt.toLowerCase().match(/[a-zà-ÿ']+/g) || []; let best = 'en', bs = -1; for (const [l, L] of Object.entries(SW)) { const set = new Set(L); const s = w.filter(x => set.has(x)).length; if (s > bs) { bs = s; best = l } } return best
+};
+A.trLang = () => A.ST.trLang || (navigator.language || 'es').slice(0, 2);
+A.translateLyrics = async t => {
+const m = A.meta(t.id), to = A.trLang(); if (m.tr && m.tr[to]) return m.tr[to];
+if (!A.session) { A.loginSheet('in'); return null }
+if (!A.can('translate')) { A.go('premium'); toast('Traducir letras es de aeffy Premium'); return null }
+const L = A.parseLRC(A.lyricsOf(t)); const lines = L.length ? L.map(l => l.x) : A.lyricsOf(t).split(/\r?\n/);
+const from = A.detectLang(lines.join(' ')); if (from === to) { toast('La letra ya está en tu idioma'); return null }
+toast('Traduciendo…');
+try { const { data, error } = await A.sb().functions.invoke('aeffy-translate', { body: { lines, from, to } }); if (error || data?.error) throw new Error(data?.error || 'x'); m.tr = m.tr || {}; m.tr[to] = data.lines; A.saveMeta(); return data.lines }
+catch (e) { toast(e.message && e.message !== 'x' ? e.message : 'No pude traducir ahora'); return null }
+};
+A.googleLogin = async () => { const sb = A.sb(); if (!sb) { toast('Sin conexión'); return } const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + '/' } }); if (error) toast(/provider is not enabled|Unsupported provider/i.test(error.message) ? 'Entrar con Google se activa muy pronto' : 'No se pudo abrir Google') };
+on('google', () => A.googleLogin());
+}
+'use strict';
+{
 const { $, $$, ms, esc, toast, P } = A;
 document.addEventListener('click', e => {
 if (dragJustEnded) { e.preventDefault(); e.stopPropagation(); return }
@@ -1110,6 +1375,8 @@ A.installHtml = () => { if (standalone() || localStorage.getItem('ae_noinst')) r
 A.on('install', async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; A.render() });
 A.on('noinst', () => { localStorage.setItem('ae_noinst', 1); A.render() });
 if ('serviceWorker' in navigator && location.protocol === 'https:') addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => { }));
+A.liveNotify = () => { A.publishNow && A.publishNow(); A.recastTrack && A.recastTrack(); A.spotPush && A.spotPush(); if (A.route().v === 'spots' && A.spot?.role === 'host') A.spotPaint() };
+document.addEventListener('input', e => { if (e.target.id === 'devName') { localStorage.setItem('ae_devname', e.target.value.trim().slice(0, 30)); A.recastTrack && A.recastTrack() } });
 addEventListener('pagehide', A.saveStats);
 document.addEventListener('visibilitychange', () => { if (document.hidden) { A.saveStats(); if (A.ST.backupAuto) autoBackup() } });
 function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('ae_bkday') === k) return; try { localStorage.setItem('ae_autobk', A.backupData()); localStorage.setItem('ae_bkday', k); localStorage.setItem('ae_lastbk', new Date().toLocaleString('es')) } catch (e) { } }
