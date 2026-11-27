@@ -1538,7 +1538,7 @@ addEventListener('beforeinstallprompt', e => e.preventDefault());
 A.installHtml = () => { if (A.inApp || localStorage.getItem('ae_noinst')) return ''; return `<div class="install">${A.logo(40)}<div class="t"><b>Descarga aeffy para Android</b><br><span class="muted small">La app completa, con Spots para escuchar con tus amigos.</span></div><a class="btn" href="${A.APK}">Descargar</a><button class="ib" data-a="noinst" aria-label="Cerrar">${ms('close')}</button></div>` };
 A.downloadSheet = why => A.sheet(A.shead('android', 'Descarga aeffy', why || 'Esto funciona en la app aeffy para Android.') + `<a class="btn big" style="width:100%" href="${A.APK}">${ms('download')}Descargar aeffy para Android</a><p class="small muted" style="margin:12px 0 0">Abre el archivo aeffy.apk y, si Android te lo pide, permite instalar apps de esta fuente.</p>${/android/i.test(navigator.userAgent) ? `<a class="btn g" style="width:100%;margin-top:6px" href="intent://${location.host}/${location.hash}#Intent;scheme=https;package=app.aeffy.music;end">Ya la tengo: abrir aeffy</a>` : ''}`);
 A.on('noinst', () => { localStorage.setItem('ae_noinst', 1); A.render() });
-if ('serviceWorker' in navigator && location.protocol === 'https:') addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => { }));
+if ('serviceWorker' in navigator && location.protocol === 'https:' && !window.AeffyNative) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => { }));
 
 /* avisos en vivo: amigos, Recast, Spot */
 A.liveNotify = () => { A.publishNow && A.publishNow(); A.recastTrack && A.recastTrack(); A.spotPush && A.spotPush(); if (A.route().v === 'spots' && A.spot?.role === 'host') A.spotPaint() };
@@ -1570,6 +1570,9 @@ if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }
   A.inApp = true;
   document.documentElement.classList.add('native');
+  /* dentro de la app no usamos service worker: tapaba la música del teléfono */
+  try { if (navigator.serviceWorker) navigator.serviceWorker.getRegistrations().then(rs => { rs.forEach(r => r.unregister()); if (navigator.serviceWorker.controller && !sessionStorage.getItem('ae_swoff')) { sessionStorage.setItem('ae_swoff', '1'); setTimeout(() => location.reload(), 150) } }) } catch (e) { }
+  if (!localStorage.getItem('ae_artfix')) { localStorage.setItem('ae_artfix', '1'); A._artfix = 1 }
 
   const delT = A.deleteTrack;
   A.deleteTrack = async id => { const t = A.byId(id); await delT(id); if (t && t.native) { A.meta(id).hidden = 1; A.saveMeta() } };
@@ -1610,6 +1613,7 @@ if (N) {
   let painting = false;
   async function paintCovers() {
     if (painting) return; painting = true; const done = {};
+    if (A._artfix) { A._artfix = 0; for (const t of A.tracks) if (t.native && t.noArt) { delete t.noArt; t.cover = null } }
     const todo = A.tracks.filter(t => t.native && t.cover === null && !t.noArt);
     let n = 0;
     for (const t of todo) {
