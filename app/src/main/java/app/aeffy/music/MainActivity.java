@@ -35,7 +35,7 @@ public class MainActivity extends Activity {
     volatile boolean resumed;
     WebView web;
     private ValueCallback<Uri[]> fileCallback;
-    private static final int REQ_FILES = 11, REQ_PERM = 12;
+    private static final int REQ_FILES = 11, REQ_PERM = 12, REQ_DEL = 13, REQ_WPERM = 14;
 
     @SuppressLint({"SetJavaScriptEnabled", "JavascriptInterface"})
     @Override
@@ -192,11 +192,32 @@ public class MainActivity extends Activity {
     public void onRequestPermissionsResult(int code, String[] perms, int[] res) {
         super.onRequestPermissionsResult(code, perms, res);
         if (code == REQ_PERM) js("window.AeffyNativeCb && AeffyNativeCb('perm'," + hasMusicPermission() + ")");
+        if (code == REQ_WPERM) js("window.AeffyNativeCb && AeffyNativeCb('wperm'," + hasWritePermission() + ")");
+    }
+
+    boolean hasWritePermission() {
+        if (Build.VERSION.SDK_INT >= 30) return true;
+        return checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    void requestWritePermission() {
+        requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQ_WPERM);
+    }
+
+    /** Android 11+: el sistema muestra un solo aviso para borrar varias canciones */
+    void requestDelete(java.util.List<Uri> uris) {
+        try {
+            android.app.PendingIntent pi = android.provider.MediaStore.createDeleteRequest(getContentResolver(), uris);
+            startIntentSenderForResult(pi.getIntentSender(), REQ_DEL, null, 0, 0, 0);
+        } catch (Exception e) {
+            js("window.AeffyNativeCb && AeffyNativeCb('deleted', false)");
+        }
     }
 
     @Override
     protected void onActivityResult(int code, int result, Intent data) {
         super.onActivityResult(code, result, data);
+        if (code == REQ_DEL) { js("window.AeffyNativeCb && AeffyNativeCb('deleted', " + (result == RESULT_OK) + ")"); return; }
         if (code == REQ_FILES && fileCallback != null) {
             Uri[] out = null;
             if (result == RESULT_OK && data != null) {
