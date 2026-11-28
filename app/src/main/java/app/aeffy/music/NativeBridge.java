@@ -146,6 +146,8 @@ public class NativeBridge {
     @JavascriptInterface
     public void askNotify() {
         if (Build.VERSION.SDK_INT >= 33) act.runOnUiThread(() -> act.requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 13));
+    }
+
     /* ---------- Ahorrar espacio ---------- */
     @JavascriptInterface public boolean needWrite() { return !act.hasWritePermission(); }
     @JavascriptInterface public void requestWrite() { act.runOnUiThread(act::requestWritePermission); }
