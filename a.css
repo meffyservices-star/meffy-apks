@@ -502,3 +502,8 @@ body.chatmode .dock{display:none}
 @keyframes wig{from{transform:rotate(-2deg)}to{transform:rotate(2deg)}}
 .udot{position:absolute;top:6px;right:6px;width:9px;height:9px;border-radius:50%;background:#e5484d}
 .ucount{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:11px;background:var(--p);color:var(--onp);font-style:normal;font-weight:800;font-size:12px;padding:0 6px}
+
+.discard{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:linear-gradient(120deg,var(--pc),var(--pcl));color:var(--onpc);border-radius:22px;padding:14px 16px;margin:4px 0 14px}
+.discard>.ms:first-child{font-size:28px}.discard .t{flex:1;display:grid;gap:2px}.discard .t b{font-family:var(--hf);font-size:17px}.discard .t span{font-size:13px;opacity:.85}
+#dg{margin:0 0 12px}
+.svbar{height:10px;border-radius:99px;background:var(--s3);overflow:hidden;margin-top:6px}.svbar i{display:block;height:100%;background:var(--p);border-radius:inherit;transition:width .3s}

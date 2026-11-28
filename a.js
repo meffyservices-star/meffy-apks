@@ -274,6 +274,8 @@ P.au.addEventListener('timeupdate', () => {
   }
   A.onTime && A.onTime(c)
 });
+A.tx = (...a) => tx(...a); Object.defineProperty(A, 'actx', { get: () => actx });
+A.setMedia = t => setMedia(t);
 function setMedia(t) { if (!('mediaSession' in navigator)) return; try { navigator.mediaSession.metadata = new MediaMetadata({ title: t.name, artist: t.artist, album: t.album, artwork: t.cover ? [{ src: t.cover, sizes: '360x360', type: 'image/jpeg' }] : [{ src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' }] });[['play', () => P.au.play()], ['pause', () => P.au.pause()], ['nexttrack', A.next], ['previoustrack', A.prev], ['seekto', e => { P.au.currentTime = e.seekTime }]].forEach(([a, f]) => { try { navigator.mediaSession.setActionHandler(a, f) } catch (e) { } }) } catch (e) { } }
 A.setSleep = min => { clearTimeout(P.sleepT); P.sleepAt = min ? Date.now() + min * 60000 : 0; if (min) P.sleepT = setTimeout(() => { P.au.pause(); P.sleepAt = 0; toast('Buenas noches: se pausó la música') }, min * 60000) };
 
@@ -1017,7 +1019,7 @@ on('checkupd', async () => { try { const r = await navigator.serviceWorker?.getR
 const SEC = [
   ['Cuenta', [['cuenta', 'account_circle', 'Cuenta', 'Sesión, datos de la cuenta y seguridad'], ['privacidad', 'shield', 'Datos y privacidad', ''], ['perfil', 'badge', 'Editar perfil', 'Foto, portada, nombre y más'], ['premium', 'crown', 'aeffy Premium', '']]],
   ['Aspecto', [['apariencia', 'palette', 'Apariencia', '']]],
-  ['Música', [['biblioteca', 'folder', 'Biblioteca local', ''], ['reproduccion', 'play_circle', 'Reproducción', ''], ['eq', 'tune', 'Ecualizador y Tono', ''], ['letra', 'mic', 'Letra', '']]],
+  ['Música', [['biblioteca', 'folder', 'Biblioteca local', ''], ['reproduccion', 'play_circle', 'Reproducción', ''], ['eq', 'tune', 'Ecualizador y Tono', ''], ['letra', 'mic', 'Letra', ''], ['ahorrar', 'compress', 'Ahorrar espacio', 'Comprime la música pesada']]],
   ['Conexiones y datos', [['spots', 'podcasts', 'Spots', ''], ['recast', 'devices', 'aeffy Recast', ''], ['copias', 'inventory_2', 'Copias e historial', '']]],
   ['aeffy', [['info', 'info', 'Información', '']]]];
 let sq = '';
@@ -1691,6 +1693,293 @@ on('fpcopy', el => { const [id, lid] = el.dataset.v.split('~'); const p = FP[id]
   A.LISTS.unshift({ id: 'l' + Date.now().toString(36), name: l.name, desc: 'De ' + (p.display_name || '@' + p.handle), ids, share: false }); A.saveLists(); toast('Guardada en tu Biblioteca') });
 on('viewas', () => { if (A.session) A.go('u/' + A.session.user.id) });
 }
+/* aeffy · Descubrir: música gratis y legal (Audius, y Jamendo si hay client_id) */
+'use strict';
+{
+const { $, esc, ms, toast, cov, on, top, badge } = A;
+const V = A.views;
+const AUD = 'https://api.audius.co/v1', APP = 'app_name=aeffy';
+const fmt = s => { s = Math.round(s || 0); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') };
+
+/* ---------- canciones en línea (no ocupan espacio) ---------- */
+A.REMOTE = new Map();
+try { for (const t of A.lsGet('ae_remote', [])) A.REMOTE.set(t.id, t) } catch (e) { }
+const saveRemote = () => { const keep = new Set([...A.STS.recent, ...A.LISTS.flatMap(l => l.ids), ...A.P.queue, ...Object.keys(A.META).filter(k => A.META[k] && A.META[k].liked)]); const arr = [...A.REMOTE.values()].filter(t => keep.has(t.id)).slice(-400); A.lsSet('ae_remote', arr) };
+const byId0 = A.byId; A.byId = id => byId0(id) || A.REMOTE.get(id);
+function remember(t) { const o = A.REMOTE.get(t.id); if (o) Object.assign(o, t); else A.REMOTE.set(t.id, t); return A.REMOTE.get(t.id) }
+const fromAudius = d => ({ id: 'au:' + d.id, remote: 'audius', rid: d.id, name: d.title, artist: (d.user && d.user.name) || 'Artista', album: d.genre || 'Audius', dur: d.duration || 0, cover: d.artwork && (d.artwork['480x480'] || d.artwork['150x150']) || null, hue: A.hueOf((d.user && d.user.name || '') + d.title), sat: .6, url: `${AUD}/tracks/${encodeURIComponent(d.id)}/stream?${APP}`, page: d.permalink ? 'https://audius.co' + d.permalink : '', dl: !!d.is_downloadable });
+const fromJamendo = d => ({ id: 'ja:' + d.id, remote: 'jamendo', rid: d.id, name: d.name, artist: d.artist_name || 'Artista', album: d.album_name || 'Jamendo', dur: d.duration || 0, cover: d.image || d.album_image || null, hue: A.hueOf((d.artist_name || '') + d.name), sat: .6, url: d.audio, dlurl: d.audiodownload_allowed ? d.audiodownload : '', page: d.shareurl || '', dl: !!d.audiodownload_allowed });
+const jkey = () => (A.cfg && A.cfg.jamendo && A.cfg.jamendo.client_id) || '';
+const okAudius = d => d && d.is_streamable !== false && !d.stream_conditions && !d.is_delete && d.is_available !== false;
+
+async function audius(path) { const r = await fetch(`${AUD}${path}${path.includes('?') ? '&' : '?'}${APP}`); if (!r.ok) throw 0; const j = await r.json(); return (j.data || []).filter(okAudius).map(fromAudius) }
+async function jamendo(params) { const k = jkey(); if (!k) return []; const r = await fetch(`https://api.jamendo.com/v3.0/tracks/?client_id=${encodeURIComponent(k)}&format=json&limit=30&audioformat=mp32&${params}`); if (!r.ok) return []; const j = await r.json(); return (j.results || []).filter(d => d.audio).map(fromJamendo) }
+
+/* ---------- vista ---------- */
+const D = { q: '', res: null, busy: false, home: null, genre: '' };
+const GENRES = [['', 'Lo más escuchado'], ['Electronic', 'Electrónica'], ['Hip-Hop/Rap', 'Hip-hop'], ['Pop', 'Pop'], ['Alternative', 'Alternativa'], ['R&B/Soul', 'R&B'], ['Lo-Fi', 'Lo-fi'], ['Latin', 'Latina'], ['Acoustic', 'Acústica'], ['Ambient', 'Relajante']];
+const JG = { Electronic: 'electronic', 'Hip-Hop/Rap': 'hiphop', Pop: 'pop', Alternative: 'rock', 'R&B/Soul': 'rnb', 'Lo-Fi': 'lounge', Latin: 'latin', Acoustic: 'acoustic', Ambient: 'ambient' };
+async function loadHome() {
+  if (D.busy) return; D.busy = true;
+  try {
+    const g = D.genre; const [a, j] = await Promise.all([audius(`/tracks/trending?limit=40${g ? '&genre=' + encodeURIComponent(g) : ''}&time=week`).catch(() => []), jamendo(g ? 'order=popularity_week&tags=' + JG[g] : 'order=popularity_week')]);
+    D.home = mix(a, j); D.homeG = g
+  } catch (e) { D.home = [] }
+  D.busy = false; if (A.route().v === 'descubrir') A.render()
+}
+async function search() {
+  const q = D.q.trim(); if (!q) { D.res = null; A.render(); return }
+  D.busy = true; A.render();
+  const [a, j] = await Promise.all([audius('/tracks/search?limit=40&query=' + encodeURIComponent(q)).catch(() => null), jamendo('search=' + encodeURIComponent(q))]);
+  D.res = a === null && !j.length ? 'err' : mix(a || [], j); D.busy = false; if (A.route().v === 'descubrir') A.render()
+}
+const mix = (a, j) => { const out = []; for (let i = 0; i < Math.max(a.length, j.length); i++) { if (a[i]) out.push(remember(a[i])); if (j[i]) out.push(remember(j[i])) } return out };
+const saved = t => A.tracks.some(x => x.from === t.id);
+const row = (t, ctx) => `<div class="li" data-a="playin" data-id="${esc(t.id)}" data-ctx="${ctx}" role="button" tabindex="0">${cov(t, 's48')}<div class="t"><b>${esc(t.name)}</b><span>${esc(t.artist)} · ${fmt(t.dur)}${t.remote === 'jamendo' ? ' · Jamendo' : ''}${saved(t) ? ' · ' + ms('download_done', 1) + 'En tu teléfono' : ''}</span></div><button class="ib" data-a="dsave" data-id="${esc(t.id)}" aria-label="Guardar en mi teléfono">${ms(saved(t) ? 'download_done' : 'download', saved(t) ? 1 : 0)}</button><button class="ib" data-a="dmenu" data-id="${esc(t.id)}" aria-label="Más opciones">${ms('more_vert')}</button></div>`;
+
+V.descubrir = () => {
+  let body;
+  if (!navigator.onLine) body = `<section class="card c">${badge('wifi_off')}<h3>Sin internet</h3><p>La música gratis se escucha en línea. Lo que guardaste en tu teléfono sigue en tu Biblioteca.</p></section>`;
+  else if (D.q.trim()) {
+    if (D.busy) body = `<p class="muted" style="padding:20px 4px">Buscando…</p>`;
+    else if (D.res === 'err') body = `<section class="card c">${badge('cloud_off')}<h3>No pude buscar ahora</h3><p>Revisa tu conexión e intenta de nuevo.</p></section>`;
+    else if (D.res && !D.res.length) body = `<p class="muted" style="padding:20px 4px">No encontré “${esc(D.q)}” en la música gratis. Aquí hay sobre todo artistas independientes.</p>`;
+    else if (D.res) { A.ctx.disc = D.res.map(t => t.id); body = `<div class="sech"><h2>Resultados</h2></div>` + D.res.map(t => row(t, 'disc')).join('') }
+    else body = '';
+  } else {
+    if (!D.home || D.homeG !== D.genre) { if (!D.busy) loadHome(); body = `<p class="muted" style="padding:20px 4px">Cargando música…</p>` }
+    else { A.ctx.disc = D.home.map(t => t.id); body = D.home.length ? `<div class="row2" style="margin:2px 0 6px"><button class="btn" data-a="playctx" data-ctx="disc" data-from="Música gratis">${ms('play_arrow', 1)}Reproducir</button><button class="btn t" data-a="playctx" data-ctx="disc" data-shuf="1" data-from="Música gratis">${ms('shuffle')}Aleatorio</button></div>` + D.home.map(t => row(t, 'disc')).join('') : `<section class="card c">${badge('cloud_off')}<h3>No pude cargar la música</h3><p>Intenta de nuevo en un momento.</p></section>` }
+  }
+  return top({ back: 1 }) + `<h1 class="h1">Música gratis</h1><p class="sub" style="margin:-4px 0 12px">Escúchala sin descargar nada. Si te gusta, guárdala en tu teléfono para oírla sin internet.</p>
+    <form id="dq" class="search">${ms('search')}<input id="dqi" type="search" placeholder="Busca canciones o artistas" value="${esc(D.q)}" autocomplete="off" aria-label="Buscar música gratis"></form>
+    ${D.q.trim() ? '' : `<div class="chips" id="dg">${GENRES.map(([k, n]) => `<button class="chip${D.genre === k ? ' on' : ''}" data-a="dgenre" data-v="${esc(k)}">${n}</button>`).join('')}</div>`}
+    ${body}<p class="small muted" style="text-align:center;margin:22px 0 8px">Música de artistas independientes de Audius${jkey() ? ' y Jamendo' : ''}, gratis y legal.</p>`
+};
+const after0 = A.afterRender;
+A.afterRender = v => {
+  after0 && after0(v);
+  if (v !== 'descubrir') return;
+  const f = $('#dq'); if (f) f.onsubmit = e => { e.preventDefault(); const i = $('#dqi'); i.blur(); D.q = i.value; search() };
+  const i = $('#dqi'); if (i) i.oninput = () => { if (!i.value.trim() && D.q) { D.q = ''; D.res = null; A.render(); setTimeout(() => { const n = $('#dqi'); n && n.focus() }, 0) } };
+};
+on('dgenre', el => { D.genre = el.dataset.v; D.home = null; A.render() });
+
+/* ---------- guardar en el teléfono ---------- */
+async function saveOffline(t) {
+  if (saved(t)) { toast('Ya está en tu teléfono'); return }
+  toast('Guardando en tu teléfono…');
+  try {
+    const r = await fetch(t.dlurl || t.url); if (!r.ok) throw 0; const blob = await r.blob();
+    const id = 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    const nt = { id, from: t.id, file: (t.artist + ' - ' + t.name).replace(/[\\/:*?"<>|]/g, '') + '.mp3', folder: 'aeffy', size: blob.size, name: t.name, artist: t.artist, albumArtist: '', album: t.album, year: '', track: 0, genre: '', dur: t.dur, addedAt: Date.now(), hue: t.hue, sat: t.sat, cover: null, source: t.remote, page: t.page };
+    if (t.cover) { try { const cb = await (await fetch(t.cover)).blob(); const c = await A.shrinkCover(cb); nt.cover = c.url; nt.hue = c.hue; nt.sat = c.sat; await A.tx('blob', 'readwrite', s => s.put(cb, 'cv:' + id)) } catch (e) { } }
+    A.MEMBLOB.set(id, blob); A.tracks.push(nt); await A.saveTrack(nt); await A.tx('blob', 'readwrite', s => s.put(blob, id));
+    // si estaba en playlists o me gusta como canción en línea, pasa a la guardada
+    A.LISTS.forEach(l => { l.ids = l.ids.map(x => x === t.id ? id : x) }); A.saveLists();
+    if (A.META[t.id]) { A.META[id] = Object.assign({}, A.META[t.id]); A.saveMeta() }
+    toast('Guardada: ya la puedes oír sin internet'); A.render()
+  } catch (e) { toast('No pude guardarla. Revisa tu internet') }
+}
+on('dsave', el => { const t = A.byId(el.dataset.id); if (t) saveOffline(t) });
+on('dmenu', el => {
+  const t = A.byId(el.dataset.id); if (!t) return;
+  A.sheet(`<div class="shead">${cov(t, 's56')}<div class="t"><b>${esc(t.name)}</b><span>${esc(t.artist)}</span></div></div>
+    <button class="si" data-a="dsave" data-id="${esc(t.id)}"><span class="ic">${ms('download')}</span><span class="t"><b>${saved(t) ? 'Ya está en tu teléfono' : 'Guardar en mi teléfono'}</b><span>Para escucharla sin internet</span></span></button>
+    <button class="si" data-a="dqueue" data-id="${esc(t.id)}"><span class="ic">${ms('queue_music')}</span><span class="t"><b>Reproducir después</b></span></button>
+    <button class="si" data-a="addto" data-id="${esc(t.id)}"><span class="ic">${ms('playlist_add')}</span><span class="t"><b>Agregar a una playlist</b><span>Se escucha en línea hasta que la guardes</span></span></button>
+    ${t.page ? `<button class="si" data-a="dpage" data-v="${esc(t.page)}"><span class="ic">${ms('open_in_new')}</span><span class="t"><b>Ver al artista en ${t.remote === 'jamendo' ? 'Jamendo' : 'Audius'}</b></span></button>` : ''}`)
+});
+on('dqueue', el => { A.popLayer(); const P = A.P; if (!P.cur) { A.playList([el.dataset.id], 0, 'Música gratis'); return } P.queue.splice(P.qi + 1, 0, el.dataset.id); toast('Sonará después') });
+on('dpage', el => { const u = el.dataset.v; if (window.AeffyNative && AeffyNative.openExternal) AeffyNative.openExternal(u); else window.open(u, '_blank', 'noopener') });
+
+/* ---------- reproducir en línea ---------- */
+const P = A.P; try { P.au.crossOrigin = 'anonymous' } catch (e) { }
+const play0 = A.playIdx;
+A.playIdx = async (i, keepPos) => {
+  const t = A.byId(P.queue[i]);
+  if (!t || !t.remote) return play0(i, keepPos);
+  if (!navigator.onLine) { toast('Esta canción se escucha con internet'); return }
+  P.qi = i; A.initAudio(); if (A.actx && A.actx.state === 'suspended') A.actx.resume();
+  if (P.url) { URL.revokeObjectURL(P.url); P.url = null }
+  P.cur = t.id; P.au.src = t.url; P.au.playbackRate = A.ST.speed; P.last = 0;
+  try { await P.au.play() } catch (e) { }
+  const S = A.STS; S.recent = [t.id, ...S.recent.filter(x => x !== t.id)].slice(0, 60); S.plays[t.id] = (S.plays[t.id] || 0) + 1; A.saveStats(); saveRemote();
+  A.meta(t.id).last = Date.now(); A.saveMeta();
+  A.setMedia && A.setMedia(t); A.repaint(); A.onTrack && A.onTrack(t); A.liveNotify && A.liveNotify(); if (A.ST.autoLyrics) A.fetchLyrics(t);
+  if (t.cover && !t.hueOk) { t.hueOk = 1; try { const c = await A.shrinkCover(await (await fetch(t.cover)).blob()); t.hue = c.hue; t.sat = c.sat; if (P.cur === t.id) A.repaint() } catch (e) { } }
+};
+P.au.addEventListener('error', () => { const t = A.byId(P.cur); if (t && t.remote) toast('No se pudo cargar esta canción en línea') });
+const saveTrack0 = A.saveTrack; A.saveTrack = t => t && t.remote ? Promise.resolve() : saveTrack0(t);
+
+/* ---------- accesos ---------- */
+const buscar0 = V.buscar;
+V.buscar = arg => buscar0(arg).replace('<div id="sres">', `<button class="discard" data-a="go" data-v="descubrir">${ms('travel_explore')}<span class="t"><b>Música gratis</b><span>Escucha sin descargar nada</span></span>${ms('chevron_right')}</button><div id="sres">`);
+const inicio0 = V.inicio;
+V.inicio = arg => { const h = inicio0(arg); const k = h.indexOf('<div class="sub">'); const i = k < 0 ? -1 : h.indexOf('</div>', k); return i < 0 ? h : h.slice(0, i + 6) + `<button class="discard" style="margin-top:12px" data-a="go" data-v="descubrir">${ms('travel_explore')}<span class="t"><b>Descubre música gratis</b><span>Escucha sin llenar tu teléfono</span></span>${ms('chevron_right')}</button>` + h.slice(i + 6) };
+}
+
+/* aeffy · Ahorrar espacio: comprime la música pesada a Opus (Ogg) y reemplaza la original */
+'use strict';
+{
+const { $, esc, ms, toast, on, badge } = A;
+const V = A.views, N = window.AeffyNative;
+const KBPS = 128, MB = 1048576;
+const fmtMB = b => b >= 1024 * MB ? (b / 1024 / MB).toFixed(1).replace('.', ',') + ' GB' : Math.max(1, Math.round(b / MB)) + ' MB';
+const kbps = t => t.dur > 0 && t.size > 0 ? t.size * 8 / t.dur / 1000 : 0;
+const isOpus = t => /\.(opus|ogg)$/i.test(t.file || '') || /opus|ogg/i.test(t.mime || '');
+const heavy = () => A.tracks.filter(t => !t.remote && !isOpus(t) && t.dur > 20 && t.dur < 15 * 60 && kbps(t) > 190 && (t.native ? !!t.nid : true));
+const est = t => t.dur * KBPS * 1000 / 8 * 1.02;
+
+/* ---------- Ogg Opus ---------- */
+const CRC = (() => { const T = new Uint32Array(256); for (let i = 0; i < 256; i++) { let r = i << 24; for (let k = 0; k < 8; k++) r = r & 0x80000000 ? (r << 1) ^ 0x04c11db7 : r << 1; T[i] = r >>> 0 } return T })();
+function crc(b) { let c = 0; for (let i = 0; i < b.length; i++) c = ((c << 8) ^ CRC[((c >>> 24) ^ b[i]) & 255]) >>> 0; return c }
+function page(packets, granule, serial, seq, flags) {
+  const lace = []; for (const p of packets) { let n = p.length; while (n >= 255) { lace.push(255); n -= 255 } lace.push(n) }
+  const head = 27 + lace.length, len = packets.reduce((a, p) => a + p.length, 0);
+  const b = new Uint8Array(head + len), v = new DataView(b.buffer);
+  b.set([79, 103, 103, 83], 0); b[4] = 0; b[5] = flags;
+  v.setUint32(6, granule % 4294967296, true); v.setUint32(10, Math.floor(granule / 4294967296), true);
+  v.setUint32(14, serial, true); v.setUint32(18, seq, true); b[26] = lace.length; b.set(lace, 27);
+  let o = head; for (const p of packets) { b.set(p, o); o += p.length }
+  v.setUint32(22, crc(b), true); return b
+}
+const u8 = s => new TextEncoder().encode(s);
+function opusHead(ch, rate, preskip) { const b = new Uint8Array(19), v = new DataView(b.buffer); b.set(u8('OpusHead')); b[8] = 1; b[9] = ch; v.setUint16(10, preskip, true); v.setUint32(12, rate, true); v.setInt16(16, 0, true); b[18] = 0; return b }
+function pictureBlock(img, mime) { const m = u8(mime), b = new Uint8Array(32 + m.length + img.length), v = new DataView(b.buffer); let o = 0; v.setUint32(o, 3); o += 4; v.setUint32(o, m.length); o += 4; b.set(m, o); o += m.length; v.setUint32(o, 0); o += 4; v.setUint32(o, 0); o += 4; v.setUint32(o, 0); o += 4; v.setUint32(o, 24); o += 4; v.setUint32(o, 0); o += 4; v.setUint32(o, img.length); o += 4; b.set(img, o); return b }
+const b64 = u => { let s = ''; for (let i = 0; i < u.length; i += 32768) s += String.fromCharCode.apply(null, u.subarray(i, i + 32768)); return btoa(s) };
+function opusTags(tags) { const vend = u8('aeffy'), cs = tags.map(u8); const len = 8 + 4 + vend.length + 4 + cs.reduce((a, c) => a + 4 + c.length, 0); const b = new Uint8Array(len), v = new DataView(b.buffer); let o = 0; b.set(u8('OpusTags')); o = 8; v.setUint32(o, vend.length, true); o += 4; b.set(vend, o); o += vend.length; v.setUint32(o, cs.length, true); o += 4; for (const c of cs) { v.setUint32(o, c.length, true); o += 4; b.set(c, o); o += c.length } return b }
+function oggOpus(chunks, ch, rate, samples, tags) {
+  const serial = (Math.random() * 4294967295) >>> 0, pre = 312, out = []; let seq = 0;
+  out.push(page([opusHead(ch, rate, pre)], 0, serial, seq++, 2));
+  // OpusTags puede ocupar varias páginas (portada): se parte en trozos de página
+  const T = opusTags(tags), MAXP = 255 * 255 - 1;
+  if (T.length <= MAXP) out.push(page([T], 0, serial, seq++, 0));
+  else { for (let o = 0; o < T.length; o += 255 * 255) { const part = T.subarray(o, Math.min(T.length, o + 255 * 255)); const last = o + 255 * 255 >= T.length; out.push(pageRaw(part, last, serial, seq++, o > 0 ? 1 : 0)) } }
+  let gran = pre, i = 0;
+  while (i < chunks.length) { const pk = []; let n = 0; while (i < chunks.length && pk.length < 50 && n + chunks[i].data.length < 60000) { pk.push(chunks[i].data); n += chunks[i].data.length; gran += chunks[i].frames; i++ } const end = i >= chunks.length; out.push(page(pk, end ? pre + samples : gran, serial, seq++, end ? 4 : 0)) }
+  return new Blob(out, { type: 'audio/ogg' })
+}
+// trozo de un paquete grande: si no es el último, el lacing termina en 255 (el paquete sigue en la página siguiente)
+function pageRaw(part, last, serial, seq, flags) {
+  const lace = []; let n = part.length; while (n >= 255) { lace.push(255); n -= 255 } if (last) lace.push(n); else if (n) { /* nunca pasa: trozos múltiplos de 255 */ lace.push(n) }
+  const head = 27 + lace.length, b = new Uint8Array(head + part.length), v = new DataView(b.buffer);
+  b.set([79, 103, 103, 83], 0); b[5] = flags; v.setUint32(6, last ? 0 : 0xffffffff, true); v.setUint32(10, last ? 0 : 0xffffffff, true); v.setUint32(14, serial, true); v.setUint32(18, seq, true); b[26] = lace.length; b.set(lace, 27); b.set(part, head); v.setUint32(22, crc(b), true); return b
+}
+
+/* ---------- codificar ---------- */
+A.canSave = async () => { try { if (typeof AudioEncoder === 'undefined') return false; const s = await AudioEncoder.isConfigSupported({ codec: 'opus', sampleRate: 48000, numberOfChannels: 2, bitrate: KBPS * 1000 }); return !!s.supported } catch (e) { return false } };
+async function encode(blob, tags) {
+  const ac = new (window.OfflineAudioContext || window.AudioContext)(2, 48000, 48000);
+  const ab = await blob.arrayBuffer(); const buf = await new Promise((ok, no) => { const p = ac.decodeAudioData(ab, ok, no); if (p && p.then) p.then(ok, no) });
+  const ch = Math.min(2, buf.numberOfChannels), rate = buf.sampleRate, len = buf.length;
+  const chunks = []; let err = null;
+  const enc = new AudioEncoder({ output: c => { const d = new Uint8Array(c.byteLength); c.copyTo(d); chunks.push({ data: d, frames: Math.round((c.duration || 20000) * 48000 / 1e6) }) }, error: e => { err = e } });
+  enc.configure({ codec: 'opus', sampleRate: rate, numberOfChannels: ch, bitrate: KBPS * 1000, opus: { application: 'audio', complexity: 9 } });
+  const STEP = rate; // 1 s por bloque
+  const planes = []; for (let c = 0; c < ch; c++) planes.push(buf.getChannelData(c));
+  for (let o = 0; o < len; o += STEP) {
+    const n = Math.min(STEP, len - o), data = new Float32Array(n * ch);
+    for (let c = 0; c < ch; c++) data.set(planes[c].subarray(o, o + n), c * n);
+    const ad = new AudioData({ format: 'f32-planar', sampleRate: rate, numberOfFrames: n, numberOfChannels: ch, timestamp: Math.round(o / rate * 1e6), data });
+    enc.encode(ad); ad.close();
+    if (enc.encodeQueueSize > 20) await new Promise(r => setTimeout(r, 0));
+    if (err) throw err
+  }
+  await enc.flush(); enc.close(); if (err) throw err;
+  return oggOpus(chunks, ch, rate, Math.round(len * 48000 / rate), tags)
+}
+async function coverBytes(t) {
+  try {
+    let b = null;
+    if (t.native) { const r = await fetch('/__native/art/' + t.nid + '?s=600'); if (r.ok && r.headers.get('x-aeffy')) b = await r.blob() }
+    if (!b) b = await A.tx('blob', 'readonly', s => s.get('cv:' + t.id));
+    if (!b && t.cover && /^data:/.test(t.cover)) b = await (await fetch(t.cover)).blob();
+    if (!b || b.size > 400000) return null; return { img: new Uint8Array(await b.arrayBuffer()), mime: b.type || 'image/jpeg' }
+  } catch (e) { return null }
+}
+
+/* ---------- proceso ---------- */
+const S = { run: false, done: 0, total: 0, saved: 0, fail: 0, cur: '', stop: false, olds: [], map: [] };
+const waitCb = k => new Promise(res => { const prev = window.AeffyNativeCb; const t = setTimeout(() => fin(false), 120000); function fin(v) { clearTimeout(t); window.AeffyNativeCb = prev; res(v) } window.AeffyNativeCb = (kk, v) => { if (kk === k) fin(v); else prev && prev(kk, v) } });
+async function run(list) {
+  if (S.run) return; Object.assign(S, { run: true, done: 0, total: list.length, saved: 0, fail: 0, stop: false, olds: [], map: [] });
+  let lock = null; try { lock = await navigator.wakeLock.request('screen') } catch (e) { }
+  if (N && N.needWrite && N.needWrite()) { N.requestWrite(); const ok = await waitCb('wperm'); if (!ok) { S.run = false; toast('Sin ese permiso no puedo guardar la música comprimida'); A.render(); return } }
+  for (const t of list) {
+    if (S.stop) break; S.cur = t.name; paint();
+    try {
+      const src = await A.blobFor(t); if (!src) throw 0;
+      const tags = ['TITLE=' + t.name, 'ARTIST=' + t.artist, 'ALBUM=' + t.album]; if (t.albumArtist) tags.push('ALBUMARTIST=' + t.albumArtist); if (t.year) tags.push('DATE=' + t.year); if (t.track) tags.push('TRACKNUMBER=' + t.track);
+      const cb = await coverBytes(t); if (cb) tags.push('METADATA_BLOCK_PICTURE=' + b64(pictureBlock(cb.img, cb.mime)));
+      const ogg = await encode(src, tags);
+      if (ogg.size >= src.size * .85) { S.done++; continue } // no vale la pena
+      const fname = (t.file || (t.artist + ' - ' + t.name)).replace(/\.[^.]+$/, '') + '.opus';
+      if (t.native) {
+        const data = b64(new Uint8Array(await ogg.arrayBuffer()));
+        const nid = N.saveAudio(fname, data, t.name, t.artist, t.album, 'audio/ogg');
+        if (!(nid > 0)) throw 0;
+        S.olds.push(t.nid); S.map.push([t.id, 'n' + nid, { cover: t.cover, hue: t.hue, sat: t.sat }]);
+      } else {
+        await A.tx('blob', 'readwrite', s => s.put(ogg, t.id)); A.MEMBLOB.set(t.id, ogg);
+        t.file = fname; t.mime = 'audio/ogg'; await A.saveTrack(t);
+      }
+      S.saved += Math.max(0, src.size - ogg.size); t.size = ogg.size;
+    } catch (e) { S.fail++ }
+    S.done++; paint()
+  }
+  S.cur = '';
+  if (S.map.length) {
+    if (A.ST.folders && !A.ST.folders.includes('Music')) { A.ST.folders.push('Music'); A.saveSet() }
+    remap(); S.phase = 'del'; paint();
+    const r = N.deleteMedia(JSON.stringify(S.olds));
+    let ok = r === 'done'; if (r === 'asked') ok = await waitCb('deleted');
+    S.delOk = ok;
+    if (A.nativeScan) await A.nativeScan(true);
+    for (const [, nid, c] of S.map) { const nt = A.byId(nid); if (nt && c.cover) { nt.cover = c.cover; nt.hue = c.hue; nt.sat = c.sat; A.saveTrack(nt) } }
+  }
+  try { lock && lock.release() } catch (e) { }
+  S.run = false; S.phase = 'end'; A.render();
+  toast(S.saved ? `Liberaste ${fmtMB(S.saved)}` : 'Listo')
+}
+function remap() {
+  const m = new Map(S.map.map(([o, n]) => [o, n]));
+  A.LISTS.forEach(l => { l.ids = l.ids.map(x => m.get(x) || x) }); A.saveLists();
+  for (const [o, n] of m) { if (A.META[o]) { A.META[n] = Object.assign({}, A.META[o]) } }
+  A.saveMeta();
+  const st = A.STS; if (st.plays) for (const [o, n] of m) if (st.plays[o]) { st.plays[n] = (st.plays[n] || 0) + st.plays[o] }
+  if (st.recent) st.recent = st.recent.map(x => m.get(x) || x);
+  A.saveStats && A.saveStats()
+}
+function paint() { const el = $('#svp'); if (!el) return; el.innerHTML = progress() }
+const progress = () => S.phase === 'del' ? `<p class="sub">Ahora tu teléfono te pedirá permiso para borrar las canciones originales pesadas. Toca <b>Permitir</b>.</p>` :
+  `<div class="svbar"><i style="width:${S.total ? S.done / S.total * 100 : 0}%"></i></div><p class="sub" style="margin-top:8px">${S.done} de ${S.total} · ${fmtMB(S.saved)} liberados${S.cur ? '<br><span class="muted">Comprimiendo: ' + esc(S.cur) + '</span>' : ''}</p><p class="small muted">Deja aeffy abierta mientras termina.</p>`;
+
+/* ---------- vista ---------- */
+let can = null;
+const view = () => {
+  if (can === null) { A.canSave().then(v => { can = v; A.render() }); }
+  const H = heavy(), total = A.tracks.reduce((a, t) => a + (t.size || 0), 0), save = H.reduce((a, t) => a + Math.max(0, t.size - est(t)), 0);
+  let body;
+  if (S.run) body = `<section class="card"><h3>Ahorrando espacio…</h3><div id="svp">${progress()}</div><div class="foot"><button class="btn t" data-a="svstop">Detener</button></div></section>`;
+  else if (S.phase === 'end') { body = `<section class="card c">${badge('check_circle')}<h3>¡Listo! Liberaste ${fmtMB(S.saved)}</h3><p>Tus canciones siguen en aeffy con sus portadas, me gusta y playlists.${S.map.length && !S.delOk ? ' Las originales no se borraron: puedes intentarlo otra vez o borrarlas tú desde tus archivos.' : ''}${S.fail ? ` ${S.fail} no se pudieron comprimir y quedaron como estaban.` : ''}</p><button class="btn" data-a="svok">Aceptar</button></section>`; }
+  else if (N && !N.saveAudio) body = `<section class="card c">${badge('system_update')}<h3>Actualiza aeffy</h3><p>Para ahorrar espacio necesitas la versión nueva de la app. Descárgala e instálala encima de la que tienes.</p><button class="btn" data-a="dpage" data-v="https://aeffy.vercel.app/descargar">Descargar la versión nueva</button></section>`;
+  else if (can === false) body = `<section class="card c">${badge('info')}<h3>Tu teléfono no permite comprimir</h3><p>Esta función necesita una versión más nueva de Android System WebView. Actualízala desde la Play Store y vuelve a intentar.</p></section>`;
+  else if (!H.length) body = `<section class="card c">${badge('check_circle')}<h3>Tu música ya está liviana</h3><p>No hay canciones pesadas para comprimir.</p></section>`;
+  else body = `<section class="card c">${badge('compress')}<h3>Puedes liberar unos ${fmtMB(save)}</h3><p>${H.length} ${H.length === 1 ? 'canción ocupa' : 'canciones ocupan'} más de lo necesario. aeffy las comprime a una calidad que se escucha igual y reemplaza las pesadas.</p><button class="btn big" data-a="svgo" ${can === null ? 'disabled' : ''}>${ms('compress')}Ahorrar ${fmtMB(save)}</button></section>
+      <div class="sech"><h2>Las más pesadas</h2></div>${H.sort((a, b) => b.size - a.size).slice(0, 12).map(t => `<div class="li">${A.cov(t, 's48')}<div class="t"><b>${esc(t.name)}</b><span>${esc(t.artist)} · ${fmtMB(t.size)} → ${fmtMB(est(t))}</span></div></div>`).join('')}`;
+  return A.top({ back: 1 }) + `<h1 class="h1">Ahorrar espacio</h1><p class="sub" style="margin:-4px 0 14px">Tu música ocupa ${fmtMB(total)} en total.</p>${body}
+    <p class="small muted" style="margin:16px 4px">La música comprimida queda en la carpeta Música/aeffy de tu teléfono. Para que no se escuche la diferencia, aeffy solo comprime las canciones de mucha calidad (más de 190 kbps).</p>`
+};
+const aj0 = V.ajustes; V.ajustes = arg => arg === 'ahorrar' ? view() : aj0(arg);
+on('svgo', () => { const H = heavy().sort((a, b) => b.size - a.size); if (H.length) { if (!N) { /* web: solo canciones importadas */ } run(H); A.render() } });
+on('svstop', () => { S.stop = true; toast('Se detiene al terminar la canción actual') });
+on('svok', () => { S.phase = ''; A.render() });
+
+/* aviso en la Biblioteca si hay mucho para ahorrar */
+const bib0 = V.biblioteca;
+V.biblioteca = arg => { const h = bib0(arg); const H = heavy(); const save = H.reduce((a, t) => a + Math.max(0, t.size - est(t)), 0); if (save < 50 * MB || S.run) return h; const i = h.indexOf('</h1>'); return i < 0 ? h : h.slice(0, i + 5) + `<button class="discard" data-a="go" data-v="ajustes/ahorrar">${ms('compress')}<span class="t"><b>Libera ${fmtMB(save)}</b><span>Comprime tu música pesada sin perder calidad</span></span>${ms('chevron_right')}</button>` + h.slice(i + 5) };
+}
+
 /* aeffy · arranque, eventos, disco arrastrable, instalación */
 'use strict';
 {
@@ -1778,7 +2067,7 @@ function autoBackup() { const k = A.dkey(new Date()); if (localStorage.getItem('
 {
 const { $, esc, ms, toast, P, on } = A;
 const N = window.AeffyNative;
-A.BUILD = 26;
+A.BUILD = 27;
 A.native = !!N;
 if (N) {
   try { localStorage.setItem('ae_inapp', '1') } catch (e) { }
